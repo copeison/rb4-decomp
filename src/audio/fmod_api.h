@@ -188,8 +188,13 @@ static_assert(sizeof(FMOD_STUDIO_ADVANCEDSETTINGS) == 20);
 struct FMOD_DSP_DESCRIPTION;
 struct FMOD_SYSTEM;
 
+struct FMOD_OUTPUT_STATE;
+using FMOD_OUTPUT_READFROMMIXER = FMOD_RESULT (*)(
+    FMOD_OUTPUT_STATE*, void*, std::uint32_t);
+
 struct FMOD_OUTPUT_STATE {
     void* plugindata;
+    FMOD_OUTPUT_READFROMMIXER readfrommixer;
 };
 
 using FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK = FMOD_RESULT (*)(
@@ -426,6 +431,8 @@ public:
     FMOD_RESULT setCallback(
         FMOD_SYSTEM_CALLBACK callback,
         FMOD_SYSTEM_CALLBACK_TYPE callback_mask);
+    FMOD_RESULT mixerSuspend();
+    FMOD_RESULT mixerResume();
 };
 
 namespace Studio {

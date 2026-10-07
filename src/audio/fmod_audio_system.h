@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "audio_output_dispatcher.h"
 #include "fmod_api.h"
@@ -31,7 +32,9 @@ struct FmodAudioState {
     std::uint32_t dsp_buffer_length = 0;
     FMOD_SPEAKERMODE speaker_mode = FMOD_SPEAKERMODE_DEFAULT;
     std::int32_t max_channels = 0;
-    void* buffered_output_update_callback = nullptr;
+    std::function<FMOD_RESULT(FMOD_OUTPUT_STATE&)>
+        buffered_output_update_callback;
+    void* voice_pool = nullptr;
     bool shutting_down = false;
     bool mix_in_progress = false;
     std::uint64_t mix_sequence = 0;

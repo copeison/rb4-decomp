@@ -8,10 +8,6 @@
 
 namespace rb4 {
 
-FMOD_RESULT buffered_output_dispatch_update(
-    void* update_callback,
-    FMOD_OUTPUT_STATE** output_state);
-
 namespace {
 
 constexpr std::uint32_t kFmodOutputPluginVersion = 3;
@@ -89,8 +85,7 @@ FMOD_RESULT fmod_buffered_output_close(FMOD_OUTPUT_STATE* output_state) {
 // Reconstructed from eboot.elf at 0x2764C0.
 FMOD_RESULT fmod_buffered_output_update(FMOD_OUTPUT_STATE* output_state) {
     auto* state = static_cast<FmodAudioState*>(output_state->plugindata);
-    return buffered_output_dispatch_update(
-        state->buffered_output_update_callback, &output_state);
+    return state->buffered_output_update_callback(*output_state);
 }
 
 // Reconstructed from eboot.elf at 0x276520.

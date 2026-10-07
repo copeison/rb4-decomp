@@ -22,4 +22,7 @@ void audio_dispatch_mix_consumers(
 void audio_reset_source_mix_timing(void* timing_entries);
 void audio_notify_post_mix(void* observers);
 
+void audio_register_mix_consumer(void* state, void* consumer);
+void audio_unregister_mix_consumer(void* state, void* consumer);
+
 }  // namespace rb4
