@@ -13,6 +13,7 @@
 - [x] Reconstruct the top-level game initialization sequence.
 - [x] Reconstruct the main per-frame update and render schedule.
 - [x] Recover the complete UI layout ID and primary asset-path map.
+- [x] Resolve the private pad imports and reconstruct the special-controller calibration sample path.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

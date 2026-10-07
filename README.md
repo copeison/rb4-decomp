@@ -19,7 +19,9 @@ control flow is documented in [docs/startup.md](docs/startup.md), and the
 initial address map is in [docs/subsystems.md](docs/subsystems.md).
 Cleaned source progress is tracked in
 [docs/reconstruction.md](docs/reconstruction.md), with the main update order in
-[docs/frame-loop.md](docs/frame-loop.md).
+[docs/frame-loop.md](docs/frame-loop.md). Private pad import recovery and the
+special-controller calibration path are described in
+[docs/special-pad-reader.md](docs/special-pad-reader.md).
 
 ## Recreate the analysis ELF
 

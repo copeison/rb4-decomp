@@ -29,6 +29,10 @@ FOCUSED_DECOMPILATIONS = {
     "ui-layout-id-to-symbol": 0xBB06A0,
     "ui-load-layout-by-id": 0xBB5D40,
     "command-line-mark-switches-handled": 0x252BC0,
+    "special-pad-reader-open": 0x8D28A0,
+    "special-pad-reader-append-calibration-samples": 0x8D2EA0,
+    "special-pad-reader-take-calibration-samples": 0x8D3000,
+    "special-pad-reader-set-calibration-mode": 0x8D3060,
 }
 
 

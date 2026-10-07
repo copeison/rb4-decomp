@@ -1,0 +1,4 @@
+nid,library_name,resolved_name,evidence
+hGbf2QTBmqc,libScePad,scePadGetExtControllerInformation,https://github.com/DNNDHH/PS5-3.20_Libs/blob/main/libScePad.c
+WFIiSfXGUq8,libScePad,scePadOpenExt,https://github.com/DNNDHH/PS5-3.20_Libs/blob/main/libScePad.c
+xqgVCEflEDY,libScePad,scePadSetFeatureReport,https://github.com/DNNDHH/PS5-3.20_Libs/blob/main/libScePad.c

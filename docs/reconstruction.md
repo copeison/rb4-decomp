@@ -12,6 +12,7 @@ the source tree.
 | `0x997590` | `stage_presence_id_to_symbol` | `src/game/stage_presence.cpp` | All 22 enum values and their interned symbol strings recovered. |
 | `0xBB06A0`, `0xBB5D40` | `ui_layout_id_to_symbol`, layout asset map | `src/ui/ui_layout_id.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |
 | `0x252BC0` | `command_line_mark_switches_handled` | `src/core/command_line.cpp` | Complete behavior and observed container layout reconstructed. |
+| `0x8D28A0`, `0x8D2EA0`, `0x8D3000`, `0x8D3060` | special pad reader and calibration sample path | `src/input/special_pad_reader.cpp` | Hardware probing, sensor-mode report, rolling sample collection, and transfer recovered. |
 
 ## Game initialization
 
@@ -36,6 +37,16 @@ argument whose first character is `-`.
 
 The structure names are descriptive because original symbols are unavailable.
 Offset and size assertions preserve the observed binary layout.
+
+## Special pad calibration reader
+
+The special pad reader probes devices `0738:8261` and `0E6F:0173` through the
+private `scePadOpenExt` API and assigns internal hardware IDs `0x1F` and
+`0x20`. It controls a calibration sensor with feature report `0x30`, collects
+up to 64 samples from `ScePadData::deviceUniqueData`, and transfers each batch
+to calibration code. Numeric mode names are retained until their physical
+sensor meanings are proven. See `docs/special-pad-reader.md` for the layouts
+and call-site evidence.
 
 ## Stage presence IDs
 

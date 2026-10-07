@@ -3,7 +3,8 @@
 
 The Orbis linker stores imported names as compact 11-character NIDs.  SDK stub
 libraries retain both the original symbol and its binary NID, which lets this
-tool recover names without relying on an online symbol database.
+tool recover most names without relying on an online symbol database.  A small
+reviewed CSV supplements private exports omitted from the installed SDK stubs.
 """
 
 from __future__ import annotations
@@ -182,6 +183,25 @@ def load_sdk_nids(
     return matches
 
 
+def load_known_nids(path: Path) -> dict[tuple[str, str], str]:
+    """Load manually reviewed NIDs that are absent from the SDK stub set."""
+    if not path.is_file():
+        return {}
+
+    known: dict[tuple[str, str], str] = {}
+    with path.open(newline="", encoding="utf-8") as source:
+        for row in csv.DictReader(source):
+            key = (row["nid"], row["library_name"])
+            name = row["resolved_name"]
+            previous = known.setdefault(key, name)
+            if previous != name:
+                raise ValueError(
+                    f"conflicting known names for {key[0]} in {key[1]}: "
+                    f"{previous} and {name}"
+                )
+    return known
+
+
 def find_program_header(elf: ElfLayout, header_type: int) -> ProgramHeader:
     for header in elf.program_headers:
         if header.type == header_type:
@@ -274,7 +294,9 @@ def find_plt_address(elf: ElfLayout, relocation_count: int) -> int:
     raise ValueError("could not locate the executable's PLT stub sequence")
 
 
-def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
+def resolve_imports(
+    elf_path: Path, sdk_root: Path, known_nids_path: Path | None = None
+) -> list[dict[str, object]]:
     elf = parse_elf(elf_path)
     dynlib = find_program_header(elf, PT_SCE_DYNLIBDATA)
     dynamic_entries = read_dynamic_entries(elf)
@@ -307,6 +329,7 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
     relocation_count = tags[DT_SCE_PLTRELSZ] // RELOCATION.size
     plt_address = find_plt_address(elf, relocation_count)
     sdk_nids = load_sdk_nids(sdk_root)
+    known_nids = load_known_nids(known_nids_path) if known_nids_path else {}
     library_names, module_names = read_import_names(
         elf, dynlib, tags, dynamic_entries
     )
@@ -324,21 +347,30 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
         library_number = decode_compact_id(library_id)
         module_number = decode_compact_id(module_id)
 
+        library_name = library_names.get(library_number, "")
         candidates = sdk_nids.get(nid, {})
         names = sorted(candidates)
         if len(names) == 1:
             resolved_name = names[0]
             libraries = sorted(candidates[resolved_name])
+            name_source = "sdk-stub"
             status = "resolved"
         elif names:
             resolved_name = " | ".join(names)
             libraries = sorted(
                 {library for candidate in candidates.values() for library in candidate}
             )
+            name_source = "sdk-stub"
             status = "ambiguous"
+        elif (nid, library_name) in known_nids:
+            resolved_name = known_nids[nid, library_name]
+            libraries = []
+            name_source = "reviewed-map"
+            status = "resolved"
         else:
             resolved_name = ""
             libraries = []
+            name_source = ""
             status = "unresolved"
 
         rows.append(
@@ -350,10 +382,11 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
                 "encoded_symbol": encoded_symbol,
                 "nid": nid,
                 "library_id": library_id,
-                "library_name": library_names.get(library_number, ""),
+                "library_name": library_name,
                 "module_id": module_id,
                 "module_name": module_names.get(module_number, ""),
                 "resolved_name": resolved_name,
+                "name_source": name_source,
                 "stub_libraries": ";".join(libraries),
                 "status": status,
             }
@@ -384,9 +417,15 @@ def main() -> None:
         default=Path("analysis/exports/imports.csv"),
         help="resolved import CSV",
     )
+    parser.add_argument(
+        "--known-nids",
+        type=Path,
+        default=Path("tools/ps4_known_nids.csv"),
+        help="reviewed fallback NID map for exports absent from SDK stubs",
+    )
     args = parser.parse_args()
 
-    rows = resolve_imports(args.elf, args.sdk)
+    rows = resolve_imports(args.elf, args.sdk, args.known_nids)
     write_csv(args.output, rows)
     resolved = sum(row["status"] == "resolved" for row in rows)
     ambiguous = sum(row["status"] == "ambiguous" for row in rows)

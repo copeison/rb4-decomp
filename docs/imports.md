@@ -14,17 +14,21 @@ executable's dynamic symbols and jump relocations.
 | Result | Imports |
 | --- | ---: |
 | Total PLT entries | 706 |
-| Resolved unambiguously | 568 |
+| Resolved unambiguously | 571 |
 | Ambiguous | 0 |
-| Unresolved | 138 |
+| Unresolved | 135 |
 
 The resolved set includes the C and C++ runtimes and the kernel, POSIX, GNM,
 NP, HTTP, USB, pad, video, save-data, dialog, PlayGo, and user-service APIs.
-The executable's own dynamic module table identifies the unresolved entries
-precisely: 76 are from `libfmod`, 59 from `libfmodstudio`, and three from
-`libScePad`. The FMOD names require matching middleware import libraries or
-independent call-site recovery. The three pad NIDs are not present in the
-supplied 5.008 stub set and will be recovered from their callers.
+The executable's own dynamic module table identifies all remaining unresolved
+entries precisely: 76 are from `libfmod` and 59 are from `libfmodstudio`.
+Those names require matching middleware import libraries or independent
+call-site recovery.
+
+Three private `libScePad` exports omitted from the supplied SDK stubs are now
+resolved through the reviewed `tools/ps4_known_nids.csv` map. Their names and
+call-site evidence are documented in `docs/special-pad-reader.md`. The CSV's
+`name_source` column distinguishes SDK-stub results from reviewed additions.
 
 ## Reproduce the export
 
