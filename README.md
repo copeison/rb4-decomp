@@ -8,7 +8,8 @@ IDA database files stay local and are excluded from Git.
 
 - Input: PS4 fake-signed/decrypted SELF, x86-64 little endian
 - Executable type: `ET_SCE_DYNEXEC` (`0xFE10`)
-- Compiled SDK: PS4 SDK `5.008.001` (`0x05008001`)
+- Target SDK generation: PS4 SDK `5.000`
+- Process-parameter SDK revision: `5.008.001` (`0x05008001`)
 - Internal module name: `rockband_ps4_s`
 - Original linker output path:
   `D:/TeamCity/buildAgent/work/de1ea97e21c98eba/main/rockband/build/rockband_ps4_s.elf`
@@ -84,9 +85,13 @@ the reviewed private-export map, and hashed original names for the bundled FMOD
 
 Place the installed PS4 SDK 5.008 tree at `tools/ps4-sdk/`. That directory is
 excluded from Git while the extraction and IDA helper scripts beside it remain
-tracked. The headers and stubs are sufficient for import recovery. A future
-binary comparison build will also require the missing Orbis compiler and linker
-executables.
+tracked. Those installed files provide headers and stubs for import recovery;
+they do not include the compiler toolchain used for the game's 5.000 SDK
+generation.
+
+A complete later Orbis toolchain, such as SDK 6.000, can provide compilation,
+linking, ABI validation, and structural comparison. Exact code generation is
+not expected to match the unavailable original toolchain.
 
 ## Repository policy
 

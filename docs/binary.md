@@ -34,7 +34,11 @@ parameter structure contains:
 | Structure size | `0x50` |
 | Magic | `ORBI` (`0x4942524F`) |
 | Entry count | 3 |
-| SDK version | `0x05008001` = PS4 SDK `5.008.001` |
+| SDK revision word | `0x05008001` = `5.008.001` |
+
+The executable targets the PS4 SDK 5.000 generation. The revision word records
+the associated 5.008.001 build revision; it does not mean that the locally
+available 5.008 headers and stubs include the matching compiler toolchain.
 
 The `PT_SCE_COMMENT` segment records the original build output path:
 
