@@ -23,6 +23,24 @@ enum FMOD_OUTPUTTYPE : std::int32_t {
 enum FMOD_SPEAKERMODE : std::int32_t;
 enum FMOD_DSP_RESAMPLER : std::int32_t;
 
+struct FMOD_VECTOR {
+    float x;
+    float y;
+    float z;
+};
+
+struct FMOD_3D_ATTRIBUTES {
+    FMOD_VECTOR position;
+    FMOD_VECTOR velocity;
+    FMOD_VECTOR forward;
+    FMOD_VECTOR up;
+};
+
+static_assert(sizeof(FMOD_VECTOR) == 12);
+static_assert(sizeof(FMOD_3D_ATTRIBUTES) == 48);
+static_assert(offsetof(FMOD_3D_ATTRIBUTES, forward) == 24);
+static_assert(offsetof(FMOD_3D_ATTRIBUTES, up) == 36);
+
 using FMOD_INITFLAGS = std::uint32_t;
 using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
@@ -162,6 +180,9 @@ public:
         FMOD_INITFLAGS core_flags,
         void* extra_driver_data);
     FMOD_RESULT registerPlugin(const FMOD_DSP_DESCRIPTION* description);
+    FMOD_RESULT setListenerAttributes(
+        std::int32_t listener,
+        const FMOD_3D_ATTRIBUTES* attributes);
     bool isValid() const;
     FMOD_RESULT update();
 };

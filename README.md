@@ -27,6 +27,8 @@ The recovered FMOD startup sequence and custom DSP registration are described
 in [docs/audio-initialization.md](docs/audio-initialization.md).
 The file callback layer and its priority-based asynchronous reader are covered
 in [docs/fmod-file-io.md](docs/fmod-file-io.md).
+Listener coordinate conversion is documented in
+[docs/fmod-listener.md](docs/fmod-listener.md).
 
 ## Recreate the analysis ELF
 

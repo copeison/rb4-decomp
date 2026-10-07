@@ -15,6 +15,7 @@ the source tree.
 | `0x8D28A0`, `0x8D2EA0`, `0x8D3000`, `0x8D3060` | special pad reader and calibration sample path | `src/input/special_pad_reader.cpp` | Hardware probing, sensor-mode report, rolling sample collection, and transfer recovered. |
 | `0x2773C0`, `0x278270` | `fmod_audio_initialize`, custom DSP registration | `src/audio/fmod_audio_system.cpp` | FMOD 1.10.04 startup, advanced settings, file callbacks, driver format, DSP buffers, and all 12 custom plugins recovered. |
 | `0x27A1C0`-`0x27A850` | FMOD file callbacks and asynchronous reader | `src/audio/fmod_file_io.cpp` | Open, close, read, seek, priority queue, worker, cancellation, and shutdown behavior recovered. |
+| `0x262300`, `0x27ACB0` | listener update and engine-to-FMOD transform conversion | `src/audio/fmod_listener.cpp` | Primary listener gating, 48-byte transform layout, handedness conversion, and zero velocity recovered. |
 
 ## Game initialization
 
