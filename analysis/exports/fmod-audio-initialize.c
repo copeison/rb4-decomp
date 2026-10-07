@@ -95,9 +95,9 @@ __int64 __fastcall fmod_audio_initialize(__int64 a1, __int64 a2, unsigned int a3
     FMOD::System::getSoftwareFormat(*(_QWORD *)(a1 + 288), a1 + 200, v28, v27);
     FMOD::System::getDSPBufferSize(*(_QWORD *)(a1 + 288), &v26, v25);
     *(_DWORD *)(a1 + 296) = v26;
-    __asm { vcvtsi2sd xmm0, xmm1, dword ptr [rbx+0C8h] }
-    sub_D3BC0(*(double *)&_XMM0);
-    sub_1127B90(a1 + 24, *(unsigned int *)(a1 + 200));
+    __asm { vcvtsi2sd xmm0, xmm1, dword ptr [rbx+0C8h]; sample_rate }
+    audio_set_mix_format(*(double *)&_XMM0);
+    audio_output_dispatcher_set_sample_rate(a1 + 24, *(unsigned int *)(a1 + 200));
     fmod_register_custom_dsp_plugins(a1);
     FMOD::System::setCallback(*(_QWORD *)(a1 + 288), fmod_system_callback, 96);
   }

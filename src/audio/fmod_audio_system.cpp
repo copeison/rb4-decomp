@@ -1,4 +1,7 @@
 #include "fmod_audio_system.h"
+#include "audio_mix_format.h"
+#include "audio_output_dispatcher.h"
+#include "audio_runtime_adapters.h"
 #include "fmod_buffered_output.h"
 #include "fmod_file_io.h"
 #include "fmod_mix_callback.h"
@@ -6,9 +9,6 @@
 #include <array>
 
 namespace rb4 {
-void audio_set_sample_rate(double sample_rate);
-void audio_clock_initialize(void* clock, std::uint32_t sample_rate);
-
 const FMOD_DSP_DESCRIPTION* fmod_get_analysis_dsp_description();
 const FMOD_DSP_DESCRIPTION* fmod_get_bitcrusher_dsp_description();
 const FMOD_DSP_DESCRIPTION* fmod_get_delay_dsp_description();
@@ -111,8 +111,11 @@ FMOD_RESULT fmod_audio_initialize(
         state.core_system->getDSPBufferSize(
             &state.dsp_buffer_length, &dsp_buffer_count);
 
-        audio_set_sample_rate(static_cast<double>(state.sample_rate));
-        audio_clock_initialize(state.audio_clock, state.sample_rate);
+        audio_set_mix_format(
+            static_cast<double>(state.sample_rate),
+            static_cast<std::int32_t>(state.dsp_buffer_length));
+        audio_output_dispatcher_set_sample_rate(
+            state.output_block_dispatcher, state.sample_rate);
         fmod_register_custom_dsp_plugins(state);
 
         constexpr auto callback_mask =
@@ -185,6 +188,69 @@ std::uint32_t fmod_audio_initialize_custom_output(FmodAudioState& state) {
     }
 
     return 1;
+}
+
+// Reconstructed from eboot.elf at 0x277840.
+void fmod_audio_attach_studio_system(
+    FmodAudioState& state,
+    FMOD::Studio::System* studio_system) {
+    if (state.studio_system == studio_system) {
+        return;
+    }
+    if (studio_system == nullptr) {
+        fmod_audio_detach_studio_system(state);
+        return;
+    }
+
+    state.studio_system = studio_system;
+    state.studio_system->getLowLevelSystem(&state.core_system);
+
+    std::uint32_t version = 0;
+    void* previous_user_data = nullptr;
+    state.core_system->getVersion(&version);
+    state.studio_system->getUserData(&previous_user_data);
+    state.studio_system->setUserData(&state);
+    state.core_system->getUserData(&previous_user_data);
+    state.core_system->setUserData(&state);
+
+    std::int32_t driver = 0;
+    std::array<char, 256> driver_name{};
+    state.core_system->getDriver(&driver);
+    state.core_system->getDriverInfo(
+        driver,
+        driver_name.data(),
+        static_cast<std::int32_t>(driver_name.size()),
+        nullptr,
+        &state.sample_rate,
+        nullptr,
+        nullptr);
+    state.core_system->getSoftwareFormat(&state.sample_rate, nullptr, nullptr);
+
+    std::int32_t dsp_buffer_count = 0;
+    state.core_system->getDSPBufferSize(
+        &state.dsp_buffer_length, &dsp_buffer_count);
+    audio_output_dispatcher_set_sample_rate(
+        state.output_block_dispatcher, state.sample_rate);
+    fmod_register_custom_dsp_plugins(state);
+
+    state.shutting_down = false;
+    audio_mix_semaphore_post(state.mix_semaphore);
+    constexpr auto callback_mask =
+        FMOD_SYSTEM_CALLBACK_PREMIX | FMOD_SYSTEM_CALLBACK_POSTMIX;
+    state.core_system->setCallback(fmod_system_callback, callback_mask);
+    (void)state.studio_system->isValid();
+    state.studio_system->update();
+}
+
+// Reconstructed from eboot.elf at 0x277A80 and the null branch of 0x277840.
+void fmod_audio_detach_studio_system(FmodAudioState& state) {
+    while (audio_mix_semaphore_wait(state.mix_semaphore) != 0) {
+    }
+    state.shutting_down = true;
+    audio_clear_deferred_fmod_releases(state);
+    state.studio_system = nullptr;
+    state.core_system = nullptr;
+    audio_mix_semaphore_post(state.mix_semaphore);
 }
 
 }  // namespace rb4

@@ -3,11 +3,11 @@
 #include <cstddef>
 #include <cstdio>
 
+#include "audio_mix_format.h"
 #include "fmod_audio_system.h"
 
 namespace rb4 {
 
-double audio_get_sample_rate();
 FMOD_RESULT buffered_output_dispatch_update(
     void* update_callback,
     FMOD_OUTPUT_STATE** output_state);

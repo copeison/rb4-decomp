@@ -48,6 +48,10 @@ struct AudioOutputDispatcher {
     AudioOutputBlockContext current_block;
 };
 
+void audio_output_dispatcher_set_sample_rate(
+    AudioOutputDispatcher& dispatcher,
+    std::int32_t sample_rate);
+
 void audio_dispatch_output_blocks(
     AudioOutputDispatcher& dispatcher,
     std::uint32_t buffer_length,

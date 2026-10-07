@@ -53,6 +53,13 @@ void process_output_block(
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x1127B90.
+void audio_output_dispatcher_set_sample_rate(
+    AudioOutputDispatcher& dispatcher,
+    std::int32_t sample_rate) {
+    dispatcher.sample_rate = sample_rate;
+}
+
 // Reconstructed from eboot.elf at 0x1127880.
 void audio_dispatch_output_blocks(
     AudioOutputDispatcher& dispatcher,

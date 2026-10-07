@@ -2773,7 +2773,7 @@ address,end,size,name,library,thunk
 0xD39C0,0xD3AA8,232,sub_D39C0,False,False
 0xD3AB0,0xD3B98,232,sub_D3AB0,False,False
 0xD3BA0,0xD3BAC,12,audio_get_sample_rate,False,False
-0xD3BC0,0xD3C1E,94,sub_D3BC0,False,False
+0xD3BC0,0xD3C1E,94,audio_set_mix_format,False,False
 0xD3D10,0xD3D20,16,sub_D3D10,False,False
 0xD3D20,0xD3D2E,14,sub_D3D20,False,False
 0xD3D30,0xD3D38,8,sub_D3D30,False,False
@@ -6992,7 +6992,7 @@ address,end,size,name,library,thunk
 0x2773C0,0x277750,912,fmod_audio_initialize,False,False
 0x277760,0x27783F,223,sub_277760,False,False
 0x277840,0x277A71,561,fmod_audio_attach_studio_system,False,False
-0x277A80,0x277B19,153,sub_277A80,False,False
+0x277A80,0x277B19,153,fmod_audio_detach_studio_system,False,False
 0x277BA0,0x2780C6,1318,sub_277BA0,False,False
 0x2781C0,0x27826D,173,fmod_audio_dispatch_mix_buffers,False,False
 0x278270,0x278395,293,fmod_register_custom_dsp_plugins,False,False
@@ -48004,7 +48004,7 @@ address,end,size,name,library,thunk
 0x1127B60,0x1127B61,1,nullsub_4381,False,False
 0x1127B70,0x1127B73,3,sub_1127B70,False,False
 0x1127B80,0x1127B84,4,sub_1127B80,False,False
-0x1127B90,0x1127B94,4,sub_1127B90,False,False
+0x1127B90,0x1127B94,4,audio_output_dispatcher_set_sample_rate,False,False
 0x1127BA0,0x1127D79,473,sub_1127BA0,False,False
 0x1127FC0,0x11281C6,518,sub_1127FC0,False,False
 0x11281D0,0x11281E1,17,sub_11281D0,False,False

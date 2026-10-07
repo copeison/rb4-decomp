@@ -2,12 +2,11 @@
 
 #include <cstdint>
 
+#include "audio_output_dispatcher.h"
 #include "fmod_api.h"
 #include "fmod_mix_callback.h"
 
 namespace rb4 {
-
-struct AudioOutputDispatcher;
 
 constexpr std::uint32_t kFmodHeaderVersion = 0x00011004;
 
@@ -24,7 +23,6 @@ struct FmodAudioState {
     std::uint32_t dsp_buffer_length = 0;
     FMOD_SPEAKERMODE speaker_mode = FMOD_SPEAKERMODE_DEFAULT;
     std::int32_t max_channels = 0;
-    void* audio_clock = nullptr;
     void* buffered_output_update_callback = nullptr;
     bool shutting_down = false;
     bool mix_in_progress = false;
@@ -36,7 +34,7 @@ struct FmodAudioState {
     void* mix_consumer_mutex = nullptr;
     void* mix_consumers = nullptr;
     std::uint32_t mix_consumer_dispatch_depth = 0;
-    AudioOutputDispatcher* output_block_dispatcher = nullptr;
+    AudioOutputDispatcher output_block_dispatcher;
     void* source_timing_entries = nullptr;
     void* post_mix_observers = nullptr;
 };
@@ -49,5 +47,11 @@ FMOD_RESULT fmod_audio_initialize(
 void fmod_register_custom_dsp_plugins(FmodAudioState& state);
 
 std::uint32_t fmod_audio_initialize_custom_output(FmodAudioState& state);
+
+void fmod_audio_attach_studio_system(
+    FmodAudioState& state,
+    FMOD::Studio::System* studio_system);
+
+void fmod_audio_detach_studio_system(FmodAudioState& state);
 
 }  // namespace rb4

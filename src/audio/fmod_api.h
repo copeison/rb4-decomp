@@ -200,6 +200,8 @@ namespace FMOD {
 
 class System {
 public:
+    FMOD_RESULT getVersion(std::uint32_t* version);
+    FMOD_RESULT getUserData(void** user_data);
     FMOD_RESULT setUserData(void* user_data);
     FMOD_RESULT setOutput(FMOD_OUTPUTTYPE output);
     FMOD_RESULT getAdvancedSettings(FMOD_ADVANCEDSETTINGS* settings);
@@ -250,6 +252,7 @@ namespace Studio {
 class System {
 public:
     static FMOD_RESULT create(System** system, std::uint32_t header_version);
+    FMOD_RESULT getUserData(void** user_data);
     FMOD_RESULT setUserData(void* user_data);
     FMOD_RESULT getLowLevelSystem(FMOD::System** system) const;
     FMOD_RESULT getAdvancedSettings(FMOD_STUDIO_ADVANCEDSETTINGS* settings);

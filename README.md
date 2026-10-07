@@ -35,6 +35,8 @@ FMOD's premix/postmix synchronization and timing path is documented in
 [docs/fmod-mix-callback.md](docs/fmod-mix-callback.md).
 The downstream 128-sample listener pipeline is documented in
 [docs/audio-output-dispatch.md](docs/audio-output-dispatch.md).
+External FMOD system attachment and detachment is documented in
+[docs/fmod-system-attachment.md](docs/fmod-system-attachment.md).
 
 ## Recreate the analysis ELF
 
