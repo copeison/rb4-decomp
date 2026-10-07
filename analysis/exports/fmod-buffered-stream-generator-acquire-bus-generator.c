@@ -1,4 +1,4 @@
-char __fastcall fmod_streaming_clip_create_bus_generator(__int64 a1, __int64 a2)
+char __fastcall fmod_buffered_stream_generator_acquire_bus_generator(__int64 a1, __int64 a2)
 {
   __int64 v4; // rbx
   __int64 v5; // r13

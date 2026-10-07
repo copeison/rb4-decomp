@@ -34,7 +34,8 @@
 - [x] Reconstruct `FmodAudioBusGenerator` sound creation and Studio-bus routing.
 - [x] Reconstruct the `FmodAudioStreamGeneratorManager` pool and handle format.
 - [x] Reconstruct the core `FmodAudioStreamGenerator` playback lifecycle.
-- [ ] Reconstruct the higher-level streaming clip decoder and buffer callbacks.
+- [x] Identify the `FmodBufferedStreamGenerator` pool and control surface.
+- [ ] Reconstruct the buffered-stream render callback in detail.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint

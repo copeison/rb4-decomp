@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_streaming_clip_initialize(__int64 a1, _QWORD *a2, __int64 a3)
+__int64 __fastcall fmod_buffered_stream_generator_initialize(__int64 a1, _QWORD *a2, __int64 a3)
 {
   int v7; // eax
   _QWORD *v8; // rbx
@@ -14,7 +14,7 @@ __int64 __fastcall fmod_streaming_clip_initialize(__int64 a1, _QWORD *a2, __int6
 
   _R12 = a1;
   v23[2] = 0x6365786562696C2FLL;
-  if ( (unsigned __int8)fmod_streaming_clip_create_sound(a1, a2) != 0 )
+  if ( (unsigned __int8)fmod_buffered_stream_generator_create_sound(a1, a2) != 0 )
   {
     *(_DWORD *)(_R12 + 520) = -1082130432;
     *(_DWORD *)(_R12 + 516) = -1082130432;
@@ -22,8 +22,8 @@ __int64 __fastcall fmod_streaming_clip_initialize(__int64 a1, _QWORD *a2, __int6
     *(_DWORD *)(_R12 + 512) = -1;
     *(_DWORD *)(_R12 + 472) = 1065353216;
     *(_WORD *)(_R12 + 524) = 0;
-    fmod_streaming_clip_initialize_buffers(_R12, (_DWORD *)a3);
-    if ( fmod_streaming_clip_create_bus_generator(_R12, a3) != 0 )
+    fmod_buffered_stream_generator_initialize_buffers(_R12, (_DWORD *)a3);
+    if ( fmod_buffered_stream_generator_acquire_bus_generator(_R12, a3) != 0 )
     {
       v7 = *(unsigned __int8 *)(a3 + 16);
       LOBYTE(a3) = 1;

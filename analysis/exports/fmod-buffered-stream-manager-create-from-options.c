@@ -1,4 +1,4 @@
-__int64 *__fastcall fmod_streaming_clip_manager_create_from_options(__int64 a1, __int64 *a2, __int64 a3)
+__int64 *__fastcall fmod_buffered_stream_manager_create_from_options(__int64 a1, __int64 *a2, __int64 a3)
 {
   __int64 v5; // rax
   __int64 v6; // rax
@@ -60,12 +60,12 @@ __int64 *__fastcall fmod_streaming_clip_manager_create_from_options(__int64 a1, 
   if ( v20[0] != 0 )
   {
     sub_1ADEB0(v14);
-    v15 = fmod_streaming_clip_initialize(v13, v20, v19);
+    v15 = fmod_buffered_stream_generator_initialize(v13, v20, v19);
     sub_1ADEF0(v14);
   }
   else
   {
-    v15 = fmod_streaming_clip_initialize(v13, v20, v19);
+    v15 = fmod_buffered_stream_generator_initialize(v13, v20, v19);
   }
   result = nullptr;
   if ( v15 != 0 )

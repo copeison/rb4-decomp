@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_streaming_clip_create_sound(__int64 a1, _QWORD *a2)
+__int64 __fastcall fmod_buffered_stream_generator_create_sound(__int64 a1, _QWORD *a2)
 {
   __int64 v2; // r15
   __int64 v5; // rax

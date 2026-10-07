@@ -33,8 +33,8 @@ position, playback rate, loop points, audio-reset preparation, and stop
 behavior. Returning a generator to its pool at `0x269FB0` also unregisters its
 Studio-bus path.
 
-The adjacent block beginning at `0x26AB60` belongs to a larger streaming-clip
-manager rather than this 288-byte pool. Its initialized object uses fields
-through offset `0x20D`, creates decoder buffers, and acquires a nested
-`FmodAudioBusGenerator`. It is tracked separately while its callback and buffer
-types are reconstructed.
+The adjacent block beginning at `0x26AB60` is the larger
+`FmodBufferedStreamGenerator`, rather than this 288-byte pool. Its initialized
+object uses fields through offset `0x234`, creates decoder buffers, and acquires
+a nested `FmodAudioBusGenerator`. It is reconstructed separately in
+`src/audio/fmod_buffered_stream_generator.cpp`.

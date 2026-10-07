@@ -29,7 +29,7 @@ the source tree.
 | `0x267BB0`-`0x268479` | `AudioClipFmod` runtime controls | `src/audio/audio_clip_fmod.cpp` | Pause/resume state transitions, millisecond playback position, 3D attribute updates, and named Studio parameters recovered. |
 | `0x268380`, `0x268510`-`0x26943F` | `FmodAudioBusGenerator` pool and creation | `src/audio/fmod_audio_bus_generator.cpp` | Fixed pool, stale-handle rejection, sound creation, and Studio-bus route registration recovered. |
 | `0x2692B0`, `0x2693B0`-`0x26AA9F` | `FmodAudioStreamGenerator` pool and playback | `src/audio/fmod_audio_stream_generator.cpp` | MP3 type, 288-byte pool, handles, asynchronous channel startup, loop points, seeking, pause control, volume, 3D updates, and teardown recovered. |
-| `0x26AB60`-`0x26C45A` | higher-level FMOD streaming clip | focused IDA exports | Resource gate, FMOD sound creation, decoder buffers, and nested bus-generator allocation identified; decoder callbacks remain in progress. |
+| `0x26AB60`-`0x26E419` | `FmodBufferedStreamGenerator` pool and controls | `src/audio/fmod_buffered_stream_generator.cpp` | 568-byte pool, resource gate, FMOD sound-open completion, decoder blocks, nested bus generator, seeking, gain, and ring refill recovered; render math remains in progress. |
 
 ## Game initialization
 

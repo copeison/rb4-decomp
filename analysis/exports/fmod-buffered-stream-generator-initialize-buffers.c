@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_streaming_clip_initialize_buffers(__int64 a1, _DWORD *a2)
+__int64 __fastcall fmod_buffered_stream_generator_initialize_buffers(__int64 a1, _DWORD *a2)
 {
   int v4; // eax
   int v5; // edx
