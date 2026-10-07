@@ -35,6 +35,11 @@ FOCUSED_DECOMPILATIONS = {
     "special-pad-reader-set-calibration-mode": 0x8D3060,
     "audio-update-listener-attributes": 0x262300,
     "audio-build-fmod-3d-attributes": 0x27ACB0,
+    "fmod-load-modules-and-set-thread-affinity": 0x261F60,
+    "fmod-audio-state-initialize": 0x276F30,
+    "fmod-audio-initialize": 0x2773C0,
+    "fmod-register-custom-dsp-plugins": 0x278270,
+    "fmod-audio-initialize-custom-output": 0x2786D0,
 }
 
 

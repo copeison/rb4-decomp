@@ -23,6 +23,8 @@ Cleaned source progress is tracked in
 special-controller calibration path are described in
 [docs/special-pad-reader.md](docs/special-pad-reader.md). FMOD 1.10.04 import
 recovery is documented in [docs/fmod-imports.md](docs/fmod-imports.md).
+The recovered FMOD startup sequence and custom DSP registration are described
+in [docs/audio-initialization.md](docs/audio-initialization.md).
 
 ## Recreate the analysis ELF
 

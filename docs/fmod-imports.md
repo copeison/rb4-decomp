@@ -43,3 +43,6 @@ name in `tools/ps4_symbol_names.csv`. A name is accepted only when its hash and
 library both match an executable import. The generated import table marks these
 rows with `name_source=hashed-symbol`.
 
+The names make the primary startup path readable enough to reconstruct. See
+`docs/audio-initialization.md` for the recovered module, settings, callback,
+and custom DSP sequence.
