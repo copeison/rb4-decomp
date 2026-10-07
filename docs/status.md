@@ -5,7 +5,7 @@
 - [x] Recover the ELF payload from `eboot.bin`.
 - [x] Identify the executable format and compiler SDK baseline.
 - [x] Prepare an IDA-compatible analysis copy without modifying program data.
-- [ ] Create the persistent IDA database and export the initial function map.
+- [x] Create the persistent IDA database and export the initial function map.
 - [ ] Recover and name the startup path.
 - [ ] Classify major subsystems and source translation units.
 - [ ] Begin function-by-function C++ reconstruction.

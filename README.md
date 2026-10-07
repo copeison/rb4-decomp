@@ -28,6 +28,19 @@ not recognize. Change only `e_type` from `0xFE10` to standard `ET_DYN` (`3`) in
 a local copy named `files/eboot_ida.elf` before importing it into IDA. The
 extractor's `--ida-output` option automates this preparation.
 
+## Recreate the IDA baseline
+
+Run the exporter with the Python interpreter from IDA's virtual environment:
+
+```powershell
+& "$env:APPDATA\Hex-Rays\IDA Pro\venv\Scripts\python.exe" `
+  tools/ida_export.py files/eboot_ida.elf --rebuild
+```
+
+This creates the ignored persistent database at `analysis/ida/eboot.i64` and
+writes reviewable function, segment, entry-point, and source-path exports under
+`analysis/exports/`.
+
 ## Repository policy
 
 Reverse-engineering notes, scripts, recovered declarations, and reconstructed

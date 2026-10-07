@@ -1,0 +1,177 @@
+{
+  "input_path": "X:\\rb4-decomp\\files\\eboot_ida.elf",
+  "database_path": "X:\\rb4-decomp\\analysis\\ida\\eboot.i64",
+  "image_base": "0x0",
+  "minimum_address": "0x0",
+  "maximum_address": "0x1B62528",
+  "segment_count": 3,
+  "function_count": 50498,
+  "named_function_count": 33,
+  "entry_count": 1,
+  "entry_address": "0x920",
+  "string_count": 35272,
+  "source_path_count": 161,
+  "decompiler_available": true,
+  "largest_functions": [
+    {
+      "address": "0xB28240",
+      "end": "0xB38582",
+      "size": 66370,
+      "name": "sub_B28240",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xB385B0",
+      "end": "0xB46158",
+      "size": 56232,
+      "name": "sub_B385B0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x603850",
+      "end": "0x60D6E1",
+      "size": 40593,
+      "name": "sub_603850",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xB46180",
+      "end": "0xB4FFA0",
+      "size": 40480,
+      "name": "sub_B46180",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xE255D0",
+      "end": "0xE2F260",
+      "size": 40080,
+      "name": "sub_E255D0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x79A50",
+      "end": "0x82E00",
+      "size": 37808,
+      "name": "sub_79A50",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xF0FFC0",
+      "end": "0xF18320",
+      "size": 33632,
+      "name": "sub_F0FFC0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x222350",
+      "end": "0x2296B0",
+      "size": 29536,
+      "name": "sub_222350",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x11C420",
+      "end": "0x122D30",
+      "size": 26896,
+      "name": "sub_11C420",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x5C3660",
+      "end": "0x5C9E00",
+      "size": 26528,
+      "name": "sub_5C3660",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xF56FA0",
+      "end": "0xF5CED0",
+      "size": 24368,
+      "name": "sub_F56FA0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x66B430",
+      "end": "0x670C50",
+      "size": 22560,
+      "name": "sub_66B430",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xDF10B0",
+      "end": "0xDF6100",
+      "size": 20560,
+      "name": "sub_DF10B0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xCDDAE0",
+      "end": "0xCE2880",
+      "size": 19872,
+      "name": "sub_CDDAE0",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xAA6940",
+      "end": "0xAAB6D0",
+      "size": 19856,
+      "name": "sub_AA6940",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x40B490",
+      "end": "0x410090",
+      "size": 19456,
+      "name": "sub_40B490",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xFCB070",
+      "end": "0xFCFC30",
+      "size": 19392,
+      "name": "sub_FCB070",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xC6FE80",
+      "end": "0xC747F0",
+      "size": 18800,
+      "name": "sub_C6FE80",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0x8B2B70",
+      "end": "0x8B72A0",
+      "size": 18224,
+      "name": "sub_8B2B70",
+      "library": false,
+      "thunk": false
+    },
+    {
+      "address": "0xC05FD0",
+      "end": "0xC0A530",
+      "size": 17760,
+      "name": "sub_C05FD0",
+      "library": false,
+      "thunk": false
+    }
+  ]
+}
