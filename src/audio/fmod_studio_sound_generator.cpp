@@ -12,12 +12,45 @@ namespace {
 
 constexpr float kMinimumFadeMilliseconds = 25.0F;
 constexpr float kMillisecondsPerSecond = 1000.0F;
+constexpr std::uint32_t kActiveHandleBit = 0x80000000;
+constexpr std::uint32_t kGenerationMask = 0x00003FFF;
+constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
+constexpr std::uint32_t kPoolIndexShift = 14;
+constexpr std::int32_t kDialogFormat = 4;
+constexpr std::string_view kEventPrefix = "event:/";
+constexpr std::string_view kSnapshotPrefix = "snapshot:/";
 
 float decibels_to_linear(float decibels) {
     return std::pow(10.0F, decibels * 0.05F);
 }
 
 }  // namespace
+
+// Reconstructed from the path handling at eboot.elf 0x270B20.
+std::string fmod_studio_event_path(std::string_view path) {
+    const auto has_prefix = [&path](std::string_view prefix) {
+        return path.size() >= prefix.size() &&
+            path.substr(0, prefix.size()) == prefix;
+    };
+    if (has_prefix(kEventPrefix) || has_prefix(kSnapshotPrefix)) {
+        return std::string(path);
+    }
+    return std::string(kEventPrefix) + std::string(path);
+}
+
+void FmodStudioSoundGenerator::initialize_pool_slot(
+    FmodStudioSoundGeneratorManager& manager,
+    std::uint32_t index) {
+    manager_ = &manager;
+    pool_index_ = index;
+    reference_count_.store(0, std::memory_order_relaxed);
+    handle_ = 0;
+    sound_source_ = nullptr;
+    audio_state_ = nullptr;
+    spatial_source_ = nullptr;
+    state_ = AudioClipFmodState::stopped;
+    event_callback_complete_.store(true, std::memory_order_relaxed);
+}
 
 // Reconstructed from eboot.elf at 0x26FC30.
 bool FmodStudioSoundGenerator::initialize_event(
@@ -330,6 +363,191 @@ bool FmodStudioSoundGenerator::advance_fade(
     fade.current = fade.start +
         (fade.target - fade.start) * fade.progress;
     return fade.progress >= 1.0F;
+}
+
+FmodStudioSoundGeneratorManager::FmodStudioSoundGeneratorManager(
+    std::size_t capacity,
+    FmodAudioState* default_audio_state)
+    : capacity_(capacity), default_audio_state_(default_audio_state) {}
+
+// Reconstructed from eboot.elf at 0x270D90.
+std::int32_t FmodStudioSoundGeneratorManager::setting() const {
+    return setting_;
+}
+
+// Reconstructed from eboot.elf at 0x271180.
+void FmodStudioSoundGeneratorManager::set_setting(std::int32_t value) {
+    setting_ = value;
+}
+
+bool FmodStudioSoundGeneratorManager::accepts(
+    const FmodStudioSoundOptions& options) const {
+    return options.format != kDialogFormat;
+}
+
+// Reconstructed from eboot.elf at 0x271190.
+void FmodStudioSoundGeneratorManager::initialize_pool() {
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+
+    generators_ = std::make_unique<FmodStudioSoundGenerator[]>(capacity_);
+    free_indices_.clear();
+    for (std::uint32_t index = 0; index < capacity_; ++index) {
+        generators_[index].initialize_pool_slot(*this, index);
+        generators_[index].in_free_list_ = true;
+        free_indices_.push_back(index);
+    }
+    --lock_depth_;
+}
+
+// Reconstructed from eboot.elf at 0x271350.
+bool FmodStudioSoundGeneratorManager::shutdown_pool() {
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+    if (free_indices_.size() != capacity_) {
+        --lock_depth_;
+        return false;
+    }
+
+    generators_.reset();
+    free_indices_.clear();
+    --lock_depth_;
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x270B20.
+FmodStudioSoundGenerator* FmodStudioSoundGeneratorManager::create(
+    const char* event_path,
+    const FmodStudioSoundOptions& options,
+    FmodAudioState* audio_state,
+    void* sound_source,
+    AudioClipFmodSpatialSource* spatial_source) {
+    if (event_path == nullptr || !accepts(options)) {
+        return nullptr;
+    }
+
+    auto* generator = acquire(audio_state, sound_source);
+    if (generator == nullptr) {
+        return nullptr;
+    }
+
+    const auto normalized_path = fmod_studio_event_path(event_path);
+    if (!generator->initialize_event(
+            normalized_path.c_str(),
+            options,
+            *generator->audio_state_,
+            spatial_source)) {
+        release(*generator);
+        return nullptr;
+    }
+    return generator;
+}
+
+// Reconstructed from eboot.elf at 0x270EE0.
+FmodStudioSoundGenerator* FmodStudioSoundGeneratorManager::retain(
+    FmodStudioSoundGeneratorHandle handle,
+    std::uint32_t index) {
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+
+    FmodStudioSoundGenerator* result = nullptr;
+    if (generators_ != nullptr && index < capacity_) {
+        auto& generator = generators_[index];
+        if (generator.handle_ == handle) {
+            generator.reference_count_.fetch_add(
+                1, std::memory_order_relaxed);
+            result = &generator;
+        }
+    }
+    --lock_depth_;
+    return result;
+}
+
+FmodStudioSoundGenerator* FmodStudioSoundGeneratorManager::acquire(
+    FmodAudioState* audio_state,
+    void* sound_source) {
+    if (audio_state == nullptr) {
+        audio_state = default_audio_state_;
+    }
+
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+    if (free_indices_.empty() || audio_state == nullptr) {
+        --lock_depth_;
+        return nullptr;
+    }
+
+    const auto index = free_indices_.front();
+    free_indices_.pop_front();
+    auto& generator = generators_[index];
+    generator.in_free_list_ = false;
+    generator.sound_source_ = sound_source;
+    generator.audio_state_ = audio_state;
+    generator.handle_ = activate_handle(generator);
+    generator.state_ = AudioClipFmodState::uninitialized;
+    --lock_depth_;
+    return &generator;
+}
+
+// Reconstructed from eboot.elf at 0x270750.
+void FmodStudioSoundGeneratorManager::release(
+    FmodStudioSoundGenerator& generator) {
+    generator.release_event();
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+    generator.handle_ &= ~kActiveHandleBit;
+    generator.sound_source_ = nullptr;
+    generator.audio_state_ = nullptr;
+    generator.spatial_source_ = nullptr;
+    generator.state_ = AudioClipFmodState::stopped;
+    if (!generator.in_free_list_) {
+        generator.in_free_list_ = true;
+        free_indices_.push_back(generator.pool_index_);
+    }
+    --lock_depth_;
+}
+
+// Reconstructed from eboot.elf at 0x270F50.
+void FmodStudioSoundGeneratorManager::prepare_all_for_audio_reset() {
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+    for (std::size_t index = 0; index < capacity_; ++index) {
+        generators_[index].prepare_for_audio_reset();
+    }
+    --lock_depth_;
+}
+
+// Reconstructed from eboot.elf at 0x270FC0.
+void FmodStudioSoundGeneratorManager::stop_all() {
+    std::lock_guard lock(mutex_);
+    ++lock_depth_;
+    for (std::size_t index = 0; index < capacity_; ++index) {
+        generators_[index].stop_and_wait();
+    }
+    --lock_depth_;
+}
+
+// Reconstructed from eboot.elf at 0x271030.
+std::vector<FmodStudioSoundGeneratorHandle>
+FmodStudioSoundGeneratorManager::active_handles() const {
+    std::vector<FmodStudioSoundGeneratorHandle> handles;
+    handles.reserve(capacity_ - free_indices_.size());
+    for (std::size_t index = 0; index < capacity_; ++index) {
+        const auto handle = generators_[index].handle_;
+        if (static_cast<std::int32_t>(handle) < 0) {
+            handles.push_back(handle);
+        }
+    }
+    return handles;
+}
+
+FmodStudioSoundGeneratorHandle
+FmodStudioSoundGeneratorManager::activate_handle(
+    FmodStudioSoundGenerator& generator) const {
+    const auto generation = (generator.handle_ + 1) & kGenerationMask;
+    const auto pool_index =
+        (generator.pool_index_ << kPoolIndexShift) & kPoolIndexMask;
+    return kActiveHandleBit | pool_index | generation;
 }
 
 }  // namespace rb4

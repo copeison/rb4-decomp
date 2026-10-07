@@ -30,3 +30,14 @@ The dialog callback at `0x26EA10` handles FMOD programmer-sound creation and
 destruction. It looks up `FMOD_STUDIO_SOUND_INFO`, creates the low-level sound,
 returns its subsound index, and replaces the wrapper's initial 3,600,000 ms
 placeholder length when FMOD reports the sound actually playing.
+
+The adjacent `FmodStudioSoundGeneratorManager`, identified by the string at
+`0x125CF85` and vtable at `0x18F0B00`, owns a separate pool of 208-byte generic
+Studio-event generators. It rejects format 4 so programmer-sound dialog events
+remain with the dialog manager. Its path normalizer preserves both `event:/`
+and `snapshot:/` names and prefixes unqualified names with `event:/`.
+
+The generic manager uses the same synchronized pool operations and handle
+validation as the dialog manager: retain at `0x270EE0`, reset and stop passes at
+`0x270F50` and `0x270FC0`, active handles at `0x271030`, initialization at
+`0x271190`, and guarded shutdown at `0x271350`.
