@@ -118,7 +118,7 @@ FMOD_RESULT fmod_file_close(void* handle, void* user_data) {
     (void)user_data;
     auto* file_handle = as_file_handle(handle);
     if (file_handle == nullptr) {
-        return FMOD_ERR_INVALID_HANDLE;
+        return FMOD_ERR_INVALID_PARAM;
     }
 
     {
@@ -140,7 +140,7 @@ FMOD_RESULT fmod_file_read(
     (void)user_data;
     auto* file_handle = as_file_handle(handle);
     if (file_handle == nullptr) {
-        return FMOD_ERR_INVALID_HANDLE;
+        return FMOD_ERR_INVALID_PARAM;
     }
 
     const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
@@ -156,7 +156,7 @@ FMOD_RESULT fmod_file_seek(
     (void)user_data;
     auto* file_handle = as_file_handle(handle);
     if (file_handle == nullptr) {
-        return FMOD_ERR_INVALID_HANDLE;
+        return FMOD_ERR_INVALID_PARAM;
     }
 
     const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
@@ -168,7 +168,7 @@ FMOD_RESULT fmod_file_seek(
 FMOD_RESULT fmod_file_async_read(FMOD_ASYNCREADINFO* info, void* user_data) {
     (void)user_data;
     if (info == nullptr) {
-        return FMOD_ERR_INVALID_HANDLE;
+        return FMOD_ERR_INVALID_PARAM;
     }
 
     {
@@ -190,7 +190,7 @@ FMOD_RESULT fmod_file_async_read(FMOD_ASYNCREADINFO* info, void* user_data) {
 FMOD_RESULT fmod_file_async_cancel(FMOD_ASYNCREADINFO* info, void* user_data) {
     (void)user_data;
     if (info == nullptr) {
-        return FMOD_ERR_INVALID_HANDLE;
+        return FMOD_ERR_INVALID_PARAM;
     }
 
     std::unique_lock<std::mutex> lock(g_async_mutex);

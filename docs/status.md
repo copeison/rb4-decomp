@@ -26,7 +26,15 @@
 - [x] Reconstruct deferred FMOD channel and DSP release processing.
 - [x] Recover the engine-to-FMOD speaker configuration mapping.
 - [x] Reconstruct audio timing snapshots and per-source aggregation.
+- [x] Reconstruct `AudioClipFmod` channel and event teardown.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
+
+## Validation constraint
+
+The local PS4 SDK 5.008 copy contains headers and stub libraries but no Sony
+compiler or linker. Static reconstruction, IDA naming, import resolution, and
+documentation continue independently. Compilation and binary comparison stay
+pending until a compatible toolchain is available.
 
 ## Naming conventions
 

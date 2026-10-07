@@ -13,7 +13,8 @@ enum FMOD_RESULT : std::int32_t {
     FMOD_ERR_FILE_EOF = 16,
     FMOD_ERR_FILE_NOTFOUND = 18,
     FMOD_ERR_HEADER_MISMATCH = 20,
-    FMOD_ERR_INVALID_HANDLE = 31,
+    FMOD_ERR_INVALID_HANDLE = 30,
+    FMOD_ERR_INVALID_PARAM = 31,
 };
 
 enum FMOD_OUTPUTTYPE : std::int32_t {
@@ -60,6 +61,11 @@ static_assert(offsetof(FMOD_3D_ATTRIBUTES, up) == 36);
 using FMOD_INITFLAGS = std::uint32_t;
 using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
+
+enum FMOD_STUDIO_STOP_MODE : std::int32_t {
+    FMOD_STUDIO_STOP_ALLOWFADEOUT = 0,
+    FMOD_STUDIO_STOP_IMMEDIATE = 1,
+};
 
 constexpr FMOD_INITFLAGS FMOD_INIT_NORMAL = 0;
 constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
@@ -200,9 +206,13 @@ using FMOD_SYSTEM_CALLBACK = FMOD_RESULT (*)(
 
 namespace FMOD {
 
+class DSP;
+
 class ChannelControl {
 public:
     FMOD_RESULT stop();
+    FMOD_RESULT setPaused(bool paused);
+    FMOD_RESULT removeDSP(DSP* dsp);
 };
 
 class DSP {
@@ -261,6 +271,13 @@ public:
 };
 
 namespace Studio {
+
+class EventInstance {
+public:
+    FMOD_RESULT getChannelGroup(FMOD::ChannelControl** channel_group);
+    FMOD_RESULT stop(FMOD_STUDIO_STOP_MODE mode);
+    FMOD_RESULT release();
+};
 
 class System {
 public:

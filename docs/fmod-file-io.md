@@ -17,7 +17,7 @@ Read and seek operations hold the wrapper mutex. Reads return
 `FMOD_ERR_FILE_EOF` when the engine returns fewer bytes than FMOD requested;
 seeks are absolute and report success after dispatching to the engine file.
 Every callback that receives a null wrapper returns
-`FMOD_ERR_INVALID_HANDLE`. Close releases the engine file, destroys the mutex,
+`FMOD_ERR_INVALID_PARAM`. Close releases the engine file, destroys the mutex,
 and frees the wrapper.
 
 The underlying virtual file adapters are now named in IDA:
