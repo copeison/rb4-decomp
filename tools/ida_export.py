@@ -20,6 +20,13 @@ SOURCE_PATH_RE = re.compile(
     re.IGNORECASE,
 )
 
+FOCUSED_DECOMPILATIONS = {
+    "game-initialize": 0xA0,
+    "game-run-frame": 0x190,
+    "game-main": 0x3C0,
+    "command-line-mark-switches-handled": 0x252BC0,
+}
+
 
 def write_csv(path: Path, fieldnames: list[str], rows: Iterable[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -154,6 +161,19 @@ def collect_analysis(
         except Exception as exc:  # IDA raises several version-specific types.
             pseudocode = f"/* Entry-point decompilation failed: {exc} */\n"
     (export_dir / "entrypoint.c").write_text(pseudocode, encoding="utf-8")
+
+    if decompiler_available:
+        for output_name, address in FOCUSED_DECOMPILATIONS.items():
+            function = ida_funcs.get_func(address)
+            if function is None:
+                continue
+            try:
+                focused_pseudocode = str(ida_hexrays.decompile(function.start_ea))
+            except Exception as exc:  # IDA exposes version-specific exception types.
+                focused_pseudocode = f"/* Decompilation failed: {exc} */\n"
+            (export_dir / f"{output_name}.c").write_text(
+                focused_pseudocode, encoding="utf-8"
+            )
 
     named_functions = sum(
         1

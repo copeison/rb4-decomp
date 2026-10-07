@@ -8,7 +8,7 @@
 - [x] Create the persistent IDA database and export the initial function map.
 - [x] Recover and name the startup path.
 - [x] Classify major subsystems and source translation units.
-- [ ] Begin function-by-function C++ reconstruction.
+- [x] Begin function-by-function C++ reconstruction.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

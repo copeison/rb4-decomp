@@ -15,7 +15,7 @@ address,end,size,name,library,thunk
 0x9B0,0x9B9,9,sub_9B0,False,False
 0x9C0,0x9C9,9,sub_9C0,False,False
 0xB60,0xBC8,104,sub_B60,False,False
-0xD50,0xFE0,656,sub_D50,False,False
+0xD50,0xFE0,656,sound_manager_initialize,False,False
 0xFE0,0x112C,332,sub_FE0,False,False
 0x1130,0x118A,90,sub_1130,False,False
 0x1190,0x135B,459,sub_1190,False,False
@@ -5547,7 +5547,7 @@ address,end,size,name,library,thunk
 0x219A00,0x219A74,116,sub_219A00,False,False
 0x219A80,0x219A8E,14,sub_219A80,False,False
 0x219A90,0x219A9E,14,sub_219A90,False,False
-0x219AA0,0x219B78,216,sub_219AA0,False,False
+0x219AA0,0x219B78,216,core_initialize,False,False
 0x219B80,0x219BA3,35,sub_219B80,False,False
 0x219BB0,0x219BC4,20,sub_219BB0,False,False
 0x219BD0,0x219BDF,15,sub_219BD0,False,False
@@ -5759,7 +5759,7 @@ address,end,size,name,library,thunk
 0x22FCD0,0x22FF30,608,sub_22FCD0,False,False
 0x22FF30,0x2301B0,640,sub_22FF30,False,False
 0x2301B0,0x230310,352,sub_2301B0,False,False
-0x230310,0x230338,40,sub_230310,False,False
+0x230310,0x230320,16,sub_230310,False,False
 0x230340,0x2303F0,176,sub_230340,False,False
 0x2303F0,0x2305E0,496,sub_2303F0,False,False
 0x2305E0,0x230810,560,sub_2305E0,False,False
@@ -6150,7 +6150,7 @@ address,end,size,name,library,thunk
 0x252660,0x2526BB,91,sub_252660,False,False
 0x2526C0,0x252727,103,sub_2526C0,False,False
 0x2529E0,0x252B62,386,sub_2529E0,False,False
-0x252BC0,0x252BFA,58,sub_252BC0,False,False
+0x252BC0,0x252BFA,58,command_line_mark_switches_handled,False,False
 0x252C60,0x252C61,1,nullsub_16,False,False
 0x252C70,0x252C71,1,nullsub_17,False,False
 0x252C80,0x252C81,1,nullsub_871,False,False
@@ -6869,7 +6869,7 @@ address,end,size,name,library,thunk
 0x2A7040,0x2A7045,5,sub_2A7040,False,True
 0x2A7050,0x2A7051,1,nullsub_21,False,False
 0x2A7060,0x2A707C,28,sub_2A7060,False,False
-0x2A7080,0x2A7180,256,sub_2A7080,False,False
+0x2A7080,0x2A7180,256,animation_register_types,False,False
 0x2A7180,0x2A7330,432,sub_2A7180,False,False
 0x2A7330,0x2A76E0,944,sub_2A7330,False,False
 0x2A76E0,0x2A7B00,1056,sub_2A76E0,False,False
@@ -8890,7 +8890,7 @@ address,end,size,name,library,thunk
 0x35CA80,0x35CA81,1,nullsub_1085,False,False
 0x35CBC0,0x35CBC1,1,nullsub_1086,False,False
 0x35CC30,0x35CC42,18,sub_35CC30,False,False
-0x35CC50,0x35CCFE,174,sub_35CC50,False,False
+0x35CC50,0x35CCFE,174,runtime_terminate,False,False
 0x35CE20,0x35CE25,5,sub_35CE20,False,True
 0x35CE30,0x35CE31,1,nullsub_1087,False,False
 0x35CE40,0x35CE45,5,sub_35CE40,False,True
@@ -9044,7 +9044,7 @@ address,end,size,name,library,thunk
 0x367E90,0x367ECF,63,sub_367E90,False,False
 0x367ED0,0x367FE8,280,sub_367ED0,False,False
 0x367FF0,0x367FF8,8,sub_367FF0,False,False
-0x368000,0x368AF0,2800,sub_368000,False,False
+0x368000,0x368AF0,2800,system_config_initialize,False,False
 0x368AF0,0x368AF8,8,sub_368AF0,False,False
 0x368B00,0x368B14,20,sub_368B00,False,False
 0x368B20,0x368CC1,417,sub_368B20,False,False
@@ -9939,7 +9939,7 @@ address,end,size,name,library,thunk
 0x3B42D0,0x3B42EC,28,sub_3B42D0,False,False
 0x3B42F0,0x3B4400,272,sub_3B42F0,False,False
 0x3B4400,0x3B44A0,160,sub_3B4400,False,False
-0x3B44A0,0x3B4527,135,sub_3B44A0,False,False
+0x3B44A0,0x3B4527,135,physics_register_types,False,False
 0x3B4530,0x3B4910,992,sub_3B4530,False,False
 0x3B4910,0x3B4CD0,960,sub_3B4910,False,False
 0x3B4CD0,0x3B50B0,992,sub_3B4CD0,False,False
@@ -10463,7 +10463,7 @@ address,end,size,name,library,thunk
 0x3E9EE0,0x3EA940,2656,sub_3E9EE0,False,False
 0x3EA940,0x3EAB40,512,sub_3EA940,False,False
 0x3EAB40,0x3EAD4F,527,sub_3EAB40,False,False
-0x3EAD50,0x3EAFA3,595,sub_3EAD50,False,False
+0x3EAD50,0x3EAFA3,595,engine_register_types,False,False
 0x3EAFB0,0x3EB120,368,sub_3EAFB0,False,False
 0x3EB120,0x3EB290,368,sub_3EB120,False,False
 0x3EB290,0x3EB400,368,sub_3EB290,False,False
@@ -10572,7 +10572,7 @@ address,end,size,name,library,thunk
 0x4020F0,0x4024B0,960,sub_4020F0,False,False
 0x4024B0,0x402870,960,sub_4024B0,False,False
 0x402870,0x402C30,960,sub_402870,False,False
-0x402C30,0x402D30,256,sub_402C30,False,False
+0x402C30,0x402D30,256,game_systems_initialize,False,False
 0x402D30,0x402DA7,119,sub_402D30,False,False
 0x403EC0,0x403EE5,37,sub_403EC0,False,False
 0x403EF0,0x403F15,37,sub_403EF0,False,False
@@ -20736,7 +20736,7 @@ address,end,size,name,library,thunk
 0x6F5ED0,0x6F5EF7,39,sub_6F5ED0,False,False
 0x6F5F50,0x6F5FC0,112,sub_6F5F50,False,False
 0x6F5FC0,0x6F608F,207,sub_6F5FC0,False,False
-0x6F6090,0x6F61C0,304,sub_6F6090,False,False
+0x6F6090,0x6F61C0,304,game_audio_register_types,False,False
 0x6F61C0,0x6F6330,368,sub_6F61C0,False,False
 0x6F6330,0x6F6730,1024,sub_6F6330,False,False
 0x6F6730,0x6F6AF0,960,sub_6F6730,False,False
@@ -26196,7 +26196,7 @@ address,end,size,name,library,thunk
 0x891930,0x891935,5,sub_891930,False,False
 0x891940,0x891941,1,nullsub_3097,False,False
 0x891950,0x891982,50,sub_891950,False,False
-0x891990,0x891A22,146,sub_891990,False,False
+0x891990,0x891A22,146,ui_register_types,False,False
 0x891A30,0x891BA0,368,sub_891A30,False,False
 0x891BA0,0x891F80,992,sub_891BA0,False,False
 0x891F80,0x892360,992,sub_891F80,False,False
@@ -26865,7 +26865,7 @@ address,end,size,name,library,thunk
 0x8CEED0,0x8CEED1,1,nullsub_3139,False,False
 0x8CEFA0,0x8CF060,192,sub_8CEFA0,False,False
 0x8CF060,0x8CF240,480,sub_8CF060,False,False
-0x8CF240,0x8CF399,345,sub_8CF240,False,False
+0x8CF240,0x8CF399,345,input_refresh_player_assignments,False,False
 0x8CF3A0,0x8CF460,192,sub_8CF3A0,False,False
 0x8CF460,0x8CF536,214,sub_8CF460,False,False
 0x8CF540,0x8CF690,336,sub_8CF540,False,False
@@ -27808,7 +27808,7 @@ address,end,size,name,library,thunk
 0x92A750,0x92A755,5,sub_92A750,False,True
 0x92A760,0x92A765,5,sub_92A760,False,False
 0x92A770,0x92A771,1,nullsub_3189,False,False
-0x92AA00,0x92AA05,5,sub_92AA00,False,True
+0x92AA00,0x92AA05,5,j_audio_configure_time_stretch,False,True
 0x92AA10,0x92AA11,1,nullsub_3190,False,False
 0x92AA20,0x92AA2F,15,sub_92AA20,False,False
 0x92AA30,0x92AA31,1,nullsub_3191,False,False
@@ -28573,7 +28573,7 @@ address,end,size,name,library,thunk
 0x9866B0,0x986940,656,sub_9866B0,False,False
 0x986940,0x986A70,304,sub_986940,False,False
 0x986B60,0x986FF0,1168,sub_986B60,False,False
-0x986FF0,0x987460,1136,sub_986FF0,False,False
+0x986FF0,0x987460,1136,audio_configure_time_stretch,False,False
 0x987460,0x987593,307,sub_987460,False,False
 0x9875A0,0x9879A0,1024,sub_9875A0,False,False
 0x9879A0,0x987E36,1174,sub_9879A0,False,False
@@ -28781,7 +28781,7 @@ address,end,size,name,library,thunk
 0x9970E0,0x9972B3,467,sub_9970E0,False,False
 0x9972C0,0x997493,467,sub_9972C0,False,False
 0x997590,0x99777D,493,sub_997590,False,False
-0x997780,0x9979D0,592,sub_997780,False,False
+0x997780,0x9979D0,592,stage_presence_register_ids,False,False
 0x9979D0,0x997EE0,1296,sub_9979D0,False,False
 0x997EE0,0x997F4B,107,sub_997EE0,False,False
 0x997F50,0x9981F0,672,sub_997F50,False,False
@@ -34049,7 +34049,7 @@ address,end,size,name,library,thunk
 0xBB5590,0xBB58C0,816,sub_BB5590,False,False
 0xBB58C0,0xBB5C5D,925,sub_BB58C0,False,False
 0xBB5C60,0xBB5D31,209,sub_BB5C60,False,False
-0xBB5D40,0xBB6EC0,4480,sub_BB5D40,False,False
+0xBB5D40,0xBB6EC0,4480,ui_load_layout_by_id,False,False
 0xBB6EC0,0xBB6F97,215,sub_BB6EC0,False,False
 0xBB6FC0,0xBB70A0,224,sub_BB6FC0,False,False
 0xBB70A0,0xBB7185,229,sub_BB70A0,False,False
@@ -34081,7 +34081,7 @@ address,end,size,name,library,thunk
 0xBC41E0,0xBC41EF,15,sub_BC41E0,False,False
 0xBC41F0,0xBC4200,16,sub_BC41F0,False,False
 0xBC4200,0xBC4760,1376,sub_BC4200,False,False
-0xBC4760,0xBC48F0,400,sub_BC4760,False,False
+0xBC4760,0xBC48F0,400,ui_register_layout_ids,False,False
 0xBC48F0,0xBC4A7B,395,sub_BC48F0,False,False
 0xBC4A80,0xBC4A8B,11,sub_BC4A80,False,False
 0xBC4AE0,0xBC4AE4,4,sub_BC4AE0,False,False

@@ -17,6 +17,8 @@ See [docs/binary.md](docs/binary.md) for the binary inventory and
 [docs/status.md](docs/status.md) for analysis milestones. The first recovered
 control flow is documented in [docs/startup.md](docs/startup.md), and the
 initial address map is in [docs/subsystems.md](docs/subsystems.md).
+Cleaned source progress is tracked in
+[docs/reconstruction.md](docs/reconstruction.md).
 
 ## Recreate the analysis ELF
 
