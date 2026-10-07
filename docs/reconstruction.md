@@ -25,6 +25,7 @@ the source tree.
 | `0x2783A0` | engine speaker configuration mapping | `src/audio/fmod_audio_system.cpp` | Mono, stereo, 5.1, and 7.1 FMOD modes and raw channel counts recovered. |
 | `0x277BA0`, `0x278C80`-`0x278D72` | `fmod_audio_consume_timing_report` and percentage getters | `src/audio/fmod_timing_report.cpp` | Atomic snapshot/reset, buffer-duration normalization, rolling-window normalization, and per-source aggregation recovered. |
 | `0x267E50`-`0x26837A` | `AudioClipFmod` release lifecycle | `src/audio/audio_clip_fmod.cpp` | Deferred low-level channel release, Studio event teardown, invalid-handle handling, and blocking synchronous-update drain recovered. |
+| `0x266FD0`, `0x267310` | `audio_clip_fmod_start` and Studio event callback | `src/audio/audio_clip_fmod.cpp` | Custom DSP creation, event/low-level fallback, bus and 3D routing, initial pause state, and callback mask recovered. |
 
 ## Game initialization
 

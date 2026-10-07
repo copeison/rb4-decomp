@@ -5,6 +5,20 @@ the static registration routine at `0x266BF0`. Its active playback state keeps
 a custom DSP at object offset `0x188`, a low-level channel at `0x190`, routing
 handles at `0x198` and `0x1A0`, and a Studio event instance at `0x1A8`.
 
+`audio_clip_fmod_start` at `0x266FD0` first initializes the shared audio-clip
+state, creates the clip's custom DSP, and stores the clip as DSP user data. A
+Studio-event route is used only when the requested event exists and is not a
+one-shot event. That path creates an event instance, applies the requested
+key/value parameters, installs callback mask `0x182`, applies the initial
+paused state, and starts the instance.
+
+Missing and one-shot events fall back to the low-level path. The same fallback
+is the normal path for unqualified clips: FMOD starts the custom DSP on a
+paused channel, then optionally routes it through a requested Studio bus. A
+spatial clip enables FMOD mode `0x10` and applies its 3D spread. Parent channel
+group routing, the channel's base frequency, and the requested pause state are
+set before the clip joins its runtime owner's active list.
+
 Low-level playback uses `audio_clip_fmod_defer_channel_release` at `0x267FB0`.
 It enters the stopping state, detaches the clip from its runtime owner, clears
 the DSP user-data pointer under that owner's mutex, and sends the channel/DSP

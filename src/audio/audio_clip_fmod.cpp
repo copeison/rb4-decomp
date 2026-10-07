@@ -8,6 +8,116 @@
 
 namespace rb4 {
 
+namespace {
+
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kAudioClipEventCallbacks =
+    0x02 | 0x80 | 0x100;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kEventDestroyed = 0x02;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kCreateProgrammerSound = 0x80;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kDestroyProgrammerSound = 0x100;
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x266FD0 after base clip initialization.
+void audio_clip_fmod_start(
+    AudioClipFmod& clip,
+    const AudioClipFmodPlayOptions& options) {
+    clip.event_ready = false;
+    clip.base_frequency = 0.0F;
+    clip.dsp = nullptr;
+    clip.channel = nullptr;
+    clip.channel_group = nullptr;
+    clip.bus = nullptr;
+    clip.event_instance = nullptr;
+    clip.stop_in_progress = false;
+    clip.state = options.start_paused
+        ? AudioClipFmodState::paused
+        : AudioClipFmodState::playing;
+
+    auto& audio = *clip.audio_state;
+    audio.core_system->createDSP(
+        audio_clip_fmod_dsp_description(), &clip.dsp);
+    clip.dsp->setUserData(&clip);
+
+    if (options.route == AudioClipFmodRoute::studio_event) {
+        FMOD::Studio::EventDescription* description = nullptr;
+        bool oneshot = true;
+        if (audio.studio_system->getEvent(
+                options.route_path, &description) == FMOD_OK) {
+            description->isOneshot(&oneshot);
+        }
+        if (description != nullptr && !oneshot) {
+            description->createInstance(&clip.event_instance);
+            clip.event_instance->setUserData(&clip);
+            for (const auto& parameter : options.event_parameters) {
+                audio_clip_fmod_set_parameter(
+                    clip, parameter.key, parameter.value);
+            }
+            clip.event_instance->setCallback(
+                audio_clip_fmod_event_callback,
+                kAudioClipEventCallbacks);
+            clip.event_instance->setPaused(options.start_paused);
+            clip.event_instance->start();
+            return;
+        }
+    }
+
+    audio.core_system->playDSP(
+        clip.dsp, nullptr, true, &clip.channel);
+
+    if (options.route == AudioClipFmodRoute::studio_bus &&
+        audio.studio_system->getBus(options.route_path, &clip.bus) == FMOD_OK) {
+        clip.bus->getChannelGroup(&clip.channel_group);
+        clip.channel->setChannelGroup(clip.channel_group);
+    }
+
+    if (options.spatialized) {
+        clip.channel->setMode(FMOD_3D);
+        clip.channel->set3DSpread(options.spread_degrees);
+    }
+    if (clip.parent_channel_group != nullptr) {
+        if (clip.channel_group != nullptr) {
+            clip.parent_channel_group->addGroup(
+                clip.channel_group, true, nullptr);
+        } else {
+            clip.channel->setChannelGroup(clip.parent_channel_group);
+        }
+    }
+
+    clip.channel->getFrequency(&clip.base_frequency);
+    clip.channel->setPaused(options.start_paused);
+    if (clip.runtime_owner != nullptr) {
+        clip.runtime_owner->attach(clip.runtime_link);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x267310. The DSP enumeration and plugin
+// payload layout are kept behind a named adapter until those DSP types are
+// reconstructed.
+FMOD_RESULT audio_clip_fmod_event_callback(
+    FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
+    FMOD::Studio::EventInstance* event_instance,
+    void* parameters) {
+    (void)parameters;
+
+    void* user_data = nullptr;
+    event_instance->getUserData(&user_data);
+    auto* clip = static_cast<AudioClipFmod*>(user_data);
+    if (clip == nullptr) {
+        return FMOD_OK;
+    }
+
+    if (type == kCreateProgrammerSound && !clip->event_ready &&
+        clip->state != AudioClipFmodState::stopping) {
+        audio_clip_fmod_bind_event_dsp(*clip, *event_instance);
+    }
+    if (type == kEventDestroyed || type == kCreateProgrammerSound ||
+        type == kDestroyProgrammerSound) {
+        clip->event_ready = true;
+    }
+    return FMOD_OK;
+}
+
 // Reconstructed from eboot.elf at 0x2681E0.
 void audio_clip_fmod_clear_dsp_user_data(AudioClipFmod& clip) {
     if (clip.runtime_owner != nullptr) {
@@ -49,7 +159,7 @@ void audio_clip_fmod_release_event_instance(AudioClipFmod& clip) {
     clip.state = AudioClipFmodState::stopping;
     audio_clip_fmod_clear_dsp_user_data(clip);
 
-    FMOD::ChannelControl* channel_group = nullptr;
+    FMOD::ChannelGroup* channel_group = nullptr;
     const auto result =
         clip.event_instance->getChannelGroup(&channel_group);
     if (result == FMOD_ERR_INVALID_HANDLE) {

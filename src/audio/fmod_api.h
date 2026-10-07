@@ -59,8 +59,10 @@ static_assert(offsetof(FMOD_3D_ATTRIBUTES, forward) == 24);
 static_assert(offsetof(FMOD_3D_ATTRIBUTES, up) == 36);
 
 using FMOD_INITFLAGS = std::uint32_t;
+using FMOD_MODE = std::uint32_t;
 using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
+using FMOD_STUDIO_EVENT_CALLBACK_TYPE = std::uint32_t;
 
 enum FMOD_STUDIO_STOP_MODE : std::int32_t {
     FMOD_STUDIO_STOP_ALLOWFADEOUT = 0,
@@ -71,6 +73,7 @@ constexpr FMOD_INITFLAGS FMOD_INIT_NORMAL = 0;
 constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
 constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
 constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
+constexpr FMOD_MODE FMOD_3D = 0x10;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_PREMIX = 0x20;
@@ -207,12 +210,30 @@ using FMOD_SYSTEM_CALLBACK = FMOD_RESULT (*)(
 namespace FMOD {
 
 class DSP;
+class Channel;
+class ChannelGroup;
 
 class ChannelControl {
 public:
     FMOD_RESULT stop();
     FMOD_RESULT setPaused(bool paused);
     FMOD_RESULT removeDSP(DSP* dsp);
+    FMOD_RESULT setMode(FMOD_MODE mode);
+    FMOD_RESULT set3DSpread(float angle);
+};
+
+class Channel : public ChannelControl {
+public:
+    FMOD_RESULT setChannelGroup(ChannelGroup* channel_group);
+    FMOD_RESULT getFrequency(float* frequency);
+};
+
+class ChannelGroup : public ChannelControl {
+public:
+    FMOD_RESULT addGroup(
+        ChannelGroup* group,
+        bool propagate_clock,
+        void* connection);
 };
 
 class DSP {
@@ -230,6 +251,14 @@ public:
     FMOD_RESULT getAdvancedSettings(FMOD_ADVANCEDSETTINGS* settings);
     FMOD_RESULT setAdvancedSettings(FMOD_ADVANCEDSETTINGS* settings);
     FMOD_RESULT setSoftwareChannels(std::int32_t channels);
+    FMOD_RESULT createDSP(
+        const FMOD_DSP_DESCRIPTION* description,
+        DSP** dsp);
+    FMOD_RESULT playDSP(
+        DSP* dsp,
+        ChannelGroup* channel_group,
+        bool paused,
+        Channel** channel);
     FMOD_RESULT registerOutput(
         const FMOD_OUTPUT_DESCRIPTION* description,
         std::uint32_t* handle);
@@ -272,11 +301,37 @@ public:
 
 namespace Studio {
 
+class Bus {
+public:
+    FMOD_RESULT getChannelGroup(FMOD::ChannelGroup** channel_group);
+};
+
+class EventDescription;
+class EventInstance;
+
+using EventCallback = FMOD_RESULT (*)(
+    FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+    EventInstance*,
+    void*);
+
 class EventInstance {
 public:
-    FMOD_RESULT getChannelGroup(FMOD::ChannelControl** channel_group);
+    FMOD_RESULT getChannelGroup(FMOD::ChannelGroup** channel_group);
+    FMOD_RESULT getUserData(void** user_data);
+    FMOD_RESULT setUserData(void* user_data);
+    FMOD_RESULT setCallback(
+        EventCallback callback,
+        FMOD_STUDIO_EVENT_CALLBACK_TYPE callback_mask);
+    FMOD_RESULT setPaused(bool paused);
+    FMOD_RESULT start();
     FMOD_RESULT stop(FMOD_STUDIO_STOP_MODE mode);
     FMOD_RESULT release();
+};
+
+class EventDescription {
+public:
+    FMOD_RESULT isOneshot(bool* oneshot);
+    FMOD_RESULT createInstance(EventInstance** instance);
 };
 
 class System {
@@ -293,6 +348,10 @@ public:
         FMOD_INITFLAGS core_flags,
         void* extra_driver_data);
     FMOD_RESULT registerPlugin(const FMOD_DSP_DESCRIPTION* description);
+    FMOD_RESULT getEvent(
+        const char* path,
+        EventDescription** description);
+    FMOD_RESULT getBus(const char* path, Bus** bus);
     FMOD_RESULT setListenerAttributes(
         std::int32_t listener,
         const FMOD_3D_ATTRIBUTES* attributes);

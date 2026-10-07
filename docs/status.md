@@ -27,6 +27,7 @@
 - [x] Recover the engine-to-FMOD speaker configuration mapping.
 - [x] Reconstruct audio timing snapshots and per-source aggregation.
 - [x] Reconstruct `AudioClipFmod` channel and event teardown.
+- [x] Reconstruct `AudioClipFmod` playback setup and routing.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint
