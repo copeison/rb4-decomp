@@ -30,6 +30,7 @@ the source tree.
 | `0x268380`, `0x268510`-`0x26943F` | `FmodAudioBusGenerator` pool and creation | `src/audio/fmod_audio_bus_generator.cpp` | Fixed pool, stale-handle rejection, sound creation, and Studio-bus route registration recovered. |
 | `0x2692B0`, `0x2693B0`-`0x26AA9F` | `FmodAudioStreamGenerator` pool and playback | `src/audio/fmod_audio_stream_generator.cpp` | MP3 type, 288-byte pool, handles, asynchronous channel startup, loop points, seeking, pause control, volume, 3D updates, and teardown recovered. |
 | `0x26AB60`-`0x26E419` | `FmodBufferedStreamGenerator` pool and rendering | `src/audio/fmod_buffered_stream_generator.cpp` | 568-byte pool, resource gate, decoder blocks, seeking, gain, ring refill, normal PCM16 stereo interpolation, and synchronized-render controls recovered; the fitted six-sample kernel remains unnamed. |
+| `0x26E990`-`0x26F6DC` | `FmodDialogGeneratorManager` pool and creation | `src/audio/fmod_dialog_generator.cpp` | `.bank` type, `event:/` path normalization, 416-byte pool, handles, retention, reset, stop, return, and guarded shutdown recovered. |
 
 ## Game initialization
 
