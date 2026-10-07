@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "fmod_listener.h"
+
 namespace rb4 {
 
 namespace {
@@ -108,6 +110,75 @@ bool FmodAudioBusGenerator::try_start_sound() {
         state = AudioClipFmodState::playing;
     }
     return true;
+}
+
+// Reconstructed from eboot.elf at 0x2694D0. Transition-envelope updates are
+// kept in their own pending reconstruction; this preserves the FMOD lifecycle
+// and the state changes around them.
+bool FmodAudioBusGenerator::update() {
+    if (state == AudioClipFmodState::stopped) {
+        return false;
+    }
+
+    if (playback_channel_ != nullptr) {
+        bool playing = false;
+        const auto result = playback_channel_->isPlaying(&playing);
+        if (result == FMOD_ERR_INVALID_HANDLE) {
+            playback_channel_ = nullptr;
+            state = AudioClipFmodState::stopping;
+        } else if (result != FMOD_OK) {
+            state = AudioClipFmodState::stopping;
+        }
+    }
+
+    if (state == AudioClipFmodState::ready) {
+        try_start_sound();
+    } else if (state == AudioClipFmodState::stopping) {
+        stop_and_wait();
+        return false;
+    }
+
+    if (playback_channel_ == nullptr) {
+        return true;
+    }
+
+    if (state == AudioClipFmodState::playing) {
+        playback_channel_->setVolume(volume_);
+        playback_channel_->getPosition(
+            &current_position_ms_, FMOD_TIMEUNIT_MS);
+        if (pending_position_ms_ != UINT32_MAX &&
+            pending_position_ms_ != current_position_ms_ &&
+            playback_channel_->setPosition(
+                pending_position_ms_, FMOD_TIMEUNIT_MS) == FMOD_OK) {
+            current_position_ms_ = pending_position_ms_;
+            pending_position_ms_ = UINT32_MAX;
+        }
+    }
+
+    bool paused = false;
+    if (playback_channel_->getPaused(&paused) == FMOD_OK &&
+        paused != start_paused_ &&
+        playback_channel_->setPaused(start_paused_) == FMOD_OK) {
+        state = start_paused_
+            ? AudioClipFmodState::paused
+            : AudioClipFmodState::playing;
+    }
+
+    if (spatial_source != nullptr) {
+        const auto attributes = audio_build_fmod_3d_attributes(
+            spatial_source->transform());
+        playback_channel_->set3DAttributes(
+            &attributes.position, &attributes.velocity, nullptr);
+    }
+    return true;
+}
+
+void FmodAudioBusGenerator::request_paused(bool paused) {
+    start_paused_ = paused;
+}
+
+void FmodAudioBusGenerator::set_position_ms(std::uint32_t position) {
+    pending_position_ms_ = position;
 }
 
 FmodAudioBusGeneratorManager::FmodAudioBusGeneratorManager(

@@ -39,6 +39,9 @@ public:
         const FmodAudioBusSound& sound,
         const FmodAudioBusGeneratorOptions& options);
     bool try_start_sound();
+    bool update();
+    void request_paused(bool paused);
+    void set_position_ms(std::uint32_t position);
 
 private:
     friend class FmodAudioBusGeneratorManager;
@@ -54,6 +57,8 @@ private:
     FMOD::Studio::Bus* playback_bus_ = nullptr;
     std::uint32_t length_ms_ = 0;
     std::uint32_t length_pcm_ = 0;
+    std::uint32_t current_position_ms_ = 0;
+    std::uint32_t pending_position_ms_ = UINT32_MAX;
     std::int32_t bus_group_retries_ = 10;
     float volume_ = 1.0F;
     bool start_paused_ = false;
