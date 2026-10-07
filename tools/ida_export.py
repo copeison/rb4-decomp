@@ -16,7 +16,7 @@ from ida_domain.database import IdaCommandOptions
 
 SOURCE_PATH_RE = re.compile(
     r"(?:[A-Za-z]:[\\/]|/)[^\x00\r\n]{3,240}?"
-    r"\.(?:c|cc|cpp|cxx|h|hh|hpp|inl|asm|s|elf)",
+    r"\.(?:cpp|cxx|cc|c|hpp|hh|h|inl|asm|s|elf)",
     re.IGNORECASE,
 )
 

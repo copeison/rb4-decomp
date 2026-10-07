@@ -20256,7 +20256,7 @@ address,end,size,name,library,thunk
 0x6BEAF0,0x6BEBC0,208,sub_6BEAF0,False,False
 0x6BEBC0,0x6BEC50,144,sub_6BEBC0,False,False
 0x6BEC50,0x6BEF40,752,sub_6BEC50,False,False
-0x6BEF40,0x6BF4F0,1456,sub_6BEF40,False,False
+0x6BEF40,0x6BF4F0,1456,render_load_default_lighting,False,False
 0x6BF4F0,0x6BF860,880,sub_6BF4F0,False,False
 0x6BF860,0x6BF9F6,406,sub_6BF860,False,False
 0x6BFA00,0x6BFA3C,60,sub_6BFA00,False,False
@@ -45624,7 +45624,7 @@ address,end,size,name,library,thunk
 0x10999C0,0x1099AD0,272,sub_10999C0,False,False
 0x1099AD0,0x1099BD0,256,sub_1099AD0,False,False
 0x1099BD0,0x1099BE0,16,sub_1099BD0,False,False
-0x1099BE0,0x109A20F,1583,sub_1099BE0,False,False
+0x1099BE0,0x109A20F,1583,FDConvolver_ctor,False,False
 0x109A210,0x109A38E,382,sub_109A210,False,False
 0x109A390,0x109A560,464,sub_109A390,False,False
 0x109A560,0x109A563,3,sub_109A560,False,False

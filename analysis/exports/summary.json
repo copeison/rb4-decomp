@@ -6,7 +6,7 @@
   "maximum_address": "0x1B62528",
   "segment_count": 3,
   "function_count": 50498,
-  "named_function_count": 38,
+  "named_function_count": 40,
   "entry_count": 1,
   "entry_address": "0x920",
   "string_count": 35272,
