@@ -20,8 +20,22 @@ enum FMOD_OUTPUTTYPE : std::int32_t {
     FMOD_OUTPUTTYPE_AUTODETECT = 0,
 };
 
-enum FMOD_SPEAKERMODE : std::int32_t;
 enum FMOD_DSP_RESAMPLER : std::int32_t;
+
+enum FMOD_SPEAKERMODE : std::int32_t {
+    FMOD_SPEAKERMODE_DEFAULT = 0,
+    FMOD_SPEAKERMODE_RAW = 1,
+    FMOD_SPEAKERMODE_MONO = 2,
+    FMOD_SPEAKERMODE_STEREO = 3,
+};
+
+enum FMOD_SOUND_FORMAT : std::int32_t {
+    FMOD_SOUND_FORMAT_PCMFLOAT = 5,
+};
+
+enum FMOD_OUTPUT_METHOD : std::int32_t {
+    FMOD_OUTPUT_METHOD_MIX_DIRECT = 0,
+};
 
 struct FMOD_VECTOR {
     float x;
@@ -46,7 +60,11 @@ using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
 
 constexpr FMOD_INITFLAGS FMOD_INIT_NORMAL = 0;
+constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
+constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
+constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
+constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_PREMIX = 0x20;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_POSTMIX = 0x40;
 
@@ -97,6 +115,57 @@ static_assert(sizeof(FMOD_STUDIO_ADVANCEDSETTINGS) == 20);
 struct FMOD_DSP_DESCRIPTION;
 struct FMOD_SYSTEM;
 
+struct FMOD_OUTPUT_STATE {
+    void* plugindata;
+};
+
+using FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK = FMOD_RESULT (*)(
+    FMOD_OUTPUT_STATE*, std::int32_t*);
+using FMOD_OUTPUT_GETDRIVERINFO_CALLBACK = FMOD_RESULT (*)(
+    FMOD_OUTPUT_STATE*,
+    std::int32_t,
+    char*,
+    std::int32_t,
+    void*,
+    std::int32_t*,
+    FMOD_SPEAKERMODE*,
+    std::int32_t*);
+using FMOD_OUTPUT_INIT_CALLBACK = FMOD_RESULT (*)(
+    FMOD_OUTPUT_STATE*,
+    std::int32_t,
+    FMOD_INITFLAGS,
+    std::int32_t*,
+    FMOD_SPEAKERMODE*,
+    std::int32_t*,
+    FMOD_SOUND_FORMAT*,
+    std::int32_t,
+    std::int32_t,
+    void*);
+using FMOD_OUTPUT_STATE_CALLBACK = FMOD_RESULT (*)(FMOD_OUTPUT_STATE*);
+using FMOD_OUTPUT_GETHANDLE_CALLBACK = FMOD_RESULT (*)(
+    FMOD_OUTPUT_STATE*, void**);
+
+struct FMOD_OUTPUT_DESCRIPTION {
+    std::uint32_t apiversion;
+    const char* name;
+    std::uint32_t version;
+    FMOD_OUTPUT_METHOD method;
+    FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK getnumdrivers;
+    FMOD_OUTPUT_GETDRIVERINFO_CALLBACK getdriverinfo;
+    FMOD_OUTPUT_INIT_CALLBACK init;
+    FMOD_OUTPUT_STATE_CALLBACK start;
+    FMOD_OUTPUT_STATE_CALLBACK stop;
+    FMOD_OUTPUT_STATE_CALLBACK close;
+    FMOD_OUTPUT_STATE_CALLBACK update;
+    FMOD_OUTPUT_GETHANDLE_CALLBACK gethandle;
+    void* optional_callbacks[10];
+};
+
+static_assert(sizeof(FMOD_OUTPUT_DESCRIPTION) == 168);
+static_assert(offsetof(FMOD_OUTPUT_DESCRIPTION, getnumdrivers) == 24);
+static_assert(offsetof(FMOD_OUTPUT_DESCRIPTION, update) == 72);
+static_assert(offsetof(FMOD_OUTPUT_DESCRIPTION, gethandle) == 80);
+
 struct FMOD_ASYNCREADINFO;
 using FMOD_ASYNCDONE_FUNC = void (*)(FMOD_ASYNCREADINFO*, FMOD_RESULT);
 
@@ -136,6 +205,17 @@ public:
     FMOD_RESULT getAdvancedSettings(FMOD_ADVANCEDSETTINGS* settings);
     FMOD_RESULT setAdvancedSettings(FMOD_ADVANCEDSETTINGS* settings);
     FMOD_RESULT setSoftwareChannels(std::int32_t channels);
+    FMOD_RESULT registerOutput(
+        const FMOD_OUTPUT_DESCRIPTION* description,
+        std::uint32_t* handle);
+    FMOD_RESULT setOutputByPlugin(std::uint32_t handle);
+    FMOD_RESULT setDSPBufferSize(
+        std::uint32_t buffer_length,
+        std::int32_t buffer_count);
+    FMOD_RESULT setSoftwareFormat(
+        std::int32_t sample_rate,
+        FMOD_SPEAKERMODE speaker_mode,
+        std::int32_t raw_speakers);
     FMOD_RESULT setFileSystem(
         FMOD_FILE_OPEN_CALLBACK open,
         FMOD_FILE_CLOSE_CALLBACK close,

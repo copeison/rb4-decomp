@@ -17,7 +17,7 @@ __int64 __fastcall fmod_audio_initialize_custom_output(__int64 a1)
   FMOD::Studio::System::getLowLevelSystem(*(_QWORD *)(a1 + 280), a1 + 288);
   FMOD::Studio::System::setUserData(*(_QWORD *)(a1 + 280), a1);
   FMOD::System::setUserData(*(_QWORD *)(a1 + 288), a1);
-  FMOD::System::registerOutput(*(_QWORD *)(a1 + 288), &unk_19B4948, &v10);
+  FMOD::System::registerOutput(*(_QWORD *)(a1 + 288), &g_fmod_buffered_output_description, &v10);
   FMOD::System::setOutputByPlugin(*(_QWORD *)(a1 + 288), v10);
   FMOD::System::setDSPBufferSize(*(_QWORD *)(a1 + 288), *(unsigned int *)(a1 + 204), *(unsigned int *)(a1 + 208));
   FMOD::System::setSoftwareChannels(*(_QWORD *)(a1 + 288), *(unsigned int *)(a1 + 304));

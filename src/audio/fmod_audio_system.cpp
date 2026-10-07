@@ -1,4 +1,5 @@
 #include "fmod_audio_system.h"
+#include "fmod_buffered_output.h"
 #include "fmod_file_io.h"
 
 #include <array>
@@ -135,6 +136,61 @@ void fmod_register_custom_dsp_plugins(FmodAudioState& state) {
     for (const auto get_description : kCustomDspDescriptions) {
         state.studio_system->registerPlugin(get_description());
     }
+}
+
+// Reconstructed from eboot.elf at 0x2786D0.
+std::uint32_t fmod_audio_initialize_custom_output(FmodAudioState& state) {
+    FMOD::Studio::System::create(&state.studio_system, kFmodHeaderVersion);
+    state.studio_system->getLowLevelSystem(&state.core_system);
+    state.studio_system->setUserData(&state);
+    state.core_system->setUserData(&state);
+
+    std::uint32_t output_handle = 0;
+    state.core_system->registerOutput(
+        &kFmodBufferedOutputDescription, &output_handle);
+    state.core_system->setOutputByPlugin(output_handle);
+    state.core_system->setDSPBufferSize(
+        state.requested_dsp_buffer_length,
+        state.requested_dsp_buffer_count);
+    state.core_system->setSoftwareChannels(state.max_channels);
+    state.core_system->setSoftwareFormat(
+        state.sample_rate, state.speaker_mode, state.raw_speaker_count);
+
+    constexpr auto studio_flags = FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE;
+    constexpr auto core_flags =
+        FMOD_INIT_STREAM_FROM_UPDATE |
+        FMOD_INIT_MIX_FROM_UPDATE |
+        FMOD_INIT_3D_RIGHTHANDED;
+    const auto result = state.studio_system->initialize(
+        state.max_channels, studio_flags, core_flags, &state);
+
+    std::int32_t actual_sample_rate = 0;
+    FMOD_SPEAKERMODE actual_speaker_mode = FMOD_SPEAKERMODE_DEFAULT;
+    std::int32_t actual_raw_speakers = 0;
+    state.core_system->getSoftwareFormat(
+        &actual_sample_rate, &actual_speaker_mode, &actual_raw_speakers);
+
+    std::int32_t dsp_buffer_count = 0;
+    state.core_system->getDSPBufferSize(
+        &state.dsp_buffer_length, &dsp_buffer_count);
+    fmod_register_custom_dsp_plugins(state);
+
+    if (result == FMOD_OK) {
+        state.core_system->setFileSystem(
+            fmod_file_open,
+            fmod_file_close,
+            fmod_file_read,
+            fmod_file_seek,
+            fmod_file_async_read,
+            fmod_file_async_cancel,
+            -1);
+        constexpr auto callback_mask =
+            FMOD_SYSTEM_CALLBACK_PREMIX | FMOD_SYSTEM_CALLBACK_POSTMIX;
+        state.core_system->setCallback(fmod_system_callback, callback_mask);
+        return 0;
+    }
+
+    return 1;
 }
 
 }  // namespace rb4

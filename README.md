@@ -29,6 +29,8 @@ The file callback layer and its priority-based asynchronous reader are covered
 in [docs/fmod-file-io.md](docs/fmod-file-io.md).
 Listener coordinate conversion is documented in
 [docs/fmod-listener.md](docs/fmod-listener.md).
+The custom `HMX.BufferedOutput` mode is documented in
+[docs/fmod-buffered-output.md](docs/fmod-buffered-output.md).
 
 ## Recreate the analysis ELF
 

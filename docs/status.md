@@ -18,6 +18,7 @@
 - [x] Reconstruct FMOD module setup and the primary audio initialization path.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
+- [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

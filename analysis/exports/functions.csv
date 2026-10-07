@@ -2772,7 +2772,7 @@ address,end,size,name,library,thunk
 0xD39B0,0xD39B6,6,sub_D39B0,False,False
 0xD39C0,0xD3AA8,232,sub_D39C0,False,False
 0xD3AB0,0xD3B98,232,sub_D3AB0,False,False
-0xD3BA0,0xD3BAC,12,sub_D3BA0,False,False
+0xD3BA0,0xD3BAC,12,audio_get_sample_rate,False,False
 0xD3BC0,0xD3C1E,94,sub_D3BC0,False,False
 0xD3D10,0xD3D20,16,sub_D3D10,False,False
 0xD3D20,0xD3D2E,14,sub_D3D20,False,False
@@ -6922,6 +6922,7 @@ address,end,size,name,library,thunk
 0x26FB50,0x26FB6F,31,sub_26FB50,False,False
 0x26FB70,0x26FC2E,190,sub_26FB70,False,False
 0x26FC30,0x26FF4C,796,sub_26FC30,False,False
+0x26FF50,0x27013C,492,sub_26FF50,False,False
 0x270660,0x27069D,61,sub_270660,False,False
 0x271180,0x271184,4,sub_271180,False,False
 0x271490,0x271495,5,sub_271490,False,True
@@ -6975,9 +6976,12 @@ address,end,size,name,library,thunk
 0x2763A0,0x2763A5,5,sub_2763A0,False,True
 0x2763B0,0x2763B5,5,sub_2763B0,False,False
 0x2763C0,0x2763C1,1,nullsub_894,False,False
-0x2763F0,0x2763F9,9,sub_2763F0,False,False
-0x276480,0x2764A8,40,sub_276480,False,False
-0x2764B0,0x2764B3,3,sub_2764B0,False,False
+0x2763F0,0x2763F9,9,fmod_buffered_output_get_num_drivers,False,False
+0x276400,0x276471,113,fmod_buffered_output_get_driver_info,False,False
+0x276480,0x2764A8,40,fmod_buffered_output_initialize,False,False
+0x2764B0,0x2764B3,3,fmod_buffered_output_close,False,False
+0x2764C0,0x276510,80,fmod_buffered_output_update,False,False
+0x276520,0x276523,3,fmod_buffered_output_get_handle,False,False
 0x276530,0x276A39,1289,sub_276530,False,False
 0x276A40,0x276CC8,648,sub_276A40,False,False
 0x276DD0,0x276DD1,1,nullsub_895,False,False

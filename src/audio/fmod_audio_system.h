@@ -13,11 +13,16 @@ constexpr std::uint32_t kFmodHeaderVersion = 0x00011004;
 // these fields.
 struct FmodAudioState {
     std::int32_t sample_rate = 0;
+    std::uint32_t requested_dsp_buffer_length = 0;
+    std::int32_t requested_dsp_buffer_count = 0;
+    std::int32_t raw_speaker_count = 0;
     FMOD::Studio::System* studio_system = nullptr;
     FMOD::System* core_system = nullptr;
     std::uint32_t dsp_buffer_length = 0;
+    FMOD_SPEAKERMODE speaker_mode = FMOD_SPEAKERMODE_DEFAULT;
     std::int32_t max_channels = 0;
     void* audio_clock = nullptr;
+    void* buffered_output_update_callback = nullptr;
 };
 
 FMOD_RESULT fmod_audio_initialize(
@@ -27,5 +32,6 @@ FMOD_RESULT fmod_audio_initialize(
 
 void fmod_register_custom_dsp_plugins(FmodAudioState& state);
 
-}  // namespace rb4
+std::uint32_t fmod_audio_initialize_custom_output(FmodAudioState& state);
 
+}  // namespace rb4
