@@ -27,6 +27,7 @@ the source tree.
 | `0x267E50`-`0x26837A` | `AudioClipFmod` release lifecycle | `src/audio/audio_clip_fmod.cpp` | Deferred low-level channel release, Studio event teardown, invalid-handle handling, and blocking synchronous-update drain recovered. |
 | `0x266CB0`-`0x26759C` | `AudioClipFmod` DSP, playback startup, and Studio event callback | `src/audio/audio_clip_fmod.cpp` | `HMXRawAudioBus`, event/low-level fallback, HMX plugin binding, head-DSP insertion, parent routing, sample-rate base frequency, and callback readiness recovered. |
 | `0x267BB0`-`0x268479` | `AudioClipFmod` runtime controls | `src/audio/audio_clip_fmod.cpp` | Pause/resume state transitions, millisecond playback position, 3D attribute updates, and named Studio parameters recovered. |
+| `0x268380`, `0x268510`-`0x268BEC` | `FmodAudioBusGeneratorManager` pool | `src/audio/fmod_audio_bus_generator.cpp` | Fixed generator pool, recursive locking, free-list lifecycle, stale-handle rejection, active-handle collection, and all-voices shutdown recovered. |
 
 ## Game initialization
 

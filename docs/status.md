@@ -30,6 +30,7 @@
 - [x] Reconstruct `AudioClipFmod` playback setup and routing.
 - [x] Reconstruct `AudioClipFmod` Studio DSP binding.
 - [x] Reconstruct `AudioClipFmod` runtime playback controls.
+- [x] Reconstruct the `FmodAudioBusGeneratorManager` pool and handle format.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint
