@@ -30,6 +30,8 @@ public:
     const std::string& asset_path() const;
     const std::string& resolved_path() const;
     FmodAudioStreamResourceStatus status() const;
+    bool decode_failed() const;
+    void mark_decode_failed();
 
     static FmodAudioStreamResource* find(std::string_view resolved_path);
     static const std::array<std::string_view, 5>& supported_extensions();
@@ -44,6 +46,7 @@ private:
     FmodAudioStreamResourceStatus status_ =
         FmodAudioStreamResourceStatus::ready;
     bool registered_ = false;
+    bool decode_failed_ = false;
 };
 
 }  // namespace rb4

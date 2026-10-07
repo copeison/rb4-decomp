@@ -7129,8 +7129,12 @@ address,end,size,name,library,thunk
 0x272DC0,0x272DE5,37,fmod_audio_stream_resource_is_kind_of,False,False
 0x272DF0,0x272E02,18,fmod_audio_stream_resource_is_unavailable,False,False
 0x272E10,0x272E60,80,sub_272E10,False,False
-0x273160,0x27316F,15,sub_273160,False,False
-0x273170,0x273175,5,sub_273170,False,True
+0x272E60,0x272EDB,123,fmod_sound_to_pcm_callback_destruct,False,False
+0x272EE0,0x272F54,116,fmod_sound_to_pcm_callback_delete,False,False
+0x272F60,0x27314E,494,fmod_sound_to_pcm_callback_run,False,False
+0x273150,0x27315C,12,fmod_sound_to_pcm_callback_release_consumer,False,False
+0x273160,0x27316F,15,fmod_sound_to_pcm_task_destruct,False,False
+0x273170,0x273175,5,fmod_sound_to_pcm_task_delete,False,True
 0x273180,0x273329,425,sub_273180,False,False
 0x273470,0x2734B3,67,sub_273470,False,False
 0x273740,0x273893,339,sub_273740,False,False

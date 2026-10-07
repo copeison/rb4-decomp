@@ -343,6 +343,14 @@ public:
     FMOD_RESULT getLength(
         std::uint32_t* length,
         FMOD_TIMEUNIT unit);
+    FMOD_RESULT getDefaults(
+        float* frequency,
+        std::int32_t* priority);
+    FMOD_RESULT seekData(std::uint32_t pcm);
+    FMOD_RESULT readData(
+        void* buffer,
+        std::uint32_t length,
+        std::uint32_t* bytes_read);
 };
 
 class System {

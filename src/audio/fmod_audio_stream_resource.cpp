@@ -84,6 +84,14 @@ FmodAudioStreamResourceStatus FmodAudioStreamResource::status() const {
     return status_;
 }
 
+bool FmodAudioStreamResource::decode_failed() const {
+    return decode_failed_;
+}
+
+void FmodAudioStreamResource::mark_decode_failed() {
+    decode_failed_ = true;
+}
+
 // Reconstructed from eboot.elf at 0x271C20.
 FmodAudioStreamResource* FmodAudioStreamResource::find(
     std::string_view resolved_path) {

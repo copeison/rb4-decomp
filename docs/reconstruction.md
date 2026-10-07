@@ -32,6 +32,7 @@ the source tree.
 | `0x26AB60`-`0x26E419` | `FmodBufferedStreamGenerator` pool and rendering | `src/audio/fmod_buffered_stream_generator.cpp` | 568-byte pool, resource gate, decoder blocks, seeking, gain, ring refill, normal PCM16 stereo interpolation, and synchronized-render controls recovered; the fitted six-sample kernel remains unnamed. |
 | `0x26E990`-`0x2715FA` | `FmodDialogGenerator` and `FmodStudioSoundGenerator` | `src/audio/fmod_dialog_generator.cpp`, `src/audio/fmod_studio_sound_generator.cpp` | Dialog and generic pools, `.bank` routing, `event:/` and `snapshot:/` normalization, programmer sounds, Studio event lifecycle, timeline and parameter controls, 3D updates, and two-stage volume fading recovered. |
 | `0x271660`-`0x272E02` | `FmodAudioStreamResource` | `src/audio/fmod_audio_stream_resource.cpp` | Streaming-audio extensions, platform-path load, FMOD PCM16 mono/stereo probing, status codes, normalized-path registry, lookup, and teardown recovered. |
+| `0x272E60`-`0x27315C` | `FMODSoundToPCMCallback` | `src/audio/fmod_sound_to_pcm_callback.cpp` | Nonblocking-open wait, format and length query, PCM16 buffer sizing, block decode loop, cancellation, completion, rewind, and teardown recovered. |
 
 ## Game initialization
 
