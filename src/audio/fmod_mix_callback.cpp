@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "audio_output_dispatcher.h"
 #include "fmod_audio_system.h"
 
 namespace rb4 {
@@ -17,10 +18,6 @@ void audio_dispatch_mix_consumers(
     void* consumers,
     std::uint32_t buffer_length,
     std::uint64_t mix_sequence);
-void audio_dispatch_output_blocks(
-    void* dispatcher,
-    std::uint32_t buffer_length,
-    std::uint32_t mix_sequence);
 void audio_notify_post_mix(void* observers);
 
 namespace {
@@ -117,7 +114,7 @@ void fmod_audio_dispatch_mix_buffers(
     audio_mix_consumer_mutex_unlock(state.mix_consumer_mutex);
 
     audio_dispatch_output_blocks(
-        state.output_block_dispatcher,
+        *state.output_block_dispatcher,
         state.dsp_buffer_length,
         static_cast<std::uint32_t>(mix_sequence));
 }

@@ -33,6 +33,8 @@ The custom `HMX.BufferedOutput` mode is documented in
 [docs/fmod-buffered-output.md](docs/fmod-buffered-output.md).
 FMOD's premix/postmix synchronization and timing path is documented in
 [docs/fmod-mix-callback.md](docs/fmod-mix-callback.md).
+The downstream 128-sample listener pipeline is documented in
+[docs/audio-output-dispatch.md](docs/audio-output-dispatch.md).
 
 ## Recreate the analysis ELF
 

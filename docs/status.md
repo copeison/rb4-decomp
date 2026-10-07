@@ -21,6 +21,7 @@
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
 - [x] Reconstruct the FMOD pre/post-mix callback and timing lifecycle.
+- [x] Reconstruct the 128-sample audio output listener dispatch.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

@@ -7,6 +7,8 @@
 
 namespace rb4 {
 
+struct AudioOutputDispatcher;
+
 constexpr std::uint32_t kFmodHeaderVersion = 0x00011004;
 
 // Semantic state used by the cleaned reconstruction. The original audio object
@@ -34,7 +36,7 @@ struct FmodAudioState {
     void* mix_consumer_mutex = nullptr;
     void* mix_consumers = nullptr;
     std::uint32_t mix_consumer_dispatch_depth = 0;
-    void* output_block_dispatcher = nullptr;
+    AudioOutputDispatcher* output_block_dispatcher = nullptr;
     void* source_timing_entries = nullptr;
     void* post_mix_observers = nullptr;
 };
