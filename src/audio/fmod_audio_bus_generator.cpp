@@ -39,6 +39,15 @@ void FmodAudioBusGenerator::stop_and_wait() {
     state = AudioClipFmodState::stopped;
 }
 
+// Reconstructed from the default-mode branch at 0x267F10. Mode 1 keeps the
+// voice alive and recalculates source timing; the bus generator starts in the
+// default mode and is stopped before an audio-system reset.
+void FmodAudioBusGenerator::prepare_for_audio_reset() {
+    if (state != AudioClipFmodState::stopped) {
+        state = AudioClipFmodState::stopping;
+    }
+}
+
 // Reconstructed from eboot.elf at 0x268EF0.
 bool FmodAudioBusGenerator::initialize_sound(
     const FmodAudioBusSound& sound,
@@ -295,11 +304,11 @@ void FmodAudioBusGeneratorManager::release(
 }
 
 // Reconstructed from eboot.elf at 0x2686D0.
-void FmodAudioBusGeneratorManager::prepare_all() {
+void FmodAudioBusGeneratorManager::prepare_all_for_audio_reset() {
     std::lock_guard lock(mutex_);
     ++lock_depth_;
     for (std::size_t index = 0; index < capacity_; ++index) {
-        generators_[index].prepare_for_manager_update();
+        generators_[index].prepare_for_audio_reset();
     }
     --lock_depth_;
 }

@@ -23,11 +23,13 @@ retain path at `0x268660` checks both the supplied index and complete handle
 before incrementing the voice reference count. This prevents a stale handle
 from retaining a slot that has since been reused.
 
-The manager serializes pool mutations with a recursive mutex. It can dispatch
-the per-voice preparation method across the entire array at `0x2686D0`, stop
-every voice synchronously at `0x268740`, and collect all handles whose active
-bit is set at `0x2687B0`. The small accessors at `0x268510` and `0x268900`
-read and write the manager field at offset `0x38`.
+The manager serializes pool mutations with a recursive mutex. Before an audio
+reset, `0x2686D0` dispatches the per-voice preparation method across the entire
+array. The default bus-generator mode marks live voices as stopping; a separate
+mode `1` survives and recalculates its timing step from source metadata. The
+manager can stop every voice synchronously at `0x268740` and collect all
+handles whose active bit is set at `0x2687B0`. The small accessors at
+`0x268510` and `0x268900` read and write the field at offset `0x38`.
 
 The higher-level creation paths at `0x268CA0`, `0x268D80`, and `0x268EF0`
 resolve sound data, take a free generator, initialize its playback controls,

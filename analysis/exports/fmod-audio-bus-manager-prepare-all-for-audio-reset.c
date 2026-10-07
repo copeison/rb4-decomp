@@ -1,4 +1,4 @@
-double __fastcall fmod_audio_bus_manager_prepare_all(__int64 a1)
+double __fastcall fmod_audio_bus_manager_prepare_all_for_audio_reset(__int64 a1)
 {
   __int64 v2; // r14
   int v3; // eax

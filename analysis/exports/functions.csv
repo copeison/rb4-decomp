@@ -6887,7 +6887,7 @@ address,end,size,name,library,thunk
 0x267D70,0x267E44,212,audio_clip_fmod_update,False,False
 0x267E50,0x267E6C,28,audio_clip_fmod_process_release,False,False
 0x267E70,0x267F02,146,audio_clip_fmod_update_3d_attributes,False,False
-0x267F10,0x267FA2,146,fmod_audio_bus_generator_prepare_for_manager_update,False,False
+0x267F10,0x267FA2,146,audio_clip_fmod_prepare_for_audio_reset,False,False
 0x267FB0,0x268075,197,audio_clip_fmod_defer_channel_release,False,False
 0x268080,0x2681D8,344,audio_clip_fmod_release_event_instance,False,False
 0x2681E0,0x268254,116,audio_clip_fmod_clear_dsp_user_data,False,False
@@ -6903,7 +6903,7 @@ address,end,size,name,library,thunk
 0x268520,0x2685BA,154,fmod_audio_bus_manager_type_symbol,False,False
 0x2685C0,0x26865A,154,fmod_audio_bus_manager_extension_symbol,False,False
 0x268660,0x2686CE,110,fmod_audio_bus_manager_retain,False,False
-0x2686D0,0x26873B,107,fmod_audio_bus_manager_prepare_all,False,False
+0x2686D0,0x26873B,107,fmod_audio_bus_manager_prepare_all_for_audio_reset,False,False
 0x268740,0x2687A9,105,fmod_audio_bus_manager_stop_all,False,False
 0x2687B0,0x2688F6,326,fmod_audio_bus_manager_collect_active_handles,False,False
 0x268900,0x268904,4,fmod_audio_bus_manager_set_setting,False,False

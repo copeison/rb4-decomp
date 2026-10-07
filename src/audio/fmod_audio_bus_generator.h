@@ -33,7 +33,7 @@ public:
     void initialize_pool_slot(
         FmodAudioBusGeneratorManager& manager,
         std::uint32_t index);
-    void prepare_for_manager_update();
+    void prepare_for_audio_reset();
     void stop_and_wait();
     bool initialize_sound(
         const FmodAudioBusSound& sound,
@@ -85,7 +85,7 @@ public:
         void* sound_source);
     void release(FmodAudioBusGenerator& generator);
 
-    void prepare_all();
+    void prepare_all_for_audio_reset();
     void stop_all();
     std::vector<FmodAudioBusGeneratorHandle> active_handles() const;
 
