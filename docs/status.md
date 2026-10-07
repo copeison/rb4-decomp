@@ -41,6 +41,7 @@
 - [x] Reconstruct the generic `FmodStudioSoundGeneratorManager` pool.
 - [x] Reconstruct `FmodAudioStreamResource` loading and path registration.
 - [x] Reconstruct the `FMODSoundToPCMCallback` decode bridge.
+- [x] Reconstruct `FModBankResource` loading and bank enumeration.
 - [ ] Identify the synchronized six-sample interpolation kernel.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 

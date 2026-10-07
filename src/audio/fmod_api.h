@@ -85,6 +85,14 @@ enum FMOD_STUDIO_STOP_MODE : std::int32_t {
     FMOD_STUDIO_STOP_IMMEDIATE = 1,
 };
 
+enum FMOD_STUDIO_LOADING_STATE : std::int32_t {
+    FMOD_STUDIO_LOADING_STATE_UNLOADING = 0,
+    FMOD_STUDIO_LOADING_STATE_UNLOADED = 1,
+    FMOD_STUDIO_LOADING_STATE_LOADING = 2,
+    FMOD_STUDIO_LOADING_STATE_LOADED = 3,
+    FMOD_STUDIO_LOADING_STATE_ERROR = 4,
+};
+
 constexpr FMOD_INITFLAGS FMOD_INIT_NORMAL = 0;
 constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
 constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
@@ -429,8 +437,10 @@ public:
         char* path,
         std::int32_t capacity,
         std::int32_t* retrieved);
+    FMOD_RESULT lockChannelGroup();
 };
 
+class Bank;
 class EventDescription;
 class EventInstance;
 class ParameterInstance;
@@ -473,7 +483,30 @@ class EventDescription {
 public:
     FMOD_RESULT isOneshot(bool* oneshot);
     FMOD_RESULT getLength(std::int32_t* length_ms) const;
+    FMOD_RESULT getPath(
+        char* path,
+        std::int32_t capacity,
+        std::int32_t* retrieved) const;
     FMOD_RESULT createInstance(EventInstance** instance);
+};
+
+class Bank {
+public:
+    FMOD_RESULT unload();
+    FMOD_RESULT loadSampleData();
+    FMOD_RESULT getLoadingState(FMOD_STUDIO_LOADING_STATE* state) const;
+    FMOD_RESULT getSampleLoadingState(
+        FMOD_STUDIO_LOADING_STATE* state) const;
+    FMOD_RESULT getEventCount(std::int32_t* count) const;
+    FMOD_RESULT getEventList(
+        EventDescription** events,
+        std::int32_t capacity,
+        std::int32_t* count) const;
+    FMOD_RESULT getBusCount(std::int32_t* count) const;
+    FMOD_RESULT getBusList(
+        Bus** buses,
+        std::int32_t capacity,
+        std::int32_t* count) const;
 };
 
 class System {
@@ -497,6 +530,10 @@ public:
         const char* key,
         FMOD_STUDIO_SOUND_INFO* info) const;
     FMOD_RESULT getBus(const char* path, Bus** bus);
+    FMOD_RESULT loadBankFile(
+        const char* path,
+        std::uint32_t flags,
+        Bank** bank);
     FMOD_RESULT flushCommands();
     FMOD_RESULT setListenerAttributes(
         std::int32_t listener,
