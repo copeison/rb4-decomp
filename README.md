@@ -18,7 +18,8 @@ See [docs/binary.md](docs/binary.md) for the binary inventory and
 control flow is documented in [docs/startup.md](docs/startup.md), and the
 initial address map is in [docs/subsystems.md](docs/subsystems.md).
 Cleaned source progress is tracked in
-[docs/reconstruction.md](docs/reconstruction.md).
+[docs/reconstruction.md](docs/reconstruction.md), with the main update order in
+[docs/frame-loop.md](docs/frame-loop.md).
 
 ## Recreate the analysis ELF
 

@@ -9,44 +9,44 @@ bool game_run_frame()
   __int64 v6; // [rsp+38h] [rbp-28h]
 
   v6 = 0x6365786562696C2FLL;
-  sub_369940();
-  sub_7560(&unk_19C5638);
+  system_update();
+  sound_manager_update(&g_sound_manager);
   if ( unk_1ADF350 != 0 )
     sub_8ECAC0();
-  sub_33B510(&g_dingo_service);
-  sub_D20C10(&unk_1B15288);
-  sub_D2C440(&dword_1B156A0);
+  dingo_update(&g_dingo_service);
+  async_callback_queue_update(&unk_1B15288);
+  somp_session_manager_update(&dword_1B156A0);
   sub_F2CE50(unk_1B43A10);
   sub_AE3880(unk_1AF4E38);
   sub_D1E2C0(&unk_1B15110);
-  sub_8F3220(unk_1ADF7D0);
-  sub_D5C230(unk_1B1F7F0);
+  song_loading_update(unk_1ADF7D0);
+  profile_manager_update(unk_1B1F7F0);
   sub_ADE120();
-  sub_92F4A0(unk_1ADFE28);
+  resource_manager_update(unk_1ADFE28);
   sub_B0A070();
-  sub_8C8900(unk_1AC9A78);
+  ui_manager_update(g_ui_manager);
   if ( unk_1AEF778 != 0 )
     sub_A47EC0();
-  sub_BB58C0(&unk_1AFF588);
+  ui_layout_controller_update(&g_ui_layout_controller);
   sub_3AE960(unk_1A6E0A8);
   sub_C60720(unk_1B094D8);
   sub_B0CE80(unk_1AFA328);
-  sub_BD9430(unk_1B01798);
+  network_connection_monitor_update(unk_1B01798);
   sub_928FC0(&unk_1ADFB78);
-  sub_3DE0E0(qword_1A712A0);
-  if ( qword_1A712A0 == 0 )
+  render_system_poll(g_render_system);
+  if ( g_render_system == 0 )
     return false;
-  v0 = sub_8CA4C0(unk_1AC9A78);
-  if ( v0 != 0 && (unsigned __int8)sub_8B1840(v0) != 0 )
+  v0 = ui_manager_get_active_layout(g_ui_manager);
+  if ( v0 != 0 && (unsigned __int8)ui_layout_consume_skip_frame(v0) != 0 )
   {
-    sub_3DEAA0(qword_1A712A0);
+    render_system_skip_frame(g_render_system);
   }
   else
   {
     if ( (unsigned __int8)sub_43B130() != 0 )
     {
-      v1 = *(_QWORD *)(qword_1A712A0 + 112LL);
-      v2 = *(unsigned int *)(*(_QWORD *)(qword_1A712A0 + 296LL) + 184LL);
+      v1 = *(_QWORD *)(g_render_system + 112LL);
+      v2 = *(unsigned int *)(*(_QWORD *)(g_render_system + 296LL) + 184LL);
       v4[0] = &unk_18DC010;
       v5 = v4;
       sub_43B140(v1, v2, v4);
@@ -56,11 +56,11 @@ bool game_run_frame()
         v5 = nullptr;
       }
     }
-    if ( (unsigned __int8)sub_3DE130(qword_1A712A0) != 0 )
+    if ( (unsigned __int8)render_system_begin_frame(g_render_system) != 0 )
     {
-      sub_8C9A80(unk_1AC9A78);
-      sub_3DE7C0(qword_1A712A0);
+      ui_manager_render(g_ui_manager);
+      render_system_end_frame(g_render_system);
     }
   }
-  return unk_19C54C8 == 0 && qword_1A712A0 != 0;
+  return g_exit_requested == 0 && g_render_system != 0;
 }

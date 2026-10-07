@@ -7,6 +7,7 @@ the source tree.
 | Address | Reconstructed symbol | Source | Status |
 | --- | --- | --- | --- |
 | `0xA0` | `game_initialize` | `src/game/initialize.cpp` | Complete top-level initialization order and arguments recovered; two option-field meanings remain unknown. |
+| `0x190` | `game_run_frame` | `src/game/frame.cpp` | Update order and render/skip/exit control flow recovered; several owning class names remain unknown. |
 | `0x3C0` | `game_main` | `src/game/main.cpp` | Control flow recovered; dependent functions are still being reconstructed. |
 | `0x997590` | `stage_presence_id_to_symbol` | `src/game/stage_presence.cpp` | All 22 enum values and their interned symbol strings recovered. |
 | `0xBB06A0`, `0xBB5D40` | `ui_layout_id_to_symbol`, layout asset map | `src/ui/ui_layout_id.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |

@@ -122,31 +122,31 @@ __int64 __fastcall ui_load_layout_by_id(__int64 a1, unsigned int a2, char a3)
       case 0u:
         v8 = "ui/title/title.layout";
         v9 = v107;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v107[0] = 19246190;
         goto LABEL_108;
       case 1u:
         v8 = "ui/songs/songs.layout";
         v9 = &v106;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v106 = 19246190;
         goto LABEL_108;
       case 2u:
         v8 = "ui/difficulty/difficulty.layout";
         v9 = &v105;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v105 = 19246190;
         goto LABEL_108;
       case 3u:
         v8 = "ui/game/game.layout";
         v9 = &v104;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v104 = 19246190;
         goto LABEL_108;
       case 4u:
         v8 = "ui/main_menu/main_menu.layout";
         v9 = &v103;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v103 = 19246190;
         goto LABEL_108;
       case 5u:
@@ -163,265 +163,265 @@ __int64 __fastcall ui_load_layout_by_id(__int64 a1, unsigned int a2, char a3)
       case 6u:
         v8 = "ui/store/store_categories.layout";
         v9 = &v97;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v97 = 19246190;
         goto LABEL_108;
       case 7u:
         v8 = "ui/store/store_songs.layout";
         v9 = &v96;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v96 = 19246190;
         goto LABEL_108;
       case 8u:
         v8 = "ui/results/campaign_gig_complete_results.layout";
         v9 = &v94;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v94 = 19246190;
         goto LABEL_108;
       case 9u:
         v8 = "ui/loading/loading.layout";
         v9 = &v93;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v93 = 19246190;
         goto LABEL_108;
       case 0xAu:
         v8 = "ui/band_edit/band_edit.layout";
         v9 = &v92;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v92 = 19246190;
         goto LABEL_108;
       case 0xBu:
         v8 = "ui/store/store_search.layout";
         v9 = &v95;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v95 = 19246190;
         goto LABEL_108;
       case 0xCu:
         v8 = "ui/band_select/band_select.layout";
         v9 = &v91;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v91 = 19246190;
         goto LABEL_108;
       case 0xDu:
         v8 = "ui/city_select/city_select.layout";
         v9 = &v90;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v90 = 19246190;
         goto LABEL_108;
       case 0xEu:
         v8 = "ui/leaderboards/leaderboards.layout";
         v9 = &v89;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v89 = 19246190;
         goto LABEL_108;
       case 0xFu:
         v8 = "ui/player_stats/player_stats.layout";
         v9 = &v88;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v88 = 19246190;
         goto LABEL_108;
       case 0x10u:
         v8 = "ui/campaign_narrative/campaign_narrative.layout";
         v9 = &v87;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v87 = 19246190;
         goto LABEL_108;
       case 0x12u:
         v8 = "ui/store/store_home.layout";
         v9 = &v86;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v86 = 19246190;
         goto LABEL_108;
       case 0x13u:
         v8 = "ui/campaign_gig_select/campaign_gig_select.layout";
         v9 = &v85;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v85 = 19246190;
         goto LABEL_108;
       case 0x14u:
         v8 = "ui/tour_select/tour_select.layout";
         v9 = &v84;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v84 = 19246190;
         goto LABEL_108;
       case 0x15u:
         v8 = "ui/options/options_system_settings.layout";
         v9 = &v102;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v102 = 19246190;
         goto LABEL_108;
       case 0x16u:
         v8 = "ui/options/options_volume_controls.layout";
         v9 = &v101;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v101 = 19246190;
         goto LABEL_108;
       case 0x17u:
         v8 = "ui/band_naming/band_naming.layout";
         v9 = &v83;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v83 = 19246190;
         goto LABEL_108;
       case 0x19u:
         v8 = "ui/options/options_credits.layout";
         v9 = &v100;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v100 = 19246190;
         goto LABEL_108;
       case 0x1Au:
         v8 = "ui/options/options_modifiers.layout";
         v9 = &v99;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v99 = 19246190;
         goto LABEL_108;
       case 0x1Bu:
         v8 = "ui/legacy_entitlements/legacy_entitlements.layout";
         v9 = &v82;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v82 = 19246190;
         goto LABEL_108;
       case 0x1Eu:
         v8 = "ui/character/character_create/character_create.layout";
         v9 = &v80;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v80 = 19246190;
         goto LABEL_108;
       case 0x20u:
         v8 = "ui/character/character_customize/character_customize.layout";
         v9 = &v77;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v77 = 19246190;
         goto LABEL_108;
       case 0x22u:
         v8 = "ui/results/quickplay_results.layout";
         v9 = &v81;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v81 = 19246190;
         goto LABEL_108;
       case 0x23u:
         v8 = "ui/character/character_create/character_create_head.layout";
         v9 = &v79;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v79 = 19246190;
         goto LABEL_108;
       case 0x24u:
         v8 = "ui/character/character_create/character_create_hair.layout";
         v9 = &v78;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v78 = 19246190;
         goto LABEL_108;
       case 0x26u:
         v8 = "ui/character/character_customize/character_customize_clothing.layout";
         v9 = &v76;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v76 = 19246190;
         goto LABEL_108;
       case 0x27u:
         v8 = "ui/character/character_customize/character_customize_hair_makeup.layout";
         v9 = &v75;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v75 = 19246190;
         goto LABEL_108;
       case 0x28u:
         v8 = "ui/character/character_customize/character_customize_instruments.layout";
         v9 = &v74;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v74 = 19246190;
         goto LABEL_108;
       case 0x29u:
         v8 = "ui/character/character_customize/character_customize_detail.layout";
         v9 = &v73;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v73 = 19246190;
         goto LABEL_108;
       case 0x2Au:
         v8 = "ui/band_hub/band_hub.layout";
         v9 = &v69;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v69 = 19246190;
         goto LABEL_108;
       case 0x2Bu:
         v8 = "ui/band_member_select/band_member_select.layout";
         v9 = &v68;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v68 = 19246190;
         goto LABEL_108;
       case 0x2Cu:
         v8 = "ui/startup/startup.layout";
         v9 = &v67;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v67 = 19246190;
         goto LABEL_108;
       case 0x2Du:
         v8 = "ui/calibration/calibration_auto.layout";
         v9 = &v66;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v66 = 19246190;
         goto LABEL_108;
       case 0x2Eu:
         v8 = "ui/calibration/calibration_manual.layout";
         v9 = &v65;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v65 = 19246190;
         goto LABEL_108;
       case 0x2Fu:
         v8 = "ui/calibration/calibration_enter_numbers.layout";
         v9 = &v64;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v64 = 19246190;
         goto LABEL_108;
       case 0x30u:
         v8 = "ui/character/character_customize/character_customize_band_select.layout";
         v9 = &v72;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v72 = 19246190;
         goto LABEL_108;
       case 0x31u:
         v8 = "ui/band_member_select/session_member_select.layout";
         v9 = &v63;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v63 = 19246190;
         goto LABEL_108;
       case 0x33u:
         v8 = "ui/campaign_setlist/setlist.layout";
         v9 = &v62;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v62 = 19246190;
         goto LABEL_108;
       case 0x35u:
         v8 = "ui/songs/songs_search.layout";
         v9 = &v60;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v60 = 19246190;
         goto LABEL_108;
       case 0x36u:
         v8 = "ui/guitar_solo_invite/guitar_solo_invite.layout";
         v9 = &v59;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v59 = 19246190;
         goto LABEL_108;
       case 0x37u:
         v8 = "ui/band_history/band_history.layout";
         v9 = &v58;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v58 = 19246190;
         goto LABEL_108;
       case 0x38u:
         v8 = "ui/notifications/notifications.layout";
         v9 = &v57;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v57 = 19246190;
         goto LABEL_108;
       case 0x39u:
         v8 = "ui/user_setlist/setlist_hub.layout";
         v9 = &v56;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v56 = 19246190;
         goto LABEL_108;
       case 0x3Au:
         v8 = "ui/user_setlist_naming/setlist_naming.layout";
         v9 = &v55;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v55 = 19246190;
         goto LABEL_108;
       case 0x3Bu:
@@ -430,49 +430,49 @@ __int64 __fastcall ui_load_layout_by_id(__int64 a1, unsigned int a2, char a3)
           *(_DWORD *)(a1 + 336) = 0;
         v8 = "ui/practice/practice_section_select.layout";
         v9 = &v54;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v54 = 19246190;
         goto LABEL_108;
       case 0x3Cu:
         v8 = "ui/practice/practice_speed_select.layout";
         v9 = &v53;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v53 = 19246190;
         goto LABEL_108;
       case 0x3Du:
         v8 = "ui/btm/btm_setlist.layout";
         v9 = &v61;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v61 = 19246190;
         goto LABEL_108;
       case 0x40u:
         v8 = "ui/band_wars/clan_rivals_hub.layout";
         v9 = &v52;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v52 = 19246190;
         goto LABEL_108;
       case 0x41u:
         v8 = "ui/player_stats/player_v_player.layout";
         v9 = &v51;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v51 = 19246190;
         goto LABEL_108;
       case 0x42u:
         v8 = "ui/player_stats/clan_v_clan.layout";
         v9 = &v50;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v50 = 19246190;
         goto LABEL_108;
       case 0x43u:
         v8 = "ui/band_wars/find_players.layout";
         v9 = &v49;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v49 = 19246190;
         goto LABEL_108;
       case 0x44u:
         v8 = "ui/band_wars/my_invitations.layout";
         v9 = &v48;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v48 = 19246190;
         goto LABEL_108;
       case 0x45u:
@@ -481,174 +481,174 @@ __int64 __fastcall ui_load_layout_by_id(__int64 a1, unsigned int a2, char a3)
       case 0x46u:
         v8 = "ui/btm/btm_hub.layout";
         v9 = &v47;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v47 = 19246190;
         goto LABEL_108;
       case 0x47u:
         v8 = "ui/btm/btm_band_select.layout";
         v9 = &v46;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v46 = 19246190;
         goto LABEL_108;
       case 0x48u:
         sub_BB6FC0(v7, 72);
         v8 = "ui/band_wars/clan_badges.layout";
         v9 = &v45;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v45 = 19246190;
         goto LABEL_108;
       case 0x4Au:
         v8 = "ui/btm/btm_intro_choice.layout";
         v9 = &v44;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v44 = 19246190;
         goto LABEL_108;
       case 0x4Bu:
         v8 = "ui/btm/btm_win_loss.layout";
         v9 = &v43;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v43 = 19246190;
         goto LABEL_108;
       case 0x4Cu:
         v8 = "ui/btm/btm_chapter_completion.layout";
         v9 = &v42;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v42 = 19246190;
         goto LABEL_108;
       case 0x4Du:
         v8 = "ui/band_wars/find_groups.layout";
         v9 = &v41;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v41 = 19246190;
         goto LABEL_108;
       case 0x4Eu:
         v8 = "ui/band_naming/btm_band_naming.layout";
         v9 = &v40;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v40 = 19246190;
         goto LABEL_108;
       case 0x4Fu:
         v8 = "ui/band_wars/clan_notifications.layout";
         v9 = &v39;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v39 = 19246190;
         goto LABEL_108;
       case 0x50u:
         v8 = "ui/band_wars_clan_stats/clan_stats.layout";
         v9 = &v38;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v38 = 19246190;
         goto LABEL_108;
       case 0x51u:
         v8 = "ui/band_wars/clan_badges.layout";
         v9 = &v37;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v37 = 19246190;
         goto LABEL_108;
       case 0x52u:
         v8 = "ui/player_stats/player_badges.layout";
         v9 = &v36;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v36 = 19246190;
         goto LABEL_108;
       case 0x53u:
         v8 = "ui/portrait/player_portrait.layout";
         v9 = &v35;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v35 = 19246190;
         goto LABEL_108;
       case 0x54u:
         v8 = "ui/band_wars/clan_create_edit.layout";
         v9 = &v34;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v34 = 19246190;
         goto LABEL_108;
       case 0x56u:
         v8 = "ui/btm/btm_mode_completion.layout";
         v9 = &v30;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v30 = 19246190;
         goto LABEL_108;
       case 0x58u:
         v8 = "ui/band_wars/clan_roster.layout";
         v9 = &v29;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v29 = 19246190;
         goto LABEL_108;
       case 0x59u:
         v8 = "ui/band_wars/band_wars_weekly_challenges.layout";
         v9 = &v27;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v27 = 19246190;
         goto LABEL_108;
       case 0x5Au:
         v8 = "ui/band_wars/clan_tier_status.layout";
         v9 = &v26;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v26 = 19246190;
         goto LABEL_108;
       case 0x5Bu:
         v8 = "ui/band_wars/clan_rivals_event_leaderboard.layout";
         v9 = &v25;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v25 = 19246190;
         goto LABEL_108;
       case 0x5Cu:
         v8 = "ui/btm/btm_challenge.layout";
         v9 = &v24;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v24 = 19246190;
         goto LABEL_108;
       case 0x5Du:
         v8 = "ui/somp/somp_green_room/somp_green_room.layout";
         v9 = &v23;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v23 = 19246190;
         goto LABEL_108;
       case 0x5Eu:
         v8 = "ui/somp/somp_menu.layout";
         v9 = &v22;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v22 = 19246190;
         goto LABEL_108;
       case 0x5Fu:
         v8 = "ui/somp/somp_hub/somp_hub.layout";
         v9 = &v21;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v21 = 19246190;
         goto LABEL_108;
       case 0x60u:
         v8 = "ui/somp/somp_invite_friends/somp_invite_friends.layout";
         v9 = &v20;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v20 = 19246190;
         goto LABEL_108;
       case 0x61u:
         v8 = "ui/missions/missions.layout";
         v9 = &v19;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v19 = 19246190;
         goto LABEL_108;
       case 0x62u:
         v8 = "ui/band_wars/band_wars_user_settings.layout";
         v9 = &v33;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v33 = 19246190;
         goto LABEL_108;
       case 0x63u:
         v8 = "ui/band_wars/clan_rivals_looking_for_clan.layout";
         v9 = &v32;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v32 = 19246190;
         goto LABEL_108;
       case 0x64u:
         v8 = "ui/band_wars/clan_rivals_invitations.layout";
         v9 = &v31;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v31 = 19246190;
         goto LABEL_108;
       case 0x65u:
-        v13 = unk_1AC9A78;
+        v13 = g_ui_manager;
         v18 = 19246190;
         sub_1AF950(&v18, "ui/somp/somp_session_create_edit/somp_session_create_edit.layout");
         sub_8C9F50(v13, &v18);
@@ -656,7 +656,7 @@ __int64 __fastcall ui_load_layout_by_id(__int64 a1, unsigned int a2, char a3)
       case 0x66u:
 LABEL_102:
         v17 = 19246190;
-        v14 = unk_1AC9A78;
+        v14 = g_ui_manager;
         sub_1AF950(&v17, "ui/somp/somp_browse_sessions/somp_browse_sessions.layout");
         sub_8C9F50(v14, &v17);
         goto LABEL_103;
@@ -665,30 +665,30 @@ LABEL_103:
         v8 = "ui/somp/somp_session_preferences/somp_session_preferences.layout";
         v9 = &v16;
         v16 = 19246190;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         goto LABEL_108;
       case 0x68u:
         v8 = "ui/options/options_graphics.layout";
         v9 = &v98;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v98 = 19246190;
         goto LABEL_108;
       case 0x69u:
         v8 = "ui/band_wars/clan_info_landing.layout";
         v9 = &v28;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v28 = 19246190;
         goto LABEL_108;
       case 0x6Au:
         v8 = "ui/character/character_customize/character_customize_track.layout";
         v9 = &v71;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v71 = 19246190;
         goto LABEL_108;
       case 0x6Bu:
         v8 = "ui/character/character_customize/character_customize_track_r2t.layout";
         v9 = &v70;
-        v10 = unk_1AC9A78;
+        v10 = g_ui_manager;
         v70 = 19246190;
 LABEL_108:
         sub_1AF950(v9, v8);

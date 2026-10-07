@@ -60,7 +60,7 @@ address,end,size,name,library,thunk
 0x7120,0x7217,247,sub_7120,False,False
 0x7220,0x74A8,648,sub_7220,False,False
 0x74B0,0x7534,132,sub_74B0,False,False
-0x7560,0x7627,199,sub_7560,False,False
+0x7560,0x7627,199,sound_manager_update,False,False
 0x7680,0x77BD,317,sub_7680,False,False
 0x7820,0x79B5,405,sub_7820,False,False
 0x79C0,0x79D9,25,sub_79C0,False,False
@@ -8956,7 +8956,7 @@ address,end,size,name,library,thunk
 0x33B370,0x33B3F0,128,sub_33B370,False,False
 0x33B3F0,0x33B470,128,sub_33B3F0,False,False
 0x33B470,0x33B50D,157,sub_33B470,False,False
-0x33B510,0x33B519,9,sub_33B510,False,False
+0x33B510,0x33B519,9,dingo_update,False,False
 0x33B520,0x33B5C4,164,sub_33B520,False,False
 0x33B5E0,0x33B819,569,sub_33B5E0,False,False
 0x33B820,0x33B907,231,sub_33B820,False,False
@@ -9467,7 +9467,7 @@ address,end,size,name,library,thunk
 0x3690C0,0x36949D,989,sub_3690C0,False,False
 0x3694A0,0x369852,946,sub_3694A0,False,False
 0x369860,0x36993A,218,sub_369860,False,False
-0x369940,0x3699A3,99,sub_369940,False,False
+0x369940,0x3699A3,99,system_update,False,False
 0x369A20,0x369A21,1,nullsub_30,False,False
 0x369A90,0x369ACF,63,sub_369A90,False,False
 0x369AD0,0x369B28,88,sub_369AD0,False,False
@@ -10810,18 +10810,18 @@ address,end,size,name,library,thunk
 0x3DDE60,0x3DDFE4,388,sub_3DDE60,False,False
 0x3DE080,0x3DE0A5,37,sub_3DE080,False,False
 0x3DE0B0,0x3DE0DB,43,sub_3DE0B0,False,False
-0x3DE0E0,0x3DE12E,78,sub_3DE0E0,False,False
-0x3DE130,0x3DE169,57,sub_3DE130,False,False
+0x3DE0E0,0x3DE12E,78,render_system_poll,False,False
+0x3DE130,0x3DE169,57,render_system_begin_frame,False,False
 0x3DE170,0x3DE39A,554,sub_3DE170,False,False
 0x3DE3A0,0x3DE499,249,sub_3DE3A0,False,False
 0x3DE4A0,0x3DE7B9,793,sub_3DE4A0,False,False
-0x3DE7C0,0x3DE7F4,52,sub_3DE7C0,False,False
+0x3DE7C0,0x3DE7F4,52,render_system_end_frame,False,False
 0x3DE830,0x3DE837,7,sub_3DE830,False,False
 0x3DE840,0x3DE847,7,sub_3DE840,False,False
 0x3DE8E0,0x3DE8EF,15,sub_3DE8E0,False,False
 0x3DE8F0,0x3DE9DB,235,sub_3DE8F0,False,False
 0x3DE9E0,0x3DEA91,177,sub_3DE9E0,False,False
-0x3DEAA0,0x3DEACF,47,sub_3DEAA0,False,False
+0x3DEAA0,0x3DEACF,47,render_system_skip_frame,False,False
 0x3DEB20,0x3DEB59,57,sub_3DEB20,False,False
 0x3DEB60,0x3DEB7C,28,sub_3DEB60,False,False
 0x3DEB80,0x3DEBB1,49,sub_3DEB80,False,False
@@ -27112,7 +27112,7 @@ address,end,size,name,library,thunk
 0x8AFB90,0x8AFC16,134,sub_8AFB90,False,False
 0x8AFC20,0x8AFC71,81,sub_8AFC20,False,False
 0x8B0E90,0x8B10F2,610,sub_8B0E90,False,False
-0x8B1840,0x8B1858,24,sub_8B1840,False,False
+0x8B1840,0x8B1858,24,ui_layout_consume_skip_frame,False,False
 0x8B1A20,0x8B1A28,8,sub_8B1A20,False,False
 0x8B1B00,0x8B1B03,3,sub_8B1B00,False,False
 0x8B1BB0,0x8B1D6C,444,sub_8B1BB0,False,False
@@ -27478,13 +27478,13 @@ address,end,size,name,library,thunk
 0x8C8710,0x8C885B,331,sub_8C8710,False,False
 0x8C8880,0x8C88AC,44,sub_8C8880,False,False
 0x8C88B0,0x8C88FC,76,sub_8C88B0,False,False
-0x8C8900,0x8C9693,3475,sub_8C8900,False,False
+0x8C8900,0x8C9693,3475,ui_manager_update,False,False
 0x8C96A0,0x8C96A8,8,sub_8C96A0,False,False
 0x8C9700,0x8C97E7,231,sub_8C9700,False,False
 0x8C97F0,0x8C98FD,269,sub_8C97F0,False,False
 0x8C9900,0x8C9A30,304,sub_8C9900,False,False
 0x8C9A40,0x8C9A7B,59,sub_8C9A40,False,False
-0x8C9A80,0x8C9BDC,348,sub_8C9A80,False,False
+0x8C9A80,0x8C9BDC,348,ui_manager_render,False,False
 0x8C9C30,0x8C9F44,788,sub_8C9C30,False,False
 0x8C9F50,0x8C9F55,5,sub_8C9F50,False,True
 0x8C9F60,0x8CA30F,943,sub_8C9F60,False,False
@@ -27492,7 +27492,7 @@ address,end,size,name,library,thunk
 0x8CA390,0x8CA391,1,nullsub_3137,False,False
 0x8CA3A0,0x8CA3F6,86,sub_8CA3A0,False,False
 0x8CA460,0x8CA4B3,83,sub_8CA460,False,False
-0x8CA4C0,0x8CA4D1,17,sub_8CA4C0,False,False
+0x8CA4C0,0x8CA4D1,17,ui_manager_get_active_layout,False,False
 0x8CA800,0x8CA86B,107,sub_8CA800,False,False
 0x8CAF20,0x8CAF4C,44,sub_8CAF20,False,False
 0x8CAFD0,0x8CAFD5,5,sub_8CAFD0,False,False
@@ -27967,7 +27967,7 @@ address,end,size,name,library,thunk
 0x8F3120,0x8F31BE,158,sub_8F3120,False,False
 0x8F31E0,0x8F31FA,26,sub_8F31E0,False,False
 0x8F3200,0x8F321E,30,sub_8F3200,False,False
-0x8F3220,0x8F3C75,2645,sub_8F3220,False,False
+0x8F3220,0x8F3C75,2645,song_loading_update,False,False
 0x8F3C80,0x8F3D94,276,sub_8F3C80,False,False
 0x8F3DB0,0x8F3DBD,13,sub_8F3DB0,False,False
 0x8F3DC0,0x8F3DD6,22,sub_8F3DC0,False,False
@@ -28532,7 +28532,7 @@ address,end,size,name,library,thunk
 0x92F020,0x92F2E5,709,sub_92F020,False,False
 0x92F2F0,0x92F415,293,sub_92F2F0,False,False
 0x92F420,0x92F456,54,sub_92F420,False,False
-0x92F4A0,0x92F610,368,sub_92F4A0,False,False
+0x92F4A0,0x92F610,368,resource_manager_update,False,False
 0x92F620,0x92F8D8,696,sub_92F620,False,False
 0x92F8E0,0x92FBD5,757,sub_92F8E0,False,False
 0x92FBE0,0x92FCA8,200,sub_92FBE0,False,False
@@ -34942,7 +34942,7 @@ address,end,size,name,library,thunk
 0xBB50F0,0xBB5155,101,sub_BB50F0,False,False
 0xBB5160,0xBB547B,795,sub_BB5160,False,False
 0xBB5590,0xBB58BC,812,sub_BB5590,False,False
-0xBB58C0,0xBB5B8D,717,sub_BB58C0,False,False
+0xBB58C0,0xBB5B8D,717,ui_layout_controller_update,False,False
 0xBB5C60,0xBB5D31,209,sub_BB5C60,False,False
 0xBB5D40,0xBB6EB3,4467,ui_load_layout_by_id,False,False
 0xBB6EC0,0xBB6F97,215,ui_adjust_loading_thread_priorities,False,False
@@ -35171,7 +35171,7 @@ address,end,size,name,library,thunk
 0xBD8E50,0xBD8E79,41,sub_BD8E50,False,False
 0xBD8FF0,0xBD9130,320,sub_BD8FF0,False,False
 0xBD9150,0xBD942B,731,sub_BD9150,False,False
-0xBD9430,0xBD9514,228,sub_BD9430,False,False
+0xBD9430,0xBD9514,228,network_connection_monitor_update,False,False
 0xBD9520,0xBD95D3,179,sub_BD9520,False,False
 0xBD95E0,0xBD97D2,498,sub_BD95E0,False,False
 0xBD97E0,0xBD9B32,850,sub_BD97E0,False,False
@@ -38178,7 +38178,7 @@ address,end,size,name,library,thunk
 0xD20740,0xD209C5,645,sub_D20740,False,False
 0xD209D0,0xD20A05,53,sub_D209D0,False,False
 0xD20A10,0xD20C0E,510,sub_D20A10,False,False
-0xD20C10,0xD20D5D,333,sub_D20C10,False,False
+0xD20C10,0xD20D5D,333,async_callback_queue_update,False,False
 0xD20D60,0xD21081,801,sub_D20D60,False,False
 0xD21090,0xD212CC,572,sub_D21090,False,False
 0xD212D0,0xD21400,304,sub_D212D0,False,False
@@ -38269,7 +38269,7 @@ address,end,size,name,library,thunk
 0xD2BF90,0xD2C23E,686,sub_D2BF90,False,False
 0xD2C3F0,0xD2C412,34,sub_D2C3F0,False,False
 0xD2C420,0xD2C432,18,sub_D2C420,False,False
-0xD2C440,0xD2D353,3859,sub_D2C440,False,False
+0xD2C440,0xD2D353,3859,somp_session_manager_update,False,False
 0xD2D360,0xD2D3A1,65,sub_D2D360,False,False
 0xD2D3B0,0xD2D712,866,sub_D2D3B0,False,False
 0xD2D720,0xD2D812,242,sub_D2D720,False,False
@@ -38796,7 +38796,7 @@ address,end,size,name,library,thunk
 0xD5BBF0,0xD5C06A,1146,sub_D5BBF0,False,False
 0xD5C070,0xD5C193,291,sub_D5C070,False,False
 0xD5C1A0,0xD5C223,131,sub_D5C1A0,False,False
-0xD5C230,0xD5C3B8,392,sub_D5C230,False,False
+0xD5C230,0xD5C3B8,392,profile_manager_update,False,False
 0xD5C3C0,0xD5C66A,682,sub_D5C3C0,False,False
 0xD5C670,0xD5C8F0,640,sub_D5C670,False,False
 0xD5C900,0xD5C96E,110,sub_D5C900,False,False

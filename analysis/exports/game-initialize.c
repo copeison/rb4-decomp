@@ -27,7 +27,7 @@ bool game_initialize()
   input_refresh_player_assignments();
   if ( unk_19E4559 != 0 )
     runtime_terminate(0);
-  ui_load_layout_by_id((__int64)&unk_1AFF588, 0x2Cu, 0);
+  ui_load_layout_by_id((__int64)&g_ui_layout_controller, 0x2Cu, 0);
   command_line_mark_switches_handled(arguments);
   return true;
 }

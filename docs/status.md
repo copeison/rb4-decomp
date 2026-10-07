@@ -11,6 +11,7 @@
 - [x] Classify major subsystems and source translation units.
 - [x] Begin function-by-function C++ reconstruction.
 - [x] Reconstruct the top-level game initialization sequence.
+- [x] Reconstruct the main per-frame update and render schedule.
 - [x] Recover the complete UI layout ID and primary asset-path map.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
