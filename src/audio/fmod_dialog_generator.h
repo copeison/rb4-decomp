@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "audio_clip_fmod.h"
+#include "fmod_studio_sound_generator.h"
 
 namespace rb4 {
 
@@ -20,6 +21,7 @@ using FmodDialogGeneratorHandle = std::uint32_t;
 
 struct FmodDialogGeneratorOptions {
     std::int32_t format = 4;
+    FmodStudioSoundOptions sound;
 };
 
 std::string fmod_dialog_event_path(std::string_view path);
@@ -29,11 +31,40 @@ public:
     void initialize_pool_slot(
         FmodDialogGeneratorManager& manager,
         std::uint32_t index);
+    bool initialize_event(
+        const char* event_path,
+        const FmodDialogGeneratorOptions& options,
+        AudioClipFmodSpatialSource* spatial_source);
+    void pause();
+    void resume();
     void prepare_for_audio_reset();
     void stop_and_wait();
+    bool update();
+
+    AudioClipFmodState state() const;
+    float position_ms() const;
+    float channel_position_ms() const;
+    float length_ms() const;
+    void set_position_ms(float position);
+    bool set_event_parameter(const char* name, float value);
+    bool get_event_parameter(const char* name, float& value) const;
+    void configure_fade(
+        std::int32_t completion_mode,
+        float target,
+        float duration_seconds);
+    float fade_value() const;
+    void configure_volume_transition(bool fade_out, bool immediate);
+    bool volume_transition_requested() const;
 
 private:
     friend class FmodDialogGeneratorManager;
+
+    static FMOD_RESULT programmer_sound_callback(
+        FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
+        FMOD::Studio::EventInstance* event_instance,
+        void* parameters);
+    FMOD_RESULT create_programmer_sound(
+        FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES& properties);
 
     FmodDialogGeneratorManager* manager_ = nullptr;
     std::uint32_t pool_index_ = 0;
@@ -41,6 +72,8 @@ private:
     FmodDialogGeneratorHandle handle_ = 0;
     void* sound_source_ = nullptr;
     FmodAudioState* audio_state_ = nullptr;
+    FmodStudioSoundGenerator studio_generator_;
+    float length_ms_ = 3600000.0F;
     bool in_free_list_ = false;
     AudioClipFmodState state_ = AudioClipFmodState::stopped;
 };

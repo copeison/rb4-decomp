@@ -14,7 +14,19 @@ enumeration at `0x26F120`, return at `0x26EBE0`, and shutdown at `0x26F420`
 use the same synchronized free-list and generation-handle scheme as the other
 FMOD generator managers.
 
-Each pool entry contains an event runtime beginning 136 bytes into the object.
-That runtime owns the Studio event instance and its fade state. Event creation,
-callbacks, playback controls, and fade behavior remain the next reconstruction
-milestone.
+Each pool entry embeds a `FmodStudioSoundGenerator` beginning 136 bytes into the
+object. Its name is present at `0x125CFB3`, and its vtable begins at
+`0x18F09F0`. The wrapper delegates pause, resume, timeline position, named
+parameters, fades, update, reset, and synchronous stop operations to it.
+
+Initialization at `0x26FC30` resolves the Studio event, reads its timeline
+length, creates an instance, installs initial parameter values and a callback,
+applies 3D attributes, and starts either playing or paused. Runtime update at
+`0x2702C0` follows Studio playback state, refreshes 3D attributes, advances two
+independent linear fades from timeline movement, applies their product as event
+volume, and releases a stopped event.
+
+The dialog callback at `0x26EA10` handles FMOD programmer-sound creation and
+destruction. It looks up `FMOD_STUDIO_SOUND_INFO`, creates the low-level sound,
+returns its subsound index, and replaces the wrapper's initial 3,600,000 ms
+placeholder length when FMOD reports the sound actually playing.

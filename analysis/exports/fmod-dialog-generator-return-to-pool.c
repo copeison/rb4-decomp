@@ -4,7 +4,7 @@ double __fastcall fmod_dialog_generator_return_to_pool(__int64 a1)
   __int64 v3; // rax
   _QWORD *v4; // rcx
 
-  sub_270660(a1 + 136);
+  fmod_studio_sound_generator_release_event(a1 + 136);
   v2 = *(_QWORD *)(a1 + 16);
   scePthreadMutexLock(v2 + 24);
   ++*(_DWORD *)(v2 + 16);

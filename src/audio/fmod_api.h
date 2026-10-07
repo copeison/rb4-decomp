@@ -65,6 +65,18 @@ using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
 using FMOD_STUDIO_EVENT_CALLBACK_TYPE = std::uint32_t;
 
+namespace FMOD {
+class Sound;
+}
+
+enum FMOD_STUDIO_PLAYBACK_STATE : std::int32_t {
+    FMOD_STUDIO_PLAYBACK_PLAYING = 0,
+    FMOD_STUDIO_PLAYBACK_SUSTAINING = 1,
+    FMOD_STUDIO_PLAYBACK_STOPPED = 2,
+    FMOD_STUDIO_PLAYBACK_STARTING = 3,
+    FMOD_STUDIO_PLAYBACK_STOPPING = 4,
+};
+
 enum FMOD_STUDIO_STOP_MODE : std::int32_t {
     FMOD_STUDIO_STOP_ALLOWFADEOUT = 0,
     FMOD_STUDIO_STOP_IMMEDIATE = 1,
@@ -83,6 +95,39 @@ constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_PREMIX = 0x20;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_POSTMIX = 0x40;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_DESTROYED = 0x00000002;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_STARTED = 0x00000008;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_STOPPED = 0x00000020;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND = 0x00000080;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_DESTROY_PROGRAMMER_SOUND = 0x00000100;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_SOUND_PLAYED = 0x00002000;
+constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
+    FMOD_STUDIO_EVENT_CALLBACK_ALL = 0xFFFFFFFF;
+
+struct FMOD_STUDIO_SOUND_INFO {
+    const char* name_or_data;
+    FMOD_MODE mode;
+    std::uint32_t padding;
+    std::byte create_sound_info[232];
+    std::int32_t subsound_index;
+};
+
+struct FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
+    const char* name;
+    FMOD::Sound* sound;
+    std::int32_t subsound_index;
+};
+
+static_assert(sizeof(FMOD_STUDIO_SOUND_INFO) == 256);
+static_assert(offsetof(FMOD_STUDIO_SOUND_INFO, create_sound_info) == 16);
+static_assert(sizeof(FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES) == 24);
+static_assert(offsetof(FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES, sound) == 8);
 
 struct FMOD_ADVANCEDSETTINGS {
     std::int32_t cbSize;
@@ -390,8 +435,11 @@ public:
     FMOD_RESULT start();
     FMOD_RESULT stop(FMOD_STUDIO_STOP_MODE mode);
     FMOD_RESULT release();
+    FMOD_RESULT getPlaybackState(
+        FMOD_STUDIO_PLAYBACK_STATE* state) const;
     FMOD_RESULT getTimelinePosition(std::int32_t* position);
     FMOD_RESULT setTimelinePosition(std::int32_t position);
+    FMOD_RESULT setVolume(float volume);
     FMOD_RESULT set3DAttributes(const FMOD_3D_ATTRIBUTES* attributes);
     FMOD_RESULT setParameterValue(const char* name, float value);
     FMOD_RESULT getParameter(
@@ -407,6 +455,7 @@ public:
 class EventDescription {
 public:
     FMOD_RESULT isOneshot(bool* oneshot);
+    FMOD_RESULT getLength(std::int32_t* length_ms) const;
     FMOD_RESULT createInstance(EventInstance** instance);
 };
 
@@ -427,7 +476,11 @@ public:
     FMOD_RESULT getEvent(
         const char* path,
         EventDescription** description);
+    FMOD_RESULT getSoundInfo(
+        const char* key,
+        FMOD_STUDIO_SOUND_INFO* info) const;
     FMOD_RESULT getBus(const char* path, Bus** bus);
+    FMOD_RESULT flushCommands();
     FMOD_RESULT setListenerAttributes(
         std::int32_t listener,
         const FMOD_3D_ATTRIBUTES* attributes);

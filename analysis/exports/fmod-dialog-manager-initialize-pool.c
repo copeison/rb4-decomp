@@ -39,7 +39,7 @@ __int64 __fastcall fmod_dialog_manager_initialize_pool(__int64 a1, __int64 a2)
       __asm { vmovups xmmword ptr [r15+38h], xmm0 }
       *(_QWORD *)(_R15 + 112) = 0;
       *(_QWORD *)_R15 = &vtable_FmodDialogGenerator;
-      result = sub_26FB70(_R15 + 136, _XMM0);
+      result = fmod_studio_sound_generator_construct(_R15 + 136, _XMM0);
       *(_QWORD *)(_R15 + 384) = 0;
       _R15 += 416;
     }

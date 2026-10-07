@@ -37,7 +37,7 @@
 - [x] Identify the `FmodBufferedStreamGenerator` pool and control surface.
 - [x] Reconstruct the normal buffered-stream PCM render path.
 - [x] Reconstruct the `FmodDialogGeneratorManager` pool and resource routing.
-- [ ] Reconstruct the `FmodDialogGenerator` Studio-event lifecycle.
+- [x] Reconstruct the `FmodDialogGenerator` Studio-event lifecycle.
 - [ ] Identify the synchronized six-sample interpolation kernel.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 

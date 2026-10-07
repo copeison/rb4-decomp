@@ -1,5 +1,7 @@
 #include "fmod_dialog_generator.h"
 
+#include "fmod_audio_system.h"
+
 namespace rb4 {
 
 namespace {
@@ -10,6 +12,7 @@ constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
 constexpr std::int32_t kDialogFormat = 4;
 constexpr std::string_view kEventPrefix = "event:/";
+constexpr FMOD_MODE kProgrammerSoundMode = 0x00014200;
 
 }  // namespace
 
@@ -31,17 +34,188 @@ void FmodDialogGenerator::initialize_pool_slot(
     handle_ = 0;
     sound_source_ = nullptr;
     audio_state_ = nullptr;
+    length_ms_ = 3600000.0F;
     state_ = AudioClipFmodState::stopped;
+}
+
+// Reconstructed from eboot.elf at 0x26E990.
+bool FmodDialogGenerator::initialize_event(
+    const char* event_path,
+    const FmodDialogGeneratorOptions& options,
+    AudioClipFmodSpatialSource* spatial_source) {
+    if (event_path == nullptr || options.format != kDialogFormat ||
+        audio_state_ == nullptr) {
+        return false;
+    }
+
+    length_ms_ = 3600000.0F;
+    const auto normalized_path = fmod_dialog_event_path(event_path);
+    const auto initialized = studio_generator_.initialize_event(
+        normalized_path.c_str(),
+        options.sound,
+        *audio_state_,
+        spatial_source,
+        programmer_sound_callback,
+        this);
+    state_ = studio_generator_.state();
+    return initialized;
+}
+
+void FmodDialogGenerator::pause() {
+    studio_generator_.pause();
+    state_ = studio_generator_.state();
+}
+
+void FmodDialogGenerator::resume() {
+    studio_generator_.resume();
+    state_ = studio_generator_.state();
 }
 
 void FmodDialogGenerator::prepare_for_audio_reset() {
-    if (state_ != AudioClipFmodState::stopped) {
-        state_ = AudioClipFmodState::stopping;
-    }
+    studio_generator_.prepare_for_audio_reset();
+    state_ = studio_generator_.state();
 }
 
 void FmodDialogGenerator::stop_and_wait() {
-    state_ = AudioClipFmodState::stopped;
+    studio_generator_.stop_and_wait();
+    state_ = studio_generator_.state();
+}
+
+bool FmodDialogGenerator::update() {
+    const auto active = studio_generator_.update();
+    state_ = studio_generator_.state();
+    return active;
+}
+
+AudioClipFmodState FmodDialogGenerator::state() const {
+    return studio_generator_.state();
+}
+
+float FmodDialogGenerator::position_ms() const {
+    return studio_generator_.position_ms();
+}
+
+float FmodDialogGenerator::channel_position_ms() const {
+    return studio_generator_.channel_position_ms();
+}
+
+float FmodDialogGenerator::length_ms() const {
+    return length_ms_;
+}
+
+void FmodDialogGenerator::set_position_ms(float position) {
+    studio_generator_.set_position_ms(position);
+}
+
+bool FmodDialogGenerator::set_event_parameter(
+    const char* name,
+    float value) {
+    return studio_generator_.set_event_parameter(name, value);
+}
+
+bool FmodDialogGenerator::get_event_parameter(
+    const char* name,
+    float& value) const {
+    return studio_generator_.get_event_parameter(name, value);
+}
+
+void FmodDialogGenerator::configure_fade(
+    std::int32_t completion_mode,
+    float target,
+    float duration_seconds) {
+    studio_generator_.configure_fade(
+        completion_mode, target, duration_seconds);
+}
+
+float FmodDialogGenerator::fade_value() const {
+    return studio_generator_.fade_value();
+}
+
+void FmodDialogGenerator::configure_volume_transition(
+    bool fade_out,
+    bool immediate) {
+    studio_generator_.configure_volume_transition(fade_out, immediate);
+}
+
+bool FmodDialogGenerator::volume_transition_requested() const {
+    return studio_generator_.volume_transition_requested();
+}
+
+// Reconstructed from eboot.elf at 0x26EA10.
+FMOD_RESULT FmodDialogGenerator::programmer_sound_callback(
+    FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
+    FMOD::Studio::EventInstance* event_instance,
+    void* parameters) {
+    void* user_data = nullptr;
+    event_instance->getUserData(&user_data);
+    auto* generator = static_cast<FmodDialogGenerator*>(user_data);
+    if (generator == nullptr) {
+        return FMOD_OK;
+    }
+
+    if (generator->state() == AudioClipFmodState::stopped ||
+        generator->state() == AudioClipFmodState::stopping) {
+        generator->studio_generator_.mark_event_callback_complete();
+        return FMOD_OK;
+    }
+
+    if (type == FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND) {
+        auto* properties =
+            static_cast<FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES*>(parameters);
+        return properties != nullptr
+            ? generator->create_programmer_sound(*properties)
+            : FMOD_ERR_INVALID_PARAM;
+    }
+    if (type == FMOD_STUDIO_EVENT_CALLBACK_DESTROY_PROGRAMMER_SOUND) {
+        auto* properties =
+            static_cast<FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES*>(parameters);
+        return properties != nullptr && properties->sound != nullptr
+            ? properties->sound->release()
+            : FMOD_OK;
+    }
+    if (type == FMOD_STUDIO_EVENT_CALLBACK_SOUND_PLAYED) {
+        auto* sound = static_cast<FMOD::Sound*>(parameters);
+        std::uint32_t length = 0;
+        if (sound != nullptr &&
+            sound->getLength(&length, FMOD_TIMEUNIT_MS) == FMOD_OK) {
+            generator->length_ms_ = static_cast<float>(length);
+        }
+    } else if (type == FMOD_STUDIO_EVENT_CALLBACK_STARTED) {
+        generator->studio_generator_.notify_event_started();
+    } else if (type == FMOD_STUDIO_EVENT_CALLBACK_DESTROYED ||
+               type == FMOD_STUDIO_EVENT_CALLBACK_STOPPED) {
+        generator->studio_generator_.mark_event_callback_complete();
+    }
+    return FMOD_OK;
+}
+
+FMOD_RESULT FmodDialogGenerator::create_programmer_sound(
+    FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES& properties) {
+    if (audio_state_ == nullptr || audio_state_->studio_system == nullptr ||
+        audio_state_->core_system == nullptr || properties.name == nullptr) {
+        return FMOD_ERR_INVALID_PARAM;
+    }
+
+    FMOD_STUDIO_SOUND_INFO sound_info{};
+    const auto info_result = audio_state_->studio_system->getSoundInfo(
+        properties.name, &sound_info);
+    if (info_result != FMOD_OK) {
+        return info_result;
+    }
+
+    FMOD::Sound* sound = nullptr;
+    const auto create_result = audio_state_->core_system->createSound(
+        sound_info.name_or_data,
+        sound_info.mode | kProgrammerSoundMode,
+        sound_info.create_sound_info,
+        &sound);
+    if (create_result != FMOD_OK) {
+        return create_result;
+    }
+
+    properties.sound = sound;
+    properties.subsound_index = sound_info.subsound_index;
+    return FMOD_OK;
 }
 
 FmodDialogGeneratorManager::FmodDialogGeneratorManager(
@@ -152,6 +326,7 @@ void FmodDialogGeneratorManager::release(
     generator.handle_ &= ~kActiveHandleBit;
     generator.sound_source_ = nullptr;
     generator.audio_state_ = nullptr;
+    generator.studio_generator_.release_event();
     generator.state_ = AudioClipFmodState::stopped;
     if (!generator.in_free_list_) {
         generator.in_free_list_ = true;
