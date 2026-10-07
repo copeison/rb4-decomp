@@ -34024,7 +34024,7 @@ address,end,size,name,library,thunk
 0xBB02E0,0xBB0640,864,sub_BB02E0,False,False
 0xBB0640,0xBB0690,80,sub_BB0640,False,False
 0xBB0690,0xBB0698,8,sub_BB0690,False,False
-0xBB06A0,0xBB0F40,2208,sub_BB06A0,False,False
+0xBB06A0,0xBB0F40,2208,ui_layout_id_to_symbol,False,False
 0xBB0F40,0xBB1160,544,sub_BB0F40,False,False
 0xBB1160,0xBB1380,544,sub_BB1160,False,False
 0xBB1380,0xBB15A0,544,sub_BB1380,False,False
