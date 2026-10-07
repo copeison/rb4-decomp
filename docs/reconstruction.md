@@ -28,6 +28,7 @@ the source tree.
 | `0x266CB0`-`0x26759C` | `AudioClipFmod` DSP, playback startup, and Studio event callback | `src/audio/audio_clip_fmod.cpp` | `HMXRawAudioBus`, event/low-level fallback, HMX plugin binding, head-DSP insertion, parent routing, sample-rate base frequency, and callback readiness recovered. |
 | `0x267BB0`-`0x268479` | `AudioClipFmod` runtime controls | `src/audio/audio_clip_fmod.cpp` | Pause/resume state transitions, millisecond playback position, 3D attribute updates, and named Studio parameters recovered. |
 | `0x268380`, `0x268510`-`0x269BDB` | `FmodAudioBusGenerator` pool and playback | `src/audio/fmod_audio_bus_generator.cpp` | Fixed pool, stale-handle rejection, asynchronous sound creation, Studio-bus retry routing, channel startup, and initial playback state recovered. |
+| `0x269CF0`, `0x26A270`-`0x26AD9C` | `FmodAudioStreamGeneratorManager` pool and creation | `src/audio/fmod_audio_stream_generator.cpp` | MP3 stream type, 288-byte fixed pool, shared handle encoding, reset/stop dispatch, free-list allocation, and stream-option gate recovered. |
 
 ## Game initialization
 

@@ -33,6 +33,7 @@
 - [x] Reconstruct the `FmodAudioBusGeneratorManager` pool and handle format.
 - [x] Reconstruct `FmodAudioBusGenerator` asynchronous sound startup.
 - [x] Reconstruct the core `FmodAudioBusGenerator` runtime update lifecycle.
+- [x] Reconstruct the `FmodAudioStreamGeneratorManager` pool and creation gate.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint
