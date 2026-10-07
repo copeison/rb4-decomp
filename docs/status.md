@@ -31,9 +31,10 @@
 - [x] Reconstruct `AudioClipFmod` Studio DSP binding.
 - [x] Reconstruct `AudioClipFmod` runtime playback controls.
 - [x] Reconstruct the `FmodAudioBusGeneratorManager` pool and handle format.
-- [x] Reconstruct `FmodAudioBusGenerator` asynchronous sound startup.
-- [x] Reconstruct the core `FmodAudioBusGenerator` runtime update lifecycle.
-- [x] Reconstruct the `FmodAudioStreamGeneratorManager` pool and creation gate.
+- [x] Reconstruct `FmodAudioBusGenerator` sound creation and Studio-bus routing.
+- [x] Reconstruct the `FmodAudioStreamGeneratorManager` pool and handle format.
+- [x] Reconstruct the core `FmodAudioStreamGenerator` playback lifecycle.
+- [ ] Reconstruct the higher-level streaming clip decoder and buffer callbacks.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint

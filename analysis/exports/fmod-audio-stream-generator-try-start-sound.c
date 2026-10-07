@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_audio_bus_generator_try_start_sound(__int64 a1)
+__int64 __fastcall fmod_audio_stream_generator_try_start_sound(__int64 a1)
 {
   __int64 v2; // rdi
   int ChannelGroup; // eax

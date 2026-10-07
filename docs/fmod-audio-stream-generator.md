@@ -1,8 +1,9 @@
-# FmodAudioStreamGenerator pool
+# FmodAudioStreamGenerator lifecycle
 
 The embedded names at `0x125CD08` and `0x125CD2D` identify
-`FmodAudioStreamGeneratorManager` and `FmodAudioStreamGenerator`. The manager
-vtable begins at `0x18F0528`, and its extension method returns `.mp3`.
+`FmodAudioStreamGeneratorManager` and `FmodAudioStreamGenerator`. The generator
+vtable begins at `0x18F0418`, the manager vtable begins at `0x18F0528`, and the
+manager's extension method returns `.mp3`.
 
 This manager uses the same handle scheme and synchronized free-list design as
 the bus-generator manager. Its pool entries are `0x120` bytes rather than
@@ -17,8 +18,23 @@ handles the same stale-generation protection. The manager can prepare all
 streams for an audio reset at `0x26A450`, synchronously stop them at `0x26A4C0`,
 and collect active handles at `0x26A530`.
 
-The creation path at `0x26AB60` accepts only the stream-specific option form
-whose format field is 3 and whose stream flag is set. `0x26AC30` then removes a
-free entry, selects the requested or default audio state, assigns the sound
-source, creates a fresh handle, and continues into stream initialization at
-`0x26ADA0`.
+The generator methods occupy `0x2692B0` through `0x26A26A`. Startup at
+`0x269980` polls `FMOD::Sound::getOpenState`, retries Studio-bus result 76 up to
+ten times, and falls back to the default channel group if the bus stays
+unavailable. Once the sound is ready, it reads both millisecond and PCM
+lengths, starts a paused channel, enables looping, captures the base frequency,
+applies volume, and enters the requested playing or paused state.
+
+The runtime update at `0x2694D0` handles invalid FMOD channel handles, pending
+startup, stopping, volume transitions, playback-rate changes, loop-point
+changes, millisecond seeks, pause synchronization, and 3D attributes. The
+small virtual methods at `0x269BF0` through `0x269D37` expose pause/resume,
+position, playback rate, loop points, audio-reset preparation, and stop
+behavior. Returning a generator to its pool at `0x269FB0` also unregisters its
+Studio-bus path.
+
+The adjacent block beginning at `0x26AB60` belongs to a larger streaming-clip
+manager rather than this 288-byte pool. Its initialized object uses fields
+through offset `0x20D`, creates decoder buffers, and acquires a nested
+`FmodAudioBusGenerator`. It is tracked separately while its callback and buffer
+types are reconstructed.

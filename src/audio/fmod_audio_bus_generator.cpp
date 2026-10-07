@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "fmod_audio_system.h"
 #include "fmod_listener.h"
 
 namespace rb4 {
@@ -14,9 +15,6 @@ constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
 constexpr FMOD_MODE kBusSoundMode2d = 0x00014080;
 constexpr FMOD_MODE kBusSoundMode3d = 0x00014090;
-constexpr std::int32_t kOpenStateReady = 0;
-constexpr FMOD_RESULT kBusGroupNotReady =
-    static_cast<FMOD_RESULT>(76);
 
 }  // namespace
 
@@ -78,116 +76,6 @@ bool FmodAudioBusGenerator::initialize_sound(
         playback_bus_ = nullptr;
     }
     return true;
-}
-
-// Reconstructed from eboot.elf at 0x269980.
-bool FmodAudioBusGenerator::try_start_sound() {
-    std::int32_t open_state = 0;
-    std::uint32_t percent_buffered = 0;
-    bool starving = false;
-    bool disk_busy = false;
-    sound_->getOpenState(
-        &open_state, &percent_buffered, &starving, &disk_busy);
-
-    FMOD::ChannelGroup* channel_group = nullptr;
-    if (playback_bus_ != nullptr) {
-        const auto result = playback_bus_->getChannelGroup(&channel_group);
-        if (result != FMOD_OK) {
-            if (result == kBusGroupNotReady && --bus_group_retries_ > 0) {
-                return false;
-            }
-            channel_group = nullptr;
-        }
-    }
-    if (open_state != kOpenStateReady) {
-        return false;
-    }
-
-    sound_->getLength(&length_ms_, FMOD_TIMEUNIT_MS);
-    sound_->getLength(&length_pcm_, FMOD_TIMEUNIT_PCM);
-    assigned_audio_state_->core_system->playSound(
-        sound_, channel_group, true, &playback_channel_);
-    playback_channel_->setMode(FMOD_LOOP_NORMAL);
-    playback_channel_->setLoopCount(0);
-    playback_channel_->getFrequency(&base_frequency);
-    playback_channel_->setVolume(volume_);
-
-    if (start_paused_) {
-        state = AudioClipFmodState::paused;
-    } else {
-        playback_channel_->setPaused(false);
-        state = AudioClipFmodState::playing;
-    }
-    return true;
-}
-
-// Reconstructed from eboot.elf at 0x2694D0. Transition-envelope updates are
-// kept in their own pending reconstruction; this preserves the FMOD lifecycle
-// and the state changes around them.
-bool FmodAudioBusGenerator::update() {
-    if (state == AudioClipFmodState::stopped) {
-        return false;
-    }
-
-    if (playback_channel_ != nullptr) {
-        bool playing = false;
-        const auto result = playback_channel_->isPlaying(&playing);
-        if (result == FMOD_ERR_INVALID_HANDLE) {
-            playback_channel_ = nullptr;
-            state = AudioClipFmodState::stopping;
-        } else if (result != FMOD_OK) {
-            state = AudioClipFmodState::stopping;
-        }
-    }
-
-    if (state == AudioClipFmodState::ready) {
-        try_start_sound();
-    } else if (state == AudioClipFmodState::stopping) {
-        stop_and_wait();
-        return false;
-    }
-
-    if (playback_channel_ == nullptr) {
-        return true;
-    }
-
-    if (state == AudioClipFmodState::playing) {
-        playback_channel_->setVolume(volume_);
-        playback_channel_->getPosition(
-            &current_position_ms_, FMOD_TIMEUNIT_MS);
-        if (pending_position_ms_ != UINT32_MAX &&
-            pending_position_ms_ != current_position_ms_ &&
-            playback_channel_->setPosition(
-                pending_position_ms_, FMOD_TIMEUNIT_MS) == FMOD_OK) {
-            current_position_ms_ = pending_position_ms_;
-            pending_position_ms_ = UINT32_MAX;
-        }
-    }
-
-    bool paused = false;
-    if (playback_channel_->getPaused(&paused) == FMOD_OK &&
-        paused != start_paused_ &&
-        playback_channel_->setPaused(start_paused_) == FMOD_OK) {
-        state = start_paused_
-            ? AudioClipFmodState::paused
-            : AudioClipFmodState::playing;
-    }
-
-    if (spatial_source != nullptr) {
-        const auto attributes = audio_build_fmod_3d_attributes(
-            spatial_source->transform());
-        playback_channel_->set3DAttributes(
-            &attributes.position, &attributes.velocity, nullptr);
-    }
-    return true;
-}
-
-void FmodAudioBusGenerator::request_paused(bool paused) {
-    start_paused_ = paused;
-}
-
-void FmodAudioBusGenerator::set_position_ms(std::uint32_t position) {
-    pending_position_ms_ = position;
 }
 
 FmodAudioBusGeneratorManager::FmodAudioBusGeneratorManager(

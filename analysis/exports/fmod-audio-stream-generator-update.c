@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_audio_bus_generator_update(__int64 a1, double a2, __m128 _XMM1, __m128 _XMM2)
+__int64 __fastcall fmod_audio_stream_generator_update(__int64 a1, double a2, __m128 _XMM1, __m128 _XMM2)
 {
   unsigned int v4; // r14d
   int v6; // eax
@@ -54,7 +54,7 @@ __int64 __fastcall fmod_audio_bus_generator_update(__int64 a1, double a2, __m128
   if ( v6 == 2 )
   {
 LABEL_15:
-    fmod_audio_bus_generator_try_start_sound(_RBX);
+    fmod_audio_stream_generator_try_start_sound(_RBX);
 LABEL_16:
     LOBYTE(v4) = 1;
     if ( *(_QWORD *)(_RBX + 88) == 0 )

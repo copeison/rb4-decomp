@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_audio_bus_generator_initialize_pool_slot(__int64 a1, __int64 a2, int a3)
+__int64 __fastcall fmod_audio_stream_generator_initialize_pool_slot(__int64 a1, __int64 a2, int a3)
 {
   __int64 result; // rax
 

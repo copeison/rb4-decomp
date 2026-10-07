@@ -242,6 +242,7 @@ class Channel : public ChannelControl {
 public:
     FMOD_RESULT setChannelGroup(ChannelGroup* channel_group);
     FMOD_RESULT getFrequency(float* frequency);
+    FMOD_RESULT setFrequency(float frequency);
     FMOD_RESULT getPosition(
         std::uint32_t* position,
         FMOD_TIMEUNIT unit);
@@ -279,6 +280,7 @@ public:
 
 class Sound {
 public:
+    FMOD_RESULT release();
     FMOD_RESULT getOpenState(
         std::int32_t* open_state,
         std::uint32_t* percent_buffered,

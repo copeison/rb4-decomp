@@ -33,28 +33,11 @@ handles whose active bit is set at `0x2687B0`. The small accessors at
 
 The higher-level creation paths at `0x268CA0`, `0x268D80`, and `0x268EF0`
 resolve sound data, take a free generator, initialize its playback controls,
-and create an asynchronous FMOD sound. The creation mode is `0x14080` for a
-normal 2D source and `0x14090` for a spatial source. A Studio-bus route stores
-the bus immediately and registers its resolved path with the engine.
-
-`fmod_audio_bus_generator_try_start_sound` at `0x269980` polls the asynchronous
-open state. It also asks a selected Studio bus for its channel group, retrying
-result 76 up to ten times before falling back to the default group. Once the
-sound reports ready, the generator reads its millisecond and PCM lengths,
-starts a paused low-level channel, enables normal looping with loop count zero,
-captures the base frequency, applies the initial volume, and finally enters
-the requested playing or paused state.
+and create an FMOD sound. The creation mode is `0x14080` for a normal 2D source
+and `0x14090` for a spatial source. A Studio-bus route stores the bus
+immediately and registers its resolved path with the engine.
 
 Several option fields used for gain conversion and transition envelopes in
 `0x268EF0` still lack stable engine names. The cleaned source exposes the
 confirmed start-paused, start-silent, route, and route-path fields while the
 remaining controls stay in the focused decompilation export.
-
-The runtime update at `0x2694D0` treats `FMOD_ERR_INVALID_HANDLE` as a lost
-channel and moves the generator toward stopped state. A ready generator polls
-the asynchronous startup helper, while a stopping generator stops and clears
-its channel. Active playback refreshes volume and millisecond position, applies
-a queued seek, synchronizes the requested paused state with FMOD, and updates
-3D attributes from the engine transform. The binary also advances two generic
-transition envelopes in this method; their callback payload types remain
-unnamed and are retained in the focused export.

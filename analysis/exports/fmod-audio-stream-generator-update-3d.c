@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_audio_bus_generator_update_3d(__int64 a1)
+__int64 __fastcall fmod_audio_stream_generator_update_3d(__int64 a1)
 {
   __int64 v2; // rdi
   _DWORD *v3; // rax

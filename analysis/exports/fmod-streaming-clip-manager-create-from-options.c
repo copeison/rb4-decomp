@@ -1,4 +1,4 @@
-__int64 *__fastcall fmod_audio_stream_manager_create_from_options(__int64 a1, __int64 *a2, __int64 a3)
+__int64 *__fastcall fmod_streaming_clip_manager_create_from_options(__int64 a1, __int64 *a2, __int64 a3)
 {
   __int64 v5; // rax
   __int64 v6; // rax
@@ -8,22 +8,20 @@ __int64 *__fastcall fmod_audio_stream_manager_create_from_options(__int64 a1, __
   __int64 v10; // rcx
   __int64 *v11; // rax
   __int64 v12; // rcx
-  __int64 *v13; // r15
-  double v14; // xmm0_8
-  __int64 v15; // rbx
-  double v16; // xmm0_8
-  char v17; // r14
+  __int64 v13; // r15
+  __int64 v14; // rbx
+  char v15; // r14
   __int64 *result; // rax
-  __int64 v20; // [rsp+8h] [rbp-48h]
-  __int64 v21; // [rsp+10h] [rbp-40h]
-  _QWORD v22[7]; // [rsp+18h] [rbp-38h] BYREF
+  __int64 v18; // [rsp+8h] [rbp-48h]
+  __int64 v19; // [rsp+10h] [rbp-40h]
+  _QWORD v20[7]; // [rsp+18h] [rbp-38h] BYREF
 
-  v22[1] = 0x6365786562696C2FLL;
+  v20[1] = 0x6365786562696C2FLL;
   v5 = *(_QWORD *)(a3 + 8);
   if ( v5 == 0 )
     v5 = sub_5C20(&g_sound_manager);
-  v20 = v5;
-  v21 = a3;
+  v18 = v5;
+  v19 = a3;
   v6 = sub_C14B0(&unk_19C90B0, *(_QWORD *)(a3 + 64), 1);
   v7 = unk_19C90E8;
   v8 = v6;
@@ -43,34 +41,34 @@ __int64 *__fastcall fmod_audio_stream_manager_create_from_options(__int64 a1, __
     *(_QWORD *)v11[1] = v12;
     *v11 = (__int64)v11;
     v11[1] = (__int64)v11;
-    v11[3] = v20;
+    v11[3] = v18;
     v11[4] = v7;
-    v13 = v11 - 5;
+    v13 = (__int64)(v11 - 5);
     sub_40720((__int64)(v11 - 5));
     v9 = *(_DWORD *)(a1 + 16);
   }
   else
   {
-    v13 = nullptr;
+    v13 = 0;
   }
   *(_DWORD *)(a1 + 16) = v9 - 1;
-  v14 = scePthreadMutexUnlock(a1 + 24);
-  if ( v13 == nullptr )
+  scePthreadMutexUnlock(a1 + 24);
+  if ( v13 == 0 )
     return nullptr;
-  v15 = *a2;
-  v22[0] = *a2;
-  if ( v22[0] != 0 )
+  v14 = *a2;
+  v20[0] = *a2;
+  if ( v20[0] != 0 )
   {
-    sub_1ADEB0(v15);
-    v17 = sub_26ADA0(v13, v22, v21, v16);
-    sub_1ADEF0(v15);
+    sub_1ADEB0(v14);
+    v15 = fmod_streaming_clip_initialize(v13, v20, v19);
+    sub_1ADEF0(v14);
   }
   else
   {
-    v17 = sub_26ADA0(v13, v22, v21, v14);
+    v15 = fmod_streaming_clip_initialize(v13, v20, v19);
   }
   result = nullptr;
-  if ( v17 != 0 )
-    return v13;
+  if ( v15 != 0 )
+    return (__int64 *)v13;
   return result;
 }

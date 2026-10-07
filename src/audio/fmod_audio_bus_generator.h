@@ -38,10 +38,6 @@ public:
     bool initialize_sound(
         const FmodAudioBusSound& sound,
         const FmodAudioBusGeneratorOptions& options);
-    bool try_start_sound();
-    bool update();
-    void request_paused(bool paused);
-    void set_position_ms(std::uint32_t position);
 
 private:
     friend class FmodAudioBusGeneratorManager;

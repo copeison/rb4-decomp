@@ -27,8 +27,9 @@ the source tree.
 | `0x267E50`-`0x26837A` | `AudioClipFmod` release lifecycle | `src/audio/audio_clip_fmod.cpp` | Deferred low-level channel release, Studio event teardown, invalid-handle handling, and blocking synchronous-update drain recovered. |
 | `0x266CB0`-`0x26759C` | `AudioClipFmod` DSP, playback startup, and Studio event callback | `src/audio/audio_clip_fmod.cpp` | `HMXRawAudioBus`, event/low-level fallback, HMX plugin binding, head-DSP insertion, parent routing, sample-rate base frequency, and callback readiness recovered. |
 | `0x267BB0`-`0x268479` | `AudioClipFmod` runtime controls | `src/audio/audio_clip_fmod.cpp` | Pause/resume state transitions, millisecond playback position, 3D attribute updates, and named Studio parameters recovered. |
-| `0x268380`, `0x268510`-`0x269BDB` | `FmodAudioBusGenerator` pool and playback | `src/audio/fmod_audio_bus_generator.cpp` | Fixed pool, stale-handle rejection, asynchronous sound creation, Studio-bus retry routing, channel startup, and initial playback state recovered. |
-| `0x269CF0`, `0x26A270`-`0x26AD9C` | `FmodAudioStreamGeneratorManager` pool and creation | `src/audio/fmod_audio_stream_generator.cpp` | MP3 stream type, 288-byte fixed pool, shared handle encoding, reset/stop dispatch, free-list allocation, and stream-option gate recovered. |
+| `0x268380`, `0x268510`-`0x26943F` | `FmodAudioBusGenerator` pool and creation | `src/audio/fmod_audio_bus_generator.cpp` | Fixed pool, stale-handle rejection, sound creation, and Studio-bus route registration recovered. |
+| `0x2692B0`, `0x2693B0`-`0x26AA9F` | `FmodAudioStreamGenerator` pool and playback | `src/audio/fmod_audio_stream_generator.cpp` | MP3 type, 288-byte pool, handles, asynchronous channel startup, loop points, seeking, pause control, volume, 3D updates, and teardown recovered. |
+| `0x26AB60`-`0x26C45A` | higher-level FMOD streaming clip | focused IDA exports | Resource gate, FMOD sound creation, decoder buffers, and nested bus-generator allocation identified; decoder callbacks remain in progress. |
 
 ## Game initialization
 
