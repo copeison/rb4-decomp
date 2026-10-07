@@ -21,6 +21,5 @@ void audio_dispatch_mix_consumers(
 
 void audio_reset_source_mix_timing(void* timing_entries);
 void audio_notify_post_mix(void* observers);
-void audio_clear_deferred_fmod_releases(FmodAudioState& state);
 
 }  // namespace rb4

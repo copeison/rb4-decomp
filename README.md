@@ -37,6 +37,8 @@ The downstream 128-sample listener pipeline is documented in
 [docs/audio-output-dispatch.md](docs/audio-output-dispatch.md).
 External FMOD system attachment and detachment is documented in
 [docs/fmod-system-attachment.md](docs/fmod-system-attachment.md).
+Deferred channel/DSP cleanup is documented in
+[docs/fmod-deferred-release.md](docs/fmod-deferred-release.md).
 
 ## Recreate the analysis ELF
 

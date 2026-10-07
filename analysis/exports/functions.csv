@@ -7005,7 +7005,7 @@ address,end,size,name,library,thunk
 0x2789D0,0x2789D3,3,sub_2789D0,False,False
 0x2789E0,0x2789E3,3,sub_2789E0,False,False
 0x2789F0,0x2789F3,3,sub_2789F0,False,False
-0x278A00,0x278B72,370,sub_278A00,False,False
+0x278A00,0x278B72,370,fmod_defer_channel_dsp_release,False,False
 0x278C40,0x278C48,8,sub_278C40,False,False
 0x278C50,0x278C55,5,sub_278C50,False,False
 0x278C60,0x278C66,6,sub_278C60,False,False
@@ -7016,7 +7016,7 @@ address,end,size,name,library,thunk
 0x278D10,0x278D47,55,sub_278D10,False,False
 0x278D50,0x278D72,34,sub_278D50,False,False
 0x278D80,0x278DE6,102,sub_278D80,False,False
-0x278DF0,0x278E93,163,sub_278DF0,False,False
+0x278DF0,0x278E93,163,fmod_process_deferred_releases,False,False
 0x278EA0,0x278ED2,50,sub_278EA0,False,False
 0x278EE0,0x278F12,50,sub_278EE0,False,False
 0x278F20,0x278F26,6,sub_278F20,False,False
@@ -48010,6 +48010,7 @@ address,end,size,name,library,thunk
 0x11281D0,0x11281E1,17,sub_11281D0,False,False
 0x11281F0,0x112832C,316,sub_11281F0,False,False
 0x1128370,0x112837C,12,sub_1128370,False,False
+0x1128380,0x11283EC,108,audio_register_mix_consumer,False,False
 0x1128480,0x1128496,22,sub_1128480,False,False
 0x11286E0,0x11287AF,207,sub_11286E0,False,False
 0x11287C0,0x11287C1,1,nullsub_4382,False,False

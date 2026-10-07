@@ -23,6 +23,7 @@
 - [x] Reconstruct the FMOD pre/post-mix callback and timing lifecycle.
 - [x] Reconstruct the 128-sample audio output listener dispatch.
 - [x] Reconstruct external FMOD Studio system attachment and detachment.
+- [x] Reconstruct deferred FMOD channel and DSP release processing.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

@@ -198,6 +198,17 @@ using FMOD_SYSTEM_CALLBACK = FMOD_RESULT (*)(
 
 namespace FMOD {
 
+class ChannelControl {
+public:
+    FMOD_RESULT stop();
+};
+
+class DSP {
+public:
+    FMOD_RESULT setUserData(void* user_data);
+    FMOD_RESULT release();
+};
+
 class System {
 public:
     FMOD_RESULT getVersion(std::uint32_t* version);

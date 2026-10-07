@@ -3,6 +3,7 @@
 #include "audio_output_dispatcher.h"
 #include "audio_runtime_adapters.h"
 #include "fmod_buffered_output.h"
+#include "fmod_deferred_release.h"
 #include "fmod_file_io.h"
 #include "fmod_mix_callback.h"
 
@@ -247,7 +248,7 @@ void fmod_audio_detach_studio_system(FmodAudioState& state) {
     while (audio_mix_semaphore_wait(state.mix_semaphore) != 0) {
     }
     state.shutting_down = true;
-    audio_clear_deferred_fmod_releases(state);
+    fmod_clear_deferred_releases(state);
     state.studio_system = nullptr;
     state.core_system = nullptr;
     audio_mix_semaphore_post(state.mix_semaphore);

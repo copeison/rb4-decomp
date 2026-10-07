@@ -4,6 +4,7 @@
 
 #include "audio_output_dispatcher.h"
 #include "fmod_api.h"
+#include "fmod_deferred_release.h"
 #include "fmod_mix_callback.h"
 
 namespace rb4 {
@@ -30,6 +31,7 @@ struct FmodAudioState {
     AudioTimingAccumulator engine_mix_timing;
     AudioTimingAccumulator fmod_mix_timing;
     AudioRollingTimingAccumulator buffer_set_timing;
+    FmodDeferredReleaseQueue deferred_releases;
     void* mix_semaphore = nullptr;
     void* mix_consumer_mutex = nullptr;
     void* mix_consumers = nullptr;
