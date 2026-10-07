@@ -29,8 +29,5 @@ bool game_initialize()
     runtime_terminate(0);
   ui_load_layout_by_id((__int64)&unk_1AFF588, 0x2Cu, 0);
   command_line_mark_switches_handled(arguments);
-  if ( v4 == 0x6365786562696C2FLL )
-    return true;
-  sub_1243210();
-  return game_run_frame();
+  return true;
 }

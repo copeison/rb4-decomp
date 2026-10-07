@@ -45,11 +45,26 @@ This creates the ignored persistent database at `analysis/ida/eboot.i64` and
 writes reviewable function, segment, entry-point, and source-path exports under
 `analysis/exports/`.
 
+## Resolve PS4 imports
+
+Use the matching SDK stubs to translate the executable's compact NIDs back to
+their original API names:
+
+```powershell
+python tools/resolve_ps4_imports.py
+```
+
+The resolver writes `analysis/exports/imports.csv`. Applying its verified names
+to IDA produces substantially clearer callers and pseudocode. The current
+database contains all unambiguous names recovered from the SDK.
+
 ## Local PS4 SDK
 
 Place the installed PS4 SDK 5.008 tree at `tools/ps4-sdk/`. That directory is
 excluded from Git while the extraction and IDA helper scripts beside it remain
-tracked. Build scripts will use this path as the local `SCE_ORBIS_SDK_DIR`.
+tracked. The headers and stubs are sufficient for import recovery. A future
+binary comparison build will also require the missing Orbis compiler and linker
+executables.
 
 ## Repository policy
 

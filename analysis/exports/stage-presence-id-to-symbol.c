@@ -1,7 +1,7 @@
 // Lazily interns the 22 StagePresenceId names and returns the Symbol value for the requested ID.
 __int64 stage_presence_id_to_symbol(int id)
 {
-  if ( byte_1AE5930 == 0 && (unsigned int)sub_1243270(&byte_1AE5930) != 0 )
+  if ( byte_1AE5930 == 0 && (unsigned int)_cxa_guard_acquire(&byte_1AE5930) != 0 )
   {
     sub_256FD0(qword_1AE5880, "kBandOverdrive");
     sub_256FD0(&unk_1AE5888, "kGreatGuitarSolo");
@@ -25,7 +25,7 @@ __int64 stage_presence_id_to_symbol(int id)
     sub_256FD0(&unk_1AE5918, "kGreatDrumSolo");
     sub_256FD0(&unk_1AE5920, "kSoloFiveStars");
     sub_256FD0(&unk_1AE5928, "kImprovGuitarGeneral");
-    sub_1243280(&byte_1AE5930);
+    _cxa_guard_release(&byte_1AE5930);
   }
   return qword_1AE5880[id];
 }

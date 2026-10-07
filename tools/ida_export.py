@@ -226,14 +226,14 @@ copy of the extracted executable.
 | Address range | `{summary['minimum_address']}` to `{summary['maximum_address']}` |
 | Segments | {summary['segment_count']:,} |
 | Functions | {summary['function_count']:,} |
-| Initially named functions | {summary['named_function_count']:,} |
+| Named functions | {summary['named_function_count']:,} |
 | IDA strings | {summary['string_count']:,} |
 | Recovered source paths | {summary['source_path_count']:,} |
 | Hex-Rays available | {str(summary['decompiler_available']).lower()} |
 
 ## Largest discovered functions
 
-| Address | Initial name | Size (bytes) |
+| Address | Current name | Size (bytes) |
 | --- | --- | ---: |
 {largest_lines}
 

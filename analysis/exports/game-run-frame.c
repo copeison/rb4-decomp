@@ -4,15 +4,11 @@ bool game_run_frame()
   __int64 v0; // rax
   __int64 v1; // rdi
   __int64 v2; // rsi
-  bool result; // al
-  char **v4; // rdx
-  int v5; // edi
-  char **v6; // rsi
-  _QWORD v7[4]; // [rsp+0h] [rbp-60h] BYREF
-  _QWORD *v8; // [rsp+20h] [rbp-40h]
-  __int64 v9; // [rsp+38h] [rbp-28h]
+  _QWORD v4[4]; // [rsp+0h] [rbp-60h] BYREF
+  _QWORD *v5; // [rsp+20h] [rbp-40h]
+  __int64 v6; // [rsp+38h] [rbp-28h]
 
-  v9 = 0x6365786562696C2FLL;
+  v6 = 0x6365786562696C2FLL;
   sub_369940();
   sub_7560(&unk_19C5638);
   if ( unk_1ADF350 != 0 )
@@ -38,44 +34,33 @@ bool game_run_frame()
   sub_BD9430(unk_1B01798);
   sub_928FC0(&unk_1ADFB78);
   sub_3DE0E0(unk_1A712A0);
-  if ( unk_1A712A0 != 0 )
+  if ( unk_1A712A0 == 0 )
+    return false;
+  v0 = sub_8CA4C0(unk_1AC9A78);
+  if ( v0 != 0 && (unsigned __int8)sub_8B1840(v0) != 0 )
   {
-    v0 = sub_8CA4C0(unk_1AC9A78);
-    if ( v0 != 0 && (unsigned __int8)sub_8B1840(v0) != 0 )
-    {
-      sub_3DEAA0(unk_1A712A0);
-    }
-    else
-    {
-      if ( (unsigned __int8)sub_43B130() != 0 )
-      {
-        v1 = *(_QWORD *)(unk_1A712A0 + 112LL);
-        v2 = *(unsigned int *)(*(_QWORD *)(unk_1A712A0 + 296LL) + 184LL);
-        v7[0] = &unk_18DC010;
-        v8 = v7;
-        sub_43B140(v1, v2, v7);
-        if ( v8 != nullptr )
-        {
-          (*(void (__fastcall **)(_QWORD *, bool))(*v8 + 32LL))(v8, v8 != v7);
-          v8 = nullptr;
-        }
-      }
-      if ( (unsigned __int8)sub_3DE130(unk_1A712A0) != 0 )
-      {
-        sub_8C9A80(unk_1AC9A78);
-        sub_3DE7C0(unk_1A712A0);
-      }
-    }
-    result = unk_19C54C8 == 0 && unk_1A712A0 != 0;
+    sub_3DEAA0(unk_1A712A0);
   }
   else
   {
-    result = false;
+    if ( (unsigned __int8)sub_43B130() != 0 )
+    {
+      v1 = *(_QWORD *)(unk_1A712A0 + 112LL);
+      v2 = *(unsigned int *)(*(_QWORD *)(unk_1A712A0 + 296LL) + 184LL);
+      v4[0] = &unk_18DC010;
+      v5 = v4;
+      sub_43B140(v1, v2, v4);
+      if ( v5 != nullptr )
+      {
+        (*(void (__fastcall **)(_QWORD *, bool))(*v5 + 32LL))(v5, v5 != v4);
+        v5 = nullptr;
+      }
+    }
+    if ( (unsigned __int8)sub_3DE130(unk_1A712A0) != 0 )
+    {
+      sub_8C9A80(unk_1AC9A78);
+      sub_3DE7C0(unk_1A712A0);
+    }
   }
-  if ( v9 != 0x6365786562696C2FLL )
-  {
-    sub_1243210();
-    return game_main(v5, v6, v4);
-  }
-  return result;
+  return unk_19C54C8 == 0 && unk_1A712A0 != 0;
 }

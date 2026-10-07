@@ -2,18 +2,17 @@
 __int64 ui_layout_id_to_symbol(int id)
 {
   __int64 result; // rax
-  __int64 v3; // [rsp+0h] [rbp-20h] BYREF
-  __int64 v4; // [rsp+8h] [rbp-18h]
+  _QWORD v3[4]; // [rsp+0h] [rbp-20h] BYREF
 
-  v4 = 0x6365786562696C2FLL;
+  v3[1] = 0x6365786562696C2FLL;
   if ( id == -1 )
   {
-    sub_256FD0(&v3, "kLayoutInvalid");
-    result = v3;
+    sub_256FD0(v3, "kLayoutInvalid");
+    return v3[0];
   }
   else
   {
-    if ( byte_1AFF510 == 0 && (unsigned int)sub_1243270(&byte_1AFF510) != 0 )
+    if ( byte_1AFF510 == 0 && (unsigned int)_cxa_guard_acquire(&byte_1AFF510) != 0 )
     {
       sub_256FD0(qword_1AFF1B0, "kLayoutTitle");
       sub_256FD0(&unk_1AFF1B8, "kLayoutSongSelect");
@@ -123,15 +122,10 @@ __int64 ui_layout_id_to_symbol(int id)
       sub_256FD0(&unk_1AFF4F8, "kLayoutClanInfoLanding");
       sub_256FD0(&unk_1AFF500, "kLayoutRockShopCustomizeTrack");
       sub_256FD0(&unk_1AFF508, "kLayoutRockShopCustomizeTrackR2T");
-      sub_1243280(&byte_1AFF510);
+      _cxa_guard_release(&byte_1AFF510);
     }
     result = qword_1AFF1B0[id];
-    v3 = result;
-  }
-  if ( v4 != 0x6365786562696C2FLL )
-  {
-    sub_1243210();
-    return sub_BB0F40();
+    v3[0] = result;
   }
   return result;
 }

@@ -5,11 +5,11 @@
   "minimum_address": "0x0",
   "maximum_address": "0x1B62528",
   "segment_count": 3,
-  "function_count": 50498,
-  "named_function_count": 59,
+  "function_count": 51850,
+  "named_function_count": 656,
   "entry_count": 1,
   "entry_address": "0x920",
-  "string_count": 35272,
+  "string_count": 37861,
   "source_path_count": 161,
   "decompiler_available": true,
   "largest_functions": [
@@ -23,8 +23,8 @@
     },
     {
       "address": "0xB385B0",
-      "end": "0xB46158",
-      "size": 56232,
+      "end": "0xB4614C",
+      "size": 56220,
       "name": "sub_B385B0",
       "library": false,
       "thunk": false
@@ -39,136 +39,136 @@
     },
     {
       "address": "0xB46180",
-      "end": "0xB4FFA0",
-      "size": 40480,
+      "end": "0xB4FF90",
+      "size": 40464,
       "name": "sub_B46180",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xE255D0",
-      "end": "0xE2F260",
-      "size": 40080,
+      "end": "0xE2F25C",
+      "size": 40076,
       "name": "sub_E255D0",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x79A50",
-      "end": "0x82E00",
-      "size": 37808,
+      "end": "0x82DFC",
+      "size": 37804,
       "name": "sub_79A50",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xF0FFC0",
-      "end": "0xF18320",
-      "size": 33632,
+      "end": "0xF18314",
+      "size": 33620,
       "name": "sub_F0FFC0",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x222350",
-      "end": "0x2296B0",
-      "size": 29536,
+      "end": "0x2296A6",
+      "size": 29526,
       "name": "sub_222350",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x11C420",
-      "end": "0x122D30",
-      "size": 26896,
+      "end": "0x122D28",
+      "size": 26888,
       "name": "sub_11C420",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x5C3660",
-      "end": "0x5C9E00",
-      "size": 26528,
+      "end": "0x5C9DFB",
+      "size": 26523,
       "name": "sub_5C3660",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xF56FA0",
-      "end": "0xF5CED0",
-      "size": 24368,
+      "end": "0xF5CECE",
+      "size": 24366,
       "name": "sub_F56FA0",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x66B430",
-      "end": "0x670C50",
-      "size": 22560,
+      "end": "0x670C43",
+      "size": 22547,
       "name": "sub_66B430",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xDF10B0",
-      "end": "0xDF6100",
-      "size": 20560,
+      "end": "0xDF60F6",
+      "size": 20550,
       "name": "sub_DF10B0",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xCDDAE0",
-      "end": "0xCE2880",
-      "size": 19872,
+      "end": "0xCE2870",
+      "size": 19856,
       "name": "sub_CDDAE0",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xAA6940",
-      "end": "0xAAB6D0",
-      "size": 19856,
+      "end": "0xAAB6C2",
+      "size": 19842,
       "name": "sub_AA6940",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x40B490",
-      "end": "0x410090",
-      "size": 19456,
+      "end": "0x41008E",
+      "size": 19454,
       "name": "sub_40B490",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xFCB070",
-      "end": "0xFCFC30",
-      "size": 19392,
+      "end": "0xFCFC29",
+      "size": 19385,
       "name": "sub_FCB070",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xC6FE80",
-      "end": "0xC747F0",
-      "size": 18800,
+      "end": "0xC747E6",
+      "size": 18790,
       "name": "sub_C6FE80",
       "library": false,
       "thunk": false
     },
     {
       "address": "0x8B2B70",
-      "end": "0x8B72A0",
-      "size": 18224,
+      "end": "0x8B729E",
+      "size": 18222,
       "name": "sub_8B2B70",
       "library": false,
       "thunk": false
     },
     {
       "address": "0xC05FD0",
-      "end": "0xC0A530",
-      "size": 17760,
+      "end": "0xC0A523",
+      "size": 17747,
       "name": "sub_C05FD0",
       "library": false,
       "thunk": false

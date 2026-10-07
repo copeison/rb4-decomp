@@ -6,7 +6,7 @@ status to two imported termination stubs.
 
 ```mermaid
 flowchart TD
-    A["start 0x920"] --> B["runtime setup and atexit registration"]
+    A["start 0x920"] --> B["_init_env and atexit registration"]
     B --> C["runtime_run_initializers 0x20"]
     C --> D["game_main 0x3C0"]
     D --> E["game_initialize 0xA0"]
@@ -14,7 +14,7 @@ flowchart TD
     F -->|continue| F
     F -->|stop| G["return 0"]
     E -->|failure| G
-    G --> H["platform termination stubs"]
+    G --> H["catchReturnFromMain and exit"]
 ```
 
 ## Recovered functions
@@ -32,11 +32,18 @@ These descriptive names are stored in the local IDA database and exported in
 
 ## Entrypoint imports
 
-The generic ELF loader does not currently resolve the PS4 NID imports, so the
-five PLT stubs called by `start` remain address-named. Control flow strongly
-suggests that the repeated stub at `0x1243230` registers exit handlers and that
-the last two stubs terminate the process. Those labels will remain unchanged
-until the Orbis dynamic symbol and relocation data provide direct evidence.
+The matching SDK stubs resolve every platform import used directly by `start`:
+
+| Address | Imported symbol | Role |
+| --- | --- | --- |
+| `0x1243220` | `_init_env` | Initializes the C runtime from the initial process stack. |
+| `0x1243230` | `atexit` | Registers the loader cleanup and executable finalizer callbacks. |
+| `0x1243240` | `catchReturnFromMain` | Passes the game return status back to the runtime. |
+| `0x1243250` | `exit` | Terminates the process with that status. |
+
+These names come from the binary NIDs in the PS4 SDK 5.008 stub libraries,
+rather than from control-flow inference. The raw entry-point decompilation is
+stored in `analysis/exports/entrypoint.c`.
 
 ## First source reconstruction
 

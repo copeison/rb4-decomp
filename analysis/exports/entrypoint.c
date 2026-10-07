@@ -1,17 +1,15 @@
-void __fastcall __noreturn start(unsigned int *a1, __int64 a2)
+void __fastcall __noreturn start(unsigned int *initial_stack, void (*rtld_cleanup)())
 {
   unsigned int v2; // r14d
-  unsigned int *v4; // r15
-  __int64 v5; // rdi
+  char **v4; // r15
 
-  v2 = *a1;
-  v4 = a1 + 2;
-  sub_1243220(a1);
-  sub_1243230(a2);
-  sub_1243230(runtime_run_finalizers);
-  runtime_run_initializers(v5);
-  LODWORD(a2) = game_main(v2, v4, 0);
-  sub_1243240((unsigned int)a2);
-  sub_1243250((unsigned int)a2);
-  BUG();
+  v2 = *initial_stack;
+  v4 = (char **)(initial_stack + 2);
+  init_env(initial_stack);
+  atexit(rtld_cleanup);
+  atexit(runtime_run_finalizers);
+  runtime_run_initializers();
+  LODWORD(rtld_cleanup) = game_main(v2, v4, nullptr);
+  catchReturnFromMain((int)rtld_cleanup);
+  exit((int)rtld_cleanup);
 }

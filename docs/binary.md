@@ -46,3 +46,9 @@ The executable imports standard Orbis services plus FMOD and FMOD Studio. The
 initial import set includes audio output, pad and USB input, networking, NP,
 save data, trophies, dialogs, PlayGo, video output, video decoding, voice,
 remote play, streaming, and system/user services.
+
+The executable contains 706 x86-64 PLT entries. Matching their encoded NIDs
+against the local SDK 5.008 stubs recovers 568 exact symbol names. The remaining
+138 entries belong to libraries that are not present in the supplied SDK stub
+set, primarily the two FMOD modules. See [imports.md](imports.md) for the method
+and current coverage.

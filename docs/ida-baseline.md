@@ -10,26 +10,26 @@ copy of the extracted executable.
 | Image base | `0x0` |
 | Address range | `0x0` to `0x1B62528` |
 | Segments | 3 |
-| Functions | 50,498 |
-| Initially named functions | 59 |
-| IDA strings | 35,272 |
+| Functions | 51,850 |
+| Named functions | 656 |
+| IDA strings | 37,861 |
 | Recovered source paths | 161 |
 | Hex-Rays available | true |
 
 ## Largest discovered functions
 
-| Address | Initial name | Size (bytes) |
+| Address | Current name | Size (bytes) |
 | --- | --- | ---: |
 | `0xB28240` | `sub_B28240` | 66,370 |
-| `0xB385B0` | `sub_B385B0` | 56,232 |
+| `0xB385B0` | `sub_B385B0` | 56,220 |
 | `0x603850` | `sub_603850` | 40,593 |
-| `0xB46180` | `sub_B46180` | 40,480 |
-| `0xE255D0` | `sub_E255D0` | 40,080 |
-| `0x79A50` | `sub_79A50` | 37,808 |
-| `0xF0FFC0` | `sub_F0FFC0` | 33,632 |
-| `0x222350` | `sub_222350` | 29,536 |
-| `0x11C420` | `sub_11C420` | 26,896 |
-| `0x5C3660` | `sub_5C3660` | 26,528 |
+| `0xB46180` | `sub_B46180` | 40,464 |
+| `0xE255D0` | `sub_E255D0` | 40,076 |
+| `0x79A50` | `sub_79A50` | 37,804 |
+| `0xF0FFC0` | `sub_F0FFC0` | 33,620 |
+| `0x222350` | `sub_222350` | 29,526 |
+| `0x11C420` | `sub_11C420` | 26,888 |
+| `0x5C3660` | `sub_5C3660` | 26,523 |
 
 The complete machine-readable exports are under `analysis/exports/`. These are
 the baseline for later naming and source reconstruction passes.
