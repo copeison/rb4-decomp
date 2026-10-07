@@ -1,17 +1,11 @@
 #include "fmod_audio_system.h"
 #include "fmod_buffered_output.h"
 #include "fmod_file_io.h"
+#include "fmod_mix_callback.h"
 
 #include <array>
 
 namespace rb4 {
-FMOD_RESULT fmod_system_callback(
-    FMOD_SYSTEM* system,
-    FMOD_SYSTEM_CALLBACK_TYPE type,
-    void* command_data1,
-    void* command_data2,
-    void* user_data);
-
 void audio_set_sample_rate(double sample_rate);
 void audio_clock_initialize(void* clock, std::uint32_t sample_rate);
 

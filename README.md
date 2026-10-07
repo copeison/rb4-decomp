@@ -31,6 +31,8 @@ Listener coordinate conversion is documented in
 [docs/fmod-listener.md](docs/fmod-listener.md).
 The custom `HMX.BufferedOutput` mode is documented in
 [docs/fmod-buffered-output.md](docs/fmod-buffered-output.md).
+FMOD's premix/postmix synchronization and timing path is documented in
+[docs/fmod-mix-callback.md](docs/fmod-mix-callback.md).
 
 ## Recreate the analysis ELF
 

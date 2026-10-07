@@ -17,6 +17,7 @@ the source tree.
 | `0x27A1C0`-`0x27A850` | FMOD file callbacks and asynchronous reader | `src/audio/fmod_file_io.cpp` | Open, close, read, seek, priority queue, worker, cancellation, and shutdown behavior recovered. |
 | `0x262300`, `0x27ACB0` | listener update and engine-to-FMOD transform conversion | `src/audio/fmod_listener.cpp` | Primary listener gating, 48-byte transform layout, handedness conversion, and zero velocity recovered. |
 | `0x2763F0`-`0x276520`, `0x2786D0` | `HMX.BufferedOutput` callbacks and custom-output initialization | `src/audio/fmod_buffered_output.cpp`, `src/audio/fmod_audio_system.cpp` | Output descriptor, 128 virtual drivers, format negotiation, update dispatch, and update-driven FMOD flags recovered. |
+| `0x2781C0`, `0x2783E0`, `0x278880`-`0x2789CD` | mix-buffer dispatch and FMOD pre/post-mix callback | `src/audio/fmod_mix_callback.cpp` | Semaphore ownership, mix sequence, source reset, observer dispatch, and cumulative/rolling timing recovered. |
 
 ## Game initialization
 

@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "fmod_api.h"
+#include "fmod_mix_callback.h"
 
 namespace rb4 {
 
@@ -23,6 +24,19 @@ struct FmodAudioState {
     std::int32_t max_channels = 0;
     void* audio_clock = nullptr;
     void* buffered_output_update_callback = nullptr;
+    bool shutting_down = false;
+    bool mix_in_progress = false;
+    std::uint64_t mix_sequence = 0;
+    AudioTimingAccumulator engine_mix_timing;
+    AudioTimingAccumulator fmod_mix_timing;
+    AudioRollingTimingAccumulator buffer_set_timing;
+    void* mix_semaphore = nullptr;
+    void* mix_consumer_mutex = nullptr;
+    void* mix_consumers = nullptr;
+    std::uint32_t mix_consumer_dispatch_depth = 0;
+    void* output_block_dispatcher = nullptr;
+    void* source_timing_entries = nullptr;
+    void* post_mix_observers = nullptr;
 };
 
 FMOD_RESULT fmod_audio_initialize(

@@ -13,12 +13,14 @@
 - [x] Reconstruct the top-level game initialization sequence.
 - [x] Reconstruct the main per-frame update and render schedule.
 - [x] Recover the complete UI layout ID and primary asset-path map.
-- [x] Resolve the private pad imports and reconstruct the special-controller calibration sample path.
+- [x] Resolve the private pad imports and reconstruct the special-controller
+  calibration sample path.
 - [x] Recover all FMOD 1.10.04 import names and apply them to IDA.
 - [x] Reconstruct FMOD module setup and the primary audio initialization path.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
+- [x] Reconstruct the FMOD pre/post-mix callback and timing lifecycle.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions
