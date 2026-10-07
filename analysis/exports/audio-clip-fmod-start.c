@@ -53,7 +53,7 @@ LABEL_5:
   }
   v4 = *(_QWORD *)(v9 + 768);
 LABEL_6:
-  FMOD::System::createDSP(v4, &unk_19B4840, _R14 + 392);
+  FMOD::System::createDSP(v4, &audio_clip_fmod_dsp_description_data, _R14 + 392);
   FMOD::DSP::setUserData(*((FMOD::DSP **)_R14 + 49), _R14);
   v27[0] = nullptr;
   if ( *((_DWORD *)_RBX + 10) != 1 )

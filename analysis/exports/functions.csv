@@ -963,7 +963,7 @@ address,end,size,name,library,thunk
 0x406D0,0x40714,68,sub_406D0,False,False
 0x40720,0x40763,67,sub_40720,False,False
 0x40770,0x407C0,80,sub_40770,False,False
-0x407C0,0x407D3,19,sub_407C0,False,False
+0x407C0,0x407D3,19,audio_clip_notify_event_dsp_attached,False,False
 0x40800,0x4082E,46,sub_40800,False,False
 0x40830,0x40851,33,sub_40830,False,False
 0x40860,0x4088C,44,sub_40860,False,False
@@ -6868,8 +6868,8 @@ address,end,size,name,library,thunk
 0x266BD0,0x266BD5,5,sub_266BD0,False,False
 0x266BE0,0x266BE1,1,nullsub_886,False,False
 0x266BF0,0x266CA7,183,sub_266BF0,False,False
-0x266CB0,0x266CCF,31,sub_266CB0,False,False
-0x266CD0,0x266F00,560,sub_266CD0,False,False
+0x266CB0,0x266CCF,31,audio_clip_fmod_dsp_set_position,False,False
+0x266CD0,0x266F00,560,audio_clip_fmod_dsp_read,False,False
 0x266F10,0x266F60,80,sub_266F10,False,False
 0x266F60,0x266F65,5,sub_266F60,False,True
 0x266F70,0x266F79,9,sub_266F70,False,False

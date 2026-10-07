@@ -1,6 +1,7 @@
 #include "audio_clip_fmod.h"
 
 #include <chrono>
+#include <cstring>
 #include <thread>
 
 #include "fmod_audio_system.h"
@@ -16,6 +17,15 @@ constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kAudioClipEventCallbacks =
 constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kEventDestroyed = 0x02;
 constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kCreateProgrammerSound = 0x80;
 constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE kDestroyProgrammerSound = 0x100;
+constexpr char kHmxDspNamePrefix[] = "HMX.";
+
+// Studio DSP plugins expose this shared prefix through FMOD user data. Only
+// the fields touched by the event callback have been recovered so far.
+struct HmxStudioDspUserData {
+    void* reserved[2];
+    AudioClipFmod* clip;
+    void* notify_on_attachment;
+};
 
 }  // namespace
 
@@ -92,9 +102,50 @@ void audio_clip_fmod_start(
     }
 }
 
-// Reconstructed from eboot.elf at 0x267310. The DSP enumeration and plugin
-// payload layout are kept behind a named adapter until those DSP types are
-// reconstructed.
+// Reconstructed from eboot.elf at 0x267310.
+void audio_clip_fmod_bind_event_dsp(
+    AudioClipFmod& clip,
+    FMOD::Studio::EventInstance& event_instance) {
+    FMOD::ChannelGroup* channel_group = nullptr;
+    event_instance.getChannelGroup(&channel_group);
+
+    std::int32_t dsp_count = 0;
+    channel_group->getNumDSPs(&dsp_count);
+    for (std::int32_t index = 0; index < dsp_count; ++index) {
+        FMOD::DSP* dsp = nullptr;
+        channel_group->getDSP(index, &dsp);
+
+        char name[256]{};
+        dsp->getInfo(name, nullptr, nullptr, nullptr, nullptr);
+        if (std::strncmp(name, kHmxDspNamePrefix, 4) != 0) {
+            continue;
+        }
+
+        void* user_data = nullptr;
+        dsp->getUserData(&user_data);
+        auto* hmx_data = static_cast<HmxStudioDspUserData*>(user_data);
+        if (hmx_data == nullptr) {
+            continue;
+        }
+
+        hmx_data->clip = &clip;
+        if (hmx_data->notify_on_attachment != nullptr &&
+            clip.spatial_source != nullptr) {
+            clip.spatial_source->notify_event_dsp_attached();
+        }
+    }
+
+    clip.base_frequency = static_cast<float>(clip.audio_state->sample_rate);
+    channel_group->addDSP(FMOD_CHANNELCONTROL_DSP_HEAD, clip.dsp);
+    if (clip.parent_channel_group != nullptr) {
+        clip.parent_channel_group->addGroup(channel_group, true, nullptr);
+    }
+    if (clip.runtime_owner != nullptr) {
+        clip.runtime_owner->attach(clip.runtime_link);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x267310.
 FMOD_RESULT audio_clip_fmod_event_callback(
     FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
     FMOD::Studio::EventInstance* event_instance,

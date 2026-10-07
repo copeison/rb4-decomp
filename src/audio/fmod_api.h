@@ -76,6 +76,7 @@ constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
 constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
 constexpr FMOD_MODE FMOD_3D = 0x10;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_MS = 0x01;
+constexpr std::int32_t FMOD_CHANNELCONTROL_DSP_HEAD = -3;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_PREMIX = 0x20;
@@ -220,6 +221,9 @@ public:
     FMOD_RESULT stop();
     FMOD_RESULT setPaused(bool paused);
     FMOD_RESULT removeDSP(DSP* dsp);
+    FMOD_RESULT getNumDSPs(std::int32_t* count);
+    FMOD_RESULT getDSP(std::int32_t index, DSP** dsp);
+    FMOD_RESULT addDSP(std::int32_t index, DSP* dsp);
     FMOD_RESULT setMode(FMOD_MODE mode);
     FMOD_RESULT set3DSpread(float angle);
     FMOD_RESULT set3DAttributes(
@@ -250,6 +254,13 @@ public:
 
 class DSP {
 public:
+    FMOD_RESULT getInfo(
+        char* name,
+        std::uint32_t* version,
+        std::int32_t* channels,
+        std::int32_t* config_width,
+        std::int32_t* config_height);
+    FMOD_RESULT getUserData(void** user_data);
     FMOD_RESULT setUserData(void* user_data);
     FMOD_RESULT release();
 };

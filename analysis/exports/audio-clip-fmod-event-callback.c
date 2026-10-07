@@ -56,7 +56,7 @@ LABEL_9:
               {
                 v15[2] = v20;
                 if ( v7[3] != 0 )
-                  sub_407C0();
+                  audio_clip_notify_event_dsp_attached();
               }
             }
           }

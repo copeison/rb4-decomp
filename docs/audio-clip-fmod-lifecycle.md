@@ -38,12 +38,20 @@ releases the DSP outside the clip callback path.
 Studio playback uses `audio_clip_fmod_release_event_instance` at `0x268080`.
 The event callback at `0x267310` marks stop-related callbacks ready directly.
 On its programmer-sound callback, it locates each custom `HMX.` DSP, attaches
-the clip to the DSP user data, inserts the DSP into the event channel group,
-and then marks the instance ready. Teardown clears that user data, removes the
-DSP from the event's channel group, stops the event immediately, releases the
-instance, and releases the DSP. If
+the clip to the DSP user data, and invokes the clip's attachment notification
+when requested by that payload. It takes the audio system sample rate as the
+clip's base frequency, inserts `HMXRawAudioBus` at
+`FMOD_CHANNELCONTROL_DSP_HEAD`, applies parent-group routing, and joins the
+runtime owner's active list before marking the instance ready. Teardown clears
+that user data, removes the DSP from the event's channel group, stops the event
+immediately, releases the instance, and releases the DSP. If
 `getChannelGroup` reports `FMOD_ERR_INVALID_HANDLE`, FMOD has already
 invalidated the event-owned objects, so the method only clears its pointers.
+
+The shared HMX Studio DSP payload is only partially named. Its fields at
+offsets `0x10` and `0x18` are proven to be the active clip pointer and a
+non-null attachment-notification flag. The leading 16 bytes remain reserved
+until a plugin constructor or owner establishes their meaning.
 
 `audio_clip_fmod_stop_and_wait` at `0x2682A0` prevents concurrent updates and
 runs both release paths. When a Studio system is available, it sleeps for one

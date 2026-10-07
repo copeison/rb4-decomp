@@ -42,6 +42,8 @@ FOCUSED_DECOMPILATIONS = {
     "special-pad-reader-set-calibration-mode": 0x8D3060,
     "audio-update-listener-attributes": 0x262300,
     "audio-clip-fmod-start": 0x266FD0,
+    "audio-clip-fmod-dsp-set-position": 0x266CB0,
+    "audio-clip-fmod-dsp-read": 0x266CD0,
     "audio-clip-fmod-event-callback": 0x267310,
     "audio-clip-fmod-pause": 0x267BB0,
     "audio-clip-fmod-resume": 0x267C00,

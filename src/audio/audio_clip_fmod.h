@@ -52,6 +52,7 @@ public:
 class AudioClipFmodSpatialSource {
 public:
     virtual ~AudioClipFmodSpatialSource() = default;
+    virtual void notify_event_dsp_attached() {}
     virtual const EngineTransform& transform() const = 0;
 };
 
@@ -73,9 +74,6 @@ struct AudioClipFmod {
 };
 
 const FMOD_DSP_DESCRIPTION* audio_clip_fmod_dsp_description();
-void audio_clip_fmod_bind_event_dsp(
-    AudioClipFmod& clip,
-    FMOD::Studio::EventInstance& event_instance);
 FMOD_RESULT audio_clip_fmod_event_callback(
     FMOD_STUDIO_EVENT_CALLBACK_TYPE type,
     FMOD::Studio::EventInstance* event_instance,
