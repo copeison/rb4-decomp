@@ -10,8 +10,105 @@ constexpr std::uint32_t kActiveHandleBit = 0x80000000;
 constexpr std::uint32_t kGenerationMask = 0x00003FFF;
 constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
+constexpr FMOD_MODE kBusSoundMode2d = 0x00014080;
+constexpr FMOD_MODE kBusSoundMode3d = 0x00014090;
+constexpr std::int32_t kOpenStateReady = 0;
+constexpr FMOD_RESULT kBusGroupNotReady =
+    static_cast<FMOD_RESULT>(76);
 
 }  // namespace
+
+void FmodAudioBusGenerator::initialize_pool_slot(
+    FmodAudioBusGeneratorManager& manager,
+    std::uint32_t index) {
+    manager_ = &manager;
+    pool_index_ = index;
+    reference_count_.store(0, std::memory_order_relaxed);
+    handle_ = 0;
+    sound_source_ = nullptr;
+    assigned_audio_state_ = nullptr;
+}
+
+void FmodAudioBusGenerator::stop_and_wait() {
+    if (playback_channel_ != nullptr) {
+        playback_channel_->stop();
+        playback_channel_ = nullptr;
+    }
+    state = AudioClipFmodState::stopped;
+}
+
+// Reconstructed from eboot.elf at 0x268EF0.
+bool FmodAudioBusGenerator::initialize_sound(
+    const FmodAudioBusSound& sound,
+    const FmodAudioBusGeneratorOptions& options) {
+    sound_ = nullptr;
+    playback_channel_ = nullptr;
+    playback_bus_ = nullptr;
+    bus_group_retries_ = 10;
+    length_ms_ = 0;
+    length_pcm_ = 0;
+    base_frequency = 0.0F;
+    start_paused_ = options.start_paused;
+    volume_ = options.start_silent ? 0.0F : 1.0F;
+    state = AudioClipFmodState::uninitialized;
+
+    const auto mode = sound.spatialized
+        ? kBusSoundMode3d
+        : kBusSoundMode2d;
+    if (assigned_audio_state_->core_system->createSound(
+            sound.path, mode, nullptr, &sound_) != FMOD_OK) {
+        return false;
+    }
+
+    state = AudioClipFmodState::ready;
+    if (options.route == AudioClipFmodRoute::studio_bus &&
+        assigned_audio_state_->studio_system->getBus(
+            options.route_path, &playback_bus_) != FMOD_OK) {
+        playback_bus_ = nullptr;
+    }
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x269980.
+bool FmodAudioBusGenerator::try_start_sound() {
+    std::int32_t open_state = 0;
+    std::uint32_t percent_buffered = 0;
+    bool starving = false;
+    bool disk_busy = false;
+    sound_->getOpenState(
+        &open_state, &percent_buffered, &starving, &disk_busy);
+
+    FMOD::ChannelGroup* channel_group = nullptr;
+    if (playback_bus_ != nullptr) {
+        const auto result = playback_bus_->getChannelGroup(&channel_group);
+        if (result != FMOD_OK) {
+            if (result == kBusGroupNotReady && --bus_group_retries_ > 0) {
+                return false;
+            }
+            channel_group = nullptr;
+        }
+    }
+    if (open_state != kOpenStateReady) {
+        return false;
+    }
+
+    sound_->getLength(&length_ms_, FMOD_TIMEUNIT_MS);
+    sound_->getLength(&length_pcm_, FMOD_TIMEUNIT_PCM);
+    assigned_audio_state_->core_system->playSound(
+        sound_, channel_group, true, &playback_channel_);
+    playback_channel_->setMode(FMOD_LOOP_NORMAL);
+    playback_channel_->setLoopCount(0);
+    playback_channel_->getFrequency(&base_frequency);
+    playback_channel_->setVolume(volume_);
+
+    if (start_paused_) {
+        state = AudioClipFmodState::paused;
+    } else {
+        playback_channel_->setPaused(false);
+        state = AudioClipFmodState::playing;
+    }
+    return true;
+}
 
 FmodAudioBusGeneratorManager::FmodAudioBusGeneratorManager(
     std::size_t capacity,

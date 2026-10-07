@@ -16,6 +16,18 @@ class FmodAudioBusGeneratorManager;
 
 using FmodAudioBusGeneratorHandle = std::uint32_t;
 
+struct FmodAudioBusSound {
+    const char* path = nullptr;
+    bool spatialized = false;
+};
+
+struct FmodAudioBusGeneratorOptions {
+    bool start_paused = false;
+    bool start_silent = false;
+    AudioClipFmodRoute route = AudioClipFmodRoute::low_level;
+    const char* route_path = nullptr;
+};
+
 class FmodAudioBusGenerator : public AudioClipFmod {
 public:
     void initialize_pool_slot(
@@ -23,6 +35,10 @@ public:
         std::uint32_t index);
     void prepare_for_manager_update();
     void stop_and_wait();
+    bool initialize_sound(
+        const FmodAudioBusSound& sound,
+        const FmodAudioBusGeneratorOptions& options);
+    bool try_start_sound();
 
 private:
     friend class FmodAudioBusGeneratorManager;
@@ -33,6 +49,14 @@ private:
     FmodAudioBusGeneratorHandle handle_ = 0;
     void* sound_source_ = nullptr;
     FmodAudioState* assigned_audio_state_ = nullptr;
+    FMOD::Sound* sound_ = nullptr;
+    FMOD::Channel* playback_channel_ = nullptr;
+    FMOD::Studio::Bus* playback_bus_ = nullptr;
+    std::uint32_t length_ms_ = 0;
+    std::uint32_t length_pcm_ = 0;
+    std::int32_t bus_group_retries_ = 10;
+    float volume_ = 1.0F;
+    bool start_paused_ = false;
     bool in_free_list_ = false;
 };
 

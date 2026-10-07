@@ -31,5 +31,19 @@ read and write the manager field at offset `0x38`.
 
 The higher-level creation paths at `0x268CA0`, `0x268D80`, and `0x268EF0`
 resolve sound data, take a free generator, initialize its playback controls,
-create the FMOD sound, and optionally route a Studio bus. Their detailed sound
-and option layouts remain the next reconstruction step.
+and create an asynchronous FMOD sound. The creation mode is `0x14080` for a
+normal 2D source and `0x14090` for a spatial source. A Studio-bus route stores
+the bus immediately and registers its resolved path with the engine.
+
+`fmod_audio_bus_generator_try_start_sound` at `0x269980` polls the asynchronous
+open state. It also asks a selected Studio bus for its channel group, retrying
+result 76 up to ten times before falling back to the default group. Once the
+sound reports ready, the generator reads its millisecond and PCM lengths,
+starts a paused low-level channel, enables normal looping with loop count zero,
+captures the base frequency, applies the initial volume, and finally enters
+the requested playing or paused state.
+
+Several option fields used for gain conversion and transition envelopes in
+`0x268EF0` still lack stable engine names. The cleaned source exposes the
+confirmed start-paused, start-silent, route, and route-path fields while the
+remaining controls stay in the focused decompilation export.

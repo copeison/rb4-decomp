@@ -75,7 +75,9 @@ constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
 constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
 constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
 constexpr FMOD_MODE FMOD_3D = 0x10;
+constexpr FMOD_MODE FMOD_LOOP_NORMAL = 0x02;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_MS = 0x01;
+constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_PCM = 0x02;
 constexpr std::int32_t FMOD_CHANNELCONTROL_DSP_HEAD = -3;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
@@ -215,11 +217,15 @@ namespace FMOD {
 class DSP;
 class Channel;
 class ChannelGroup;
+class Sound;
 
 class ChannelControl {
 public:
     FMOD_RESULT stop();
     FMOD_RESULT setPaused(bool paused);
+    FMOD_RESULT getPaused(bool* paused);
+    FMOD_RESULT isPlaying(bool* playing);
+    FMOD_RESULT setVolume(float volume);
     FMOD_RESULT removeDSP(DSP* dsp);
     FMOD_RESULT getNumDSPs(std::int32_t* count);
     FMOD_RESULT getDSP(std::int32_t index, DSP** dsp);
@@ -242,6 +248,12 @@ public:
     FMOD_RESULT setPosition(
         std::uint32_t position,
         FMOD_TIMEUNIT unit);
+    FMOD_RESULT setLoopPoints(
+        std::uint32_t loop_start,
+        FMOD_TIMEUNIT loop_start_unit,
+        std::uint32_t loop_end,
+        FMOD_TIMEUNIT loop_end_unit);
+    FMOD_RESULT setLoopCount(std::int32_t loop_count);
 };
 
 class ChannelGroup : public ChannelControl {
@@ -265,6 +277,18 @@ public:
     FMOD_RESULT release();
 };
 
+class Sound {
+public:
+    FMOD_RESULT getOpenState(
+        std::int32_t* open_state,
+        std::uint32_t* percent_buffered,
+        bool* starving,
+        bool* disk_busy);
+    FMOD_RESULT getLength(
+        std::uint32_t* length,
+        FMOD_TIMEUNIT unit);
+};
+
 class System {
 public:
     FMOD_RESULT getVersion(std::uint32_t* version);
@@ -279,6 +303,16 @@ public:
         DSP** dsp);
     FMOD_RESULT playDSP(
         DSP* dsp,
+        ChannelGroup* channel_group,
+        bool paused,
+        Channel** channel);
+    FMOD_RESULT createSound(
+        const char* path,
+        FMOD_MODE mode,
+        void* create_sound_info,
+        Sound** sound);
+    FMOD_RESULT playSound(
+        Sound* sound,
         ChannelGroup* channel_group,
         bool paused,
         Channel** channel);
@@ -327,6 +361,10 @@ namespace Studio {
 class Bus {
 public:
     FMOD_RESULT getChannelGroup(FMOD::ChannelGroup** channel_group);
+    FMOD_RESULT getPath(
+        char* path,
+        std::int32_t capacity,
+        std::int32_t* retrieved);
 };
 
 class EventDescription;

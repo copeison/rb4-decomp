@@ -6920,8 +6920,14 @@ address,end,size,name,library,thunk
 0x268CA0,0x268D78,216,fmod_audio_bus_manager_create_from_resource,False,False
 0x268D80,0x268EEC,364,fmod_audio_bus_manager_create_from_options,False,False
 0x268EF0,0x2692A3,947,fmod_audio_bus_generator_initialize_sound,False,False
-0x2692B0,0x2692DF,47,sub_2692B0,False,False
-0x269980,0x269B3E,446,sub_269980,False,False
+0x2692B0,0x2692DF,47,fmod_audio_bus_generator_initialize_pool_slot,False,False
+0x2692E0,0x2693AA,202,fmod_audio_bus_generator_register_bus_path,False,False
+0x2693B0,0x269434,132,fmod_audio_bus_generator_destruct,False,False
+0x269440,0x2694CB,139,fmod_audio_bus_generator_delete,False,False
+0x2694D0,0x269973,1187,fmod_audio_bus_generator_update,False,False
+0x269980,0x269B3E,446,fmod_audio_bus_generator_try_start_sound,False,False
+0x269B40,0x269B66,38,fmod_audio_bus_generator_apply_volume,False,False
+0x269B70,0x269BE1,113,fmod_audio_bus_generator_update_3d,False,False
 0x269C00,0x269C08,8,sub_269C00,False,False
 0x269C38,0x269C4D,21,sub_269C38,False,False
 0x269CB0,0x269CCC,28,sub_269CB0,False,False
