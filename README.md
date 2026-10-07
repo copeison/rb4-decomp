@@ -45,6 +45,12 @@ This creates the ignored persistent database at `analysis/ida/eboot.i64` and
 writes reviewable function, segment, entry-point, and source-path exports under
 `analysis/exports/`.
 
+## Local PS4 SDK
+
+Place the installed PS4 SDK 5.008 tree at `tools/ps4-sdk/`. That directory is
+excluded from Git while the extraction and IDA helper scripts beside it remain
+tracked. Build scripts will use this path as the local `SCE_ORBIS_SDK_DIR`.
+
 ## Repository policy
 
 Reverse-engineering notes, scripts, recovered declarations, and reconstructed

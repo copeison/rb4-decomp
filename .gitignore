@@ -15,6 +15,7 @@
 /sdk/
 /ps4-sdk/
 /PS4_SDK/
+/tools/ps4-sdk/
 
 # Python caches
 __pycache__/
