@@ -25,6 +25,8 @@ special-controller calibration path are described in
 recovery is documented in [docs/fmod-imports.md](docs/fmod-imports.md).
 The recovered FMOD startup sequence and custom DSP registration are described
 in [docs/audio-initialization.md](docs/audio-initialization.md).
+The file callback layer and its priority-based asynchronous reader are covered
+in [docs/fmod-file-io.md](docs/fmod-file-io.md).
 
 ## Recreate the analysis ELF
 

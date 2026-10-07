@@ -40,6 +40,16 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-audio-initialize": 0x2773C0,
     "fmod-register-custom-dsp-plugins": 0x278270,
     "fmod-audio-initialize-custom-output": 0x2786D0,
+    "fmod-file-handle-open": 0x279FE0,
+    "fmod-async-file-reader-initialize": 0x27A1C0,
+    "fmod-async-file-reader-thread": 0x27A270,
+    "fmod-async-file-reader-shutdown": 0x27A460,
+    "fmod-file-seek": 0x27A4D0,
+    "fmod-file-read": 0x27A530,
+    "fmod-file-open": 0x27A5A0,
+    "fmod-file-close": 0x27A6D0,
+    "fmod-file-async-read": 0x27A780,
+    "fmod-file-async-cancel": 0x27A850,
 }
 
 

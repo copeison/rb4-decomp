@@ -9,7 +9,11 @@
 
 enum FMOD_RESULT : std::int32_t {
     FMOD_OK = 0,
+    FMOD_ERR_FILE_BAD = 13,
+    FMOD_ERR_FILE_EOF = 16,
+    FMOD_ERR_FILE_NOTFOUND = 18,
     FMOD_ERR_HEADER_MISMATCH = 20,
+    FMOD_ERR_INVALID_HANDLE = 31,
 };
 
 enum FMOD_OUTPUTTYPE : std::int32_t {
@@ -72,9 +76,27 @@ static_assert(offsetof(FMOD_ADVANCEDSETTINGS, stackSizeMixer) == 104);
 static_assert(offsetof(FMOD_ADVANCEDSETTINGS, commandQueueSize) == 112);
 static_assert(sizeof(FMOD_STUDIO_ADVANCEDSETTINGS) == 20);
 
-struct FMOD_ASYNCREADINFO;
 struct FMOD_DSP_DESCRIPTION;
 struct FMOD_SYSTEM;
+
+struct FMOD_ASYNCREADINFO;
+using FMOD_ASYNCDONE_FUNC = void (*)(FMOD_ASYNCREADINFO*, FMOD_RESULT);
+
+struct FMOD_ASYNCREADINFO {
+    void* handle;
+    std::uint32_t offset;
+    std::uint32_t sizebytes;
+    std::int32_t priority;
+    void* userdata;
+    void* buffer;
+    std::uint32_t bytesread;
+    FMOD_ASYNCDONE_FUNC done;
+};
+
+static_assert(sizeof(FMOD_ASYNCREADINFO) == 56);
+static_assert(offsetof(FMOD_ASYNCREADINFO, priority) == 16);
+static_assert(offsetof(FMOD_ASYNCREADINFO, buffer) == 32);
+static_assert(offsetof(FMOD_ASYNCREADINFO, done) == 48);
 
 using FMOD_FILE_OPEN_CALLBACK = FMOD_RESULT (*)(
     const char*, std::uint32_t*, void**, void*);
@@ -146,4 +168,3 @@ public:
 
 }  // namespace Studio
 }  // namespace FMOD
-

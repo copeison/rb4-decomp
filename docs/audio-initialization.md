@@ -75,3 +75,6 @@ the game's output plugin, applies stored DSP-buffer and software-format values,
 then initializes Studio with non-default flags. These paths are exported as
 analysis evidence but remain separate from the primary cleaned routine until
 their owning state layout is reconstructed.
+
+The installed file callbacks are reconstructed separately in
+`docs/fmod-file-io.md`.
