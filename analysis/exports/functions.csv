@@ -1,8 +1,8 @@
 address,end,size,name,library,thunk
-0x20,0x7B,91,sub_20,False,False
-0xA0,0x190,240,sub_A0,False,False
-0x190,0x3C0,560,sub_190,False,False
-0x3C0,0x3DD,29,sub_3C0,False,False
+0x20,0x7B,91,runtime_run_initializers,False,False
+0xA0,0x190,240,game_initialize,False,False
+0x190,0x3C0,560,game_run_frame,False,False
+0x3C0,0x3DD,29,game_main,False,False
 0x500,0x541,65,sub_500,False,False
 0x550,0x55E,14,sub_550,False,False
 0x850,0x85F,15,sub_850,False,False
@@ -49810,7 +49810,7 @@ address,end,size,name,library,thunk
 0x1243150,0x1243153,3,sub_1243150,False,False
 0x1243180,0x1243181,1,nullsub_4721,False,False
 0x1243190,0x1243195,5,sub_1243190,False,True
-0x12431A0,0x12431EC,76,sub_12431A0,False,False
+0x12431A0,0x12431EC,76,runtime_run_finalizers,False,False
 0x1243200,0x1243210,16,sub_1243200,False,False
 0x1243210,0x1243220,16,sub_1243210,False,False
 0x1243220,0x1243230,16,sub_1243220,False,False

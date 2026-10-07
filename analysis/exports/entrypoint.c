@@ -8,9 +8,9 @@ void __fastcall __noreturn start(unsigned int *a1, __int64 a2)
   v4 = a1 + 2;
   sub_1243220(a1);
   sub_1243230(a2);
-  sub_1243230(sub_12431A0);
-  sub_20(v5);
-  LODWORD(a2) = sub_3C0(v2, v4, 0);
+  sub_1243230(runtime_run_finalizers);
+  runtime_run_initializers(v5);
+  LODWORD(a2) = game_main(v2, v4, 0);
   sub_1243240((unsigned int)a2);
   sub_1243250((unsigned int)a2);
   BUG();

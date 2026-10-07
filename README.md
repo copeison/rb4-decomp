@@ -14,7 +14,8 @@ IDA database files stay local and are excluded from Git.
   `D:/TeamCity/buildAgent/work/de1ea97e21c98eba/main/rockband/build/rockband_ps4_s.elf`
 
 See [docs/binary.md](docs/binary.md) for the binary inventory and
-[docs/status.md](docs/status.md) for analysis milestones.
+[docs/status.md](docs/status.md) for analysis milestones. The first recovered
+control flow is documented in [docs/startup.md](docs/startup.md).
 
 ## Recreate the analysis ELF
 

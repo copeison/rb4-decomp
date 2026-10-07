@@ -6,7 +6,7 @@
 - [x] Identify the executable format and compiler SDK baseline.
 - [x] Prepare an IDA-compatible analysis copy without modifying program data.
 - [x] Create the persistent IDA database and export the initial function map.
-- [ ] Recover and name the startup path.
+- [x] Recover and name the startup path.
 - [ ] Classify major subsystems and source translation units.
 - [ ] Begin function-by-function C++ reconstruction.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
