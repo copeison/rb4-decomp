@@ -28780,7 +28780,7 @@ address,end,size,name,library,thunk
 0x996F00,0x9970D3,467,sub_996F00,False,False
 0x9970E0,0x9972B3,467,sub_9970E0,False,False
 0x9972C0,0x997493,467,sub_9972C0,False,False
-0x997590,0x99777D,493,sub_997590,False,False
+0x997590,0x99777D,493,stage_presence_id_to_symbol,False,False
 0x997780,0x9979D0,592,stage_presence_register_ids,False,False
 0x9979D0,0x997EE0,1296,sub_9979D0,False,False
 0x997EE0,0x997F4B,107,sub_997EE0,False,False

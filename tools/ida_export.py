@@ -24,6 +24,7 @@ FOCUSED_DECOMPILATIONS = {
     "game-initialize": 0xA0,
     "game-run-frame": 0x190,
     "game-main": 0x3C0,
+    "stage-presence-id-to-symbol": 0x997590,
     "command-line-mark-switches-handled": 0x252BC0,
 }
 

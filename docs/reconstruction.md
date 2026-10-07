@@ -7,6 +7,7 @@ the source tree.
 | Address | Reconstructed symbol | Source | Status |
 | --- | --- | --- | --- |
 | `0x3C0` | `game_main` | `src/game/main.cpp` | Control flow recovered; dependent functions are still being reconstructed. |
+| `0x997590` | `stage_presence_id_to_symbol` | `src/game/stage_presence.cpp` | All 22 enum values and their interned symbol strings recovered. |
 | `0x252BC0` | `command_line_mark_switches_handled` | `src/core/command_line.cpp` | Complete behavior and observed container layout reconstructed. |
 
 ## Command-line argument layout
@@ -19,3 +20,11 @@ argument whose first character is `-`.
 
 The structure names are descriptive because original symbols are unavailable.
 Offset and size assertions preserve the observed binary layout.
+
+## Stage presence IDs
+
+The function at `0x997590` initializes a guarded table of 22 eight-byte engine
+symbols and indexes it directly with the requested ID. Every symbol string is
+embedded beside the function, which makes the enum order exact. The cleaned
+source uses a function-local static array to express the same one-time
+initialization without reproducing compiler guard internals.
