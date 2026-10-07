@@ -20,11 +20,11 @@ executable's dynamic symbols and jump relocations.
 
 The resolved set includes the C and C++ runtimes and the kernel, POSIX, GNM,
 NP, HTTP, USB, pad, video, save-data, dialog, PlayGo, and user-service APIs.
-The unresolved entries group into two large external modules and one small
-module that are absent from the installed SDK stubs. String evidence elsewhere
-in the executable identifies the large external dependency as FMOD and FMOD
-Studio; those names will require their matching middleware libraries or
-independent call-site recovery.
+The executable's own dynamic module table identifies the unresolved entries
+precisely: 76 are from `libfmod`, 59 from `libfmodstudio`, and three from
+`libScePad`. The FMOD names require matching middleware import libraries or
+independent call-site recovery. The three pad NIDs are not present in the
+supplied 5.008 stub set and will be recovered from their callers.
 
 ## Reproduce the export
 
@@ -36,6 +36,6 @@ python tools/resolve_ps4_imports.py files/eboot.elf `
   --output analysis/exports/imports.csv
 ```
 
-The CSV preserves the PLT and GOT addresses, encoded symbol, NID, library and
-module identifiers, resolved name, source stub libraries, and resolution
-status. Only unique matches are safe to apply automatically to IDA.
+The CSV preserves the PLT and GOT addresses, encoded symbol, NID, decoded
+library and module names, resolved API name, source stub libraries, and
+resolution status. Only unique matches are safe to apply automatically to IDA.

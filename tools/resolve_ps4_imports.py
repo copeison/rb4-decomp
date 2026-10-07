@@ -23,6 +23,8 @@ PT_LOAD = 1
 PT_SCE_DYNLIBDATA = 0x61000000
 
 DT_NULL = 0
+DT_SCE_NEEDED_MODULE = 0x6100000F
+DT_SCE_IMPORT_LIB = 0x61000015
 DT_SCE_JMPREL = 0x61000029
 DT_SCE_PLTRELSZ = 0x6100002D
 DT_SCE_STRTAB = 0x61000035
@@ -187,15 +189,50 @@ def find_program_header(elf: ElfLayout, header_type: int) -> ProgramHeader:
     raise ValueError(f"ELF program header 0x{header_type:X} was not found")
 
 
-def read_dynamic_tags(elf: ElfLayout) -> dict[int, int]:
+def read_dynamic_entries(elf: ElfLayout) -> list[tuple[int, int]]:
     dynamic = find_program_header(elf, PT_DYNAMIC)
-    tags: dict[int, int] = {}
+    entries: list[tuple[int, int]] = []
     for offset in range(dynamic.offset, dynamic.offset + dynamic.file_size, 16):
         tag, value = struct.unpack_from("<QQ", elf.data, offset)
         if tag == DT_NULL:
             break
-        tags[tag] = value
-    return tags
+        entries.append((tag, value))
+    return entries
+
+
+def read_dynamic_tags(entries: Iterable[tuple[int, int]]) -> dict[int, int]:
+    return {tag: value for tag, value in entries}
+
+
+def decode_compact_id(value: str) -> int | None:
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-"
+    result = 0
+    for character in value:
+        index = alphabet.find(character)
+        if index < 0:
+            return None
+        result = result * 64 + index
+    return result
+
+
+def read_import_names(
+    elf: ElfLayout,
+    dynlib: ProgramHeader,
+    tags: dict[int, int],
+    entries: Iterable[tuple[int, int]],
+) -> tuple[dict[int, str], dict[int, str]]:
+    string_offset = dynlib.offset + tags[DT_SCE_STRTAB]
+    strings = elf.data[string_offset : string_offset + tags[DT_SCE_STRSZ]]
+    libraries: dict[int, str] = {}
+    modules: dict[int, str] = {}
+    for tag, value in entries:
+        name = read_c_string(strings, value & 0xFFFFFFFF)
+        identifier = (value >> 48) & 0xFFFF
+        if tag == DT_SCE_IMPORT_LIB:
+            libraries[identifier] = name
+        elif tag == DT_SCE_NEEDED_MODULE:
+            modules[identifier] = name
+    return libraries, modules
 
 
 def require_tags(tags: dict[int, int], required: Iterable[int]) -> None:
@@ -240,7 +277,8 @@ def find_plt_address(elf: ElfLayout, relocation_count: int) -> int:
 def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
     elf = parse_elf(elf_path)
     dynlib = find_program_header(elf, PT_SCE_DYNLIBDATA)
-    tags = read_dynamic_tags(elf)
+    dynamic_entries = read_dynamic_entries(elf)
+    tags = read_dynamic_tags(dynamic_entries)
     require_tags(
         tags,
         (
@@ -269,6 +307,9 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
     relocation_count = tags[DT_SCE_PLTRELSZ] // RELOCATION.size
     plt_address = find_plt_address(elf, relocation_count)
     sdk_nids = load_sdk_nids(sdk_root)
+    library_names, module_names = read_import_names(
+        elf, dynlib, tags, dynamic_entries
+    )
 
     rows: list[dict[str, object]] = []
     for index in range(relocation_count):
@@ -280,6 +321,8 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
         nid = parts[0] if parts else ""
         library_id = parts[1] if len(parts) > 1 else ""
         module_id = parts[2] if len(parts) > 2 else ""
+        library_number = decode_compact_id(library_id)
+        module_number = decode_compact_id(module_id)
 
         candidates = sdk_nids.get(nid, {})
         names = sorted(candidates)
@@ -307,7 +350,9 @@ def resolve_imports(elf_path: Path, sdk_root: Path) -> list[dict[str, object]]:
                 "encoded_symbol": encoded_symbol,
                 "nid": nid,
                 "library_id": library_id,
+                "library_name": library_names.get(library_number, ""),
                 "module_id": module_id,
+                "module_name": module_names.get(module_number, ""),
                 "resolved_name": resolved_name,
                 "stub_libraries": ";".join(libraries),
                 "status": status,
