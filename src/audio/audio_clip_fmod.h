@@ -8,6 +8,7 @@
 namespace rb4 {
 
 struct FmodAudioState;
+struct EngineTransform;
 
 enum class AudioClipFmodState : std::int32_t {
     uninitialized = 0,
@@ -25,7 +26,7 @@ enum class AudioClipFmodRoute : std::int32_t {
 };
 
 struct AudioClipFmodParameter {
-    std::uint64_t key = 0;
+    const char* name = nullptr;
     float value = 0.0F;
 };
 
@@ -48,9 +49,16 @@ public:
     void unlock();
 };
 
+class AudioClipFmodSpatialSource {
+public:
+    virtual ~AudioClipFmodSpatialSource() = default;
+    virtual const EngineTransform& transform() const = 0;
+};
+
 struct AudioClipFmod {
     AudioClipFmodState state = AudioClipFmodState::uninitialized;
     FmodAudioState* audio_state = nullptr;
+    AudioClipFmodSpatialSource* spatial_source = nullptr;
     void* runtime_link = nullptr;
     AudioClipFmodRuntimeOwner* runtime_owner = nullptr;
     FMOD::DSP* dsp = nullptr;
@@ -65,10 +73,6 @@ struct AudioClipFmod {
 };
 
 const FMOD_DSP_DESCRIPTION* audio_clip_fmod_dsp_description();
-void audio_clip_fmod_set_parameter(
-    AudioClipFmod& clip,
-    std::uint64_t key,
-    float value);
 void audio_clip_fmod_bind_event_dsp(
     AudioClipFmod& clip,
     FMOD::Studio::EventInstance& event_instance);
@@ -86,5 +90,21 @@ void audio_clip_fmod_release_event_instance(AudioClipFmod& clip);
 void audio_clip_fmod_process_release(AudioClipFmod& clip);
 void audio_clip_fmod_release_dsp(AudioClipFmod& clip);
 void audio_clip_fmod_stop_and_wait(AudioClipFmod& clip);
+void audio_clip_fmod_pause(AudioClipFmod& clip);
+void audio_clip_fmod_resume(AudioClipFmod& clip);
+float audio_clip_fmod_get_channel_position_ms(const AudioClipFmod& clip);
+float audio_clip_fmod_get_position_ms(const AudioClipFmod& clip);
+void audio_clip_fmod_set_position_ms(
+    AudioClipFmod& clip,
+    float milliseconds);
+void audio_clip_fmod_update_3d_attributes(AudioClipFmod& clip);
+bool audio_clip_fmod_set_event_parameter(
+    AudioClipFmod& clip,
+    const char* name,
+    float value);
+bool audio_clip_fmod_get_event_parameter(
+    const AudioClipFmod& clip,
+    const char* name,
+    float& value);
 
 }  // namespace rb4

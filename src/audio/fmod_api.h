@@ -60,6 +60,7 @@ static_assert(offsetof(FMOD_3D_ATTRIBUTES, up) == 36);
 
 using FMOD_INITFLAGS = std::uint32_t;
 using FMOD_MODE = std::uint32_t;
+using FMOD_TIMEUNIT = std::uint32_t;
 using FMOD_STUDIO_INITFLAGS = std::uint32_t;
 using FMOD_SYSTEM_CALLBACK_TYPE = std::uint32_t;
 using FMOD_STUDIO_EVENT_CALLBACK_TYPE = std::uint32_t;
@@ -74,6 +75,7 @@ constexpr FMOD_INITFLAGS FMOD_INIT_STREAM_FROM_UPDATE = 0x01;
 constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
 constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
 constexpr FMOD_MODE FMOD_3D = 0x10;
+constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_MS = 0x01;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_NORMAL = 0;
 constexpr FMOD_STUDIO_INITFLAGS FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE = 0x04;
 constexpr FMOD_SYSTEM_CALLBACK_TYPE FMOD_SYSTEM_CALLBACK_PREMIX = 0x20;
@@ -220,12 +222,22 @@ public:
     FMOD_RESULT removeDSP(DSP* dsp);
     FMOD_RESULT setMode(FMOD_MODE mode);
     FMOD_RESULT set3DSpread(float angle);
+    FMOD_RESULT set3DAttributes(
+        const FMOD_VECTOR* position,
+        const FMOD_VECTOR* velocity,
+        const FMOD_VECTOR* alternate_pan_position);
 };
 
 class Channel : public ChannelControl {
 public:
     FMOD_RESULT setChannelGroup(ChannelGroup* channel_group);
     FMOD_RESULT getFrequency(float* frequency);
+    FMOD_RESULT getPosition(
+        std::uint32_t* position,
+        FMOD_TIMEUNIT unit);
+    FMOD_RESULT setPosition(
+        std::uint32_t position,
+        FMOD_TIMEUNIT unit);
 };
 
 class ChannelGroup : public ChannelControl {
@@ -308,6 +320,7 @@ public:
 
 class EventDescription;
 class EventInstance;
+class ParameterInstance;
 
 using EventCallback = FMOD_RESULT (*)(
     FMOD_STUDIO_EVENT_CALLBACK_TYPE,
@@ -326,6 +339,18 @@ public:
     FMOD_RESULT start();
     FMOD_RESULT stop(FMOD_STUDIO_STOP_MODE mode);
     FMOD_RESULT release();
+    FMOD_RESULT getTimelinePosition(std::int32_t* position);
+    FMOD_RESULT setTimelinePosition(std::int32_t position);
+    FMOD_RESULT set3DAttributes(const FMOD_3D_ATTRIBUTES* attributes);
+    FMOD_RESULT setParameterValue(const char* name, float value);
+    FMOD_RESULT getParameter(
+        const char* name,
+        ParameterInstance** parameter) const;
+};
+
+class ParameterInstance {
+public:
+    FMOD_RESULT getValue(float* value) const;
 };
 
 class EventDescription {

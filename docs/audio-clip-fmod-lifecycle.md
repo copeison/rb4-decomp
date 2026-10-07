@@ -19,6 +19,15 @@ spatial clip enables FMOD mode `0x10` and applies its 3D spread. Parent channel
 group routing, the channel's base frequency, and the requested pause state are
 set before the clip joins its runtime owner's active list.
 
+The runtime controls share the same channel/event split. Pause and resume at
+`0x267BB0` and `0x267C00` call the matching FMOD object and update the clip
+state. Position accessors at `0x267C60` through `0x267D64` use
+`FMOD_TIMEUNIT_MS` for low-level channels and Studio timeline milliseconds for
+events. The 3D updater at `0x267E70` rebuilds the engine transform in FMOD's
+coordinate system and sends either the position/velocity pair or the complete
+Studio attributes. The wrappers at `0x2683F0` and `0x268410` set and get named
+Studio event parameters.
+
 Low-level playback uses `audio_clip_fmod_defer_channel_release` at `0x267FB0`.
 It enters the stopping state, detaches the clip from its runtime owner, clears
 the DSP user-data pointer under that owner's mutex, and sends the channel/DSP

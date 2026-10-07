@@ -5,6 +5,7 @@
 
 #include "fmod_audio_system.h"
 #include "fmod_deferred_release.h"
+#include "fmod_listener.h"
 
 namespace rb4 {
 
@@ -50,8 +51,8 @@ void audio_clip_fmod_start(
             description->createInstance(&clip.event_instance);
             clip.event_instance->setUserData(&clip);
             for (const auto& parameter : options.event_parameters) {
-                audio_clip_fmod_set_parameter(
-                    clip, parameter.key, parameter.value);
+                audio_clip_fmod_set_event_parameter(
+                    clip, parameter.name, parameter.value);
             }
             clip.event_instance->setCallback(
                 audio_clip_fmod_event_callback,
@@ -228,6 +229,112 @@ void audio_clip_fmod_stop_and_wait(AudioClipFmod& clip) {
     }
 
     clip.stop_in_progress = false;
+}
+
+// Reconstructed from eboot.elf at 0x267BB0.
+void audio_clip_fmod_pause(AudioClipFmod& clip) {
+    if (clip.state == AudioClipFmodState::paused ||
+        clip.state == AudioClipFmodState::stopped ||
+        clip.state == AudioClipFmodState::stopping) {
+        return;
+    }
+    if (clip.channel != nullptr) {
+        clip.channel->setPaused(true);
+    } else if (clip.event_instance != nullptr) {
+        clip.event_instance->setPaused(true);
+    }
+    clip.state = AudioClipFmodState::paused;
+}
+
+// Reconstructed from eboot.elf at 0x267C00.
+void audio_clip_fmod_resume(AudioClipFmod& clip) {
+    if (clip.state == AudioClipFmodState::stopped ||
+        clip.state == AudioClipFmodState::stopping) {
+        return;
+    }
+    if (clip.channel != nullptr) {
+        clip.channel->setPaused(false);
+        clip.state = AudioClipFmodState::playing;
+    } else if (clip.event_instance != nullptr) {
+        clip.event_instance->setPaused(false);
+        clip.state = AudioClipFmodState::playing;
+    } else {
+        clip.state = AudioClipFmodState::ready;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x267C60.
+float audio_clip_fmod_get_channel_position_ms(const AudioClipFmod& clip) {
+    if (clip.channel == nullptr) {
+        return 0.0F;
+    }
+    std::uint32_t position = 0;
+    clip.channel->getPosition(&position, FMOD_TIMEUNIT_MS);
+    return static_cast<float>(position);
+}
+
+// Reconstructed from eboot.elf at 0x267CC0.
+float audio_clip_fmod_get_position_ms(const AudioClipFmod& clip) {
+    if (clip.channel != nullptr) {
+        return audio_clip_fmod_get_channel_position_ms(clip);
+    }
+    if (clip.event_instance == nullptr) {
+        return 0.0F;
+    }
+    std::int32_t position = 0;
+    clip.event_instance->getTimelinePosition(&position);
+    return static_cast<float>(position);
+}
+
+// Reconstructed from eboot.elf at 0x267D30.
+void audio_clip_fmod_set_position_ms(
+    AudioClipFmod& clip,
+    float milliseconds) {
+    if (clip.channel != nullptr) {
+        clip.channel->setPosition(
+            static_cast<std::uint32_t>(milliseconds), FMOD_TIMEUNIT_MS);
+    } else if (clip.event_instance != nullptr) {
+        clip.event_instance->setTimelinePosition(
+            static_cast<std::int32_t>(milliseconds));
+    }
+}
+
+// Reconstructed from eboot.elf at 0x267E70.
+void audio_clip_fmod_update_3d_attributes(AudioClipFmod& clip) {
+    if ((clip.channel == nullptr && clip.event_instance == nullptr) ||
+        clip.spatial_source == nullptr) {
+        return;
+    }
+    const auto attributes = audio_build_fmod_3d_attributes(
+        clip.spatial_source->transform());
+    if (clip.channel != nullptr) {
+        clip.channel->set3DAttributes(
+            &attributes.position, &attributes.velocity, nullptr);
+    } else {
+        clip.event_instance->set3DAttributes(&attributes);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x2683F0.
+bool audio_clip_fmod_set_event_parameter(
+    AudioClipFmod& clip,
+    const char* name,
+    float value) {
+    return clip.event_instance != nullptr &&
+        clip.event_instance->setParameterValue(name, value) == FMOD_OK;
+}
+
+// Reconstructed from eboot.elf at 0x268410.
+bool audio_clip_fmod_get_event_parameter(
+    const AudioClipFmod& clip,
+    const char* name,
+    float& value) {
+    if (clip.event_instance == nullptr) {
+        return false;
+    }
+    FMOD::Studio::ParameterInstance* parameter = nullptr;
+    return clip.event_instance->getParameter(name, &parameter) == FMOD_OK &&
+        parameter->getValue(&value) == FMOD_OK;
 }
 
 }  // namespace rb4

@@ -6881,9 +6881,9 @@ address,end,size,name,library,thunk
 0x267790,0x267B90,1024,sub_267790,False,False
 0x267BB0,0x267C00,80,audio_clip_fmod_pause,False,False
 0x267C00,0x267C52,82,audio_clip_fmod_resume,False,False
-0x267C60,0x267CBB,91,sub_267C60,False,False
-0x267CC0,0x267D2B,107,sub_267CC0,False,False
-0x267D30,0x267D64,52,sub_267D30,False,False
+0x267C60,0x267CBB,91,audio_clip_fmod_get_channel_position_ms,False,False
+0x267CC0,0x267D2B,107,audio_clip_fmod_get_position_ms,False,False
+0x267D30,0x267D64,52,audio_clip_fmod_set_position_ms,False,False
 0x267D70,0x267E44,212,audio_clip_fmod_update,False,False
 0x267E50,0x267E6C,28,audio_clip_fmod_process_release,False,False
 0x267E70,0x267F02,146,audio_clip_fmod_update_3d_attributes,False,False
@@ -6893,8 +6893,8 @@ address,end,size,name,library,thunk
 0x268260,0x268298,56,audio_clip_fmod_release_dsp,False,False
 0x2682A0,0x26837A,218,audio_clip_fmod_stop_and_wait,False,False
 0x268380,0x2683EF,111,sub_268380,False,False
-0x2683F0,0x26840F,31,sub_2683F0,False,False
-0x268410,0x268479,105,sub_268410,False,False
+0x2683F0,0x26840F,31,audio_clip_fmod_set_event_parameter,False,False
+0x268410,0x268479,105,audio_clip_fmod_get_event_parameter,False,False
 0x268490,0x2684FD,109,sub_268490,False,False
 0x268510,0x268514,4,sub_268510,False,False
 0x268900,0x268904,4,sub_268900,False,False
