@@ -20,40 +20,45 @@ double finish_timing(AudioTimingAccumulator& timing) {
     if (timing.active_depth > 0 && --timing.active_depth == 0) {
         timing.elapsed_ticks += performance_counter_read() - timing.start_ticks;
     }
-    return performance_counter_ticks_to_seconds(timing.elapsed_ticks);
+    return performance_counter_ticks_to_milliseconds(timing.elapsed_ticks);
 }
 
 void lock_statistics(AudioTimingAccumulator& timing) {
-    while (timing.statistics_lock.test_and_set(std::memory_order_acquire)) {
+    std::int32_t expected = 0;
+    while (!timing.statistics_lock.compare_exchange_weak(
+        expected, 1, std::memory_order_acquire)) {
+        expected = 0;
     }
 }
 
 void unlock_statistics(AudioTimingAccumulator& timing) {
-    timing.statistics_lock.clear(std::memory_order_release);
+    timing.statistics_lock.store(0, std::memory_order_release);
 }
 
 void record_timing(AudioTimingAccumulator& timing) {
-    const double seconds = finish_timing(timing);
+    const double milliseconds = finish_timing(timing);
     lock_statistics(timing);
-    timing.total_seconds += seconds;
+    timing.total_milliseconds += milliseconds;
     ++timing.sample_count;
-    timing.maximum_seconds = std::max(timing.maximum_seconds, seconds);
+    timing.maximum_milliseconds = std::max(
+        timing.maximum_milliseconds, milliseconds);
     unlock_statistics(timing);
 }
 
 void record_rolling_timing(AudioRollingTimingAccumulator& rolling) {
-    const double seconds = finish_timing(rolling.timing);
+    const double milliseconds = finish_timing(rolling.timing);
     lock_statistics(rolling.timing);
 
     const std::uint32_t slot = rolling.window_index % rolling.window_size;
-    rolling.rolling_seconds += seconds - rolling.window[slot];
-    rolling.window[slot] = seconds;
+    rolling.rolling_milliseconds += milliseconds - rolling.window[slot];
+    rolling.window[slot] = milliseconds;
     ++rolling.window_index;
 
-    rolling.timing.total_seconds += rolling.rolling_seconds;
+    rolling.timing.total_milliseconds += rolling.rolling_milliseconds;
     ++rolling.timing.sample_count;
-    rolling.timing.maximum_seconds = std::max(
-        rolling.timing.maximum_seconds, rolling.rolling_seconds);
+    rolling.timing.maximum_milliseconds = std::max(
+        rolling.timing.maximum_milliseconds,
+        rolling.rolling_milliseconds);
     unlock_statistics(rolling.timing);
 }
 

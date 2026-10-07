@@ -44,7 +44,7 @@ struct FmodAudioState {
     void* mix_consumers = nullptr;
     std::uint32_t mix_consumer_dispatch_depth = 0;
     AudioOutputDispatcher output_block_dispatcher;
-    void* source_timing_entries = nullptr;
+    AudioSourceTimingEntry* source_timing_entries = nullptr;
     void* post_mix_observers = nullptr;
 };
 

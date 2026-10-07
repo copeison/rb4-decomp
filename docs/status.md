@@ -25,6 +25,7 @@
 - [x] Reconstruct external FMOD Studio system attachment and detachment.
 - [x] Reconstruct deferred FMOD channel and DSP release processing.
 - [x] Recover the engine-to-FMOD speaker configuration mapping.
+- [x] Reconstruct audio timing snapshots and per-source aggregation.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Naming conventions

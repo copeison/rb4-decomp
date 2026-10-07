@@ -49,7 +49,7 @@ int __fastcall fmod_system_callback(
                                      - *((_QWORD *)user_data + 63);
       }
     }
-    *(double *)&_XMM0 = performance_counter_ticks_to_seconds(*((_QWORD *)user_data + 64));
+    *(double *)&_XMM0 = performance_counter_ticks_to_milliseconds(*((_QWORD *)user_data + 64));
     v25 = (volatile signed __int32 *)(_R14 + 496);
     v27 = _InterlockedCompareExchange((volatile signed __int32 *)_R14 + 124, 1, 0);
     v26 = v27 != 0;
@@ -135,7 +135,7 @@ LABEL_38:
       *((_QWORD *)_R14 + 55) += ((unsigned int)v11 | ((unsigned __int64)HIDWORD(v11) << 32)) - *((_QWORD *)_R14 + 54);
     }
   }
-  *(double *)&_XMM0 = performance_counter_ticks_to_seconds(*((_QWORD *)_R14 + 55));
+  *(double *)&_XMM0 = performance_counter_ticks_to_milliseconds(*((_QWORD *)_R14 + 55));
   v13 = (volatile signed __int32 *)(_R14 + 424);
   v15 = _InterlockedCompareExchange((volatile signed __int32 *)_R14 + 106, 1, 0);
   v14 = v15 != 0;

@@ -23,7 +23,7 @@ void __fastcall audio_rolling_timing_accumulator_finish(void *timing)
       *((_QWORD *)timing + 7) += ((unsigned int)v4 | ((unsigned __int64)HIDWORD(v4) << 32)) - *((_QWORD *)timing + 6);
     }
   }
-  *(double *)&_XMM0 = performance_counter_ticks_to_seconds(*((_QWORD *)timing + 7));
+  *(double *)&_XMM0 = performance_counter_ticks_to_milliseconds(*((_QWORD *)timing + 7));
   v6 = _RBX + 10;
   v7 = _InterlockedCompareExchange(_RBX + 10, 1, 0);
   if ( v7 != 0 )

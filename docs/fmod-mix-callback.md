@@ -25,12 +25,11 @@ and compared with its maximum. Finally, the callback invokes every registered
 postmix observer, clears the active flag, and releases the semaphore.
 
 The original timing accumulators use the processor timestamp counter and a
-spin lock for their statistics. `performance_counter_ticks_to_seconds` at
-`0x25C0E0` converts ticks with a reciprocal initialized from
+spin lock for their statistics. `performance_counter_ticks_to_milliseconds`
+at `0x25C0E0` converts ticks with `1000.0` divided by the frequency returned by
 `sceKernelGetTscFrequency`. The clean reconstruction keeps these mechanics in
 `src/audio/fmod_mix_callback.cpp`.
 
 The intrusive source-timer and observer list layouts are known, but their
 concrete callback classes are outside this milestone. Named adapter functions
-preserve those dispatch points until their owners are reconstructed. The
-semaphore is similarly opaque until the PS4 SDK headers are available.
+preserve those dispatch points until their owners are reconstructed.

@@ -7,7 +7,7 @@ namespace rb4 {
 struct FmodAudioState;
 
 std::uint64_t performance_counter_read();
-double performance_counter_ticks_to_seconds(std::uint64_t ticks);
+double performance_counter_ticks_to_milliseconds(std::uint64_t ticks);
 
 int audio_mix_semaphore_wait(void* semaphore);
 void audio_mix_semaphore_post(void* semaphore);
