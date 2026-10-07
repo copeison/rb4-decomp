@@ -188,6 +188,18 @@ static_assert(sizeof(FMOD_STUDIO_ADVANCEDSETTINGS) == 20);
 struct FMOD_DSP_DESCRIPTION;
 struct FMOD_SYSTEM;
 
+struct FMOD_GUID {
+    std::uint32_t data1;
+    std::uint16_t data2;
+    std::uint16_t data3;
+    std::uint8_t data4[8];
+};
+
+static_assert(sizeof(FMOD_GUID) == 16);
+
+using FMOD_DRIVER_STATE = std::uint32_t;
+constexpr FMOD_DRIVER_STATE FMOD_DRIVER_STATE_CONNECTED = 0x1;
+
 struct FMOD_OUTPUT_STATE;
 using FMOD_OUTPUT_READFROMMIXER = FMOD_RESULT (*)(
     FMOD_OUTPUT_STATE*, void*, std::uint32_t);
@@ -421,6 +433,18 @@ public:
         std::int32_t* system_rate,
         FMOD_SPEAKERMODE* speaker_mode,
         std::int32_t* speaker_mode_channels);
+    FMOD_RESULT getRecordNumDrivers(
+        std::int32_t* driver_count,
+        std::int32_t* connected_count);
+    FMOD_RESULT getRecordDriverInfo(
+        std::int32_t driver,
+        char* name,
+        std::int32_t name_length,
+        FMOD_GUID* guid,
+        std::int32_t* system_rate,
+        FMOD_SPEAKERMODE* speaker_mode,
+        std::int32_t* speaker_mode_channels,
+        FMOD_DRIVER_STATE* state);
     FMOD_RESULT getSoftwareFormat(
         std::int32_t* sample_rate,
         FMOD_SPEAKERMODE* speaker_mode,
@@ -440,6 +464,9 @@ namespace Studio {
 class Bus {
 public:
     FMOD_RESULT getChannelGroup(FMOD::ChannelGroup** channel_group);
+    FMOD_RESULT getVolume(float* volume, float* final_volume) const;
+    FMOD_RESULT setVolume(float volume);
+    FMOD_RESULT setMute(bool mute);
     FMOD_RESULT getPath(
         char* path,
         std::int32_t capacity,

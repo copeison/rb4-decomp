@@ -34,6 +34,7 @@ the source tree.
 | `0x271660`-`0x272E02` | `FmodAudioStreamResource` | `src/audio/fmod_audio_stream_resource.cpp` | Streaming-audio extensions, platform-path load, FMOD PCM16 mono/stereo probing, status codes, normalized-path registry, lookup, and teardown recovered. |
 | `0x272E60`-`0x27315C` | `FMODSoundToPCMCallback` | `src/audio/fmod_sound_to_pcm_callback.cpp` | Nonblocking-open wait, format and length query, PCM16 buffer sizing, block decode loop, cancellation, completion, rewind, and teardown recovered. |
 | `0x273740`-`0x275180` | `FModBankResource` | `src/audio/fmod_bank_resource.cpp` | PS4 and localized path handling, per-Studio-system bank and sample-data load, bus locking, unload waits, event and bus path enumeration, and paired master-bank routing recovered. |
+| `0x275490`-`0x275C00`, `0x27B3E0`-`0x27BA9B` | FMOD audio input manager and record devices | `src/audio/fmod_audio_input_manager.cpp` | Studio bus binding, authored-volume scaling, mute and channel-group access, fixed device slots, `GENERAL` driver filtering, duplicate suppression, and connection reconciliation recovered. |
 | `0x275E20`-`0x2763C0` | FMOD recording audio render target | `src/audio/fmod_recording_audio_render_target.cpp` | Embedded FMOD state delegation, buffered-output mixer reads, dual-layer locking, mix-consumer dispatch, and asynchronous recording-thread lifecycle recovered. |
 
 ## Game initialization
