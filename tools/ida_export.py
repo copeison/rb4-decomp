@@ -33,6 +33,8 @@ FOCUSED_DECOMPILATIONS = {
     "special-pad-reader-append-calibration-samples": 0x8D2EA0,
     "special-pad-reader-take-calibration-samples": 0x8D3000,
     "special-pad-reader-set-calibration-mode": 0x8D3060,
+    "audio-update-listener-attributes": 0x262300,
+    "audio-build-fmod-3d-attributes": 0x27ACB0,
 }
 
 

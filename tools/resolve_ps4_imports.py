@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import base64
 import csv
+import hashlib
 import struct
 from collections import defaultdict
 from dataclasses import dataclass
@@ -22,6 +23,8 @@ from typing import Iterable
 PT_DYNAMIC = 2
 PT_LOAD = 1
 PT_SCE_DYNLIBDATA = 0x61000000
+
+PS4_NID_SUFFIX = bytes.fromhex("518D64A635DED8C1E6B039B1C3E55230")
 
 DT_NULL = 0
 DT_SCE_NEEDED_MODULE = 0x6100000F
@@ -129,6 +132,12 @@ def encode_nid(raw_nid: bytes) -> str:
     return encoded.replace("/", "-")
 
 
+def calculate_nid(symbol_name: str) -> str:
+    """Calculate the printable PS4 NID for an original linker symbol."""
+    digest = hashlib.sha1(symbol_name.encode("utf-8") + PS4_NID_SUFFIX).digest()
+    return encode_nid(digest[:8])
+
+
 def iter_sdk_symbols(stub_path: Path) -> Iterable[tuple[str, str]]:
     elf = parse_elf(stub_path)
     sections = {
@@ -200,6 +209,26 @@ def load_known_nids(path: Path) -> dict[tuple[str, str], str]:
                     f"{previous} and {name}"
                 )
     return known
+
+
+def load_symbol_names(path: Path) -> dict[tuple[str, str], str]:
+    """Hash reviewed original symbol names into a library-specific NID map."""
+    if not path.is_file():
+        return {}
+
+    symbols: dict[tuple[str, str], str] = {}
+    with path.open(newline="", encoding="utf-8") as source:
+        for row in csv.DictReader(source):
+            library_name = row["library_name"]
+            symbol_name = row["symbol_name"]
+            key = (calculate_nid(symbol_name), library_name)
+            previous = symbols.setdefault(key, symbol_name)
+            if previous != symbol_name:
+                raise ValueError(
+                    f"symbol NID collision for {key[0]} in {key[1]}: "
+                    f"{previous} and {symbol_name}"
+                )
+    return symbols
 
 
 def find_program_header(elf: ElfLayout, header_type: int) -> ProgramHeader:
@@ -295,7 +324,10 @@ def find_plt_address(elf: ElfLayout, relocation_count: int) -> int:
 
 
 def resolve_imports(
-    elf_path: Path, sdk_root: Path, known_nids_path: Path | None = None
+    elf_path: Path,
+    sdk_root: Path,
+    known_nids_path: Path | None = None,
+    symbol_names_path: Path | None = None,
 ) -> list[dict[str, object]]:
     elf = parse_elf(elf_path)
     dynlib = find_program_header(elf, PT_SCE_DYNLIBDATA)
@@ -330,6 +362,7 @@ def resolve_imports(
     plt_address = find_plt_address(elf, relocation_count)
     sdk_nids = load_sdk_nids(sdk_root)
     known_nids = load_known_nids(known_nids_path) if known_nids_path else {}
+    symbol_names = load_symbol_names(symbol_names_path) if symbol_names_path else {}
     library_names, module_names = read_import_names(
         elf, dynlib, tags, dynamic_entries
     )
@@ -366,6 +399,11 @@ def resolve_imports(
             resolved_name = known_nids[nid, library_name]
             libraries = []
             name_source = "reviewed-map"
+            status = "resolved"
+        elif (nid, library_name) in symbol_names:
+            resolved_name = symbol_names[nid, library_name]
+            libraries = []
+            name_source = "hashed-symbol"
             status = "resolved"
         else:
             resolved_name = ""
@@ -423,9 +461,17 @@ def main() -> None:
         default=Path("tools/ps4_known_nids.csv"),
         help="reviewed fallback NID map for exports absent from SDK stubs",
     )
+    parser.add_argument(
+        "--symbol-names",
+        type=Path,
+        default=Path("tools/ps4_symbol_names.csv"),
+        help="reviewed original names to resolve by calculating their PS4 NIDs",
+    )
     args = parser.parse_args()
 
-    rows = resolve_imports(args.elf, args.sdk, args.known_nids)
+    rows = resolve_imports(
+        args.elf, args.sdk, args.known_nids, args.symbol_names
+    )
     write_csv(args.output, rows)
     resolved = sum(row["status"] == "resolved" for row in rows)
     ambiguous = sum(row["status"] == "ambiguous" for row in rows)

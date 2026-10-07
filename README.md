@@ -21,7 +21,8 @@ Cleaned source progress is tracked in
 [docs/reconstruction.md](docs/reconstruction.md), with the main update order in
 [docs/frame-loop.md](docs/frame-loop.md). Private pad import recovery and the
 special-controller calibration path are described in
-[docs/special-pad-reader.md](docs/special-pad-reader.md).
+[docs/special-pad-reader.md](docs/special-pad-reader.md). FMOD 1.10.04 import
+recovery is documented in [docs/fmod-imports.md](docs/fmod-imports.md).
 
 ## Recreate the analysis ELF
 
@@ -57,9 +58,9 @@ their original API names:
 python tools/resolve_ps4_imports.py
 ```
 
-The resolver writes `analysis/exports/imports.csv`. Applying its verified names
-to IDA produces substantially clearer callers and pseudocode. The current
-database contains all unambiguous names recovered from the SDK.
+The resolver writes `analysis/exports/imports.csv`. It combines the SDK stubs,
+the reviewed private-export map, and hashed original names for the bundled FMOD
+1.10.04 libraries. The current database contains names for all 706 imports.
 
 ## Local PS4 SDK
 
