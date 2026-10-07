@@ -22,7 +22,7 @@ bool game_initialize()
   v3 = 0;
   game_systems_initialize((__int64)v2, v0);
   ui_register_types();
-  (*(void (**)(void))(qword_19FBAF0 + 56))();
+  (*(void (**)(void))(g_dingo_service + 56))();
   audio_configure_time_stretch();
   input_refresh_player_assignments();
   if ( unk_19E4559 != 0 )

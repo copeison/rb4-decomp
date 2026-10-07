@@ -9031,6 +9031,7 @@ address,end,size,name,library,thunk
 0x33EC50,0x33EE23,467,sub_33EC50,False,False
 0x33EE50,0x33EE54,4,sub_33EE50,False,False
 0x33EF70,0x33F068,248,sub_33EF70,False,False
+0x33F090,0x33F6E5,1621,dingo_initialize,False,False
 0x33F700,0x33F780,128,sub_33F700,False,False
 0x33F950,0x33F953,3,sub_33F950,False,False
 0x33FF90,0x33FF91,1,nullsub_1073,False,False

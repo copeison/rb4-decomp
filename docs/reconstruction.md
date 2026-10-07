@@ -6,10 +6,24 @@ the source tree.
 
 | Address | Reconstructed symbol | Source | Status |
 | --- | --- | --- | --- |
+| `0xA0` | `game_initialize` | `src/game/initialize.cpp` | Complete top-level initialization order and arguments recovered; two option-field meanings remain unknown. |
 | `0x3C0` | `game_main` | `src/game/main.cpp` | Control flow recovered; dependent functions are still being reconstructed. |
 | `0x997590` | `stage_presence_id_to_symbol` | `src/game/stage_presence.cpp` | All 22 enum values and their interned symbol strings recovered. |
 | `0xBB06A0`, `0xBB5D40` | `ui_layout_id_to_symbol`, layout asset map | `src/ui/ui_layout_id.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |
 | `0x252BC0` | `command_line_mark_switches_handled` | `src/core/command_line.cpp` | Complete behavior and observed container layout reconstructed. |
+
+## Game initialization
+
+`game_initialize` performs a fixed startup sequence: core services, UI and
+stage-presence identifiers, `config/rockband.dta`, sound, engine type
+registrations, primary game systems, UI resources, Dingo backend networking,
+time-stretch audio, and player assignments. It then loads
+`kLayoutGameStartup` and marks remaining command-line switches handled.
+
+The game-system option block is exactly 16 bytes. Its first three bytes are set
+to true and its final eight bytes are zero. Rendering initialization reads the
+second flag directly; the meanings of the first and third flags are retained as
+unknown fields until their virtual consumer is recovered.
 
 ## Command-line argument layout
 

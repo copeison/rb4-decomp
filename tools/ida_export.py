@@ -24,6 +24,7 @@ FOCUSED_DECOMPILATIONS = {
     "game-initialize": 0xA0,
     "game-run-frame": 0x190,
     "game-main": 0x3C0,
+    "dingo-initialize": 0x33F090,
     "stage-presence-id-to-symbol": 0x997590,
     "ui-layout-id-to-symbol": 0xBB06A0,
     "ui-load-layout-by-id": 0xBB5D40,
