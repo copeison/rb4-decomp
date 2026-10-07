@@ -1,0 +1,27 @@
+# Extracted and analysis-ready executables
+/files/*.elf
+
+# IDA databases and temporary analysis files
+/analysis/ida/
+*.i64
+*.idb
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+
+# Locally installed proprietary SDK files
+/sdk/
+/ps4-sdk/
+/PS4_SDK/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Editor and operating-system state
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
