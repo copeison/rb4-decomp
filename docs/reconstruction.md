@@ -8,7 +8,7 @@ the source tree.
 | --- | --- | --- | --- |
 | `0x3C0` | `game_main` | `src/game/main.cpp` | Control flow recovered; dependent functions are still being reconstructed. |
 | `0x997590` | `stage_presence_id_to_symbol` | `src/game/stage_presence.cpp` | All 22 enum values and their interned symbol strings recovered. |
-| `0xBB06A0` | `ui_layout_id_to_symbol` | `src/ui/ui_layout_id.cpp` | Invalid ID plus all 108 ordered layout IDs recovered. |
+| `0xBB06A0`, `0xBB5D40` | `ui_layout_id_to_symbol`, layout asset map | `src/ui/ui_layout_id.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |
 | `0x252BC0` | `command_line_mark_switches_handled` | `src/core/command_line.cpp` | Complete behavior and observed container layout reconstructed. |
 
 ## Command-line argument layout
@@ -37,3 +37,10 @@ separate `kLayoutInvalid` result for ID -1. The ordered list lives in
 `src/ui/ui_layout_list.inc` so the enum and symbol table share one readable
 source of truth. ID `0x2C` is `kLayoutGameStartup`, matching the startup layout
 loaded by `game_initialize`.
+
+The loader at `0xBB5D40` supplies direct `.layout` paths for 92 of those IDs.
+The same include now drives `ui_layout_primary_path`, keeping every recovered
+path aligned with its enum value. Sixteen deprecated, fallback, or unsupported
+IDs have no direct path. SOMP IDs 101 and 102 also fall through in the original
+switch to preload the subsequent session layouts; the helper reports the first
+path associated with each requested ID.

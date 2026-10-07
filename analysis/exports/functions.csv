@@ -34944,7 +34944,7 @@ address,end,size,name,library,thunk
 0xBB58C0,0xBB5B8D,717,sub_BB58C0,False,False
 0xBB5C60,0xBB5D31,209,sub_BB5C60,False,False
 0xBB5D40,0xBB6EB3,4467,ui_load_layout_by_id,False,False
-0xBB6EC0,0xBB6F97,215,sub_BB6EC0,False,False
+0xBB6EC0,0xBB6F97,215,ui_adjust_loading_thread_priorities,False,False
 0xBB6FC0,0xBB7094,212,sub_BB6FC0,False,False
 0xBB70A0,0xBB717F,223,sub_BB70A0,False,False
 0xBB7190,0xBB71E2,82,sub_BB7190,False,False
