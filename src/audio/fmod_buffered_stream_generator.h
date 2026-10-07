@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -26,6 +27,11 @@ struct FmodBufferedStereoSample {
     float left = 0.0F;
     float right = 0.0F;
 };
+
+// The six samples are ordered y[-2], y[-1], y[0], y[1], y[2], y[3].
+float fmod_buffered_stream_interpolate_optimal32_6p5o(
+    const std::array<float, 6>& samples,
+    float fraction);
 
 FmodBufferedStereoSample fmod_buffered_stream_interpolate_pcm16_stereo(
     const std::int16_t* interleaved_samples,

@@ -44,7 +44,7 @@
 - [x] Reconstruct `FModBankResource` loading and bank enumeration.
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
-- [ ] Identify the synchronized six-sample interpolation kernel.
+- [x] Identify the synchronized six-sample interpolation kernel.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 
 ## Validation constraint

@@ -30,8 +30,14 @@ stereo path linearly interpolates interleaved signed 16-bit PCM and scales it by
 `1 / 32768`; the cleaned source reconstructs that path and zero-fills an output
 tail after source exhaustion.
 
-The synchronized path enables a six-sample interpolation kernel at `0x26D940`
-and adjusts source position toward a target sample. The control functions at
-`0x26DAB0`, `0x26DBA0`, and `0x26DBD0` enable synchronization, set its target in
-milliseconds, and disable it. That specialized kernel stays in the focused IDA
-export until its fitted coefficient scheme is identified.
+The synchronized path enables a six-point, fifth-order interpolation kernel at
+`0x26D940` and adjusts source position toward a target sample. Its constants are
+the float-rounded coefficients of Olli Niemitalo's Optimal 32x z-form audio
+interpolator. The kernel forms even and odd pairs from `y[-2]` through `y[3]`,
+shifts the fractional position by `-0.5`, and evaluates the polynomial with
+Horner's method independently for each stereo channel.
+
+The control functions at `0x26DAB0`, `0x26DBA0`, and `0x26DBD0` enable
+synchronization, set its target in milliseconds, and disable it. The scalar
+source reconstruction preserves the exact binary coefficients while the
+focused IDA export retains the optimized SIMD implementation as evidence.

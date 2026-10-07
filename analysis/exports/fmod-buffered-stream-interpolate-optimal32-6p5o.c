@@ -1,10 +1,10 @@
-__int128 __usercall fmod_buffered_stream_interpolate_six_sample_window@<xmm0>(__int64 a1@<rdi>, __int64 _RSI@<rsi>)
+__int128 __usercall fmod_buffered_stream_interpolate_optimal32_6p5o@<xmm0>(__int64 a1@<rdi>, __int64 _RSI@<rsi>)
 {
   __int128 result; // xmm0
 
   __asm
   {
-    vmovss  xmm3, dword ptr [rsi+0Ch]
+    vmovss  xmm3, dword ptr [rsi+0Ch]; Float-rounded coefficients match Olli Niemitalo's Optimal 32x, 6-point, 5th-order z-form audio interpolator.
     vmovss  xmm4, dword ptr [rsi+10h]
     vmovss  xmm5, dword ptr [rsi+14h]
     vmovss  xmm6, dword ptr [rsi]

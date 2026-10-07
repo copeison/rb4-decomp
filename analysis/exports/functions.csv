@@ -7003,7 +7003,7 @@ address,end,size,name,library,thunk
 0x26D8B0,0x26D8B1,1,nullsub_888,False,False
 0x26D8C0,0x26D8C1,1,nullsub_889,False,False
 0x26D8D0,0x26D93B,107,fmod_buffered_stream_generator_compute_sync_adjustment,False,False
-0x26D940,0x26DA93,339,fmod_buffered_stream_interpolate_six_sample_window,False,False
+0x26D940,0x26DA93,339,fmod_buffered_stream_interpolate_optimal32_6p5o,False,False
 0x26DAA0,0x26DAA9,9,fmod_buffered_stream_generator_render_callback_adjusted,False,False
 0x26DAB0,0x26DB9B,235,fmod_buffered_stream_generator_enable_sync,False,False
 0x26DBA0,0x26DBC3,35,fmod_buffered_stream_generator_set_sync_target_ms,False,False

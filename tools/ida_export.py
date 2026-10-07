@@ -120,7 +120,7 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-buffered-stream-generator-refill-buffers": 0x26C480,
     "fmod-buffered-stream-generator-render-callback": 0x26C720,
     "fmod-buffered-stream-generator-compute-sync-adjustment": 0x26D8D0,
-    "fmod-buffered-stream-interpolate-six-sample-window": 0x26D940,
+    "fmod-buffered-stream-interpolate-optimal32-6p5o": 0x26D940,
     "fmod-buffered-stream-generator-enable-sync": 0x26DAB0,
     "fmod-buffered-stream-generator-set-sync-target-ms": 0x26DBA0,
     "fmod-buffered-stream-generator-disable-sync": 0x26DBD0,

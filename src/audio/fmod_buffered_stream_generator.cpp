@@ -16,6 +16,43 @@ constexpr float kPcm16ToFloat = 1.0F / 32768.0F;
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x26D940. These float-rounded coefficients
+// implement Olli Niemitalo's Optimal 32x, six-point, fifth-order z-form
+// interpolator. The synchronized render path applies it to each channel.
+float fmod_buffered_stream_interpolate_optimal32_6p5o(
+    const std::array<float, 6>& samples,
+    float fraction) {
+    const float z = fraction - 0.5F;
+
+    const float even1 = samples[3] + samples[2];
+    const float odd1 = samples[3] - samples[2];
+    const float even2 = samples[4] + samples[1];
+    const float odd2 = samples[4] - samples[1];
+    const float even3 = samples[5] + samples[0];
+    const float odd3 = samples[5] - samples[0];
+
+    const float c0 = even1 * 0.426859825850F +
+                     even2 * 0.0723812356591F +
+                     even3 * 0.000758930807933F;
+    const float c1 = odd1 * 0.358317732811F +
+                     odd2 * 0.204516440630F +
+                     odd3 * 0.00562658812851F;
+    const float c2 = even1 * -0.217009171844F +
+                     even2 * 0.200513765216F +
+                     even3 * 0.0164954103529F;
+    const float c3 = odd1 * -0.251127153635F +
+                     odd2 * 0.0422302596271F +
+                     odd3 * 0.0248872749507F;
+    const float c4 = even1 * 0.0416694656014F +
+                     even2 * -0.0625042021275F +
+                     even3 * 0.0208347346634F;
+    const float c5 = odd1 * 0.0834979936481F +
+                     odd2 * -0.0417491272092F +
+                     odd3 * 0.00834987871349F;
+
+    return ((((c5 * z + c4) * z + c3) * z + c2) * z + c1) * z + c0;
+}
+
 // The normal path in the render callback at 0x26C720 performs linear
 // interpolation over interleaved signed 16-bit stereo frames.
 FmodBufferedStereoSample fmod_buffered_stream_interpolate_pcm16_stereo(
