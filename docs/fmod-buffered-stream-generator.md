@@ -18,13 +18,20 @@ format, default frequency, and PCM length before submitting every block to the
 engine's streaming queue.
 
 The generator forwards pause, resume, reset, stop, fade, and transition
-controls to the nested bus generator. Position is stored in seconds. Seeking
-at `0x26BDC0` waits for all submitted blocks to become idle, converts seconds
-to a sample position, resets the ring, and resubmits the required blocks. Gain
-is stored at offset `0x1D8` under the generator's stream lock.
+controls to the nested bus generator. Position is stored in milliseconds.
+Seeking at `0x26BDC0` waits for all submitted blocks to become idle, converts
+milliseconds to a sample position, resets the ring, and resubmits the required
+blocks. Gain is stored at offset `0x1D8` under the generator's stream lock.
 
 `0x26C480` keeps the ring populated around the current block. The large callback
 at `0x26C720` supplies decoded samples to an output request, handles underrun
-silence, loop and seek boundaries, gain, and sample-rate conversion. Its
-detailed interpolation and channel-layout behavior remains in the focused IDA
-export until the callback payload structures are fully named.
+silence, loop and seek boundaries, gain, and sample-rate conversion. Its normal
+stereo path linearly interpolates interleaved signed 16-bit PCM and scales it by
+`1 / 32768`; the cleaned source reconstructs that path and zero-fills an output
+tail after source exhaustion.
+
+The synchronized path enables a six-sample interpolation kernel at `0x26D940`
+and adjusts source position toward a target sample. The control functions at
+`0x26DAB0`, `0x26DBA0`, and `0x26DBD0` enable synchronization, set its target in
+milliseconds, and disable it. That specialized kernel stays in the focused IDA
+export until its fitted coefficient scheme is identified.

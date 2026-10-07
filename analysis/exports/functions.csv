@@ -6986,8 +6986,8 @@ address,end,size,name,library,thunk
 0x26BD40,0x26BD63,35,fmod_buffered_stream_generator_pause,False,False
 0x26BD70,0x26BD94,36,fmod_buffered_stream_generator_resume,False,False
 0x26BDA0,0x26BDA5,5,fmod_buffered_stream_generator_get_channel_position,False,False
-0x26BDB0,0x26BDB9,9,fmod_buffered_stream_generator_get_position_seconds,False,False
-0x26BDC0,0x26BFC1,513,fmod_buffered_stream_generator_set_position_seconds,False,False
+0x26BDB0,0x26BDB9,9,fmod_buffered_stream_generator_get_position_ms,False,False
+0x26BDC0,0x26BFC1,513,fmod_buffered_stream_generator_set_position_ms,False,False
 0x26C040,0x26C080,64,fmod_buffered_stream_generator_set_gain,False,False
 0x26C080,0x26C091,17,fmod_buffered_stream_generator_get_gain,False,False
 0x26C150,0x26C174,36,fmod_buffered_stream_generator_prepare_for_audio_reset,False,False
@@ -6997,6 +6997,12 @@ address,end,size,name,library,thunk
 0x26C720,0x26D87C,4444,fmod_buffered_stream_generator_render_callback,False,False
 0x26D8B0,0x26D8B1,1,nullsub_888,False,False
 0x26D8C0,0x26D8C1,1,nullsub_889,False,False
+0x26D8D0,0x26D93B,107,fmod_buffered_stream_generator_compute_sync_adjustment,False,False
+0x26D940,0x26DA93,339,fmod_buffered_stream_interpolate_six_sample_window,False,False
+0x26DAA0,0x26DAA9,9,fmod_buffered_stream_generator_render_callback_adjusted,False,False
+0x26DAB0,0x26DB9B,235,fmod_buffered_stream_generator_enable_sync,False,False
+0x26DBA0,0x26DBC3,35,fmod_buffered_stream_generator_set_sync_target_ms,False,False
+0x26DBD0,0x26DBFD,45,fmod_buffered_stream_generator_disable_sync,False,False
 0x26DC00,0x26DC04,4,fmod_buffered_stream_manager_get_setting,False,False
 0x26DC10,0x26DCAA,154,fmod_buffered_stream_manager_type_symbol,False,False
 0x26DCB0,0x26DD4A,154,fmod_buffered_stream_manager_extension_symbol,False,False

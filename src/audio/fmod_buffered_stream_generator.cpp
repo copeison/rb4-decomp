@@ -1,5 +1,8 @@
 #include "fmod_buffered_stream_generator.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace rb4 {
 
 namespace {
@@ -9,8 +12,75 @@ constexpr std::uint32_t kGenerationMask = 0x00003FFF;
 constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
 constexpr std::int32_t kBufferedStreamFormat = 3;
+constexpr float kPcm16ToFloat = 1.0F / 32768.0F;
 
 }  // namespace
+
+// The normal path in the render callback at 0x26C720 performs linear
+// interpolation over interleaved signed 16-bit stereo frames.
+FmodBufferedStereoSample fmod_buffered_stream_interpolate_pcm16_stereo(
+    const std::int16_t* interleaved_samples,
+    std::size_t frame_count,
+    float frame_position,
+    float gain) {
+    if (interleaved_samples == nullptr || frame_count == 0) {
+        return {};
+    }
+
+    const auto clamped_position = std::clamp(
+        frame_position, 0.0F, static_cast<float>(frame_count - 1));
+    const auto current_frame =
+        static_cast<std::size_t>(std::floor(clamped_position));
+    const auto next_frame = std::min(current_frame + 1, frame_count - 1);
+    const auto fraction = clamped_position - current_frame;
+
+    const auto* current = interleaved_samples + current_frame * 2;
+    const auto* next = interleaved_samples + next_frame * 2;
+    const auto scale = gain * kPcm16ToFloat;
+    return {
+        (current[0] + (next[0] - current[0]) * fraction) * scale,
+        (current[1] + (next[1] - current[1]) * fraction) * scale,
+    };
+}
+
+std::size_t fmod_buffered_stream_render_linear_pcm16_stereo(
+    const std::int16_t* interleaved_samples,
+    std::size_t source_frame_count,
+    float& source_frame_position,
+    float source_frames_per_output_frame,
+    float gain,
+    float* output_left,
+    float* output_right,
+    std::size_t output_frame_count) {
+    if (interleaved_samples == nullptr || output_left == nullptr ||
+        output_right == nullptr || source_frames_per_output_frame <= 0.0F) {
+        return 0;
+    }
+
+    std::size_t frames_written = 0;
+    while (frames_written < output_frame_count &&
+           source_frame_position < source_frame_count) {
+        const auto sample = fmod_buffered_stream_interpolate_pcm16_stereo(
+            interleaved_samples,
+            source_frame_count,
+            source_frame_position,
+            gain);
+        output_left[frames_written] = sample.left;
+        output_right[frames_written] = sample.right;
+        source_frame_position += source_frames_per_output_frame;
+        ++frames_written;
+    }
+
+    std::fill(
+        output_left + frames_written,
+        output_left + output_frame_count,
+        0.0F);
+    std::fill(
+        output_right + frames_written,
+        output_right + output_frame_count,
+        0.0F);
+    return frames_written;
+}
 
 // Reconstructed from eboot.elf at 0x26AFF0.
 void FmodBufferedStreamGenerator::initialize_pool_slot(
@@ -25,7 +95,7 @@ void FmodBufferedStreamGenerator::initialize_pool_slot(
     bus_generator_ = nullptr;
     sound_ = nullptr;
     gain_ = 1.0F;
-    position_seconds_ = 0.0F;
+    position_ms_ = 0.0F;
     sound_open_pending_ = false;
     state_ = AudioClipFmodState::stopped;
 }
@@ -53,13 +123,13 @@ void FmodBufferedStreamGenerator::stop_and_wait() {
 }
 
 // Reconstructed from eboot.elf at 0x26BDC0.
-void FmodBufferedStreamGenerator::set_position_seconds(float position) {
-    position_seconds_ = position;
+void FmodBufferedStreamGenerator::set_position_ms(float position) {
+    position_ms_ = position;
 }
 
 // Reconstructed from eboot.elf at 0x26BDB0.
-float FmodBufferedStreamGenerator::position_seconds() const {
-    return position_seconds_;
+float FmodBufferedStreamGenerator::position_ms() const {
+    return position_ms_;
 }
 
 // Reconstructed from eboot.elf at 0x26C040.

@@ -1,4 +1,4 @@
-__int64 __fastcall fmod_buffered_stream_generator_set_position_seconds(__int64 a1, __m128 _XMM0)
+__int64 __fastcall fmod_buffered_stream_generator_set_position_ms(__int64 a1, __m128 _XMM0)
 {
   _QWORD *v3; // r14
   __int64 v5; // rax

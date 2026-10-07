@@ -22,6 +22,27 @@ struct FmodBufferedStreamOptions {
     bool streaming = false;
 };
 
+struct FmodBufferedStereoSample {
+    float left = 0.0F;
+    float right = 0.0F;
+};
+
+FmodBufferedStereoSample fmod_buffered_stream_interpolate_pcm16_stereo(
+    const std::int16_t* interleaved_samples,
+    std::size_t frame_count,
+    float frame_position,
+    float gain);
+
+std::size_t fmod_buffered_stream_render_linear_pcm16_stereo(
+    const std::int16_t* interleaved_samples,
+    std::size_t source_frame_count,
+    float& source_frame_position,
+    float source_frames_per_output_frame,
+    float gain,
+    float* output_left,
+    float* output_right,
+    std::size_t output_frame_count);
+
 class FmodBufferedStreamGenerator {
 public:
     void initialize_pool_slot(
@@ -31,8 +52,8 @@ public:
     void resume();
     void prepare_for_audio_reset();
     void stop_and_wait();
-    void set_position_seconds(float position);
-    float position_seconds() const;
+    void set_position_ms(float position);
+    float position_ms() const;
     void set_gain(float gain);
     float gain() const;
 
@@ -48,7 +69,7 @@ private:
     FmodAudioBusGenerator* bus_generator_ = nullptr;
     FMOD::Sound* sound_ = nullptr;
     float gain_ = 1.0F;
-    float position_seconds_ = 0.0F;
+    float position_ms_ = 0.0F;
     bool sound_open_pending_ = false;
     bool in_free_list_ = false;
     AudioClipFmodState state_ = AudioClipFmodState::stopped;
