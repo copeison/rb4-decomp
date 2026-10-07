@@ -11,6 +11,13 @@ namespace rb4 {
 
 constexpr std::uint32_t kFmodHeaderVersion = 0x00011004;
 
+enum class AudioSpeakerConfiguration : std::int32_t {
+    mono = 0,
+    stereo = 1,
+    surround_5_1 = 2,
+    surround_7_1 = 3,
+};
+
 // Semantic state used by the cleaned reconstruction. The original audio object
 // contains other timing, synchronization, stream, and callback state around
 // these fields.
@@ -55,5 +62,9 @@ void fmod_audio_attach_studio_system(
     FMOD::Studio::System* studio_system);
 
 void fmod_audio_detach_studio_system(FmodAudioState& state);
+
+void fmod_audio_configure_speakers(
+    FmodAudioState& state,
+    AudioSpeakerConfiguration configuration);
 
 }  // namespace rb4

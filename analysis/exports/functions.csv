@@ -6996,7 +6996,7 @@ address,end,size,name,library,thunk
 0x277BA0,0x2780C6,1318,sub_277BA0,False,False
 0x2781C0,0x27826D,173,fmod_audio_dispatch_mix_buffers,False,False
 0x278270,0x278395,293,fmod_register_custom_dsp_plugins,False,False
-0x2783A0,0x2783C9,41,sub_2783A0,False,False
+0x2783A0,0x2783C9,41,fmod_audio_configure_speakers,False,False
 0x2783D0,0x2783D1,1,nullsub_896,False,False
 0x2783E0,0x2786C7,743,fmod_system_callback,False,False
 0x2786D0,0x27887D,429,fmod_audio_initialize_custom_output,False,False

@@ -22,6 +22,7 @@ the source tree.
 | `0x277840`, `0x277A80` | attach or detach an external FMOD Studio system | `src/audio/fmod_audio_system.cpp` | User-data binding, format discovery, DSP registration, callback enablement, and synchronized detach recovered. |
 | `0xD3BA0`, `0xD3BC0` | global audio mix-format accessors | `src/audio/audio_mix_format.cpp` | Sample rate, reciprocal, buffer cadence, and milliseconds-per-buffer calculations recovered. |
 | `0x1128380`, `0x278A00`, `0x278DF0` | double-buffered deferred FMOD release queue | `src/audio/fmod_deferred_release.cpp` | Mix-consumer registration, enqueue, buffer swap, channel stop, DSP release, and detach-time clearing recovered. |
+| `0x2783A0` | engine speaker configuration mapping | `src/audio/fmod_audio_system.cpp` | Mono, stereo, 5.1, and 7.1 FMOD modes and raw channel counts recovered. |
 
 ## Game initialization
 

@@ -53,6 +53,7 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-audio-detach-studio-system": 0x277A80,
     "fmod-audio-dispatch-mix-buffers": 0x2781C0,
     "fmod-register-custom-dsp-plugins": 0x278270,
+    "fmod-audio-configure-speakers": 0x2783A0,
     "fmod-system-callback": 0x2783E0,
     "fmod-audio-initialize-custom-output": 0x2786D0,
     "audio-timing-accumulator-finish": 0x278880,

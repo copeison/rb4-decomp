@@ -136,6 +136,30 @@ void fmod_register_custom_dsp_plugins(FmodAudioState& state) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x2783A0.
+void fmod_audio_configure_speakers(
+    FmodAudioState& state,
+    AudioSpeakerConfiguration configuration) {
+    switch (configuration) {
+        case AudioSpeakerConfiguration::mono:
+            state.speaker_mode = FMOD_SPEAKERMODE_MONO;
+            state.raw_speaker_count = 1;
+            break;
+        case AudioSpeakerConfiguration::stereo:
+            state.speaker_mode = FMOD_SPEAKERMODE_STEREO;
+            state.raw_speaker_count = 2;
+            break;
+        case AudioSpeakerConfiguration::surround_5_1:
+            state.speaker_mode = FMOD_SPEAKERMODE_5POINT1;
+            state.raw_speaker_count = 6;
+            break;
+        case AudioSpeakerConfiguration::surround_7_1:
+            state.speaker_mode = FMOD_SPEAKERMODE_7POINT1;
+            state.raw_speaker_count = 8;
+            break;
+    }
+}
+
 // Reconstructed from eboot.elf at 0x2786D0.
 std::uint32_t fmod_audio_initialize_custom_output(FmodAudioState& state) {
     FMOD::Studio::System::create(&state.studio_system, kFmodHeaderVersion);

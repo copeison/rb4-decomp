@@ -39,6 +39,8 @@ External FMOD system attachment and detachment is documented in
 [docs/fmod-system-attachment.md](docs/fmod-system-attachment.md).
 Deferred channel/DSP cleanup is documented in
 [docs/fmod-deferred-release.md](docs/fmod-deferred-release.md).
+Engine-to-FMOD speaker configuration is documented in
+[docs/audio-speaker-configuration.md](docs/audio-speaker-configuration.md).
 
 ## Recreate the analysis ELF
 
