@@ -33,8 +33,11 @@ enum FMOD_SPEAKERMODE : std::int32_t {
 };
 
 enum FMOD_SOUND_FORMAT : std::int32_t {
+    FMOD_SOUND_FORMAT_PCM16 = 2,
     FMOD_SOUND_FORMAT_PCMFLOAT = 5,
 };
+
+enum FMOD_SOUND_TYPE : std::int32_t;
 
 enum FMOD_OUTPUT_METHOD : std::int32_t {
     FMOD_OUTPUT_METHOD_MIX_DIRECT = 0,
@@ -88,6 +91,7 @@ constexpr FMOD_INITFLAGS FMOD_INIT_MIX_FROM_UPDATE = 0x02;
 constexpr FMOD_INITFLAGS FMOD_INIT_3D_RIGHTHANDED = 0x04;
 constexpr FMOD_MODE FMOD_3D = 0x10;
 constexpr FMOD_MODE FMOD_LOOP_NORMAL = 0x02;
+constexpr FMOD_MODE FMOD_CREATESTREAM = 0x80;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_MS = 0x01;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_PCM = 0x02;
 constexpr std::int32_t FMOD_CHANNELCONTROL_DSP_HEAD = -3;
@@ -326,6 +330,11 @@ public:
 class Sound {
 public:
     FMOD_RESULT release();
+    FMOD_RESULT getFormat(
+        FMOD_SOUND_TYPE* type,
+        FMOD_SOUND_FORMAT* format,
+        std::int32_t* channels,
+        std::int32_t* bits);
     FMOD_RESULT getOpenState(
         std::int32_t* open_state,
         std::uint32_t* percent_buffered,

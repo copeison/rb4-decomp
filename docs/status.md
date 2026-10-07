@@ -39,6 +39,7 @@
 - [x] Reconstruct the `FmodDialogGeneratorManager` pool and resource routing.
 - [x] Reconstruct the `FmodDialogGenerator` Studio-event lifecycle.
 - [x] Reconstruct the generic `FmodStudioSoundGeneratorManager` pool.
+- [x] Reconstruct `FmodAudioStreamResource` loading and path registration.
 - [ ] Identify the synchronized six-sample interpolation kernel.
 - [ ] Establish a PS4 SDK 5.008 build and comparison loop.
 

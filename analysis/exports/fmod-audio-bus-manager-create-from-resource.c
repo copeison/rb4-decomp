@@ -6,7 +6,7 @@ __int64 *__fastcall fmod_audio_bus_manager_create_from_resource(__int64 a1, __in
   _QWORD v8[7]; // [rsp+8h] [rbp-38h] BYREF
 
   v8[1] = 0x6365786562696C2FLL;
-  sub_271C20(v8, *(_QWORD *)a2);
+  fmod_audio_stream_resource_find(v8, *(_QWORD *)a2);
   if ( v8[0] == 0 )
     return nullptr;
   if ( (*(unsigned __int8 (__fastcall **)(_QWORD))(*(_QWORD *)v8[0] + 48LL))(v8[0]) != 0 )
