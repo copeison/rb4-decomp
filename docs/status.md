@@ -392,6 +392,8 @@
   depth range, DOF disc blur, SSAO, CMAA, and signed-distance passes.
 - [x] Reconstruct both signed-distance compute-shader dispatches, sampled
   inputs, unordered outputs, and distance/tile constant layouts.
+- [x] Reconstruct the blur-classification compute-shader dispatch, texture
+  bindings, unordered classification output, and tile constant layout.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

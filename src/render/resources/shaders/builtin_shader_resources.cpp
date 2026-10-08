@@ -21,17 +21,6 @@ std::int64_t* construct_shader(
     return reinterpret_cast<std::int64_t*>(bytes + 288);
 }
 
-std::int64_t* construct_compute_shader(
-    void* storage,
-    void (*install_dispatch)(void*)) {
-    render_primary_shader_construct(
-        *static_cast<RenderPrimaryShaderResource*>(storage));
-    render_compute_shader_install_dispatch(storage);
-    install_dispatch(storage);
-    auto* bytes = static_cast<std::uint8_t*>(storage);
-    return reinterpret_cast<std::int64_t*>(bytes + 288);
-}
-
 std::uint8_t* construct_parameterized_shader(
     void* storage,
     void (*install_dispatch)(void*),
@@ -227,15 +216,6 @@ void render_test_shader_construct(void* shader) {
         shader, render_test_shader_install_dispatch, 2);
     shader_field(shader, 328) = -1;
     shader_field(shader, 336) = 0;
-}
-
-// Reconstructed from eboot.elf at 0x62E1C0.
-void render_blur_classify_compute_shader_construct(void* shader) {
-    auto* fields = construct_compute_shader(
-        shader, render_blur_classify_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 6; ++index) {
-        fields[index] = -1;
-    }
 }
 
 // Reconstructed from eboot.elf at 0x6F2B40.
