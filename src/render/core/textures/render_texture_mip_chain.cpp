@@ -30,7 +30,7 @@ std::size_t mip_chain_capacity(const RenderTextureMipChainArray& mip_chains) {
     return static_cast<std::size_t>(mip_chains.capacity - mip_chains.begin);
 }
 
-std::size_t level_count(const RenderTextureMipChainState& mip_chain) {
+std::size_t mip_chain_level_count(const RenderTextureMipChainState& mip_chain) {
     std::size_t count = 0;
     auto* level = &mip_chain;
     while (level != nullptr) {
@@ -236,16 +236,21 @@ void render_texture_mip_chain_array_validate(
     }
 
     const auto& first = *mip_chains.begin;
-    const auto expected_levels = level_count(first);
+    const auto expected_levels = mip_chain_level_count(first);
     for (auto* mip_chain = mip_chains.begin + 1;
          mip_chain != mip_chains.end;
          ++mip_chain) {
         if (mip_chain->fields.width != first.fields.width ||
             mip_chain->fields.data_format != first.fields.data_format ||
-            level_count(*mip_chain) != expected_levels) {
+            mip_chain_level_count(*mip_chain) != expected_levels) {
             return;
         }
     }
+}
+
+std::size_t render_texture_mip_chain_level_count(
+    const RenderTextureMipChainState& mip_chain) {
+    return mip_chain_level_count(mip_chain);
 }
 
 void render_texture_mip_chain_array_destruct(

@@ -29,6 +29,15 @@ struct RenderTextureArrayCube : RenderTexture {
     RenderTextureCubeArray cubes;
 };
 
+void render_texture_cube_array_construct(
+    RenderTextureDescriptorState& descriptor_state,
+    RenderTextureCubeArray& cubes,
+    const RenderTextureArrayCubeDescriptor& descriptor,
+    bool has_source_data);
+bool render_texture_cube_array_validate(
+    const RenderTextureCubeArray& cubes);
+void render_texture_cube_array_destruct(RenderTextureCubeArray& cubes);
+
 static_assert(sizeof(RenderTextureCubeDescriptorRange) == 24);
 static_assert(sizeof(RenderTextureArrayCubeDescriptor) == 168);
 static_assert(sizeof(RenderTextureCubeArray) == 32);

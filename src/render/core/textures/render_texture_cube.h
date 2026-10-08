@@ -24,6 +24,14 @@ struct RenderTextureCube : RenderTexture {
     RenderTextureCubeState cube;
 };
 
+bool render_texture_cube_prepare_descriptor(
+    const RenderTextureCubeDescriptorState& cube);
+void render_texture_cube_state_construct(
+    RenderTextureCubeState& cube,
+    const RenderTextureCubeDescriptorState& descriptor,
+    bool has_source_data);
+void render_texture_cube_state_destruct(RenderTextureCubeState& cube);
+
 static_assert(sizeof(RenderTextureCubeDescriptorState) == 480);
 static_assert(sizeof(RenderTextureCubeState) == 480);
 static_assert(sizeof(RenderTextureCubeDescriptor) == 624);

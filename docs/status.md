@@ -395,6 +395,8 @@
   growth, deep-copy append, validation, and ownership teardown.
 - [x] Type and reconstruct recursive mip-level ownership, deep source-pixel
   copies, auxiliary release, and common descriptor/state teardown.
+- [x] Reconstruct six-face cube state ownership and cube-array reserve, deep
+  append, validation, capacity growth, and teardown.
 - [x] Recover the texture data-format bit widths used by mip source allocation,
   including storage reuse and optional source copying.
 - [x] Reconstruct the full 85-ID data-format descriptor table and its 31-entry

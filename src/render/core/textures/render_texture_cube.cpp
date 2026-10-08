@@ -9,6 +9,48 @@
 
 namespace rb4 {
 
+// Reconstructed from eboot.elf at 0x68CC00.
+void render_texture_cube_state_construct(
+    RenderTextureCubeState& cube,
+    const RenderTextureCubeDescriptorState& descriptor,
+    bool has_source_data) {
+    for (std::size_t index = 0; index < 6; ++index) {
+        render_texture_mip_chain_construct(
+            cube.faces[index], descriptor.faces[index], has_source_data);
+    }
+}
+
+void render_texture_cube_state_destruct(RenderTextureCubeState& cube) {
+    for (std::size_t index = 6; index != 0; --index) {
+        render_texture_mip_chain_destruct(cube.faces[index - 1]);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x68D2C0 and 0x68D320.
+bool render_texture_cube_prepare_descriptor(
+    const RenderTextureCubeDescriptorState& cube) {
+    const auto& first = cube.faces[0].fields;
+    if (first.width == 0 || first.height == 0 ||
+        first.width != first.height || first.depth != 1) {
+        return false;
+    }
+
+    const auto expected_levels = render_texture_mip_chain_level_count(
+        reinterpret_cast<const RenderTextureMipChainState&>(cube.faces[0]));
+    for (std::size_t index = 1; index < 6; ++index) {
+        const auto& face = cube.faces[index].fields;
+        if (face.width != first.width || face.height != first.height ||
+            face.depth != first.depth ||
+            face.data_format != first.data_format ||
+            render_texture_mip_chain_level_count(
+                reinterpret_cast<const RenderTextureMipChainState&>(
+                    cube.faces[index])) != expected_levels) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Reconstructed from eboot.elf at 0x6A1030.
 void render_texture_cube_descriptor_construct(
     RenderTextureCubeDescriptor& descriptor) {
