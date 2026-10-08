@@ -28,9 +28,6 @@ const char* config_read_string(
     const DataConfig& config,
     const char* key);
 
-bool render_platform_supports_async_compute();
-RenderExtent render_platform_default_resolution();
 bool command_line_resolution_override(RenderExtent& resolution);
-bool render_platform_supports_resolution(RenderExtent resolution);
 
 }  // namespace rb4

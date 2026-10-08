@@ -30,3 +30,7 @@ The platform-seven boot predicate at `0x6B9FE0` is also direct: the resource
 tier must be at least four and feature bits zero and three must both be set.
 The constructor intentionally ignores this predicate's result, as in the
 binary.
+
+Renderer settings consume slot seven directly. Feature bit `0x10` gates async
+compute, the vector's final entry supplies the default output resolution, and
+command-line resolution overrides must match an entry in that vector.

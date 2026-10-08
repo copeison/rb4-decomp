@@ -31,9 +31,10 @@ The principal defaults recovered from its constant stores are:
 
 The loader reads nested settings for graphics API validation, a graphics
 debugger, barrier validation, and shader-compilation diagnostics. If the
-platform supports async compute and that option is enabled, multithreaded
-rendering is disabled. Platforms without async-compute support force both
-async compute and tiled lighting off.
+current platform slot's feature bit `0x10` supports async compute and that
+option is enabled, multithreaded rendering is disabled. Platforms without the
+feature force both async compute and tiled lighting off. This capability test
+now reads the typed platform configuration directly.
 
 The numeric `vsync_mode` loaded from configuration is separate from the
 runtime `vsync_enabled` flag. `toggle_vsync` at `0x6BA880` flips the latter;
@@ -69,7 +70,9 @@ target width and height into 16-pixel tiles.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the
-initial window resolution and sets the explicit-override flag.
+initial window resolution and sets the explicit-override flag. The default is
+the final mode in platform slot seven's sorted resolution vector; validation
+linearly searches that same vector, matching the original implementation.
 
 `render_parse_resolution` accepts `WIDTHxHEIGHT` using a lowercase `x`. A
 single positive number is treated as the height and expanded to a 16:9 width;

@@ -4,11 +4,40 @@
 #include <cstdlib>
 
 #include "core/memory/engine_memory.h"
+#include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings_adapters.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 
 namespace {
+
+constexpr std::size_t kCurrentPlatformConfigIndex = 7;
+constexpr std::uint32_t kAsyncComputeFeature = 0x10;
+
+const RenderPlatformConfig& current_platform_config() {
+    return render_system_platform_config_at(
+        *render_system_instance(),
+        kCurrentPlatformConfigIndex);
+}
+
+bool platform_supports_async_compute() {
+    return (current_platform_config().feature_flags & kAsyncComputeFeature) != 0;
+}
+
+RenderExtent platform_default_resolution() {
+    return current_platform_config().resolutions.back();
+}
+
+bool platform_supports_resolution(RenderExtent resolution) {
+    for (const auto& supported : current_platform_config().resolutions) {
+        if (supported.width == resolution.width &&
+            supported.height == resolution.height) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool equals_ignore_ascii_case(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
@@ -124,7 +153,7 @@ void apply_platform_limits(RenderSettings& settings) {
     settings.partial_framerate_enabled =
         settings.max_partial_framerate_scenes != 0;
 
-    if (render_platform_supports_async_compute()) {
+    if (platform_supports_async_compute()) {
         if (settings.async_compute_enabled) {
             settings.multithreaded_rendering_enabled = false;
         }
@@ -218,10 +247,10 @@ void render_settings_initialize(RenderSettings& settings) {
     }
     apply_platform_limits(settings);
 
-    settings.output_resolution = render_platform_default_resolution();
+    settings.output_resolution = platform_default_resolution();
     RenderExtent override_resolution;
     if (command_line_resolution_override(override_resolution) &&
-        render_platform_supports_resolution(override_resolution)) {
+        platform_supports_resolution(override_resolution)) {
         settings.output_resolution = override_resolution;
         settings.pc_window_resolution = override_resolution;
         settings.resolution_overridden = true;

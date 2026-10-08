@@ -39,6 +39,8 @@
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
 - [x] Recover the exact 232-byte renderer-settings layout, allocation/release,
   and signed limit fields.
+- [x] Replace settings platform-query adapters with direct slot-seven feature
+  and advertised-resolution reads.
 - [x] Identify renderer tile dimensions and light-capacity settings.
 - [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Reconstruct shared tiled-light compute-buffer teardown.
@@ -67,7 +69,7 @@
 - [x] Replace the CMAA capability adapter with the exact platform-seven feature
   bit test.
 - [x] Inline CMAA color, edge, and compressed-edge texture descriptors and
-  retain only the renderer-capability adapter.
+  owner registration.
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
 - [x] Replace the shared light-accumulation creation adapter with direct
