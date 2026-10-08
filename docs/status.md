@@ -60,6 +60,7 @@
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Recover the Orbis particle-buffer factory and quad-index layout.
 - [x] Recover the Orbis occlusion-query factory and vtable method boundaries.
+- [x] Recover the Orbis vertex, geometry, pixel, and compute shader factory.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

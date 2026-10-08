@@ -31,6 +31,7 @@ the source tree.
 | `0x8D8300` | Orbis frame submission | `src/render/orbis_frame_submit.cpp` | Submit-token condition wait, active-command flush, primary frame-owner submission, and collected-object finalization recovered. |
 | `0x8D85C0`, `0x8E1570`-`0x8E16C7` | Orbis GPU fence | `src/render/orbis_fence.cpp` | 24-byte object factory, zeroed four-byte `PS4Fence` allocation, destructor variants, and conditional deferred release recovered. |
 | `0x8D8AD0` | Orbis constant-buffer factory | `src/render/orbis_constant_buffer.cpp` | Named contiguous allocation, 112-byte header, 16-byte element stride, and inline payload construction recovered. |
+| `0x8D8B30` | Orbis shader factory | `src/render/orbis_shader.cpp` | Six-stage enum dispatch, four supported Orbis shader classes, exact object sizes, and stage-specific allocation names recovered. |
 | `0x8D8980`, `0x8E4F60` | Orbis 1D texture factory | `src/render/orbis_texture_1d.cpp` | 408-byte allocation, descriptor type 0, common construction, Orbis vtable, and zeroed backend state recovered. |
 | `0x8D89B0`, `0x8D62C0` | Orbis 2D texture factory | `src/render/orbis_texture_2d.cpp` | 520-byte allocation, common `RndTexture2DResource` construction, Orbis vtable, and zeroed backend state recovered. |
 | `0x8D89E0`, `0x8E53C0` | Orbis 3D texture factory | `src/render/orbis_texture_3d.cpp` | 408-byte allocation, descriptor type 2, common construction, Orbis vtable, and zeroed backend state recovered. |
