@@ -396,6 +396,8 @@
   bindings, unordered classification output, and tile constant layout.
 - [x] Reconstruct the DOF disc-blur compute-shader dispatch, sampled scene
   inputs, texture and structured outputs, constants, and tile definitions.
+- [x] Reconstruct the volumetric-scattering density, accumulation, and deferred
+  compute shaders, including permutations, typed light buffers, and constants.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

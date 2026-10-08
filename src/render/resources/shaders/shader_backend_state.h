@@ -67,5 +67,11 @@ std::uint64_t render_shader_backend_add_structured_buffer_output(
     const char* structure_name,
     std::uint32_t resource_dimension,
     std::uint32_t stage);
+std::uint64_t render_shader_backend_add_structured_buffer_input(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    const char* structure_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t stage);
 
 }  // namespace rb4

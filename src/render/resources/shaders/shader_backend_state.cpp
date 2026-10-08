@@ -256,4 +256,44 @@ std::uint64_t render_shader_backend_add_structured_buffer_output(
     return resource_index;
 }
 
+// Reconstructed from eboot.elf at 0x644150.
+std::uint64_t render_shader_backend_add_structured_buffer_input(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    const char* structure_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t stage) {
+    constexpr std::size_t kStageCount = 6;
+    constexpr std::size_t kBufferInputArrayOffset = 12;
+    constexpr std::uint64_t kBufferRegisterOffset = 12;
+    if (stage >= kStageCount) {
+        return 0;
+    }
+
+    std::uint64_t resource_index = 0;
+    constexpr std::uint32_t kBindingArrayGroups[]{0, 6, 12};
+    for (const auto array_offset : kBindingArrayGroups) {
+        const auto& array = state.binding_arrays[stage + array_offset];
+        resource_index += static_cast<std::uint64_t>(
+            array.begin == nullptr ? 0 : array.end - array.begin);
+    }
+
+    const Symbol resource_symbol(resource_name);
+    const Symbol structure_symbol(structure_name);
+    static const Symbol empty_symbol("");
+    auto& binding = append_binding(
+        state.binding_arrays[kBufferInputArrayOffset + stage]);
+    binding.reserved_0 = 1;
+    binding.resource_dimension = UINT32_MAX;
+    binding.stage_mask = UINT32_MAX;
+    binding.binding_index = static_cast<std::int32_t>(resource_dimension);
+    binding.resource_name = resource_symbol.value();
+    binding.sampler_name = empty_symbol.value();
+    binding.default_sampler_name = structure_symbol.value();
+    binding.resource_index = resource_index;
+    auto& buffer_count = state.stage_resource_counts[kStageCount + stage];
+    binding.stage_resource_count = buffer_count++ + kBufferRegisterOffset;
+    return resource_index;
+}
+
 }  // namespace rb4

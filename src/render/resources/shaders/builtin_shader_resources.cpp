@@ -218,42 +218,6 @@ void render_test_shader_construct(void* shader) {
     shader_field(shader, 336) = 0;
 }
 
-// Reconstructed from eboot.elf at 0x6D26D0.
-void render_vscat_density_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader, render_vscat_density_compute_shader_install_dispatch, 1);
-    for (std::size_t offset = 312; offset <= 488; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-    shader_field(shader, 496) = 0;
-}
-
-// Reconstructed from eboot.elf at 0x6D1E70.
-void render_vscat_accumulation_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader,
-        render_vscat_accumulation_compute_shader_install_dispatch,
-        3);
-    for (std::size_t offset = 352; offset <= 408; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-    shader_field(shader, 416) = -1;
-    shader_field(shader, 424) = 0;
-}
-
-// Reconstructed from eboot.elf at 0x6D3490.
-void render_vscat_deferred_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader, render_vscat_deferred_compute_shader_install_dispatch, 1);
-    shader_field(shader, 312) = -1;
-    shader_field(shader, 320) = -1;
-    shader_field(shader, 328) = -1;
-    for (std::size_t offset = 344; offset <= 392; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-    shader_field(shader, 400) = 0;
-}
-
 // Reconstructed from eboot.elf at 0x6F3E00.
 void render_test_compute_shader_construct(void* shader) {
     construct_parameterized_compute_shader(
