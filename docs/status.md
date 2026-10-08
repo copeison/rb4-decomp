@@ -41,6 +41,7 @@
 - [x] Reconstruct scene-mask render-target allocation and teardown.
 - [x] Reconstruct tiled scene-mask targets and grid mesh.
 - [x] Reconstruct per-scene linear and tiled depth targets.
+- [x] Inline linear and tiled-depth creation-state and format descriptors.
 - [x] Reconstruct the per-scene ambient-occlusion target.
 - [x] Inline the ambient-occlusion texture descriptor and primary-block
   registration path.

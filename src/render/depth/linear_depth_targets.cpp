@@ -2,8 +2,10 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/depth/linear_depth_target_adapters.h"
 
 namespace rb4 {
 
@@ -46,13 +48,35 @@ void create_target(
     LinearDepthTargetKind kind,
     RenderExtent extent,
     bool register_with_owner) {
-    target_slot(block, kind) =
-        render_target_resources_create_linear_depth_target(
-            resources,
-            kind,
-            extent,
-            reusable_target(reusable_block, kind),
-            register_with_owner);
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(7));
+    creation_state.values[9] = static_cast<std::uint32_t>(
+        render_texture_default_filter_mode(7));
+    creation_state.values[10] = 10;
+    const bool tiled = kind == LinearDepthTargetKind::kTiledDepthRange;
+    const RenderDataFormatDescriptor format_descriptor{
+        tiled ? 32U : 16U,
+        tiled ? 0U : 10U,
+        0,
+        1,
+        -1,
+    };
+    auto* target = render_target_resources_create_texture_2d(
+        resources,
+        tiled ? "Tiled Depth Range" : "Linear Depth Buffer",
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        extent,
+        -1,
+        0,
+        reusable_target(reusable_block, kind));
+    target_slot(block, kind) = target;
+    if (register_with_owner) {
+        resources.registered_resources_begin[
+            resources.registered_resource_count++] = target;
+    }
 }
 
 void release_target(
