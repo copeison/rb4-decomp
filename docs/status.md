@@ -22,6 +22,8 @@
 - [x] Reconstruct the six default render materials and shader-graph bindings.
 - [x] Reconstruct the default render-camera object and component attachment.
 - [x] Reconstruct the 49 default fallback textures and family ordering.
+- [x] Recover the exact default float colors, three-dimensional checker fill,
+  common format conversion, typed descriptors, and direct texture factories.
 - [x] Reconstruct top-level default render-resource initialization ordering.
 - [x] Reconstruct fallback directional-light creation and activation.
 - [x] Recover default texture lookup and shadow-offset accessors.

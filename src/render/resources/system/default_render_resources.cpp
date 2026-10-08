@@ -1,5 +1,7 @@
 #include "render/resources/system/default_render_resources.h"
 
+#include "render/core/textures/render_texture_adapters.h"
+
 namespace rb4 {
 
 namespace {
@@ -15,9 +17,10 @@ void replace_scene_resource(
     destination = replacement;
 }
 
-void release_texture(RndTextureResource*& texture) {
+template <typename Texture>
+void release_texture(Texture*& texture) {
     if (texture != nullptr) {
-        rnd_texture_resource_release(texture);
+        render_texture_release_dynamic(*texture);
         texture = nullptr;
     }
 }

@@ -21,11 +21,27 @@ The binary stores those pointers dimension first as seven adjacent arrays. The
 cleaned `DefaultTextureSet` groups them by semantic kind so all shapes for one
 fallback value stay together.
 
-The four normal defaults use an extent of 8. The three visible error patterns
-use an extent of 64 and initialize alternate color values. Cubes and cube
-arrays build six matching face descriptors. The cleaned implementation keeps
-the dimension-specific allocation behind runtime adapters while preserving
-the exact family order, names, and extents.
+The four ordinary defaults use an extent of 8. Their float colors are white,
+opaque black, transparent black, and the `(0.5, 0.5, 1, 1)` flat normal. The
+three error textures use an extent of 64 and alternate every eight texels in
+all dimensions:
+
+| Kind | Primary | Secondary |
+| --- | --- | --- |
+| Error | `(1, 0.5, 0, 1)` | `(0, 1, 1, 1)` |
+| Error Greyscale | `(0.25, 0.25, 0.25, 1)` | `(0.75, 0.75, 0.75, 1)` |
+| Error Normal | `(1, 0, 0, 1)` | `(0, 1, 0, 1)` |
+
+All families resolve the `{32, 4, 0, 2, -1}` data-format descriptor for
+resource class 7. A temporary float4 image is converted into owned mip source
+data for each dimensional extent. The 1D and 2D mip data is shared by the
+matching single-layer array descriptors, while cubes and cube arrays each
+build six owned face descriptors. The normal families set texture creation
+mode 3; every family sets creation values 8 and 9 to 2 and 1 respectively.
+
+The cleaned implementation calls the typed common 1D, 2D, 3D, cube, 1D-array,
+2D-array, and cube-array factories directly. Only the shared mip pixel-format
+conversion remains at the engine boundary.
 
 The descriptor type values are corroborated by the resource-class switch at
 `0x6ACF40`: `0` through `5` map to `RndTexture1DResource`,
@@ -34,4 +50,5 @@ The descriptor type values are corroborated by the resource-class switch at
 `7` is the six-face array form used by the light-probe texture-array path.
 
 `render_get_default_texture` at `0x6C00F0` indexes these tables by the raw shape
-values `0` through `5` and `7`, returning null for unsupported values.
+values `0` through `5` and `7`, returning the common `RenderTexture` base or
+null for unsupported values.
