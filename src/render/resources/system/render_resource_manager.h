@@ -61,10 +61,48 @@ struct RenderShaderConstantState {
     RenderShaderConstantRegistry* constant_registry;
 };
 
+struct RenderResourceManagerResources {
+    void* error_shader;
+    void* basic_shader;
+    void* bink_convert_shader;
+    void* bloom_shader;
+    void* blur_shader;
+    void* fxaa_shader;
+    void* dof_sprite_shader;
+    void* display_shading_mode_shader;
+    void* display_sphere_map_shader;
+    void* display_texture_cube_shader;
+    void* downsample_shader;
+    void* linearize_depth_shader;
+    void* output_conversion_shader;
+    void* refine_scene_mask_shader;
+    void* stencil_scene_mask_shader;
+    void* test_pattern_shader;
+    void* reserved_16;
+    void* blur_classify_compute_shader;
+    void* calc_depth_range_compute_shader;
+    void* clear_buffer_compute_shader;
+    void* copy_buffer_compute_shader;
+    void* dof_disc_blur_compute_shader;
+    void* vscat_density_compute_shader;
+    void* vscat_accumulation_compute_shader;
+    void* vscat_deferred_compute_shader;
+    void* ssao_compute_shader;
+    void* cmaa_edge_detect_compute_shader;
+    void* cmaa_edge_prune_compute_shader;
+    void* cmaa_shape_fit_compute_shader;
+    void* cmaa_final_process_compute_shader;
+    void* linearize_depth_compute_shader;
+    void* signed_distance_compute_shader;
+    void* signed_distance_classify_compute_shader;
+    void* render_test_shader;
+    void* render_test_compute_shader;
+};
+
 struct RenderResourceManagerRuntime {
     RenderShaderParameterRegistrySet* shader_parameters;
     void* function_table_texture;
-    void* resources[35];
+    RenderResourceManagerResources resources;
     std::uint64_t reserved_680;
 };
 
@@ -104,6 +142,21 @@ static_assert(
 static_assert(
     offsetof(RenderShaderConstantState, constant_registry) == 296);
 static_assert(sizeof(RenderResourceManagerRuntime) == 304);
+static_assert(sizeof(RenderResourceManagerResources) == 280);
+static_assert(
+    offsetof(RenderResourceManagerResources, dof_sprite_shader) == 48);
+static_assert(
+    offsetof(RenderResourceManagerResources, reserved_16) == 128);
+static_assert(
+    offsetof(
+        RenderResourceManagerResources,
+        blur_classify_compute_shader) == 136);
+static_assert(
+    offsetof(RenderResourceManagerResources, render_test_shader) == 264);
+static_assert(
+    offsetof(
+        RenderResourceManagerResources,
+        render_test_compute_shader) == 272);
 static_assert(offsetof(RenderResourceManager, runtime) == 384);
 static_assert(
     offsetof(RenderResourceManager, runtime) +
@@ -124,6 +177,7 @@ static_assert(sizeof(RenderResourceManager) == 712);
 
 RenderResourceManager& render_system_resource_manager(RenderSystem& system);
 void render_resource_manager_construct(RenderResourceManager& manager);
+void render_resource_manager_initialize(RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_parameters(
     RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_constant_registry(

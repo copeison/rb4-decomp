@@ -9,15 +9,16 @@
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
 #include "render/core/settings/render_settings.h"
+#include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/names/render_resource_name_adapters.h"
+#include "render/resources/shaders/builtin_shader_adapters.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
-#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 
@@ -25,6 +26,8 @@ namespace {
 
 constexpr std::size_t kResourceManagerOffset = 2544;
 constexpr std::ptrdiff_t kSecondaryShaderDirtyOffset = -395;
+constexpr std::size_t kCurrentPlatformConfigIndex = 7;
+constexpr std::uint32_t kAsyncComputeFeature = 0x10;
 
 struct RenderManagedObjectDispatch {
     void* reserved_0;
@@ -126,6 +129,22 @@ void add_shader_constant_group(
         render_shader_constant_registry_add_definition(
             registry, definition.name, definition.value);
     }
+}
+
+void* create_builtin_shader(
+    std::size_t size,
+    void (*construct)(void*)) {
+    auto* storage = render_allocate(size);
+    construct(storage);
+    render_primary_shader_register(
+        *static_cast<RenderPrimaryShaderResource*>(storage));
+    return storage;
+}
+
+bool supports_async_compute() {
+    const auto& platform = render_system_platform_config_at(
+        *render_system_instance(), kCurrentPlatformConfigIndex);
+    return (platform.feature_flags & kAsyncComputeFeature) != 0;
 }
 
 }  // namespace
@@ -491,6 +510,92 @@ void render_resource_manager_initialize_shader_constants(
         source_hash;
 }
 
+// Reconstructed from eboot.elf at 0x63F400.
+void render_resource_manager_initialize(RenderResourceManager& manager) {
+    manager.shader_constants.initialization_phases[0] = 1;
+    render_resource_manager_initialize_shader_constant_registry(manager);
+    render_resource_manager_initialize_shader_parameters(manager);
+    render_resource_manager_initialize_shader_constants(manager);
+
+    auto& resources = manager.runtime.resources;
+    resources.error_shader = create_builtin_shader(
+        328, render_error_shader_construct);
+    resources.basic_shader = create_builtin_shader(
+        400, render_basic_shader_construct);
+    resources.bink_convert_shader = create_builtin_shader(
+        392, render_bink_convert_shader_construct);
+    resources.bloom_shader = create_builtin_shader(
+        376, render_bloom_shader_construct);
+    resources.blur_shader = create_builtin_shader(
+        480, render_blur_shader_construct);
+    resources.fxaa_shader = create_builtin_shader(
+        312, render_fxaa_shader_construct);
+    resources.display_shading_mode_shader = create_builtin_shader(
+        312, render_display_shading_mode_shader_construct);
+    resources.display_sphere_map_shader = create_builtin_shader(
+        296, render_display_sphere_map_shader_construct);
+    resources.display_texture_cube_shader = create_builtin_shader(
+        416, render_display_texture_cube_shader_construct);
+    resources.downsample_shader = create_builtin_shader(
+        376, render_downsample_shader_construct);
+    resources.linearize_depth_shader = create_builtin_shader(
+        296, render_linearize_depth_shader_construct);
+    resources.output_conversion_shader = create_builtin_shader(
+        384, render_output_conversion_shader_construct);
+    resources.refine_scene_mask_shader = create_builtin_shader(
+        296, render_refine_scene_mask_shader_construct);
+    resources.stencil_scene_mask_shader = create_builtin_shader(
+        312, render_stencil_scene_mask_shader_construct);
+    resources.test_pattern_shader = create_builtin_shader(
+        320, render_test_pattern_shader_construct);
+
+    if (supports_async_compute()) {
+        resources.blur_classify_compute_shader = create_builtin_shader(
+            336, render_blur_classify_compute_shader_construct);
+        resources.calc_depth_range_compute_shader = create_builtin_shader(
+            320, render_calc_depth_range_compute_shader_construct);
+        resources.clear_buffer_compute_shader = create_builtin_shader(
+            392, render_clear_buffer_compute_shader_construct);
+        resources.copy_buffer_compute_shader = create_builtin_shader(
+            424, render_copy_buffer_compute_shader_construct);
+        resources.dof_disc_blur_compute_shader = create_builtin_shader(
+            376, render_dof_disc_blur_compute_shader_construct);
+        resources.dof_sprite_shader = create_builtin_shader(
+            304, render_dof_sprite_shader_construct);
+        resources.vscat_density_compute_shader = create_builtin_shader(
+            504, render_vscat_density_compute_shader_construct);
+        resources.vscat_accumulation_compute_shader = create_builtin_shader(
+            432, render_vscat_accumulation_compute_shader_construct);
+        resources.vscat_deferred_compute_shader = create_builtin_shader(
+            408, render_vscat_deferred_compute_shader_construct);
+        resources.ssao_compute_shader = create_builtin_shader(
+            352, render_ssao_compute_shader_construct);
+        resources.cmaa_edge_detect_compute_shader = create_builtin_shader(
+            328, render_cmaa_edge_detect_compute_shader_construct);
+        resources.cmaa_edge_prune_compute_shader = create_builtin_shader(
+            320, render_cmaa_edge_prune_compute_shader_construct);
+        resources.cmaa_shape_fit_compute_shader = create_builtin_shader(
+            328, render_cmaa_shape_fit_compute_shader_construct);
+        resources.cmaa_final_process_compute_shader = create_builtin_shader(
+            328, render_cmaa_final_process_compute_shader_construct);
+        resources.linearize_depth_compute_shader = create_builtin_shader(
+            344, render_linearize_depth_compute_shader_construct);
+        resources.signed_distance_compute_shader = create_builtin_shader(
+            344, render_signed_distance_compute_shader_construct);
+        resources.signed_distance_classify_compute_shader =
+            create_builtin_shader(
+                336,
+                render_signed_distance_classify_compute_shader_construct);
+    }
+
+    resources.render_test_shader = create_builtin_shader(
+        344, render_test_shader_construct);
+    if (supports_async_compute()) {
+        resources.render_test_compute_shader = create_builtin_shader(
+            352, render_test_compute_shader_construct);
+    }
+}
+
 // Reconstructed from eboot.elf at 0x63F350.
 void render_resource_manager_destruct(RenderResourceManager& manager) {
     release_list_sentinel(manager.primary_list);
@@ -618,8 +723,9 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
     }
 
     release_dynamic_resource(manager.runtime.function_table_texture);
-    for (auto*& resource : manager.runtime.resources) {
-        release_dynamic_resource(resource);
+    auto** resources = &manager.runtime.resources.error_shader;
+    for (std::size_t index = 0; index < 35; ++index) {
+        release_dynamic_resource(resources[index]);
     }
 }
 

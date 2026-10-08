@@ -189,6 +189,21 @@ RenderPrimaryShaderResource& render_primary_shader_from_link(
         bytes - kManagerLinkOffset);
 }
 
+// Reconstructed from eboot.elf at 0x638A20.
+void render_primary_shader_register(RenderPrimaryShaderResource& shader) {
+    auto& manager = render_system_resource_manager(*render_system_instance());
+    auto* sentinel = manager.primary_list;
+    auto* previous = sentinel->previous;
+    shader.manager_link.next = sentinel;
+    shader.manager_link.previous = previous;
+    previous->next = &shader.manager_link;
+    sentinel->previous = &shader.manager_link;
+
+    if (manager.shader_constants.initialization_phases[1] != 0) {
+        render_primary_shader_finalize(shader);
+    }
+}
+
 // Reconstructed from eboot.elf at 0x6380B0.
 void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
     render_primary_shader_set_base_dispatch(shader);

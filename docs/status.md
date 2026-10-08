@@ -362,6 +362,10 @@
   emission, and the resource manager's FNV-1a shader-source hash.
 - [x] Reconstruct the 129-record shader constant registry, including all 13
   source comment groups and 116 named integer definitions.
+- [x] Reconstruct top-level resource-manager initialization, name its 35 shader
+  slots, and recover the async-compute-gated allocation sequence.
+- [x] Reconstruct primary-shader registration and late-registration finalize
+  behavior.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder

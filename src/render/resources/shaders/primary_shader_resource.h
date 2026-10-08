@@ -12,6 +12,7 @@ void render_primary_shader_construct(RenderPrimaryShaderResource& shader);
 void render_primary_shader_destruct(RenderPrimaryShaderResource& shader);
 void render_primary_shader_prepare(RenderPrimaryShaderResource& shader);
 void render_primary_shader_finalize(RenderPrimaryShaderResource& shader);
+void render_primary_shader_register(RenderPrimaryShaderResource& shader);
 void render_primary_shader_clear_compiled_objects(
     RenderPrimaryShaderResource& shader);
 

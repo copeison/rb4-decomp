@@ -21,7 +21,6 @@
 #include "render/resources/system/default_render_resources.h"
 #include "render/resources/system/render_backend_resource.h"
 #include "render/resources/system/render_resource_manager.h"
-#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 

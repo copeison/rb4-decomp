@@ -17,8 +17,19 @@ two 16-byte intrusive-list sentinels; each list node is self-linked when empty.
 
 The destructor at `0x63F350` unlinks and releases the two sentinel nodes, frees
 the pointer array's backing storage by its capacity, and releases the array
-owner. The top-level runtime initializer remains an adapter boundary while its
-constant registry and backend-resource sequence are reconstructed.
+owner. The top-level initializer at `0x63F400` is source-owned. It advances the
+first manager phase, initializes the constant registry, parameter registries,
+and constant blocks, then allocates and registers every built-in shader in its
+original order.
+
+The formerly anonymous 35-pointer runtime array now has named slots. Fifteen
+graphics shaders are always created, followed by the always-on render-test
+shader. When platform slot seven exposes feature bit `0x10`, the manager also
+creates the DOF sprite shader and 17 compute resources for blur, depth range,
+buffer clearing/copying, DOF, volumetric scattering, SSAO, CMAA, depth
+linearization, signed distance, and compute render testing. Slot 16 remains
+unused as observed. Each resource retains its exact allocation size from the
+executable.
 
 Shader-constant setup at `0x640D60` is source-owned. It creates the `Scene`,
 `RenderTarget`, `Camera`, `ClipPlanes`,
@@ -76,9 +87,11 @@ Registry growth doubles capacity from one record, matching the original
 32-byte record array.
 
 The primary-shader layout and ownership implementation are kept in the
-dedicated `src/render/resources/shaders` domain. The manager only converts its
-intrusive links back to typed shader resources and invokes their finalize or
-compiled-object-clear operations.
+dedicated `src/render/resources/shaders` domain. Registration at `0x638A20`
+now inserts each shader into the manager's primary intrusive list directly and
+immediately finalizes late registrations after manager phase two. The manager
+converts links back to typed shader resources when finalizing or clearing
+compiled objects.
 
 Shader reload at `0x641F30` walks both intrusive lists directly. Primary
 resources place their manager link at offset `0x110`; each owns six 32-byte
