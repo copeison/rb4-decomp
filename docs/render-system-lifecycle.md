@@ -153,9 +153,10 @@ recursive lock depth, and mutex. Its destructor dynamically releases every
 ordinary statistic, destroys and frees each root statistic, unwinds the mutex,
 and frees both pointer arrays by their recorded capacities.
 
-GPU-stat frame finish resolves completed queries through one narrow adapter,
-advances the four-slot history ring directly, and resets every statistic's new
-slot query list under the block's recursive mutex.
+GPU-stat frame finish resolves completed queries through the primary context,
+builds the optional total remainder, smooths runtime samples over a 50-frame
+window, aggregates every root, advances the four-slot history ring, and resets
+every statistic's new slot query list under the block's recursive mutex.
 
 The adjacent 304-byte lighting block is typed separately under
 `src/render/resources/lighting`. Its constructor defaults, two pointer arrays,

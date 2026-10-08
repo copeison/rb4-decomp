@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -20,6 +21,12 @@ struct RenderGpuStatScope {
     std::uint64_t query_id;
 };
 
+struct RenderGpuStatistics {
+    float elapsed_seconds;
+    std::uint32_t reserved;
+    std::array<std::uint64_t, 6> hardware_counters;
+};
+
 struct RenderContextVtable {
     void* reserved_0;
     void (*delete_context)(RenderContext* context);
@@ -33,6 +40,9 @@ struct RenderContextVtable {
     void* reserved_176[9];
     void (*begin_gpu_stat)(RenderContext* context, std::uint64_t query_id);
     void (*end_gpu_stat)(RenderContext* context, std::uint64_t query_id);
+    RenderGpuStatistics (*resolve_gpu_stat)(
+        RenderContext* context,
+        std::uint64_t query_id);
 };
 
 struct RenderContext {
@@ -47,10 +57,12 @@ static_assert(offsetof(RenderContext, mode) == 12);
 static_assert(sizeof(RenderContext) == 16);
 static_assert(sizeof(RenderContextSubmissionResource) == 32);
 static_assert(sizeof(RenderGpuStatScope) == 16);
+static_assert(sizeof(RenderGpuStatistics) == 56);
 static_assert(
     offsetof(RenderContextVtable, prepare_submission_resources) == 168);
 static_assert(offsetof(RenderContextVtable, begin_gpu_stat) == 248);
 static_assert(offsetof(RenderContextVtable, end_gpu_stat) == 256);
+static_assert(offsetof(RenderContextVtable, resolve_gpu_stat) == 264);
 
 void render_context_delete(RenderContext& context);
 void render_context_initialize(RenderContext& context);
@@ -69,6 +81,9 @@ void render_context_begin_gpu_stat(
     RenderContext& context,
     std::uint64_t query_id);
 void render_context_end_gpu_stat(
+    RenderContext& context,
+    std::uint64_t query_id);
+RenderGpuStatistics render_context_resolve_gpu_stat(
     RenderContext& context,
     std::uint64_t query_id);
 

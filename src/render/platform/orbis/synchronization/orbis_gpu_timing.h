@@ -1,19 +1,12 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
+
+#include "render/core/context/render_context.h"
 
 namespace rb4 {
 
 struct OrbisRenderContext;
-
-struct RenderGpuStatistics {
-    float elapsed_seconds = 0.0F;
-    std::uint32_t reserved = 0;
-    std::array<std::uint64_t, 6> hardware_counters = {};
-};
-
-static_assert(sizeof(RenderGpuStatistics) == 56);
 
 void orbis_render_context_begin_gpu_stat(
     OrbisRenderContext& context,

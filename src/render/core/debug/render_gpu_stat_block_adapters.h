@@ -14,6 +14,5 @@ void render_gpu_statistic_construct(
 std::size_t render_gpu_counter_count();
 const char* render_gpu_counter_name(std::uint32_t index);
 float render_gpu_counter_scale(std::uint32_t index);
-void render_gpu_stat_block_resolve_frame(RenderGpuStatBlock& block);
 
 }  // namespace rb4

@@ -26,11 +26,21 @@ and records each new statistic in its root's pointer array. Frame end at
 Frame finish at
 `0x62B960` resolves the completed slot, advances the four-entry history ring
 under the recursive mutex, and clears the new slot's sample range for every
-statistic.
+statistic. Resolution at `0x62B9E0` is source-owned: it activates a pending
+render frame, resolves each retained query through render-context vtable slot
+`0x108`, and accumulates elapsed time plus six 64-bit hardware counters into
+the selected 80-byte result slot. Runtime statistics maintain rolling query
+count and elapsed-time averages over at most 50 samples, along with the latest
+and maximum elapsed values. When backend statistics are active, a
+`GPU Total {Remainder}` child subtracts all explicitly measured total children
+from the total. Each 384-byte root then sums its children and publishes the
+largest smoothing history observed among them.
 
 Destruction at `0x62ABA0` dynamically releases runtime statistics, then tears
 down every 384-byte root directly. Each root owns a 32-byte child pointer
-array, the statistic base at offset `0x20`, and four 32-byte history arrays at
-offset `0x58`; the histories are released in reverse order before the embedded
-name record and child array. The block then unwinds the recursive mutex and
-frees both top-level pointer arrays by capacity.
+array, the 56-byte statistic base at offset `0x20`, four 32-byte history arrays
+at offset `0x58`, and two 80-byte result slots at offset `0xD8`; the histories
+are released in reverse order before the embedded name record and child array.
+Runtime statistics use the same base, histories, and result slots, followed by
+their interned full-name key at offset `0x158`. The block then unwinds the
+recursive mutex and frees both top-level pointer arrays by capacity.

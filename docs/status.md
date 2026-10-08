@@ -321,6 +321,8 @@
   child-list growth, and hardware-counter metadata propagation.
 - [x] Type GPU root-statistic child/history ownership and reconstruct its
   reverse array and embedded-name teardown.
+- [x] Reconstruct GPU query resolution, two-slot result accumulation,
+  50-frame smoothing, total remainder, and root aggregation.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its

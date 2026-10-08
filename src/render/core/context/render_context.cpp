@@ -102,4 +102,10 @@ void render_context_end_gpu_stat(
     context.virtual_table->end_gpu_stat(&context, query_id);
 }
 
+RenderGpuStatistics render_context_resolve_gpu_stat(
+    RenderContext& context,
+    std::uint64_t query_id) {
+    return context.virtual_table->resolve_gpu_stat(&context, query_id);
+}
+
 }  // namespace rb4

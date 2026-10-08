@@ -21,7 +21,8 @@ struct RenderGpuStatBlock {
     void* root_statistics_allocator;
     std::uint64_t next_query_id;
     std::uint64_t frame_slot;
-    std::uint8_t reserved_88[16];
+    std::uint8_t reserved_88[8];
+    std::uint64_t active_statistics_slot;
     void* backend;
     std::int32_t lock_depth;
     std::uint32_t reserved_116;
@@ -31,6 +32,7 @@ struct RenderGpuStatBlock {
 static_assert(offsetof(RenderGpuStatBlock, total_statistic) == 32);
 static_assert(offsetof(RenderGpuStatBlock, next_query_id) == 72);
 static_assert(offsetof(RenderGpuStatBlock, frame_slot) == 80);
+static_assert(offsetof(RenderGpuStatBlock, active_statistics_slot) == 96);
 static_assert(offsetof(RenderGpuStatBlock, backend) == 104);
 static_assert(offsetof(RenderGpuStatBlock, lock_depth) == 112);
 static_assert(offsetof(RenderGpuStatBlock, mutex) == 120);
