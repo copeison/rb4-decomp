@@ -433,6 +433,8 @@
   suppression, and deleting storage release.
 - [x] Reconstruct the common 1D-texture dispatch, mip/source queries,
   creation-state replacement, source-data release, and deleting lifecycle.
+- [x] Reconstruct the common 3D-texture dispatch, mip/source queries,
+  creation-state replacement, source-data release, and deleting lifecycle.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
