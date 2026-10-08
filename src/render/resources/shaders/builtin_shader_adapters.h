@@ -22,7 +22,12 @@ void render_test_shader_install_dispatch(void* shader);
 void render_compute_shader_install_dispatch(void* shader);
 void render_blur_classify_compute_shader_install_dispatch(void* shader);
 void render_calc_depth_range_compute_shader_install_dispatch(void* shader);
+void render_clear_buffer_compute_shader_install_dispatch(void* shader);
+void render_copy_buffer_compute_shader_install_dispatch(void* shader);
 void render_dof_disc_blur_compute_shader_install_dispatch(void* shader);
+void render_vscat_density_compute_shader_install_dispatch(void* shader);
+void render_vscat_accumulation_compute_shader_install_dispatch(void* shader);
+void render_vscat_deferred_compute_shader_install_dispatch(void* shader);
 void render_ssao_compute_shader_install_dispatch(void* shader);
 void render_cmaa_edge_detect_compute_shader_install_dispatch(void* shader);
 void render_cmaa_edge_prune_compute_shader_install_dispatch(void* shader);
@@ -31,5 +36,7 @@ void render_cmaa_final_process_compute_shader_install_dispatch(void* shader);
 void render_signed_distance_compute_shader_install_dispatch(void* shader);
 void render_signed_distance_classify_compute_shader_install_dispatch(
     void* shader);
+void render_linearize_depth_compute_shader_install_dispatch(void* shader);
+void render_test_compute_shader_install_dispatch(void* shader);
 
 }  // namespace rb4

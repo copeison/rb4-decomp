@@ -48,6 +48,23 @@ std::uint8_t* construct_parameterized_shader(
     return bytes;
 }
 
+std::uint8_t* construct_parameterized_compute_shader(
+    void* storage,
+    void (*install_dispatch)(void*),
+    std::size_t binding_count) {
+    render_primary_shader_construct(
+        *static_cast<RenderPrimaryShaderResource*>(storage));
+    render_compute_shader_install_dispatch(storage);
+    install_dispatch(storage);
+    auto* bytes = static_cast<std::uint8_t*>(storage);
+    for (std::size_t index = 0; index < binding_count; ++index) {
+        auto* binding = reinterpret_cast<RenderShaderParameterBinding*>(
+            bytes + 288 + index * sizeof(RenderShaderParameterBinding));
+        *binding = {};
+    }
+    return bytes;
+}
+
 std::int64_t& shader_field(void* shader, std::size_t offset) {
     auto* bytes = static_cast<std::uint8_t*>(shader);
     return *reinterpret_cast<std::int64_t*>(bytes + offset);
@@ -231,6 +248,26 @@ void render_calc_depth_range_compute_shader_construct(void* shader) {
     fields[3] = 0;
 }
 
+// Reconstructed from eboot.elf at 0x637210.
+void render_clear_buffer_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader, render_clear_buffer_compute_shader_install_dispatch, 2);
+    shader_field(shader, 328) = -1;
+    shader_field(shader, 336) = 0;
+    for (std::size_t offset = 344; offset <= 384; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6F3550.
+void render_copy_buffer_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader, render_copy_buffer_compute_shader_install_dispatch, 2);
+    for (std::size_t offset = 328; offset <= 416; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+}
+
 // Reconstructed from eboot.elf at 0x6F2B40.
 void render_dof_disc_blur_compute_shader_construct(void* shader) {
     auto* fields = construct_shader(
@@ -239,6 +276,42 @@ void render_dof_disc_blur_compute_shader_construct(void* shader) {
         fields[index] = -1;
     }
     fields[10] = 0;
+}
+
+// Reconstructed from eboot.elf at 0x6D26D0.
+void render_vscat_density_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader, render_vscat_density_compute_shader_install_dispatch, 1);
+    for (std::size_t offset = 312; offset <= 488; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+    shader_field(shader, 496) = 0;
+}
+
+// Reconstructed from eboot.elf at 0x6D1E70.
+void render_vscat_accumulation_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader,
+        render_vscat_accumulation_compute_shader_install_dispatch,
+        3);
+    for (std::size_t offset = 352; offset <= 408; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+    shader_field(shader, 416) = -1;
+    shader_field(shader, 424) = 0;
+}
+
+// Reconstructed from eboot.elf at 0x6D3490.
+void render_vscat_deferred_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader, render_vscat_deferred_compute_shader_install_dispatch, 1);
+    shader_field(shader, 312) = -1;
+    shader_field(shader, 320) = -1;
+    shader_field(shader, 328) = -1;
+    for (std::size_t offset = 344; offset <= 392; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+    shader_field(shader, 400) = 0;
 }
 
 // Reconstructed from eboot.elf at 0x6D7130.
@@ -309,6 +382,28 @@ void render_signed_distance_classify_compute_shader_construct(void* shader) {
     for (std::size_t index = 0; index < 6; ++index) {
         fields[index] = -1;
     }
+}
+
+// Reconstructed from eboot.elf at 0x637C10.
+void render_linearize_depth_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader,
+        render_linearize_depth_compute_shader_install_dispatch,
+        1);
+    shader_field(shader, 312) = -1;
+    shader_field(shader, 320) = -1;
+    shader_field(shader, 328) = -1;
+    shader_field(shader, 336) = 0;
+}
+
+// Reconstructed from eboot.elf at 0x6F3E00.
+void render_test_compute_shader_construct(void* shader) {
+    construct_parameterized_compute_shader(
+        shader, render_test_compute_shader_install_dispatch, 1);
+    for (std::size_t offset = 312; offset <= 336; offset += 8) {
+        shader_field(shader, offset) = -1;
+    }
+    shader_field(shader, 344) = 0;
 }
 
 }  // namespace rb4
