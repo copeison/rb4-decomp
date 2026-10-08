@@ -1,20 +1,10 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 
 namespace rb4 {
 
-struct OrbisFence;
 struct OrbisRenderContext;
-struct OrbisRenderSystem;
-
-void orbis_fence_install_vtable(OrbisFence& fence);
-std::uint32_t* orbis_allocate_fence_value(
-    std::size_t size,
-    const char* name,
-    std::uint32_t alignment);
-void render_delete_fence_storage(OrbisFence& fence);
 bool orbis_render_context_recording_graphics(
     const OrbisRenderContext& context);
 bool orbis_render_context_recording_compute(

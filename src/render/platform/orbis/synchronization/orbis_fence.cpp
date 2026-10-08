@@ -5,7 +5,7 @@
 #include <limits>
 
 #include "core/memory/engine_memory.h"
-#include "render/platform/orbis/synchronization/orbis_fence_adapters.h"
+#include "render/platform/orbis/synchronization/orbis_fence_commands.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
@@ -14,6 +14,25 @@ namespace rb4 {
 namespace {
 
 constexpr const char* kFenceAllocationName = "PS4Fence";
+
+struct OrbisFenceDispatch {
+    void (*destruct)(OrbisFence& fence);
+    void (*delete_fence)(OrbisFence& fence);
+};
+
+OrbisFenceDispatch kOrbisFenceDispatch{
+    orbis_fence_destruct,
+    orbis_fence_delete,
+};
+
+void set_fence_dispatch(OrbisFence& fence) {
+    fence.implementation = &kOrbisFenceDispatch;
+}
+
+std::uint32_t* allocate_fence_value() {
+    return static_cast<std::uint32_t*>(render_allocate_named(
+        sizeof(std::uint32_t), kFenceAllocationName, 4));
+}
 
 void release_fence_value(OrbisFence& fence) {
     if (auto* system = orbis_render_system_instance()) {
@@ -35,18 +54,17 @@ OrbisFence* orbis_create_fence() {
 
 // Reconstructed from eboot.elf at 0x8E1570.
 void orbis_fence_construct(OrbisFence& fence) {
-    orbis_fence_install_vtable(fence);
+    set_fence_dispatch(fence);
     fence.value = nullptr;
     fence.sequence = 0;
-    auto* value = orbis_allocate_fence_value(
-        sizeof(std::uint32_t), kFenceAllocationName, 4);
+    auto* value = allocate_fence_value();
     *value = 0;
     fence.value = value;
 }
 
 // Reconstructed from eboot.elf at 0x8E15F0.
 void orbis_fence_destruct(OrbisFence& fence) {
-    orbis_fence_install_vtable(fence);
+    set_fence_dispatch(fence);
     release_fence_value(fence);
     fence.value = nullptr;
 }
@@ -59,9 +77,9 @@ void orbis_fence_base_destruct(OrbisFence& fence) {
 
 // Reconstructed from eboot.elf at 0x8E1680.
 void orbis_fence_delete(OrbisFence& fence) {
-    orbis_fence_install_vtable(fence);
+    set_fence_dispatch(fence);
     release_fence_value(fence);
-    render_delete_fence_storage(fence);
+    render_release(&fence);
 }
 
 // Reconstructed from eboot.elf at 0x8E16D0.
@@ -71,8 +89,7 @@ std::uint32_t orbis_fence_next_value(OrbisFence& fence) {
         fence.sequence = 0;
         release_fence_value(fence);
 
-        auto* value = orbis_allocate_fence_value(
-            sizeof(std::uint32_t), kFenceAllocationName, 4);
+        auto* value = allocate_fence_value();
         *value = 0;
         fence.value = value;
         sequence = fence.sequence;
