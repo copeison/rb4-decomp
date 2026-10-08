@@ -23,3 +23,8 @@ populate the mesh's triangle and vertex arrays, select a format descriptor
 from the table at `0x4435E0`, and then finalize the backend data. Recovered
 call-site names include `Arrow Mesh`, `Text`, `Scene Mask Mesh`, and
 `vocal_tube_mesh`.
+
+The position-only specialization is reconstructed in
+`src/render/orbis_mesh.cpp`. Its CPU vertex-vector accessors, double-buffered
+GPU update path, index-width selection, and missing IDA method boundaries are
+documented in `docs/orbis-position-mesh.md`.
