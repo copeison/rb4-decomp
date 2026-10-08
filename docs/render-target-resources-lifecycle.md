@@ -24,6 +24,13 @@ texture slot. Small local enum-to-field helpers keep multi-target subsystem
 code readable. Adapters remain only where an operation still performs
 container growth, registration, allocation, or virtual dispatch.
 
+Source binding now mirrors the inlined code at `0x6B0760`: copy the source
+texture dimensions, invoke the owner's compatibility virtual, store the
+source, and append it to the inline resource list. Common release directly
+tears down the three still-unidentified target slots and resets block count,
+extent, attachment cursor, and registered-resource count. Stereo target
+selection is the observed `resource_mode == 3` test.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.

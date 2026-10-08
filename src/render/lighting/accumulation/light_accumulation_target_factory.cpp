@@ -2,7 +2,6 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory_adapters.h"
 
 namespace rb4 {

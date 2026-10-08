@@ -4,7 +4,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_resource_adapters.h"
+#include "render/core/targets/render_target_adapters.h"
 #include "render/core/targets/render_target_resource_block.h"
 #include "render/core/targets/render_target_resource_block_adapters.h"
 #include "render/core/targets/render_target_resources_lifecycle_adapters.h"
@@ -29,10 +29,42 @@ namespace rb4 {
 
 namespace {
 
+struct RenderTargetResourcesDispatch {
+    void* destruct;
+    void* destroy;
+    bool (*accept_source_texture)(
+        RenderTargetResources& resources,
+        RenderTexture& source_texture);
+};
+
+const RenderTargetResourcesDispatch& dispatch(
+    const RenderTargetResources& resources) {
+    return *static_cast<const RenderTargetResourcesDispatch*>(
+        resources.implementation);
+}
+
 bool has_flag(
     std::uint32_t flags,
     RenderTargetResourceFlag flag) {
     return (flags & static_cast<std::uint32_t>(flag)) != 0;
+}
+
+void bind_source_texture(
+    RenderTargetResources& resources,
+    RenderTexture& source_texture) {
+    resources.extent = {source_texture.width, source_texture.height};
+    (void)dispatch(resources).accept_source_texture(
+        resources, source_texture);
+    resources.source_texture = &source_texture;
+    resources.registered_resources_begin[
+        resources.registered_resource_count++] = &source_texture;
+}
+
+void release_target(RenderTarget*& target) {
+    if (target != nullptr) {
+        render_target_release_dynamic(*target);
+        target = nullptr;
+    }
 }
 
 const RenderTargetResourceBlock* reusable_block(
@@ -74,7 +106,7 @@ void render_target_resources_initialize(
     RenderTexture& source_texture,
     const RenderTargetResources* reusable_resources) {
     render_target_resources_release(resources);
-    render_target_resources_bind_source_texture(resources, source_texture);
+    bind_source_texture(resources, source_texture);
 
     const auto flags = resources.flags;
     if (has_flag(flags, RenderTargetResourceFlag::kLightAccumulation)) {
@@ -145,7 +177,7 @@ void render_target_resources_release(RenderTargetResources& resources) {
     source_texture = nullptr;
 
     render_light_accumulation_targets_release(resources);
-    render_target_resources_release_unclassified_target(resources);
+    release_target(resources.unclassified_target_188);
     render_light_probe_accumulation_target_release(resources);
     render_sky_targets_release(resources);
     render_scaled_targets_release(resources);
@@ -160,7 +192,8 @@ void render_target_resources_release(RenderTargetResources& resources) {
         render_target_resource_block_release_partial_frame_state(block);
         render_partial_light_accumulation_target_release(block);
         render_depth_stencil_target_release(block);
-        render_target_resource_block_release_unclassified_targets(block);
+        release_target(block.unclassified_target_18);
+        release_target(block.unclassified_target_20);
         render_gbuffer_targets_release(block);
         render_linear_depth_targets_release(block);
         render_ambient_occlusion_target_release(block);
@@ -169,7 +202,10 @@ void render_target_resources_release(RenderTargetResources& resources) {
         render_volumetric_scattering_textures_release(block);
     }
 
-    render_target_resources_finish_release(resources);
+    resources.block_count = 0;
+    resources.extent = {};
+    resources.attachment_cursor = 0;
+    resources.registered_resource_count = 0;
 }
 
 // Reconstructed from eboot.elf at 0x6B28D0.

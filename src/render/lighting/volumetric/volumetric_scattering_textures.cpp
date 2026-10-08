@@ -4,7 +4,6 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/core/textures/render_texture_3d.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/lighting/volumetric/volumetric_scattering_texture_adapters.h"
@@ -187,7 +186,7 @@ void render_volumetric_scattering_textures_create(
             tile_extent);
     }
 
-    if (render_target_resources_use_stereo_targets(resources)) {
+    if (resources.resource_mode == 3) {
         for (const auto depth : kAscendingDepths) {
             create_texture(
                 resources,

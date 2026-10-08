@@ -3,7 +3,6 @@
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_adapters.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/lighting/shadows/shadow_contribution_target_adapters.h"
 
 namespace rb4 {

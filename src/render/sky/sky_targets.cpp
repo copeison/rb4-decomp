@@ -1,7 +1,6 @@
 #include "render/sky/sky_targets.h"
 
 #include "render/core/targets/render_target_adapters.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/sky/sky_target_adapters.h"
 
 namespace rb4 {

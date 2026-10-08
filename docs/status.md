@@ -59,6 +59,8 @@
   typed fields and local enum-to-field mappings.
 - [x] Recover the concrete 1,552-byte render-target state constructor and
   deleting destructor, including its verified resource-owner prefix mapping.
+- [x] Inline verified render-target source binding, unidentified-slot teardown,
+  release-state reset, and stereo-mode selection.
 - [x] Reconstruct render-target owner mode and partial-block controls.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.

@@ -3,7 +3,6 @@
 #include <array>
 
 #include "render/core/targets/render_target_adapters.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/intermediate/scaled_target_adapters.h"
 
 namespace rb4 {

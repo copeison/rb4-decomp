@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/core/targets/render_target_resource_block_adapters.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
@@ -94,7 +93,7 @@ void render_target_resource_block_initialize(
             render_target_resource_block_tiled_light_resources(block),
             extent,
             !partial_frame,
-            render_target_resources_use_stereo_targets(resources),
+            resources.resource_mode == 3,
             interpolation_reuse);
     }
 

@@ -1,7 +1,6 @@
 #include "render/lighting/ambient_occlusion/ambient_occlusion_target.h"
 
 #include "render/core/targets/render_target_adapters.h"
-#include "render/core/targets/render_target_resource_adapters.h"
 #include "render/lighting/ambient_occlusion/ambient_occlusion_target_adapters.h"
 
 namespace rb4 {
