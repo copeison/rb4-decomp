@@ -317,6 +317,8 @@
   statistic offset `0x28`.
 - [x] Reconstruct GPU-stat frame begin, nested context scopes, query-ID history
   growth, and direct render-context begin dispatch.
+- [x] Reconstruct sorted GPU-statistic lookup and creation, root association,
+  child-list growth, and hardware-counter metadata propagation.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its

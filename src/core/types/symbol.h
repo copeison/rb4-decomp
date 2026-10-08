@@ -10,6 +10,10 @@ class Symbol {
 public:
     explicit Symbol(const char* text);
 
+    const void* value() const {
+        return value_;
+    }
+
 private:
     const void* value_;
 };

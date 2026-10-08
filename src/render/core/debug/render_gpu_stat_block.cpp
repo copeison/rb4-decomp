@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
+#include "core/types/symbol.h"
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 
@@ -42,7 +43,7 @@ void initialize_root_statistic(
         parent == nullptr ? nullptr : root_statistic_base(*parent));
 }
 
-bool& root_has_hardware_counters(RenderGpuRootStatistic& statistic) {
+bool& root_has_children(RenderGpuRootStatistic& statistic) {
     return *reinterpret_cast<bool*>(&statistic.storage[73]);
 }
 
@@ -140,6 +141,185 @@ void append_root_statistic(
     block.root_statistics_capacity = new_begin + new_capacity;
 }
 
+void insert_pointer(
+    void**& begin,
+    void**& end,
+    void**& capacity,
+    void** position,
+    void* value) {
+    if (end != capacity) {
+        std::memmove(
+            position + 1,
+            position,
+            static_cast<std::size_t>(end - position) * sizeof(void*));
+        *position = value;
+        ++end;
+        return;
+    }
+
+    const auto size = begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(end - begin);
+    const auto insertion_index = begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(position - begin);
+    const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
+    auto** new_begin = static_cast<void**>(
+        engine_allocate_sized(new_capacity * sizeof(void*)));
+
+    if (insertion_index != 0) {
+        std::memmove(
+            new_begin,
+            begin,
+            insertion_index * sizeof(void*));
+    }
+    new_begin[insertion_index] = value;
+    if (insertion_index != size) {
+        std::memmove(
+            new_begin + insertion_index + 1,
+            position,
+            (size - insertion_index) * sizeof(void*));
+    }
+
+    if (begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(capacity) -
+            reinterpret_cast<std::uint8_t*>(begin));
+        engine_deallocate_sized(begin, byte_count);
+    }
+
+    begin = new_begin;
+    end = new_begin + size + 1;
+    capacity = new_begin + new_capacity;
+}
+
+std::uintptr_t pointer_key(const void* value) {
+    return reinterpret_cast<std::uintptr_t>(value);
+}
+
+const void* statistic_full_name(const void* statistic) {
+    const auto* bytes = static_cast<const std::uint8_t*>(statistic);
+    return *reinterpret_cast<const void* const*>(bytes + 344);
+}
+
+const void* root_statistic_name(const void* statistic) {
+    const auto* bytes = static_cast<const std::uint8_t*>(statistic);
+    return *reinterpret_cast<const void* const*>(bytes + 40);
+}
+
+void append_root_child(
+    RenderGpuRootStatistic& root,
+    void* statistic) {
+    auto** array = reinterpret_cast<void***>(root.storage);
+    auto*& begin = array[0];
+    auto*& end = array[1];
+    auto*& capacity = array[2];
+    insert_pointer(begin, end, capacity, end, statistic);
+}
+
+float& statistic_counter_scale(void* statistic) {
+    auto* bytes = static_cast<std::uint8_t*>(statistic);
+    return *reinterpret_cast<float*>(bytes + 44);
+}
+
+std::int32_t& statistic_counter_index(void* statistic) {
+    auto* bytes = static_cast<std::uint8_t*>(statistic);
+    return *reinterpret_cast<std::int32_t*>(bytes + 48);
+}
+
+// Reconstructed from eboot.elf at 0x62B2C0.
+void* find_or_create_gpu_statistic(
+    RenderGpuStatBlock& block,
+    const char* name,
+    const char* full_name,
+    void* parent) {
+    const Symbol name_symbol{name};
+    const Symbol full_name_symbol{full_name};
+    const auto name_key = name_symbol.value();
+    const auto full_name_key = full_name_symbol.value();
+
+    scePthreadMutexLock(&block.mutex);
+    ++block.lock_depth;
+
+    auto** statistic_position = block.statistics_begin;
+    if (block.statistics_begin != block.statistics_end) {
+        statistic_position = std::lower_bound(
+            block.statistics_begin,
+            block.statistics_end,
+            full_name_key,
+            [](const void* statistic, const void* key) {
+                return pointer_key(statistic_full_name(statistic)) <
+                    pointer_key(key);
+            });
+    }
+
+    void* statistic = nullptr;
+    if (statistic_position != block.statistics_end &&
+        statistic_full_name(*statistic_position) == full_name_key) {
+        statistic = *statistic_position;
+        --block.lock_depth;
+        scePthreadMutexUnlock(&block.mutex);
+        return statistic;
+    } else {
+        statistic = render_allocate(352);
+        render_gpu_statistic_construct(
+            statistic,
+            static_cast<const char*>(name_symbol.value()),
+            parent);
+        insert_pointer(
+            block.statistics_begin,
+            block.statistics_end,
+            block.statistics_capacity,
+            statistic_position,
+            statistic);
+    }
+
+    auto** root_position = block.root_statistics_begin;
+    if (block.root_statistics_begin != block.root_statistics_end) {
+        root_position = std::lower_bound(
+            block.root_statistics_begin,
+            block.root_statistics_end,
+            name_key,
+            [](const void* root, const void* key) {
+                return pointer_key(root_statistic_name(root)) <
+                    pointer_key(key);
+            });
+    }
+
+    RenderGpuRootStatistic* root = nullptr;
+    if (root_position != block.root_statistics_end &&
+        root_statistic_name(*root_position) == name_key) {
+        root = static_cast<RenderGpuRootStatistic*>(*root_position);
+        if (root_counter_index(*root) != UINT32_MAX &&
+            statistic_counter_scale(statistic) == 0.0F) {
+            statistic_counter_scale(statistic) = root_counter_scale(*root);
+            statistic_counter_index(statistic) = static_cast<std::int32_t>(
+                root_counter_index(*root));
+        }
+    } else {
+        root = static_cast<RenderGpuRootStatistic*>(
+            render_allocate(sizeof(RenderGpuRootStatistic)));
+        initialize_root_statistic(
+            *root,
+            static_cast<const char*>(name_symbol.value()),
+            static_cast<RenderGpuRootStatistic*>(block.total_statistic));
+        root_has_children(
+            *static_cast<RenderGpuRootStatistic*>(block.total_statistic)) = true;
+        insert_pointer(
+            block.root_statistics_begin,
+            block.root_statistics_end,
+            block.root_statistics_capacity,
+            root_position,
+            root);
+    }
+
+    append_root_child(*root, statistic);
+
+    --block.lock_depth;
+    scePthreadMutexUnlock(&block.mutex);
+    return statistic;
+}
+
 void append_query_id(
     void* statistic,
     std::uint64_t frame_slot,
@@ -231,7 +411,7 @@ void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
             *counter,
             render_gpu_counter_name(static_cast<std::uint32_t>(index)),
             total);
-        root_has_hardware_counters(*total) = true;
+        root_has_children(*total) = true;
         root_counter_scale(*counter) =
             render_gpu_counter_scale(static_cast<std::uint32_t>(index));
         root_counter_index(*counter) = static_cast<std::uint32_t>(index);
@@ -307,7 +487,7 @@ std::int64_t render_gpu_stat_block_begin(
 
     scePthreadMutexLock(&block.mutex);
     ++block.lock_depth;
-    auto* statistic = render_gpu_statistic_find_or_create(
+    auto* statistic = find_or_create_gpu_statistic(
         block, name, full_name, parent);
     const auto query_id = block.next_query_id++;
     append_query_id(statistic, block.frame_slot, query_id);
