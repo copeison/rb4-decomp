@@ -6,7 +6,10 @@ invokes `orbis_fence_construct` at `0x8E1570`.
 
 The constructor allocates one four-byte GPU-visible value named `PS4Fence`
 with alignment value 4 and initializes it to zero. The object retains that
-allocation as its fence value storage.
+allocation as its fence value storage. The recovered object layout contains
+the virtual dispatch pointer at offset `+0`, the GPU value pointer at `+8`, and
+the 32-bit sequence at `+16`; the final four bytes are unused by the recovered
+methods. `static_assert` keeps the typed reconstruction at exactly 24 bytes.
 
 The complete destructor at `0x8E15F0` and base destructor at `0x8E1640`
 release that value through the renderer's deferred-allocation queue while an
@@ -35,3 +38,6 @@ current sequence. Graphics recording uses a release-memory packet and a
 `WAIT_REG_MEM` address comparison. Standalone compute recording emits the
 corresponding compute release-memory packet and `sceGnmComputeWaitOnAddress`.
 Both waits compare all 32 bits and use the equality comparison mode.
+
+Combined IDA evidence is preserved in `analysis/exports/orbis-fence.asm` and
+`analysis/exports/orbis-fence.c`.

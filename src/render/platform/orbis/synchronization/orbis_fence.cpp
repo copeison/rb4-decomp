@@ -11,15 +11,13 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisFenceSize = 24;
 constexpr const char* kFenceAllocationName = "PS4Fence";
 
 void release_fence_value(OrbisFence& fence) {
-    auto* value = orbis_fence_value_storage(fence);
     if (auto* system = current_orbis_render_system()) {
-        orbis_defer_allocation_release(*system, value);
+        orbis_defer_allocation_release(*system, fence.value);
     } else {
-        render_release(value);
+        render_release(fence.value);
     }
 }
 
@@ -27,7 +25,7 @@ void release_fence_value(OrbisFence& fence) {
 
 // Reconstructed from eboot.elf at 0x8D85C0.
 OrbisFence* orbis_create_fence() {
-    auto* storage = render_allocate(kOrbisFenceSize);
+    auto* storage = render_allocate(sizeof(OrbisFence));
     auto* fence = reinterpret_cast<OrbisFence*>(storage);
     orbis_fence_construct(*fence);
     return fence;
@@ -35,46 +33,51 @@ OrbisFence* orbis_create_fence() {
 
 // Reconstructed from eboot.elf at 0x8E1570.
 void orbis_fence_construct(OrbisFence& fence) {
+    orbis_fence_install_vtable(fence);
+    fence.value = nullptr;
+    fence.sequence = 0;
     auto* value = orbis_allocate_fence_value(
         sizeof(std::uint32_t), kFenceAllocationName, 4);
     *value = 0;
-    orbis_fence_set_value_storage(fence, value);
+    fence.value = value;
 }
 
 // Reconstructed from eboot.elf at 0x8E15F0.
 void orbis_fence_destruct(OrbisFence& fence) {
+    orbis_fence_install_vtable(fence);
     release_fence_value(fence);
-    orbis_fence_set_value_storage(fence, nullptr);
+    fence.value = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8E1640.
 void orbis_fence_base_destruct(OrbisFence& fence) {
     release_fence_value(fence);
-    orbis_fence_set_value_storage(fence, nullptr);
+    fence.value = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8E1680.
 void orbis_fence_delete(OrbisFence& fence) {
+    orbis_fence_install_vtable(fence);
     release_fence_value(fence);
-    render_delete_fence(fence);
+    render_delete_fence_storage(fence);
 }
 
 // Reconstructed from eboot.elf at 0x8E16D0.
 std::uint32_t orbis_fence_next_value(OrbisFence& fence) {
-    auto sequence = orbis_fence_sequence(fence);
+    auto sequence = fence.sequence;
     if (sequence == std::numeric_limits<std::uint32_t>::max()) {
-        orbis_fence_set_sequence(fence, 0);
+        fence.sequence = 0;
         release_fence_value(fence);
 
         auto* value = orbis_allocate_fence_value(
             sizeof(std::uint32_t), kFenceAllocationName, 4);
         *value = 0;
-        orbis_fence_set_value_storage(fence, value);
-        sequence = 0;
+        fence.value = value;
+        sequence = fence.sequence;
     }
 
     ++sequence;
-    orbis_fence_set_sequence(fence, sequence);
+    fence.sequence = sequence;
     return sequence;
 }
 
@@ -82,7 +85,7 @@ std::uint32_t orbis_fence_next_value(OrbisFence& fence) {
 void orbis_render_context_signal_fence(
     OrbisRenderContext& context,
     OrbisFence& fence) {
-    auto* address = orbis_fence_value_storage(fence);
+    auto* address = fence.value;
     const auto value = orbis_fence_next_value(fence);
     if (orbis_render_context_recording_graphics(context)) {
         orbis_render_context_emit_graphics_fence_signal(
@@ -97,8 +100,8 @@ void orbis_render_context_signal_fence(
 void orbis_render_context_wait_fence(
     OrbisRenderContext& context,
     const OrbisFence& fence) {
-    const auto* address = orbis_fence_value_storage(fence);
-    const auto value = orbis_fence_sequence(fence);
+    const auto* address = fence.value;
+    const auto value = fence.sequence;
     if (orbis_render_context_recording_graphics(context)) {
         orbis_render_context_emit_graphics_fence_wait(
             context, address, value);

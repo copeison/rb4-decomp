@@ -4,8 +4,16 @@
 
 namespace rb4 {
 
-struct OrbisFence;
 struct OrbisRenderContext;
+
+struct OrbisFence {
+    void* implementation;
+    std::uint32_t* value;
+    std::uint32_t sequence;
+    std::uint32_t reserved;
+};
+
+static_assert(sizeof(OrbisFence) == 24);
 
 OrbisFence* orbis_create_fence();
 void orbis_fence_construct(OrbisFence& fence);
