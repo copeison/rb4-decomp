@@ -12075,9 +12075,9 @@ address,end,size,name,library,thunk
 0x448720,0x448725,5,sub_448720,False,True
 0x448730,0x448760,48,render_frame_owner_output_extent,False,False
 0x448760,0x44877E,30,render_frame_owner_draw_mode,False,False
-0x448780,0x4487B6,54,sub_448780,False,False
+0x448780,0x4487B6,54,render_frame_owner_set_draw_mode,False,False
 0x4487C0,0x4487DE,30,render_frame_owner_debug_view,False,False
-0x4487E0,0x448816,54,sub_4487E0,False,False
+0x4487E0,0x448816,54,render_frame_owner_set_debug_view,False,False
 0x448820,0x448821,1,nullsub_1254,False,False
 0x448830,0x448831,1,nullsub_1255,False,False
 0x448840,0x448843,3,sub_448840,False,False
@@ -19321,8 +19321,8 @@ address,end,size,name,library,thunk
 0x645D70,0x645DF6,134,sub_645D70,False,False
 0x645E00,0x645E1F,31,sub_645E00,False,False
 0x645E20,0x645E3F,31,sub_645E20,False,False
-0x645E40,0x645E5F,31,sub_645E40,False,False
-0x645E80,0x645ED6,86,sub_645E80,False,False
+0x645E40,0x645E5F,31,render_draw_mode_name,False,False
+0x645E80,0x645ED6,86,render_draw_mode_from_name,False,False
 0x645EE0,0x645EFC,28,sub_645EE0,False,False
 0x645F00,0x645F1C,28,sub_645F00,False,False
 0x645F20,0x6460F4,468,sub_645F20,False,False
@@ -20957,12 +20957,12 @@ address,end,size,name,library,thunk
 0x6B40A0,0x6B40C3,35,sub_6B40A0,False,False
 0x6B40D0,0x6B40D5,5,sub_6B40D0,False,True
 0x6B43B0,0x6B4EDA,2858,sub_6B43B0,False,False
-0x6B4EE0,0x6B4EEF,15,sub_6B4EE0,False,False
+0x6B4EE0,0x6B4EEF,15,render_debug_view_name,False,False
 0x6B4EF0,0x6B53B4,1220,sub_6B4EF0,False,False
 0x6B53C0,0x6B549F,223,sub_6B53C0,False,False
 0x6B54A0,0x6B54D1,49,sub_6B54A0,False,False
 0x6B54E0,0x6B5503,35,sub_6B54E0,False,False
-0x6B5510,0x6B5560,80,sub_6B5510,False,False
+0x6B5510,0x6B5560,80,render_debug_view_from_name,False,False
 0x6B5560,0x6B5F08,2472,sub_6B5560,False,False
 0x6B5FA0,0x6B6014,116,sub_6B5FA0,False,False
 0x6B6020,0x6B6025,5,sub_6B6020,False,True

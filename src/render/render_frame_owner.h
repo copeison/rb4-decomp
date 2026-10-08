@@ -18,5 +18,11 @@ struct RenderExtent {
 RenderExtent render_frame_owner_output_extent(const RenderFrameOwner& owner);
 std::uint32_t render_frame_owner_draw_mode(const RenderFrameOwner& owner);
 std::uint32_t render_frame_owner_debug_view(const RenderFrameOwner& owner);
+void render_frame_owner_set_draw_mode(
+    RenderFrameOwner& owner,
+    std::uint32_t mode);
+void render_frame_owner_set_debug_view(
+    RenderFrameOwner& owner,
+    std::uint32_t view);
 
 }  // namespace rb4

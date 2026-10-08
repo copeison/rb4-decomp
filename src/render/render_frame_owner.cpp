@@ -33,4 +33,30 @@ std::uint32_t render_frame_owner_debug_view(const RenderFrameOwner& owner) {
         : render_target_debug_view(*target);
 }
 
+// Reconstructed from eboot.elf at 0x448780.
+void render_frame_owner_set_draw_mode(
+    RenderFrameOwner& owner,
+    std::uint32_t mode) {
+    const auto target_count = render_frame_owner_target_count(owner);
+    for (std::size_t index = 0; index < target_count; ++index) {
+        auto* target = render_frame_owner_target_at(owner, index);
+        if (target != nullptr) {
+            render_target_set_draw_mode(*target, mode);
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4487E0.
+void render_frame_owner_set_debug_view(
+    RenderFrameOwner& owner,
+    std::uint32_t view) {
+    const auto target_count = render_frame_owner_target_count(owner);
+    for (std::size_t index = 0; index < target_count; ++index) {
+        auto* target = render_frame_owner_target_at(owner, index);
+        if (target != nullptr) {
+            render_target_set_debug_view(*target, view);
+        }
+    }
+}
+
 }  // namespace rb4

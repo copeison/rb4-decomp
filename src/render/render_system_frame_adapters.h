@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rb4 {
@@ -20,10 +21,16 @@ RenderFrameOwner* render_system_active_frame_owner(RenderSystem& system);
 void render_frame_owner_poll(RenderFrameOwner& owner);
 const RenderTarget* render_frame_owner_primary_target(
     const RenderFrameOwner& owner);
+std::size_t render_frame_owner_target_count(const RenderFrameOwner& owner);
+RenderTarget* render_frame_owner_target_at(
+    RenderFrameOwner& owner,
+    std::size_t index);
 std::uint32_t render_target_width(const RenderTarget& target);
 std::uint32_t render_target_height(const RenderTarget& target);
 std::uint32_t render_target_draw_mode(const RenderTarget& target);
 std::uint32_t render_target_debug_view(const RenderTarget& target);
+void render_target_set_draw_mode(RenderTarget& target, std::uint32_t mode);
+void render_target_set_debug_view(RenderTarget& target, std::uint32_t view);
 
 void render_system_prepare_frame(RenderSystem& system, bool auxiliary_frame);
 bool render_system_attach_frame_owner(
