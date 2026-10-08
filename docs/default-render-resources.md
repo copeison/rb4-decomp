@@ -19,15 +19,16 @@ an object in collection zero, names it `default_cam`, attaches an
 `src/render/resources/camera/default_camera.cpp` expresses this as a reusable helper because the
 same sequence is inlined in the main initializer.
 
-`src/render/resources/system/default_render_resources.cpp` now reconstructs this full ordering.
-It accepts the effective rendering flag directly and also checks the binary's
-global force-enable hook. Resource construction, compute-buffer allocation,
-and the two finalization calls remain narrow runtime adapters while their
-ordering and recovered arguments are explicit.
+`src/render/resources/system/default_render_resources.cpp` now reconstructs
+this full ordering. It accepts the effective rendering flag directly and also
+checks the binary's global force-enable hook. Each compute buffer now uses the
+typed 48-byte common descriptor directly: a four-byte stride, one element, the
+buffer index as initial data, zero flags, and the shared name. The two
+finalization calls remain narrow scene-resource boundaries.
 
 The texture-family loop at `0x6BDE60` is reconstructed separately in
-`src/render/resources/textures/default_textures.cpp`. Low-level graphics allocation remains behind
-dimension-specific runtime adapters.
+`src/render/resources/textures/default_textures.cpp`, using the typed common
+texture factories for every shape.
 
 ## Per-frame and shutdown paths
 

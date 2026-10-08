@@ -1,5 +1,6 @@
 #include "render/resources/system/default_render_resources.h"
 
+#include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
 
 namespace rb4 {
@@ -59,8 +60,17 @@ void render_initialize_default_resources(
     render_create_default_textures(resources.textures);
     for (std::uint32_t index = 0; index < resources.compute_buffers.size();
          ++index) {
-        resources.compute_buffers[index] = render_create_default_compute_buffer(
-            index, kDefaultComputeBufferName);
+        const RenderComputeBufferDescriptor descriptor{
+            sizeof(std::uint32_t),
+            1,
+            &index,
+            nullptr,
+            0,
+            0,
+            kDefaultComputeBufferName,
+        };
+        resources.compute_buffers[index] =
+            render_create_compute_buffer(descriptor);
     }
 
     render_create_default_camera(resources.camera, *scene);
@@ -103,7 +113,7 @@ void render_release_default_resources(DefaultRenderResources& resources) {
     }
     for (auto*& buffer : resources.compute_buffers) {
         if (buffer != nullptr) {
-            rnd_compute_buffer_release(buffer);
+            render_compute_buffer_release_dynamic(*buffer);
             buffer = nullptr;
         }
     }

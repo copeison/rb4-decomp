@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "render/core/buffers/render_compute_buffer.h"
 #include "render/resources/camera/default_camera.h"
 #include "render/resources/lighting/default_lighting.h"
 #include "render/resources/materials/default_materials.h"
@@ -12,7 +13,7 @@ namespace rb4 {
 struct DefaultRenderResources {
     RndSceneResource* scene_resource = nullptr;
     DefaultTextureSet textures;
-    std::array<RndComputeBuffer*, 2> compute_buffers{};
+    std::array<RenderComputeBuffer*, 2> compute_buffers{};
     DefaultCameraState camera;
     DefaultMaterialSet materials;
     DefaultLightingState lighting;

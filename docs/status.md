@@ -27,6 +27,8 @@
 - [x] Reconstruct top-level default render-resource initialization ordering.
 - [x] Reconstruct fallback directional-light creation and activation.
 - [x] Recover default texture lookup and shadow-offset accessors.
+- [x] Replace default compute-buffer wrappers with their exact typed common
+  descriptors and dynamic release path.
 - [x] Reconstruct default render-resource polling and teardown.
 - [x] Recover default render-resource construction and its `100.0` light scale.
 - [x] Reconstruct the render-system poll, begin, end, and skipped-frame control flow.
