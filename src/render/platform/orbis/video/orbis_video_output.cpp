@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <video_out.h>
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
@@ -22,6 +23,33 @@ constexpr std::uint32_t kGnmEventId = 64;
 constexpr std::uint32_t kSubmitThreadPriority = 699;
 
 }  // namespace
+
+void orbis_video_output_open(OrbisRenderSystem& system) {
+    constexpr std::int32_t kSystemUserId = 255;
+    const auto handle = sceVideoOutOpen(kSystemUserId, 0, 0, nullptr);
+    orbis_set_video_output_handle(system, handle);
+}
+
+void orbis_video_output_set_flip_rate(
+    OrbisRenderSystem& system,
+    std::uint32_t rate) {
+    sceVideoOutSetFlipRate(
+        orbis_video_output_handle(system), static_cast<std::int32_t>(rate));
+}
+
+void orbis_video_output_set_window_margins(
+    OrbisRenderSystem& system,
+    std::uint32_t top,
+    std::uint32_t bottom) {
+    sceVideoOutSetWindowModeMargins(
+        orbis_video_output_handle(system),
+        static_cast<int>(top),
+        static_cast<int>(bottom));
+}
+
+void orbis_video_output_close(OrbisRenderSystem& system) {
+    sceVideoOutClose(orbis_video_output_handle(system));
+}
 
 // Reconstructed from eboot.elf at 0x8D7B20.
 void orbis_render_system_initialize(OrbisRenderSystem& system) {

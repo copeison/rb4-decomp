@@ -17,7 +17,10 @@ struct OrbisRenderSystemRuntimePrefix {
     bool frame_active;
     std::uint8_t reserved_65[47];
     OrbisBackBuffer* back_buffer;
-    std::uint8_t reserved_120[3720];
+    std::uint8_t reserved_120[3684];
+    std::int32_t video_output_handle;
+    std::uint64_t event_queue;
+    std::uint8_t reserved_3816[24];
     std::uint64_t submit_token;
     bool submit_thread_running;
 };
@@ -25,6 +28,9 @@ struct OrbisRenderSystemRuntimePrefix {
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, back_buffer) == 112);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, video_output_handle) == 3804);
+static_assert(offsetof(OrbisRenderSystemRuntimePrefix, event_queue) == 3808);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
@@ -42,6 +48,19 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return *runtime->render_context;
+}
+
+std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->video_output_handle;
+}
+
+void orbis_set_video_output_handle(
+    OrbisRenderSystem& system,
+    std::int32_t handle) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->video_output_handle = handle;
 }
 
 void render_system_set_render_context(

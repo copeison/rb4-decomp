@@ -15,6 +15,10 @@ extern OrbisRenderSystem* g_orbis_render_system;
 OrbisRenderSystem* orbis_render_system_instance();
 RenderSystem& orbis_render_system_base(OrbisRenderSystem& system);
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
+std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system);
+void orbis_set_video_output_handle(
+    OrbisRenderSystem& system,
+    std::int32_t handle);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);

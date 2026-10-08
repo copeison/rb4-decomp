@@ -1,9 +1,20 @@
 #pragma once
 
+#include <cstdint>
+
 namespace rb4 {
 
 struct OrbisRenderSystem;
 
+void orbis_video_output_open(OrbisRenderSystem& system);
+void orbis_video_output_set_flip_rate(
+    OrbisRenderSystem& system,
+    std::uint32_t rate);
+void orbis_video_output_set_window_margins(
+    OrbisRenderSystem& system,
+    std::uint32_t top,
+    std::uint32_t bottom);
+void orbis_video_output_close(OrbisRenderSystem& system);
 void orbis_render_system_initialize(OrbisRenderSystem& system);
 void orbis_render_system_shutdown(OrbisRenderSystem& system);
 void orbis_render_system_delete(OrbisRenderSystem& system);
