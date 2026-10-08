@@ -8,6 +8,8 @@ namespace rb4 {
 
 namespace {
 
+constexpr std::uint32_t kShaderStageCount = 6;
+
 OrbisSamplerDescriptor build_sampler_descriptor(
     OrbisSamplerAddressMode address_mode,
     std::uint32_t filter_mode) {
@@ -103,6 +105,41 @@ void orbis_render_context_clear_shader(
     case RenderShaderStage::kHull:
     case RenderShaderStage::kDomain:
         break;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8E9810.
+void orbis_render_context_clear_rw_resources(
+    OrbisRenderContext& context,
+    std::uint32_t stage_mask) {
+    if (!orbis_render_context_graphics_resources_active(context)) {
+        return;
+    }
+
+    for (std::uint32_t index = 0; index < kShaderStageCount; ++index) {
+        if ((stage_mask & (1U << index)) == 0) {
+            continue;
+        }
+        const auto stage = static_cast<RenderShaderStage>(index);
+        orbis_render_context_clear_gnm_rw_textures(context, stage);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8E9940.
+void orbis_render_context_clear_read_resources(
+    OrbisRenderContext& context,
+    std::uint32_t stage_mask) {
+    if (!orbis_render_context_graphics_resources_active(context)) {
+        return;
+    }
+
+    for (std::uint32_t index = 0; index < kShaderStageCount; ++index) {
+        if ((stage_mask & (1U << index)) == 0) {
+            continue;
+        }
+        const auto stage = static_cast<RenderShaderStage>(index);
+        orbis_render_context_clear_gnm_textures(context, stage);
+        orbis_render_context_clear_gnm_buffers(context, stage);
     }
 }
 

@@ -17,3 +17,10 @@ one supported stage. It has dedicated Gnmx paths for vertex, geometry, pixel,
 and compute shaders. Hull and domain stages are ignored because the Orbis
 shader factory does not create either stage. Clearing the pixel shader also
 updates the context's cached pixel-shader command state.
+
+The resource-clear methods use a six-bit mask whose bit numbers match the
+engine shader-stage enum. `0x8E9810` clears all 128 read/write texture slots for
+each selected stage. `0x8E9940` clears all 128 read-only texture slots and all
+128 read-only buffer slots. Both operate only while the graphics context owns
+resource state; standalone compute recording maintains its resources in the
+selected compute context instead.

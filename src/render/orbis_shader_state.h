@@ -25,5 +25,11 @@ void orbis_render_context_set_sampler(
 void orbis_render_context_clear_shader(
     OrbisRenderContext& context,
     RenderShaderStage stage);
+void orbis_render_context_clear_rw_resources(
+    OrbisRenderContext& context,
+    std::uint32_t stage_mask);
+void orbis_render_context_clear_read_resources(
+    OrbisRenderContext& context,
+    std::uint32_t stage_mask);
 
 }  // namespace rb4

@@ -66,6 +66,7 @@
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.
+- [x] Recover masked Orbis shader-resource clearing.
 - [x] Reconstruct format-specific Orbis transient vertex drawing.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
