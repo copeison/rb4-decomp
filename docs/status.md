@@ -18,6 +18,7 @@
 - [x] Recover all FMOD 1.10.04 import names and apply them to IDA.
 - [x] Reconstruct FMOD module setup and the primary audio initialization path.
 - [x] Reconstruct PS4 FMOD module loading and thread-affinity assignment.
+- [x] Reconstruct the default render-lighting scene and light-set switch.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

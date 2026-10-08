@@ -9,7 +9,7 @@ evidence supports them.
 | --- | --- | --- |
 | Runtime and game loop | `0x20`-`0x3DC`, entry `0x920` | Static initialization, `config/rockband.dta`, and the recovered initialize/frame loop. |
 | Core data and scripting | `0x239CC0`, `0x23FF10` | Assertions reference `core/src/utl/DataNode.cpp` and `DataUtl.cpp`. |
-| Rendering and lighting | `0x6BEF40` | Loads `system/data/render/default_lighting.scene` and looks up default directional and spot lights. |
+| Rendering and lighting | `0x6BDCA0`-`0x6C0160` | Builds default resources, loads `system/data/render/default_lighting.scene`, and configures directional, spot, and probe lights. |
 | Voting and setlists UI | `0x9751E0`, `0x975ED0`, `0x9DE110`, `0x9DE680` | Direct references to `ui/voting/vote_setlist.scene`. |
 | Overshell UI | `0xBF7B30` | Direct reference to `ui/overshell/overshell.scene`. |
 | Audio DSP | `0x1099BE0` | Three assertions name Positive Grid's `FDConvolver.cpp`; the function builds FFT plans and partition buffers. |
@@ -21,6 +21,8 @@ evidence supports them.
   block-size validation, FFT-plan creation, and source assertions.
 - `render_load_default_lighting` at `0x6BEF40` is descriptive. It is supported
   by the scene path and the lighting objects accessed after loading it.
+- `render_apply_default_lighting_mode` at `0x6BFA60` is supported by the two
+  object-ID lists and the mode comparisons against `0` and `1`.
 
 ## Embedded third-party code
 
