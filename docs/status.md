@@ -42,6 +42,12 @@
 - [x] Recover the separate Orbis render-system singleton lifecycle.
 - [x] Reconstruct Orbis video-output and submit-thread startup.
 - [x] Reconstruct Orbis video-output and submit-thread shutdown.
+- [x] Type the Orbis video handle, event queue, condition variables, recursive
+  submission lock, submit token, and worker-running state.
+- [x] Replace verified video, kernel event, Gnm event, splash-service, and
+  thread-yield adapters with direct PS4 SDK calls.
+- [x] Recover the submit-worker startup handshake, one-second event wait and
+  filtering, and timeout submission recovery.
 - [x] Reconstruct Orbis GPU idle waits and deferred-allocation retirement.
 - [x] Reconstruct the Orbis frame-submit handshake.
 - [x] Complete the Orbis deferred GPU-allocation queue lifecycle.
@@ -118,6 +124,8 @@
 - [x] Recover the common cube texture-array and exact Orbis subclass layouts.
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Reconstruct Orbis compute-buffer storage, updates, binding, and destruction.
+- [x] Recover typed active-bank descriptor and allocation selection for Orbis
+  compute buffers.
 - [x] Reconstruct the common render compute-buffer factory and 80-byte base layout.
 - [x] Reconstruct the Orbis particle-buffer allocation, upload, draw, and destruction paths.
 - [x] Reconstruct the common render particle-buffer factory and 64-byte base layout.
@@ -128,6 +136,8 @@
 - [x] Reconstruct Orbis geometry and vertex shader backends.
 - [x] Reconstruct the common render-shader lifecycle and layout.
 - [x] Reconstruct the common render-texture lifecycle and 168-byte base layout.
+- [x] Type the shared render-texture usage field and color/depth backend
+  dispatch.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
