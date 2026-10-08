@@ -10,6 +10,14 @@ zeros the final 16 bytes of backend state. The wrapper at `0x696BA0` assigns
 descriptor type 4, which the type-to-resource map identifies as
 `RndTextureArray1DResource`.
 
+The common array object is exactly 344 bytes. It combines the 168-byte
+`RenderTexture` base, a normalized 144-byte descriptor snapshot, and a
+32-byte vector of 80-byte mip-chain states. Construction reserves the exact
+authored element count, copy-constructs each chain, records the count in the
+published descriptor, and derives shared mip properties from the first
+element. The Orbis subclass adds only the final descriptor and allocation
+pointers.
+
 Backend initialization at `0x8E5960` creates a 32-byte Gnm texture descriptor
 with texture type 12. The descriptor uses the authored width, unit height and
 depth, the number of 80-byte array-element records, and the common format,
@@ -28,3 +36,7 @@ destructor. The deleting destructor follows at `0x8E5900`.
 
 The six virtual methods at `0x8E5C50` through `0x8E5D0F` forward the array
 texture view and common sampler state to the shared stage-binding layer.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-array-1d.asm` and
+`analysis/exports/render-texture-array-1d.c`.

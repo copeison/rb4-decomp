@@ -8,8 +8,6 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisTextureArray1DSize = 360;
-
 void bind_texture_stage(
     const OrbisTextureArray1D& texture,
     OrbisRenderContext& context,
@@ -18,9 +16,9 @@ void bind_texture_stage(
     std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_texture(
-        context, stage, slot, orbis_texture_array_1d_gpu_texture(texture),
-        orbis_texture_array_1d_address_mode(texture),
-        orbis_texture_array_1d_filter_mode(texture), flags, border_color);
+        context, stage, slot, texture.gpu_texture,
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 }  // namespace
@@ -28,7 +26,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D8A40.
 OrbisTextureArray1D* orbis_create_texture_array_1d(
     const RenderTextureArray1DDescriptor& descriptor) {
-    auto* storage = render_allocate(kOrbisTextureArray1DSize);
+    auto* storage = render_allocate(sizeof(OrbisTextureArray1D));
     auto* texture = reinterpret_cast<OrbisTextureArray1D*>(storage);
     orbis_texture_array_1d_construct(*texture, descriptor);
     return texture;
@@ -38,25 +36,27 @@ OrbisTextureArray1D* orbis_create_texture_array_1d(
 void orbis_texture_array_1d_construct(
     OrbisTextureArray1D& texture,
     const RenderTextureArray1DDescriptor& descriptor) {
-    texture_array_1d_construct(texture, descriptor);
-    orbis_texture_array_1d_clear_backend_state(texture);
+    render_texture_array_1d_construct(texture, descriptor);
+    orbis_texture_array_1d_install_vtable(texture);
+    texture.gpu_texture = nullptr;
+    texture.allocation = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8E58A0.
 void orbis_texture_array_1d_destruct(OrbisTextureArray1D& texture) {
-    orbis_defer_texture_allocation(
-        orbis_texture_array_1d_allocation(texture));
-    if (auto* descriptor = orbis_texture_array_1d_gpu_texture(texture)) {
+    orbis_texture_array_1d_install_vtable(texture);
+    orbis_defer_texture_allocation(texture.allocation);
+    if (auto* descriptor = texture.gpu_texture) {
         render_release(descriptor);
     }
-    orbis_texture_array_1d_set_gpu_texture(texture, nullptr);
-    texture_array_1d_destruct(texture);
+    texture.gpu_texture = nullptr;
+    render_texture_array_1d_destruct(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E5900.
 void orbis_texture_array_1d_delete(OrbisTextureArray1D& texture) {
     orbis_texture_array_1d_destruct(texture);
-    render_delete_texture_array_1d(texture);
+    render_delete_texture_array_1d_storage(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E5960.
