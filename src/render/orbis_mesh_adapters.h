@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "orbis_mesh.h"
+#include "orbis_vertex_descriptors.h"
 
 namespace rb4 {
 
@@ -57,5 +58,14 @@ void orbis_skinned_compressed_mesh_grow_vertices(
 void orbis_skinned_compressed_mesh_release_vertices(OrbisMesh& mesh);
 void orbis_skinned_compressed_mesh_rebuild_vertex_buffers(OrbisMesh& mesh);
 void orbis_skinned_compressed_mesh_rebuild_index_buffer(OrbisMesh& mesh);
+void gnm_buffer_init_as_vertex_buffer(
+    OrbisBufferDescriptor& descriptor,
+    const void* data,
+    OrbisDataFormat format,
+    std::uint32_t stride,
+    std::uint32_t element_count);
+void gnm_buffer_set_resource_memory_type(
+    OrbisBufferDescriptor& descriptor,
+    OrbisResourceMemoryType memory_type);
 
 }  // namespace rb4

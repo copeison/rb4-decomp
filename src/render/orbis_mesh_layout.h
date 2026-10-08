@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "orbis_mesh.h"
+#include "orbis_vertex_descriptors.h"
 
 namespace rb4 {
 
@@ -15,7 +16,8 @@ struct OrbisMeshLayout {
     Vertex* vertices_begin;
     Vertex* vertices_end;
     Vertex* vertices_capacity_end;
-    std::uint8_t vertex_descriptors[264];
+    std::uint8_t descriptor_padding[8];
+    OrbisBufferDescriptor vertex_descriptors[2][kMeshVertexStreamCount];
     Vertex* vertex_buffers[2];
     std::size_t active_vertex_buffer;
     std::size_t vertex_buffer_capacity;
