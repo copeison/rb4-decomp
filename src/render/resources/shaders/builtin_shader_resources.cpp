@@ -284,25 +284,6 @@ void render_vscat_deferred_compute_shader_construct(void* shader) {
     shader_field(shader, 400) = 0;
 }
 
-// Reconstructed from eboot.elf at 0x62E660.
-void render_signed_distance_compute_shader_construct(void* shader) {
-    auto* fields = construct_compute_shader(
-        shader, render_signed_distance_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 7; ++index) {
-        fields[index] = -1;
-    }
-}
-
-// Reconstructed from eboot.elf at 0x62EAF0.
-void render_signed_distance_classify_compute_shader_construct(void* shader) {
-    auto* fields = construct_compute_shader(
-        shader,
-        render_signed_distance_classify_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 6; ++index) {
-        fields[index] = -1;
-    }
-}
-
 // Reconstructed from eboot.elf at 0x6F3E00.
 void render_test_compute_shader_construct(void* shader) {
     construct_parameterized_compute_shader(

@@ -390,6 +390,8 @@
   mode, sphere-map, linear-depth, scene-mask, and test-pattern shaders.
 - [x] Reconstruct compact compute-shader construction for blur classification,
   depth range, DOF disc blur, SSAO, CMAA, and signed-distance passes.
+- [x] Reconstruct both signed-distance compute-shader dispatches, sampled
+  inputs, unordered outputs, and distance/tile constant layouts.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
