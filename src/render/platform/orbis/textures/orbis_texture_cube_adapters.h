@@ -8,7 +8,6 @@ namespace rb4 {
 
 void* render_allocate(std::size_t size);
 void orbis_texture_cube_install_vtable(OrbisTextureCube& texture);
-bool orbis_texture_cube_is_depth(const OrbisTextureCube& texture);
 void orbis_texture_cube_initialize_color_storage(
     OrbisTextureCube& texture);
 void orbis_texture_cube_initialize_depth_storage(

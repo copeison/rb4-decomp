@@ -78,7 +78,7 @@ void orbis_texture_array_2d_delete(OrbisTextureArray2D& texture) {
 // Reconstructed from eboot.elf at 0x8E5E70.
 void orbis_texture_array_2d_initialize_backend(
     OrbisTextureArray2D& texture) {
-    if (texture.usage_type == 2) {
+    if (texture.usage_type == RenderTextureUsage::kDepth) {
         orbis_texture_array_2d_initialize_depth_storage(texture);
     } else {
         orbis_texture_array_2d_initialize_color_storage(texture);

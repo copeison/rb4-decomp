@@ -80,7 +80,7 @@ void orbis_texture_cube_delete(OrbisTextureCube& texture) {
 
 // Reconstructed from eboot.elf at 0x8E6CE0.
 void orbis_texture_cube_initialize_backend(OrbisTextureCube& texture) {
-    if (orbis_texture_cube_is_depth(texture)) {
+    if (texture.usage_type == RenderTextureUsage::kDepth) {
         orbis_texture_cube_initialize_depth_storage(texture);
     } else {
         orbis_texture_cube_initialize_color_storage(texture);

@@ -4,12 +4,17 @@
 
 namespace rb4 {
 
+enum class RenderTextureUsage : std::int32_t {
+    kDefault = 0,
+    kDepth = 2,
+};
+
 struct RenderTexture {
     void* implementation;
     std::int64_t frame_stamp;
     std::int32_t descriptor_type;
     std::uint8_t descriptor_prefix[44];
-    std::int32_t usage_type;
+    RenderTextureUsage usage_type;
     std::uint8_t descriptor_suffix[28];
     std::uint32_t address_mode;
     std::uint32_t filter_mode;

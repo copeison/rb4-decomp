@@ -80,7 +80,7 @@ void orbis_texture_2d_delete(OrbisTexture2D& texture) {
 void orbis_texture_2d_initialize_backend(
     OrbisTexture2D& texture,
     const OrbisTexture2D* storage_source) {
-    if (texture.usage_type == 2) {
+    if (texture.usage_type == RenderTextureUsage::kDepth) {
         orbis_texture_2d_initialize_depth_storage(texture);
     } else {
         orbis_texture_2d_initialize_color_storage(texture, storage_source);

@@ -12,7 +12,7 @@ void render_texture_construct(RenderTexture& texture) {
     for (auto& value : texture.descriptor_prefix) {
         value = 0;
     }
-    texture.usage_type = 0;
+    texture.usage_type = RenderTextureUsage::kDefault;
     for (auto& value : texture.descriptor_suffix) {
         value = 0;
     }
