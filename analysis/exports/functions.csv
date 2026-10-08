@@ -11059,9 +11059,9 @@ address,end,size,name,library,thunk
 0x3DD150,0x3DD367,535,sub_3DD150,False,False
 0x3DD410,0x3DD783,883,render_system_construct,False,False
 0x3DD790,0x3DDAB8,808,render_system_destruct,False,False
-0x3DDAE0,0x3DDC12,306,sub_3DDAE0,False,False
-0x3DDC20,0x3DDE56,566,sub_3DDC20,False,False
-0x3DDE60,0x3DDFE4,388,sub_3DDE60,False,False
+0x3DDAE0,0x3DDC12,306,render_system_initialize,False,False
+0x3DDC20,0x3DDE56,566,render_system_initialize_builtin_buffers,False,False
+0x3DDE60,0x3DDFE4,388,render_system_shutdown,False,False
 0x3DE080,0x3DE0A5,37,sub_3DE080,False,False
 0x3DE0B0,0x3DE0DB,43,sub_3DE0B0,False,False
 0x3DE0E0,0x3DE12E,78,render_system_poll,False,False

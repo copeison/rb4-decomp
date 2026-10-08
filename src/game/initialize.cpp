@@ -1,25 +1,13 @@
 #include "startup.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <limits>
 
+#include "system_init_options.h"
 #include "../core/command_line.h"
 #include "../ui/ui_layout_id.h"
 
 namespace rb4 {
-
-struct GameSystemInitOptions {
-    bool option0;
-    bool initialize_rendering;
-    bool option2;
-    std::uint8_t reserved[5];
-    std::uint64_t value8;
-};
-
-static_assert(offsetof(GameSystemInitOptions, initialize_rendering) == 1);
-static_assert(offsetof(GameSystemInitOptions, value8) == 8);
-static_assert(sizeof(GameSystemInitOptions) == 16);
 
 struct DingoService;
 struct UiLayoutController;
