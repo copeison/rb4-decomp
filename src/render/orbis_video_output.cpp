@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 
+#include "orbis_back_buffer.h"
 #include "orbis_render_system.h"
 #include "orbis_video_output_adapters.h"
 
@@ -32,6 +33,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 
     orbis_create_default_vertex_buffer(system);
     orbis_create_identity_instance_buffer(system);
+    orbis_create_back_buffer(system);
     orbis_register_render_factories(system);
 
     orbis_initialize_submit_condition(system);
@@ -70,6 +72,10 @@ void orbis_create_identity_instance_buffer(OrbisRenderSystem& system) {
         system, kIdentityInstanceBufferName, 120);
     orbis_upload_identity_instance_data(system, buffer);
     orbis_bind_identity_instance_buffer(system, buffer);
+}
+
+void orbis_create_back_buffer(OrbisRenderSystem& system) {
+    static_cast<void>(orbis_back_buffer_create(system));
 }
 
 // Reconstructed from eboot.elf at 0x8D77E0.
