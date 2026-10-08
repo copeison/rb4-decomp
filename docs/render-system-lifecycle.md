@@ -22,6 +22,12 @@ Construction proceeds in this order:
 state, backend objects, default resources, platform configurations, core
 vectors, and mutexes in reverse ownership order.
 
+The frame prefix contains a typed 40-byte owner array at offset `0x48`, with
+begin, end, capacity, and the allocator's two-word state. Shutdown walks this
+array backward, deletes each remaining frame owner, and leaves the primary
+owner and active back-buffer owner as separate pointers at offsets `0x38` and
+`0x70`.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.

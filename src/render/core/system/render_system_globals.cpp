@@ -12,6 +12,14 @@ RenderSystem* g_render_system = nullptr;
 
 namespace {
 
+struct RenderFrameOwnerArray {
+    RenderFrameOwner** begin;
+    RenderFrameOwner** end;
+    RenderFrameOwner** capacity;
+    void* allocator;
+    void* allocator_state;
+};
+
 struct RenderSystemFramePrefix {
     std::uint8_t reserved_0[56];
     union {
@@ -21,9 +29,7 @@ struct RenderSystemFramePrefix {
     bool frame_activation_pending;
     std::uint8_t reserved_65[3];
     std::uint32_t frame_activation_flags;
-    RenderFrameOwner** frame_owners_begin;
-    RenderFrameOwner** frame_owners_end;
-    std::uint8_t reserved_88[24];
+    RenderFrameOwnerArray frame_owners;
     RenderFrameOwner* frame_owner;
     std::uint8_t reserved_120[176];
     RenderSettings* settings;
@@ -36,9 +42,8 @@ static_assert(
     offsetof(RenderSystemFramePrefix, frame_activation_pending) == 64);
 static_assert(
     offsetof(RenderSystemFramePrefix, frame_activation_flags) == 68);
-static_assert(
-    offsetof(RenderSystemFramePrefix, frame_owners_begin) == 72);
-static_assert(offsetof(RenderSystemFramePrefix, frame_owners_end) == 80);
+static_assert(sizeof(RenderFrameOwnerArray) == 40);
+static_assert(offsetof(RenderSystemFramePrefix, frame_owners) == 72);
 static_assert(offsetof(RenderSystemFramePrefix, frame_owner) == 112);
 static_assert(offsetof(RenderSystemFramePrefix, settings) == 296);
 static_assert(offsetof(RenderSystemFramePrefix, factory) == 304);
@@ -63,14 +68,14 @@ std::size_t render_system_frame_owner_count(const RenderSystem& system) {
     const auto* runtime =
         reinterpret_cast<const RenderSystemFramePrefix*>(&system);
     return static_cast<std::size_t>(
-        runtime->frame_owners_end - runtime->frame_owners_begin);
+        runtime->frame_owners.end - runtime->frame_owners.begin);
 }
 
 RenderFrameOwner& render_system_frame_owner_at(
     RenderSystem& system,
     std::size_t index) {
     auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
-    return *runtime->frame_owners_begin[index];
+    return *runtime->frame_owners.begin[index];
 }
 
 bool render_system_has_pending_frame(const RenderSystem& system) {
@@ -130,9 +135,9 @@ void render_system_release_render_contexts(RenderSystem& system) {
         runtime->primary_frame_owner = nullptr;
     }
 
-    while (runtime->frame_owners_end != runtime->frame_owners_begin) {
-        --runtime->frame_owners_end;
-        auto* context = *runtime->frame_owners_end;
+    while (runtime->frame_owners.end != runtime->frame_owners.begin) {
+        --runtime->frame_owners.end;
+        auto* context = *runtime->frame_owners.end;
         if (context != nullptr) {
             render_frame_owner_delete(*context);
         }

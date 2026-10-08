@@ -205,6 +205,8 @@
 - [x] Reconstruct Orbis graphics/compute frame submission and reset.
 - [x] Recover the common frame-owner collection, active owner, and active Orbis
   frame indices used by render-target selection.
+- [x] Type the render system's complete 40-byte frame-owner array and its
+  reverse shutdown ownership path.
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.
