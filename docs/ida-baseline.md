@@ -10,8 +10,8 @@ copy of the extracted executable.
 | Image base | `0x0` |
 | Address range | `0x0` to `0x1B62528` |
 | Segments | 3 |
-| Functions | 52,127 |
-| Named functions | 1,264 |
+| Functions | 52,128 |
+| Named functions | 1,267 |
 | IDA strings | 37,828 |
 | Recovered source paths | 161 |
 | Hex-Rays available | true |
