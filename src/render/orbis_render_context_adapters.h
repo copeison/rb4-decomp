@@ -72,5 +72,58 @@ void orbis_render_context_destruct_command_state(
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);
+std::size_t orbis_render_context_active_frame(
+    const OrbisRenderContext& context);
+void orbis_render_context_emit_end_of_frame_event(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_mark_compute_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot);
+void orbis_render_context_emit_compute_completion(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot);
+void orbis_render_context_submit_compute(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot,
+    std::size_t queue);
+void orbis_render_context_mark_gfx_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_emit_gfx_completion(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_submit_gfx(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_set_active_frame(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_reset_gfx_slot(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_initialize_gfx_hardware_state(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_clear_frame_draw_count(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_render_context_reset_compute_slot(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot);
+void orbis_render_context_initialize_frame_command_state(
+    OrbisRenderContext& context,
+    std::size_t frame);
+void orbis_transient_vertex_buffer_reset(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t format);
+void orbis_render_context_emit_default_control_state(
+    OrbisRenderContext& context,
+    std::size_t frame);
 
 }  // namespace rb4

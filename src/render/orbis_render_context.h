@@ -10,6 +10,7 @@ struct OrbisRenderContext;
 
 constexpr std::size_t kOrbisFrameSlotCount = 2;
 constexpr std::size_t kOrbisComputeContextCount = 18;
+constexpr std::size_t kOrbisComputeContextsPerFrame = 9;
 constexpr std::size_t kOrbisTransientFormatCount = 8;
 
 OrbisRenderContext* orbis_render_context_create(
@@ -21,5 +22,7 @@ void orbis_render_context_create_gfx_contexts(
     OrbisRenderContext& context);
 void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context);
+void orbis_render_context_submit_frame(OrbisRenderContext& context);
+void orbis_render_context_reset_active_frame(OrbisRenderContext& context);
 
 }  // namespace rb4

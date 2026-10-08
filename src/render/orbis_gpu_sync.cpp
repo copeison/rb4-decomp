@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "orbis_gpu_sync_adapters.h"
+#include "orbis_render_context.h"
 
 namespace rb4 {
 
@@ -13,7 +14,8 @@ void orbis_render_system_wait_idle(OrbisRenderSystem& system) {
     if (orbis_frame_is_active(system)) {
         orbis_flush_active_frame(system);
     }
-    orbis_primary_frame_owner_wait_idle(system);
+    orbis_render_context_reset_active_frame(
+        orbis_render_system_context(system));
 }
 
 // Reconstructed from eboot.elf at 0x8D8140.

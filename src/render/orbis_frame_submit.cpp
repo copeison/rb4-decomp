@@ -1,13 +1,15 @@
 #include "orbis_frame_submit.h"
 
+#include "orbis_back_buffer.h"
 #include "orbis_frame_submit_adapters.h"
+#include "orbis_render_context.h"
 
 namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x8D8300.
 void orbis_render_system_submit_frame(
     OrbisRenderSystem& system,
-    const std::vector<OrbisRenderObject*>& objects) {
+    const std::vector<OrbisBackBuffer*>& back_buffers) {
     orbis_lock_submission(system);
     orbis_submit_scope_begin(system);
 
@@ -21,9 +23,9 @@ void orbis_render_system_submit_frame(
         orbis_flush_active_frame(system);
     }
 
-    orbis_submit_primary_frame_owner(system);
-    for (auto* object : objects) {
-        orbis_finalize_render_object(*object);
+    orbis_render_context_submit_frame(orbis_render_system_context(system));
+    for (auto* back_buffer : back_buffers) {
+        orbis_back_buffer_advance(*back_buffer);
     }
 
     orbis_unlock_submission(system);

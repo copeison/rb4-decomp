@@ -5,11 +5,12 @@
 
 namespace rb4 {
 
+struct OrbisRenderContext;
 struct OrbisRenderSystem;
 
 bool orbis_frame_is_active(const OrbisRenderSystem& system);
 void orbis_flush_active_frame(OrbisRenderSystem& system);
-void orbis_primary_frame_owner_wait_idle(OrbisRenderSystem& system);
+OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
 
 void orbis_gpu_wait_begin(OrbisRenderSystem& system);
 bool orbis_submission_counters_empty(const OrbisRenderSystem& system);

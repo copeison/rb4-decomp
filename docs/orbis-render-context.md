@@ -24,3 +24,18 @@ The timestamp pool at `0x8E7DF0` allocates 8 KiB and divides it into 512 pairs
 of 64-bit timestamps. The label allocator begins with 32 records. The
 destructor at `0x8E8070` releases these resources in reverse structural order,
 and the deleting destructor at `0x8E82B0` frees the context allocation.
+
+Frame submission at `0x8E82D0` emits event type 22 into the active graphics
+command buffer, then processes the active bank's nine compute contexts. Each
+context receives a release-memory write to its completion label before it is
+submitted. Slots zero through two use compute queue zero; slots three through
+eight use queue one. A final graphics release-memory packet writes the frame's
+graphics completion label, the graphics context is submitted, and the active
+frame index toggles between zero and one.
+
+Active-frame reset at `0x8E8450` rewinds the selected Gnmx graphics context and
+emits the default draw and optional dispatch hardware state. When compute is
+enabled, it rewinds all nine compute contexts in the active bank and emits the
+default dispatch state for each. It also invalidates cached command state,
+clears all eight transient-buffer cursors, and emits the default control state
+used at the start of the next frame.

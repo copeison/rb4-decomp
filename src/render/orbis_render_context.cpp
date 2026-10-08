@@ -21,6 +21,7 @@ constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
 constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr std::size_t kInitialLabelCapacity = 32;
+constexpr std::size_t kHighPriorityComputeContextCount = 3;
 
 }  // namespace
 
@@ -123,6 +124,54 @@ void orbis_render_context_destruct(OrbisRenderContext& context) {
 void orbis_render_context_delete(OrbisRenderContext& context) {
     orbis_render_context_destruct(context);
     render_free(&context);
+}
+
+// Reconstructed from eboot.elf at 0x8E82D0.
+void orbis_render_context_submit_frame(OrbisRenderContext& context) {
+    const auto frame = orbis_render_context_active_frame(context);
+    orbis_render_context_emit_end_of_frame_event(context, frame);
+
+    for (std::size_t slot = 0;
+         slot < kOrbisComputeContextsPerFrame;
+         ++slot) {
+        orbis_render_context_mark_compute_completion_pending(
+            context, frame, slot);
+        orbis_render_context_emit_compute_completion(context, frame, slot);
+
+        const auto queue =
+            slot < kHighPriorityComputeContextCount ? 0U : 1U;
+        orbis_render_context_submit_compute(context, frame, slot, queue);
+    }
+
+    orbis_render_context_mark_gfx_completion_pending(context, frame);
+    orbis_render_context_emit_gfx_completion(context, frame);
+    orbis_render_context_submit_gfx(context, frame);
+    orbis_render_context_set_active_frame(
+        context, (frame + 1) % kOrbisFrameSlotCount);
+}
+
+// Reconstructed from eboot.elf at 0x8E8450.
+void orbis_render_context_reset_active_frame(OrbisRenderContext& context) {
+    const auto frame = orbis_render_context_active_frame(context);
+    orbis_render_context_reset_gfx_slot(context, frame);
+    orbis_render_context_initialize_gfx_hardware_state(context, frame);
+    orbis_render_context_clear_frame_draw_count(context, frame);
+
+    if (orbis_render_context_compute_queues_enabled(context)) {
+        for (std::size_t slot = 0;
+             slot < kOrbisComputeContextsPerFrame;
+             ++slot) {
+            orbis_render_context_reset_compute_slot(context, frame, slot);
+        }
+    }
+
+    orbis_render_context_initialize_frame_command_state(context, frame);
+    for (std::size_t format = 0;
+         format < kOrbisTransientFormatCount;
+         ++format) {
+        orbis_transient_vertex_buffer_reset(context, frame, format);
+    }
+    orbis_render_context_emit_default_control_state(context, frame);
 }
 
 }  // namespace rb4

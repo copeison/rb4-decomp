@@ -2,7 +2,7 @@
 
 namespace rb4 {
 
-struct OrbisRenderObject;
+struct OrbisRenderContext;
 struct OrbisRenderSystem;
 
 void orbis_lock_submission(OrbisRenderSystem& system);
@@ -14,7 +14,6 @@ void orbis_wait_for_submit_token(OrbisRenderSystem& system);
 void orbis_consume_submit_token(OrbisRenderSystem& system);
 bool orbis_frame_is_active(const OrbisRenderSystem& system);
 void orbis_flush_active_frame(OrbisRenderSystem& system);
-void orbis_submit_primary_frame_owner(OrbisRenderSystem& system);
-void orbis_finalize_render_object(OrbisRenderObject& object);
+OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
 
 }  // namespace rb4

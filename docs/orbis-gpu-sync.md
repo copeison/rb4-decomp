@@ -2,7 +2,8 @@
 
 `orbis_render_system_wait_idle` at `0x8D8100` performs the renderer's full idle
 barrier. It waits for GPU submissions, retires deferred allocations, flushes
-an active frame when necessary, and finally waits on the primary frame owner.
+an active frame when necessary, and resets the newly selected platform frame
+slot at `0x8E8450` for recording.
 
 The GPU wait at `0x8D8140` checks ten submission counters associated with the
 active buffer. It yields the current thread until all ten counters reach zero.
