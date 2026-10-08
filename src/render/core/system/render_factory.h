@@ -15,6 +15,8 @@ struct RenderParticleBuffer;
 struct RenderShader;
 struct RenderTexture2D;
 struct RenderTexture2DDescriptor;
+struct RenderTexture3D;
+struct RenderTexture3DDescriptor;
 struct RenderTextureArray2D;
 struct RenderTextureArray2DDescriptor;
 
@@ -34,6 +36,9 @@ RenderMesh* render_factory_create_mesh(
 RenderTexture2D* render_factory_create_texture_2d(
     RenderFactory& factory,
     const RenderTexture2DDescriptor& descriptor);
+RenderTexture3D* render_factory_create_texture_3d(
+    RenderFactory& factory,
+    const RenderTexture3DDescriptor& descriptor);
 RenderTextureArray2D* render_factory_create_texture_array_2d(
     RenderFactory& factory,
     const RenderTextureArray2DDescriptor& descriptor);
