@@ -10,18 +10,27 @@ struct RenderFactoryDispatch {
         RenderFactory& factory,
         RenderMeshFormat format,
         const char* name);
-    void* create_texture_1d;
+    RenderTexture1D* (*create_texture_1d)(
+        RenderFactory& factory,
+        const RenderTexture1DDescriptor& descriptor);
     RenderTexture2D* (*create_texture_2d)(
         RenderFactory& factory,
         const RenderTexture2DDescriptor& descriptor);
     RenderTexture3D* (*create_texture_3d)(
         RenderFactory& factory,
         const RenderTexture3DDescriptor& descriptor);
-    std::uint8_t reserved_56[2 * sizeof(void*)];
+    RenderTextureCube* (*create_texture_cube)(
+        RenderFactory& factory,
+        const RenderTextureCubeDescriptor& descriptor);
+    RenderTextureArray1D* (*create_texture_array_1d)(
+        RenderFactory& factory,
+        const RenderTextureArray1DDescriptor& descriptor);
     RenderTextureArray2D* (*create_texture_array_2d)(
         RenderFactory& factory,
         const RenderTextureArray2DDescriptor& descriptor);
-    void* create_texture_array_cube;
+    RenderTextureArrayCube* (*create_texture_array_cube)(
+        RenderFactory& factory,
+        const RenderTextureArrayCubeDescriptor& descriptor);
     RenderConstantBuffer* (*create_constant_buffer)(
         RenderFactory& factory,
         const RenderConstantBufferDescriptor& descriptor,
@@ -47,10 +56,15 @@ const RenderFactoryDispatch& dispatch(const RenderFactory& factory) {
 }
 
 static_assert(offsetof(RenderFactoryDispatch, create_mesh) == 24);
+static_assert(offsetof(RenderFactoryDispatch, create_texture_1d) == 32);
 static_assert(offsetof(RenderFactoryDispatch, create_texture_2d) == 40);
 static_assert(offsetof(RenderFactoryDispatch, create_texture_3d) == 48);
+static_assert(offsetof(RenderFactoryDispatch, create_texture_cube) == 56);
+static_assert(offsetof(RenderFactoryDispatch, create_texture_array_1d) == 64);
 static_assert(
     offsetof(RenderFactoryDispatch, create_texture_array_2d) == 72);
+static_assert(
+    offsetof(RenderFactoryDispatch, create_texture_array_cube) == 80);
 static_assert(
     offsetof(RenderFactoryDispatch, create_constant_buffer) == 88);
 
@@ -61,6 +75,12 @@ RenderMesh* render_factory_create_mesh(
     RenderMeshFormat format,
     const char* name) {
     return dispatch(factory).create_mesh(factory, format, name);
+}
+
+RenderTexture1D* render_factory_create_texture_1d(
+    RenderFactory& factory,
+    const RenderTexture1DDescriptor& descriptor) {
+    return dispatch(factory).create_texture_1d(factory, descriptor);
 }
 
 RenderTexture2D* render_factory_create_texture_2d(
@@ -75,10 +95,28 @@ RenderTexture3D* render_factory_create_texture_3d(
     return dispatch(factory).create_texture_3d(factory, descriptor);
 }
 
+RenderTextureCube* render_factory_create_texture_cube(
+    RenderFactory& factory,
+    const RenderTextureCubeDescriptor& descriptor) {
+    return dispatch(factory).create_texture_cube(factory, descriptor);
+}
+
+RenderTextureArray1D* render_factory_create_texture_array_1d(
+    RenderFactory& factory,
+    const RenderTextureArray1DDescriptor& descriptor) {
+    return dispatch(factory).create_texture_array_1d(factory, descriptor);
+}
+
 RenderTextureArray2D* render_factory_create_texture_array_2d(
     RenderFactory& factory,
     const RenderTextureArray2DDescriptor& descriptor) {
     return dispatch(factory).create_texture_array_2d(factory, descriptor);
+}
+
+RenderTextureArrayCube* render_factory_create_texture_array_cube(
+    RenderFactory& factory,
+    const RenderTextureArrayCubeDescriptor& descriptor) {
+    return dispatch(factory).create_texture_array_cube(factory, descriptor);
 }
 
 RenderConstantBuffer* render_factory_create_constant_buffer(

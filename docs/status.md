@@ -166,6 +166,8 @@
   render-target resource creation.
 - [x] Recover the common 3D texture factory dispatch used by volumetric
   scattering resources.
+- [x] Type the remaining common 1D, cube, 1D-array, and cube-array texture
+  factory dispatch slots.
 - [x] Reconstruct common 3D descriptor resolution, factory creation, and
   reusable backend initialization.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
