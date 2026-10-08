@@ -41,6 +41,8 @@
   and signed limit fields.
 - [x] Replace settings platform-query adapters with direct slot-seven feature
   and advertised-resolution reads.
+- [x] Reconstruct generic command-line switch-value lookup and remove the
+  settings-specific resolution adapter.
 - [x] Identify renderer tile dimensions and light-capacity settings.
 - [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Reconstruct shared tiled-light compute-buffer teardown.

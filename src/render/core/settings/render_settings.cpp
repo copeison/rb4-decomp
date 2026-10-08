@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdlib>
 
+#include "core/command_line/command_line.h"
 #include "core/memory/engine_memory.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings_adapters.h"
@@ -248,12 +249,15 @@ void render_settings_initialize(RenderSettings& settings) {
     apply_platform_limits(settings);
 
     settings.output_resolution = platform_default_resolution();
-    RenderExtent override_resolution;
-    if (command_line_resolution_override(override_resolution) &&
-        platform_supports_resolution(override_resolution)) {
-        settings.output_resolution = override_resolution;
-        settings.pc_window_resolution = override_resolution;
-        settings.resolution_overridden = true;
+    if (const auto* override_text =
+            command_line_switch_value(arguments, "resolution", nullptr)) {
+        RenderExtent override_resolution{};
+        if (render_parse_resolution(override_text, override_resolution) &&
+            platform_supports_resolution(settings.output_resolution)) {
+            settings.output_resolution = override_resolution;
+            settings.pc_window_resolution = override_resolution;
+            settings.resolution_overridden = true;
+        }
     }
 }
 

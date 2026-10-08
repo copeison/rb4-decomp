@@ -38,7 +38,6 @@ void ui_load_layout_by_id(
 
 extern DingoService g_dingo_service;
 extern UiLayoutController g_ui_layout_controller;
-extern CommandLineArguments arguments;
 extern bool g_exit_after_initialization;
 
 // Reconstructed from eboot.elf at 0xA0.

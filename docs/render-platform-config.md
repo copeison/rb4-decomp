@@ -33,4 +33,5 @@ binary.
 
 Renderer settings consume slot seven directly. Feature bit `0x10` gates async
 compute, the vector's final entry supplies the default output resolution, and
-command-line resolution overrides must match an entry in that vector.
+startup confirms that default entry remains present before accepting a parsed
+command-line resolution override.

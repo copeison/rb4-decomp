@@ -28,6 +28,4 @@ const char* config_read_string(
     const DataConfig& config,
     const char* key);
 
-bool command_line_resolution_override(RenderExtent& resolution);
-
 }  // namespace rb4

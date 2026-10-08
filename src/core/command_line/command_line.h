@@ -18,6 +18,12 @@ struct CommandLineArguments {
 static_assert(offsetof(CommandLineArgument, handled) == 8);
 static_assert(sizeof(CommandLineArgument) == 16);
 
+extern CommandLineArguments arguments;
+
+const char* command_line_switch_value(
+    CommandLineArguments& arguments,
+    const char* name,
+    const char* default_value);
 void command_line_mark_switches_handled(CommandLineArguments& arguments);
 
 }  // namespace rb4

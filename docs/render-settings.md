@@ -68,17 +68,19 @@ its meaning. Its exact default and all padding are preserved. The render-target
 mask allocation at `0x6B1760` identifies the `0x80` value: it divides the
 target width and height into 16-pixel tiles.
 
-A valid command-line `resolution` value must match one of the platform's
-advertised modes. When it does, it replaces both the output resolution and the
+The startup `-resolution` switch replaces both the output resolution and the
 initial window resolution and sets the explicit-override flag. The default is
-the final mode in platform slot seven's sorted resolution vector; validation
-linearly searches that same vector, matching the original implementation.
+the final mode in platform slot seven's sorted resolution vector. The original
+startup code checks that default against the advertised list before applying
+the parsed override; it does not check the parsed extent itself. The
+reconstruction preserves this observed behavior.
 
 `render_parse_resolution` accepts `WIDTHxHEIGHT` using a lowercase `x`. A
 single positive number is treated as the height and expanded to a 16:9 width;
-for example, `1080` becomes 1,920 × 1,080. The runtime `set_resolution` command
-only enables the override when the resulting extent appears in the platform's
-advertised mode list. Calling the command without a value clears the override.
+for example, `1080` becomes 1,920 × 1,080. The separate runtime
+`set_resolution` command only enables the override when the resulting extent
+appears in the platform's advertised mode list. Calling the command without a
+value clears the override.
 
 Quality levels are the case-insensitive names `Low`, `Medium`, and `High`, with
 numeric values zero through two. Unknown names produce the invalid value `-1`.
