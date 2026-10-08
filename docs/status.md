@@ -71,6 +71,7 @@
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover Orbis GPU fence sequencing, signaling, and command-buffer waits.
 - [x] Recover cross-queue Orbis resource signaling and grouped waits.
+- [x] Reconstruct Orbis transition, UAV, and split resource barriers.
 - [x] Recover Orbis compute dispatch and graphics/compute debug markers.
 - [x] Recover the Orbis GPU-stat timestamp lifecycle and clock conversion.
 - [x] Recover the Orbis compute-buffer counter copy command.
