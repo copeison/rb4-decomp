@@ -36,6 +36,14 @@ static_assert(sizeof(RenderTextureExtent3D) == 12);
 
 void render_texture_mip_chain_descriptor_construct(
     RenderTextureMipChainDescriptor& descriptor);
+void render_texture_mip_chain_descriptor_destruct(
+    RenderTextureMipChainDescriptor& descriptor);
+void render_texture_mip_chain_construct(
+    RenderTextureMipChainState& mip_chain,
+    const RenderTextureMipChainDescriptor& descriptor,
+    bool has_source_data);
+void render_texture_mip_chain_destruct(
+    RenderTextureMipChainState& mip_chain);
 void render_texture_mip_chain_array_construct(
     RenderTextureMipChainArray& mip_chains);
 void render_texture_mip_chain_array_reserve(

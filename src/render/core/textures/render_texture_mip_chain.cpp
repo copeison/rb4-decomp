@@ -1,13 +1,19 @@
 #include "render/core/textures/render_texture_mip_chain.h"
 
 #include <cstddef>
+#include <cstring>
+#include <new>
 
 #include "core/memory/engine_memory.h"
-#include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {
 
 namespace {
+
+struct MipChainDispatch {
+    void* reserved_destruct;
+    void (*release_dynamic)(RenderTextureMipChainState* mip_chain);
+};
 
 std::size_t mip_chain_count(const RenderTextureMipChainArray& mip_chains) {
     if (mip_chains.begin == nullptr) {
@@ -28,10 +34,70 @@ std::size_t level_count(const RenderTextureMipChainState& mip_chain) {
     auto* level = &mip_chain;
     while (level != nullptr) {
         ++count;
-        level = reinterpret_cast<const RenderTextureMipChainState*>(
-            level->fields.source_state);
+        level = level->fields.next_mip;
     }
     return count;
+}
+
+void release_child(RenderTextureMipChainState*& child) {
+    if (child == nullptr) {
+        return;
+    }
+    if (child->fields.implementation != nullptr) {
+        auto* dispatch = static_cast<MipChainDispatch*>(
+            child->fields.implementation);
+        dispatch->release_dynamic(child);
+    } else {
+        render_texture_mip_chain_destruct(*child);
+        ::operator delete(child);
+    }
+    child = nullptr;
+}
+
+void destroy_mip_chain_fields(RenderTextureMipChainFields& fields) {
+    delete[] static_cast<std::uint8_t*>(fields.source_data);
+    fields.source_data = nullptr;
+    fields.source_size = 0;
+
+    release_child(fields.next_mip);
+    if (fields.auxiliary_data != nullptr) {
+        render_release(fields.auxiliary_data);
+        fields.auxiliary_data = nullptr;
+    }
+
+    fields.width = 0;
+    fields.height = 0;
+    fields.depth = 0;
+    fields.data_format = -1;
+}
+
+void copy_mip_chain_fields(
+    RenderTextureMipChainFields& destination,
+    const RenderTextureMipChainFields& source,
+    bool has_source_data) {
+    destination = {};
+    destination.data_format = -1;
+    destination.width = source.width;
+    destination.height = source.height;
+    destination.depth = source.depth;
+    destination.data_format = source.data_format;
+    destination.source_size = source.source_size;
+    std::memcpy(destination.metadata, source.metadata, sizeof(source.metadata));
+
+    if (source.source_data != nullptr) {
+        auto* pixels = new std::uint8_t[source.source_size];
+        std::memcpy(pixels, source.source_data, source.source_size);
+        destination.source_data = pixels;
+    }
+
+    if (source.next_mip != nullptr) {
+        destination.next_mip = new RenderTextureMipChainState;
+        render_texture_mip_chain_construct(
+            *destination.next_mip,
+            reinterpret_cast<const RenderTextureMipChainDescriptor&>(
+                *source.next_mip),
+            has_source_data);
+    }
 }
 
 void destroy_elements(
@@ -59,6 +125,26 @@ void render_texture_mip_chain_descriptor_construct(
     RenderTextureMipChainDescriptor& descriptor) {
     descriptor = {};
     descriptor.fields.data_format = -1;
+}
+
+// Reconstructed from eboot.elf at 0x682BC0.
+void render_texture_mip_chain_descriptor_destruct(
+    RenderTextureMipChainDescriptor& descriptor) {
+    destroy_mip_chain_fields(descriptor.fields);
+}
+
+// Reconstructed from eboot.elf at 0x682960 and 0x6829A0.
+void render_texture_mip_chain_construct(
+    RenderTextureMipChainState& mip_chain,
+    const RenderTextureMipChainDescriptor& descriptor,
+    bool has_source_data) {
+    copy_mip_chain_fields(
+        mip_chain.fields, descriptor.fields, has_source_data);
+}
+
+void render_texture_mip_chain_destruct(
+    RenderTextureMipChainState& mip_chain) {
+    destroy_mip_chain_fields(mip_chain.fields);
 }
 
 void render_texture_mip_chain_array_construct(

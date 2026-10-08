@@ -87,6 +87,8 @@ struct RenderTexture {
     std::uint8_t trailing_reserved[4];
 };
 
+union RenderTextureMipChainState;
+
 struct RenderTextureMipChainFields {
     void* implementation;
     std::uint32_t width;
@@ -95,7 +97,9 @@ struct RenderTextureMipChainFields {
     std::int32_t data_format;
     void* source_data;
     std::size_t source_size;
-    std::uint8_t source_state[40];
+    RenderTextureMipChainState* next_mip;
+    std::uint32_t metadata[6];
+    void* auxiliary_data;
 };
 
 union RenderTextureMipChainState {
@@ -143,6 +147,9 @@ static_assert(offsetof(RenderTextureMipChainFields, width) == 8);
 static_assert(offsetof(RenderTextureMipChainFields, data_format) == 20);
 static_assert(offsetof(RenderTextureMipChainFields, source_data) == 24);
 static_assert(offsetof(RenderTextureMipChainFields, source_size) == 32);
+static_assert(offsetof(RenderTextureMipChainFields, next_mip) == 40);
+static_assert(offsetof(RenderTextureMipChainFields, metadata) == 48);
+static_assert(offsetof(RenderTextureMipChainFields, auxiliary_data) == 72);
 static_assert(sizeof(RenderTextureMipChainState) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptor) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptorRange) == 24);
