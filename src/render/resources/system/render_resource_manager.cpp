@@ -1,12 +1,17 @@
 #include "render/resources/system/render_resource_manager.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_data_format.h"
+#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_texture_array_1d.h"
+#include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
@@ -203,6 +208,80 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
         }
         render_release(manager.pointer_array);
         manager.pointer_array = nullptr;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x641370.
+void render_resource_manager_finalize(RenderResourceManager& manager) {
+    reinterpret_cast<std::uint8_t*>(manager.handle_state)[1] = 1;
+    for (auto* node = manager.primary_list->next;
+         node != manager.primary_list;
+         node = node->next) {
+        render_primary_shader_finalize(&primary_shader_from_link(*node));
+    }
+
+    constexpr std::uint32_t kFunctionCount = 4;
+    constexpr std::uint32_t kSampleCount = 128;
+    constexpr float kSampleStep = 1.0F / 127.0F;
+    constexpr RenderDataFormatDescriptor kFunctionTableFormat{
+        32,
+        10,
+        2,
+        1,
+        -1,
+    };
+
+    RenderTextureArray1DDescriptor descriptor;
+    render_texture_array_1d_descriptor_construct(descriptor);
+    descriptor.texture_state.name = "function_table";
+    descriptor.texture_state.address_mode = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(6));
+    descriptor.texture_state.filter_mode = static_cast<std::uint32_t>(
+        render_texture_default_filter_mode(6));
+
+    std::array<RenderTextureMipChainDescriptor, kFunctionCount> mip_chains;
+    descriptor.mip_chains = {
+        mip_chains.data(),
+        mip_chains.data() + mip_chains.size(),
+        mip_chains.data() + mip_chains.size(),
+    };
+
+    const auto data_format =
+        render_data_format_resolve(kFunctionTableFormat, 7);
+    const RenderTextureExtent3D extent{kSampleCount, 1, 1};
+    std::array<RenderFloatPixel, kSampleCount> pixels;
+    for (std::uint32_t function_index = 0;
+         function_index < kFunctionCount;
+         ++function_index) {
+        for (std::uint32_t sample_index = 0;
+             sample_index < kSampleCount;
+             ++sample_index) {
+            pixels[sample_index] = render_function_table_sample(
+                function_index,
+                static_cast<float>(sample_index) * kSampleStep);
+        }
+
+        auto& mip = mip_chains[function_index];
+        render_texture_mip_chain_descriptor_construct(mip);
+        render_texture_mip_chain_descriptor_allocate_source(
+            mip, extent, data_format, nullptr);
+        const RenderFloatImageView image{
+            nullptr,
+            kSampleCount,
+            1,
+            1,
+            0,
+            pixels.data(),
+            nullptr,
+        };
+        render_texture_mip_chain_descriptor_copy_float_image(mip, image);
+    }
+
+    manager.runtime.function_table_texture =
+        render_create_texture_array_1d(descriptor, nullptr);
+
+    for (auto& mip : mip_chains) {
+        render_texture_mip_chain_descriptor_destruct(mip);
     }
 }
 
