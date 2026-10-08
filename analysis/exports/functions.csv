@@ -27945,7 +27945,7 @@ address,end,size,name,library,thunk
 0x8D8A40,0x8D8A70,48,sub_8D8A40,False,False
 0x8D8A70,0x8D8AA0,48,sub_8D8A70,False,False
 0x8D8AA0,0x8D8AD0,48,sub_8D8AA0,False,False
-0x8D8AD0,0x8D8B30,96,sub_8D8AD0,False,False
+0x8D8AD0,0x8D8B30,96,orbis_create_constant_buffer,False,False
 0x8D8B30,0x8D8C60,304,sub_8D8B30,False,False
 0x8D8C60,0x8D8C61,1,nullsub_3154,False,False
 0x8D8C70,0x8D8C75,5,sub_8D8C70,False,True

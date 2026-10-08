@@ -30,6 +30,7 @@ the source tree.
 | `0x8D8100`-`0x8D857A` | Orbis GPU synchronization | `src/render/orbis_gpu_sync.cpp` | Ten-counter idle barrier, active-frame flushing, and the complete mutex-protected deferred-allocation queue lifecycle recovered. |
 | `0x8D8300` | Orbis frame submission | `src/render/orbis_frame_submit.cpp` | Submit-token condition wait, active-command flush, primary frame-owner submission, and collected-object finalization recovered. |
 | `0x8D85C0`, `0x8E1570` | Orbis GPU fence | `src/render/orbis_fence.cpp` | 24-byte object factory and zeroed four-byte `PS4Fence` GPU allocation recovered. |
+| `0x8D8AD0` | Orbis constant-buffer factory | `src/render/orbis_constant_buffer.cpp` | Named contiguous allocation, 112-byte header, 16-byte element stride, and inline payload construction recovered. |
 | `0x27A1C0`-`0x27A850` | FMOD file callbacks and asynchronous reader | `src/audio/fmod_file_io.cpp` | Open, close, read, seek, priority queue, worker, cancellation, and shutdown behavior recovered. |
 | `0x262300`, `0x27ACB0` | listener update and engine-to-FMOD transform conversion | `src/audio/fmod_listener.cpp` | Primary listener gating, 48-byte transform layout, handedness conversion, and zero velocity recovered. |
 | `0x2763F0`-`0x276520`, `0x2786D0` | `HMX.BufferedOutput` callbacks and custom-output initialization | `src/audio/fmod_buffered_output.cpp`, `src/audio/fmod_audio_system.cpp` | Output descriptor, 128 virtual drivers, format negotiation, update dispatch, and update-driven FMOD flags recovered. |

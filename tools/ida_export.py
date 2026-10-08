@@ -261,6 +261,7 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-release-all-retired-allocations": 0x8D84B0,
     "orbis-create-fence": 0x8D85C0,
     "orbis-fence-construct": 0x8E1570,
+    "orbis-create-constant-buffer": 0x8D8AD0,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,
