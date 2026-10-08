@@ -49,5 +49,17 @@ std::uint64_t render_shader_backend_add_output_binding(
     std::uint32_t resource_dimension,
     std::uint32_t stage,
     std::uint32_t stage_mask);
+std::uint64_t render_shader_backend_add_buffer_input(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t element_type,
+    std::uint32_t stage);
+std::uint64_t render_shader_backend_add_buffer_output(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t element_type,
+    std::uint32_t stage);
 
 }  // namespace rb4

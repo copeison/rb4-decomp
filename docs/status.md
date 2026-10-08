@@ -435,6 +435,8 @@
   meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct common compute-buffer base dispatch, staging ownership,
   backend initialization, and deleting storage release.
+- [x] Reconstruct clear/copy buffer compute-shader dispatch, numeric/texture
+  permutations, typed buffer bindings, texture bindings, and clear constant.
 - [x] Reconstruct common constant-buffer base dispatch and deleting storage
   release.
 - [x] Reconstruct common particle-buffer base dispatch and deleting storage

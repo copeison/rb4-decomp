@@ -238,26 +238,6 @@ void render_blur_classify_compute_shader_construct(void* shader) {
     }
 }
 
-// Reconstructed from eboot.elf at 0x637210.
-void render_clear_buffer_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader, render_clear_buffer_compute_shader_install_dispatch, 2);
-    shader_field(shader, 328) = -1;
-    shader_field(shader, 336) = 0;
-    for (std::size_t offset = 344; offset <= 384; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-}
-
-// Reconstructed from eboot.elf at 0x6F3550.
-void render_copy_buffer_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader, render_copy_buffer_compute_shader_install_dispatch, 2);
-    for (std::size_t offset = 328; offset <= 416; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-}
-
 // Reconstructed from eboot.elf at 0x6F2B40.
 void render_dof_disc_blur_compute_shader_construct(void* shader) {
     auto* fields = construct_shader(
