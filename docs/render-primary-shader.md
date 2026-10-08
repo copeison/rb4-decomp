@@ -23,3 +23,8 @@ and frees the six compiled-array capacities in reverse order. Each owning
 support pointer is cleared as soon as it is released. The base dispatch
 installation, parameter-record insertion, resource-name destruction, and
 backend initialization remain narrow adapter boundaries.
+
+The 20-byte binding, 40-byte registry, and 240-byte six-registry set are shared
+with the resource manager through `shader_parameter_registry.h`. This keeps
+the encoded range, bit cursor, and enabled-state layout consistent wherever
+shader permutation fields are registered.

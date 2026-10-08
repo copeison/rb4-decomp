@@ -8,6 +8,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
+#include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
@@ -45,24 +46,6 @@ struct RenderShaderNameRecordArray {
     void* allocator;
 };
 
-struct RenderShaderParameterRecord {
-    std::uint8_t resource_name[40];
-};
-
-struct RenderShaderParameterRegistry {
-    RenderShaderParameterRecord* begin;
-    RenderShaderParameterRecord* end;
-    RenderShaderParameterRecord* capacity;
-    void* allocator;
-    std::uint32_t bit_count;
-    bool enabled;
-    std::uint8_t reserved_37[3];
-};
-
-struct RenderShaderParameterRegistrySet {
-    RenderShaderParameterRegistry registries[6];
-};
-
 struct RenderShaderCompileState {
     const void* source_identifier;
     std::int32_t resource_type;
@@ -89,25 +72,12 @@ struct RenderShaderBackendState {
     std::uint8_t reserved_768[96];
 };
 
-struct RenderShaderParameterBinding {
-    std::uint32_t first_value;
-    std::uint32_t bit_offset;
-    std::uint32_t shifted_mask;
-    std::uint32_t shift;
-    bool enabled;
-    std::uint8_t reserved_17[3];
-};
-
 static_assert(sizeof(RenderManagedObjectArray) == 32);
 static_assert(sizeof(RenderShaderNameRecord) == 32);
 static_assert(sizeof(RenderShaderNameRecordArray) == 32);
-static_assert(sizeof(RenderShaderParameterRecord) == 40);
-static_assert(sizeof(RenderShaderParameterRegistry) == 40);
-static_assert(sizeof(RenderShaderParameterRegistrySet) == 240);
 static_assert(sizeof(RenderShaderCompileState) == 72);
 static_assert(sizeof(RenderByteArray) == 32);
 static_assert(sizeof(RenderShaderBackendState) == 864);
-static_assert(sizeof(RenderShaderParameterBinding) == 20);
 
 template <typename Element>
 void release_array_storage(
@@ -132,13 +102,6 @@ void clear_compiled_objects(RenderManagedObjectArray& objects) {
         }
     }
     objects.end = objects.begin;
-}
-
-void construct_parameter_registry(
-    RenderShaderParameterRegistry& registry,
-    bool enabled) {
-    registry = {};
-    registry.enabled = enabled;
 }
 
 void destruct_name_records(RenderShaderNameRecordArray& names) {
@@ -305,11 +268,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
 
     auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
         render_allocate(sizeof(RenderShaderParameterRegistrySet)));
-    for (std::size_t index = 0; index < 6; ++index) {
-        construct_parameter_registry(
-            parameters->registries[index],
-            index == 0);
-    }
+    render_shader_parameter_registry_set_construct(*parameters);
     shader.parameters = parameters;
 
     auto* compile_state = static_cast<RenderShaderCompileState*>(

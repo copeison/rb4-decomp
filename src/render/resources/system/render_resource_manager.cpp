@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
+#include "core/types/symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
@@ -14,6 +15,7 @@
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/shaders/primary_shader_resource.h"
+#include "render/resources/shaders/primary_shader_resource_adapters.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
@@ -46,32 +48,6 @@ struct RenderResourceNameArrayOwner {
     std::uint8_t* capacity;
     void* allocator;
 };
-
-struct RenderResourceNameRecord {
-    std::uint8_t storage[40];
-};
-
-struct RenderResourceNameArray {
-    RenderResourceNameRecord* begin;
-    RenderResourceNameRecord* end;
-    RenderResourceNameRecord* capacity;
-    void* allocator;
-    std::uint32_t bit_count;
-    bool enabled;
-    std::uint8_t reserved_37[3];
-};
-
-struct RenderResourceSpecializedState {
-    RenderResourceNameArray arrays[6];
-};
-
-static_assert(sizeof(RenderResourceNameRecord) == 40);
-static_assert(sizeof(RenderResourceNameArray) == 40);
-static_assert(sizeof(RenderResourceSpecializedState) == 240);
-
-void initialize_registry(std::uint8_t* registry) {
-    std::fill_n(registry, 20, std::uint8_t{0});
-}
 
 RenderResourceListNode* create_list_sentinel() {
     auto* node = static_cast<RenderResourceListNode*>(
@@ -115,15 +91,17 @@ void release_dynamic_resource(void*& storage) {
     }
 }
 
-void destruct_name_array(RenderResourceNameArray& names) {
-    for (auto* name = names.begin; name != names.end; ++name) {
-        render_resource_name_destruct(name);
+void destruct_parameter_registry(RenderShaderParameterRegistry& parameters) {
+    for (auto* parameter = parameters.begin;
+         parameter != parameters.end;
+         ++parameter) {
+        render_resource_name_destruct(parameter->resource_name);
     }
-    if (names.begin != nullptr) {
+    if (parameters.begin != nullptr) {
         const auto byte_count = static_cast<std::size_t>(
-            reinterpret_cast<std::uint8_t*>(names.capacity) -
-            reinterpret_cast<std::uint8_t*>(names.begin));
-        engine_deallocate_sized(names.begin, byte_count);
+            reinterpret_cast<std::uint8_t*>(parameters.capacity) -
+            reinterpret_cast<std::uint8_t*>(parameters.begin));
+        engine_deallocate_sized(parameters.begin, byte_count);
     }
 }
 
@@ -172,8 +150,8 @@ RenderResourceManager& render_system_resource_manager(RenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x63F180.
 void render_resource_manager_construct(RenderResourceManager& manager) {
-    for (std::size_t index = 0; index < 4; ++index) {
-        initialize_registry(manager.registries + index * 20);
+    for (auto& binding : manager.shader_parameter_bindings) {
+        binding = {};
     }
 
     std::fill_n(
@@ -190,6 +168,39 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
     *manager.pointer_array = {};
     manager.primary_list = create_list_sentinel();
     manager.secondary_list = create_list_sentinel();
+}
+
+// Reconstructed from eboot.elf at 0x640BF0.
+void render_resource_manager_initialize_shader_parameters(
+    RenderResourceManager& manager) {
+    auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
+        render_allocate(sizeof(RenderShaderParameterRegistrySet)));
+    render_shader_parameter_registry_set_construct(*parameters);
+    manager.runtime.shader_parameters = parameters;
+
+    struct BindingDefinition {
+        const char* name;
+        std::uint32_t first_value;
+        std::uint32_t last_value;
+        std::size_t registry_index;
+    };
+    constexpr BindingDefinition kBindings[] = {
+        {"HX_BT709_TO_BT2020", 0, 2, 0},
+        {"HX_NUM_RT_SLICES", 0, 7, 0},
+        {"HX_SHADING_MODE", 0, 19, 0},
+        {"HX_GEO_TYPE", 0, 2, 1},
+    };
+
+    for (std::size_t index = 0; index < 4; ++index) {
+        const auto& definition = kBindings[index];
+        const Symbol name(definition.name);
+        render_shader_parameter_registry_add(
+            &manager.shader_parameter_bindings[index],
+            &parameters->registries[definition.registry_index],
+            name.value(),
+            definition.first_value,
+            definition.last_value);
+    }
 }
 
 // Reconstructed from eboot.elf at 0x63F350.
@@ -314,14 +325,14 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
         names_storage = nullptr;
     }
 
-    if (manager.runtime.specialized_state != nullptr) {
-        auto* state = static_cast<RenderResourceSpecializedState*>(
-            manager.runtime.specialized_state);
+    if (manager.runtime.shader_parameters != nullptr) {
+        auto* parameters = manager.runtime.shader_parameters;
         for (std::size_t index = 6; index != 0; --index) {
-            destruct_name_array(state->arrays[index - 1]);
+            destruct_parameter_registry(
+                parameters->registries[index - 1]);
         }
-        render_release(state);
-        manager.runtime.specialized_state = nullptr;
+        render_release(parameters);
+        manager.runtime.shader_parameters = nullptr;
     }
 
     release_dynamic_resource(manager.runtime.function_table_texture);

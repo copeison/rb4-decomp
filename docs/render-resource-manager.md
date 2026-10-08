@@ -1,13 +1,14 @@
 # Render resource manager
 
 The render system embeds a 712-byte resource-manager block at offset `0x9F0`.
-Its constructor at `0x63F180` begins with four fixed 20-byte registries. Each
-registry contains two cleared words and a disabled byte at offset `0x10`.
+Its constructor at `0x63F180` begins with four fixed 20-byte shader-parameter
+bindings. Each binding contains its encoded value range and bit placement plus
+an enabled byte at offset `0x10`; construction clears all four.
 
 The following handle-state region uses `-1` as its invalid sentinel, with the
 observed counters and optional handles initialized to zero. The 336-byte
 runtime region begins cleared. It now exposes three sized-array owners, a
-32-byte-record name-array owner, a specialized state, the function-table
+32-byte-record name-array owner, a shader-parameter registry set, the function-table
 texture, and 35 dynamic resource slots. The constructor then allocates a 32-byte empty
 pointer-array owner and two 16-byte intrusive-list sentinels; each list node is
 self-linked when empty.
@@ -15,7 +16,15 @@ self-linked when empty.
 The destructor at `0x63F350` unlinks and releases the two sentinel nodes, frees
 the pointer array's backing storage by its capacity, and releases the array
 owner. Runtime initialization remains a typed adapter boundary while its
-larger registry algorithm is reconstructed.
+constant table, uniform blocks, and backend-resource sequence are reconstructed.
+
+Shader-parameter setup at `0x640BF0` is source-owned. It allocates six 40-byte
+registries, enables the first, and registers four manager bindings:
+`HX_BT709_TO_BT2020` over `[0, 2]`, `HX_NUM_RT_SLICES` over `[0, 7]`,
+`HX_SHADING_MODE` over `[0, 19]`, and `HX_GEO_TYPE` over `[0, 2]`. Geometry
+type uses the second registry; the other fields share the first registry's bit
+cursor. The binding and registry layouts are shared with primary-shader lazy
+preparation under `src/render/resources/shaders`.
 
 Finalization at `0x641370` marks the second manager phase, finalizes every
 primary shader resource, and builds the `function_table` texture directly. The
@@ -53,7 +62,7 @@ offset.
 
 Shutdown at `0x641740` is source-owned. It releases eight sized-array owners in
 the handle region and three in the runtime region, destroys every name record
-before freeing its array owner, tears down the parameter-registry set
+before freeing its array owner, tears down the shader-parameter registry set
 containing six 40-byte arrays in reverse order, and invokes
 the dynamic release slot for the function-table texture and all 35 resource
 slots. Every owning slot is cleared immediately after release. Only the

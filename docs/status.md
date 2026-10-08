@@ -352,6 +352,8 @@
 - [x] Separate primary-shader resources into their own domain and reconstruct
   common construction, support-object teardown, list unlinking, and compiled
   array destruction.
+- [x] Type the shared shader-parameter binding and registry layouts and
+  reconstruct the resource manager's four built-in permutation bindings.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
