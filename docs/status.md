@@ -37,6 +37,7 @@
 - [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Reconstruct shared tiled-light compute-buffer teardown.
 - [x] Reconstruct per-target tiled-light and stereo compute-buffer allocation.
+- [x] Reconstruct per-target tiled-light resource teardown.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.

@@ -49,6 +49,20 @@ void create_light_index_and_range_buffers(
         kLightRangeStride, tile_count, range_buffer_name);
 }
 
+void release_compute_buffer(RenderComputeBuffer*& buffer) {
+    if (buffer != nullptr) {
+        render_compute_buffer_release_dynamic(*buffer);
+        buffer = nullptr;
+    }
+}
+
+void release_render_target(RenderTarget*& target) {
+    if (target != nullptr) {
+        render_target_release_dynamic(*target);
+        target = nullptr;
+    }
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6B3380.
@@ -101,6 +115,18 @@ void render_tiled_light_target_buffers_create(
             "Tiled Light Ids (Both Eyes)",
             "Tiled Light Id Ranges (Both Eyes)");
     }
+}
+
+// Reconstructed from the tiled-light portion of eboot.elf at 0x6AFFE0.
+void render_tiled_light_target_buffers_release(
+    TiledLightTargetResources& resources) {
+    release_compute_buffer(resources.light_ids[0]);
+    release_compute_buffer(resources.stereo_light_ids[0]);
+    release_compute_buffer(resources.light_ids[1]);
+    release_compute_buffer(resources.stereo_light_ids[1]);
+    release_compute_buffer(resources.light_id_ranges);
+    release_render_target(resources.interpolation_target);
+    release_compute_buffer(resources.stereo_light_id_ranges);
 }
 
 }  // namespace rb4

@@ -56,10 +56,12 @@ other 64-bit defaults:
 | `0x50` | Maximum directional lights | 16 |
 | `0x58` | Maximum light probes | 128 |
 | `0x78` | Shadow-softening tile size | 16 |
+| `0x80` | Mask tile size | 16 |
 
-The byte at `0x60` and 64-bit value at `0x80` retain offset-based names until
-their consumers establish their meanings. Their exact defaults and all
-padding are preserved.
+The byte at `0x60` retains an offset-based name until its consumers establish
+its meaning. Its exact default and all padding are preserved. The render-target
+mask allocation at `0x6B1760` identifies the `0x80` value: it divides the
+target width and height into 16-pixel tiles.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the

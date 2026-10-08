@@ -43,7 +43,7 @@ struct RenderSettings {
     std::int64_t max_partial_framerate_scenes = 0;
     std::int64_t max_shadow_contrib_buffers = 0;
     std::int64_t shadow_soften_tile_size = 16;
-    std::int64_t unknown_128 = 16;
+    std::int64_t mask_tile_size = 16;
 
     RenderExtent output_resolution{1920, 1080};
     bool resolution_overridden = false;
@@ -99,7 +99,7 @@ static_assert(offsetof(RenderSettings, unknown_96) == 96);
 static_assert(offsetof(RenderSettings, max_partial_framerate_scenes) == 104);
 static_assert(offsetof(RenderSettings, max_shadow_contrib_buffers) == 112);
 static_assert(offsetof(RenderSettings, shadow_soften_tile_size) == 120);
-static_assert(offsetof(RenderSettings, unknown_128) == 128);
+static_assert(offsetof(RenderSettings, mask_tile_size) == 128);
 static_assert(offsetof(RenderSettings, output_resolution) == 136);
 static_assert(offsetof(RenderSettings, quality_level) == 148);
 static_assert(offsetof(RenderSettings, vsync_enabled) == 152);

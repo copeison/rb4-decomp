@@ -40,3 +40,8 @@ the height with upward rounding; its specialized render-target construction
 remains behind an adapter while that descriptor type is recovered. The exact
 resource slots occupy offsets `0x58` through `0x88` in the target-resource
 block.
+
+The matching section of the render-target resource teardown at `0x6AFFE0`
+invokes each resource's virtual deleting destructor and clears all seven
+slots. This includes both double-buffered light-ID pairs, both range buffers,
+and the optional interpolation target.

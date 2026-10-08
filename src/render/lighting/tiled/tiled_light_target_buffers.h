@@ -33,5 +33,7 @@ void render_tiled_light_target_buffers_create(
     bool create_interpolation_target,
     bool stereo,
     RenderTarget* existing_interpolation_target);
+void render_tiled_light_target_buffers_release(
+    TiledLightTargetResources& resources);
 
 }  // namespace rb4
