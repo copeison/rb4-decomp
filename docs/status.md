@@ -48,6 +48,7 @@
 - [x] Inline GBuffer color and normal texture descriptors and owner
   registration.
 - [x] Reconstruct the per-scene depth/stencil target and attachment reuse.
+- [x] Inline depth/stencil creation-state and 32/40-bit format descriptors.
 - [x] Reconstruct the partial-frame light-accumulation target.
 - [x] Reconstruct CMAA render targets and reuse behavior.
 - [x] Reconstruct primary and blurred light-accumulation targets.

@@ -4,9 +4,10 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/depth/depth_stencil_target_adapters.h"
 
 namespace rb4 {
 
@@ -39,16 +40,37 @@ void render_depth_stencil_target_create(
 
     const auto& settings =
         *render_system_settings(*render_system_instance());
-    auto* target = render_target_resources_create_depth_stencil_target(
+    const auto use_40_bit_format = settings.use_40_bit_depth_stencil;
+    const RenderDataFormatDescriptor format_descriptor{
+        use_40_bit_format ? 40U : 32U,
+        11,
+        use_40_bit_format ? 2U : 0U,
+        1,
+        -1,
+    };
+    RenderTextureCreationState creation_state{};
+    creation_state.values[0] = 2;
+    creation_state.values[6] = 1;
+    creation_state.values[8] = 1;
+    creation_state.values[9] = 1;
+    creation_state.values[10] = 2;
+    auto* target = render_target_resources_create_texture_2d(
         resources,
-        settings.use_40_bit_depth_stencil,
+        "Depth/Stencil Buffer",
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        resources.extent,
         attachment_index,
-        reusable_target,
-        !partial_frame);
+        16,
+        reusable_target);
     block.depth_stencil = target;
     if (target->attachment_index != kUnassignedAttachment) {
         resources.attachment_cursor = static_cast<std::uint32_t>(
             target->attachment_index + target->attachment_count);
+    }
+    if (!partial_frame) {
+        resources.registered_resources_begin[
+            resources.registered_resource_count++] = target;
     }
 }
 
