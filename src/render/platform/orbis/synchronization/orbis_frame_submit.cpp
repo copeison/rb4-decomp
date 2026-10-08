@@ -3,6 +3,7 @@
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/synchronization/orbis_frame_submit_adapters.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {
 

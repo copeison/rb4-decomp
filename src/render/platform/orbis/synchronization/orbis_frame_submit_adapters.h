@@ -12,8 +12,6 @@ void orbis_submit_scope_end(OrbisRenderSystem& system);
 bool orbis_submit_token_available(const OrbisRenderSystem& system);
 void orbis_wait_for_submit_token(OrbisRenderSystem& system);
 void orbis_consume_submit_token(OrbisRenderSystem& system);
-bool orbis_frame_is_active(const OrbisRenderSystem& system);
 void orbis_flush_active_frame(OrbisRenderSystem& system);
-OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
 
 }  // namespace rb4
