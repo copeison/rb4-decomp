@@ -25,3 +25,18 @@ The matching section of the lighting-system destructor at `0x480AD0` invokes
 each buffer's virtual deleting destructor and clears all five owner slots in
 the same order. The source models those noncontiguous fields through a typed
 buffer-kind accessor until the complete enclosing layout is available.
+
+`render_tiled_light_target_buffers_create` at `0x6B3380` allocates two
+light-ID buffers and one range buffer for each target. The number of ranges is
+`ceil(width / tile_size) * ceil(height / tile_size) * depth_slices`. Range
+records are 32 bytes. Light IDs are 16-bit values packed two per four-byte
+buffer element, so each ID buffer contains half of
+`range_count * max_lights_per_tile` elements. All three descriptors use flag
+`1`.
+
+Stereo mode creates a second set with the embedded `Both Eyes` names. The
+optional interpolation target rounds the width up to an even value and halves
+the height with upward rounding; its specialized render-target construction
+remains behind an adapter while that descriptor type is recovered. The exact
+resource slots occupy offsets `0x58` through `0x88` in the target-resource
+block.
