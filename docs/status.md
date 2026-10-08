@@ -325,6 +325,8 @@
   dynamic release, and render-system slot lifetime.
 - [x] Recover the 712-byte resource-manager construction layout, fixed
   registries, handle sentinels, pointer-array owner, and list teardown.
+- [x] Type the resource-manager runtime ownership region and reconstruct full
+  shutdown of its array owners, specialized state, and 36 dynamic resources.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder

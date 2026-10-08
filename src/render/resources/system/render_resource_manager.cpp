@@ -7,6 +7,7 @@
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 
@@ -29,6 +30,21 @@ struct RenderManagedObjectArray {
     RenderManagedObject** begin;
     RenderManagedObject** end;
     RenderManagedObject** capacity;
+    void* allocator;
+};
+
+struct RenderSizedArrayOwner {
+    std::uint8_t reserved_0[40];
+    void* begin;
+    void* end;
+    void* capacity;
+    void* allocator;
+};
+
+struct RenderResourceNameArrayOwner {
+    std::uint8_t* begin;
+    std::uint8_t* end;
+    std::uint8_t* capacity;
     void* allocator;
 };
 
@@ -87,6 +103,29 @@ void clear_compiled_objects(RenderManagedObjectArray& objects) {
     objects.end = objects.begin;
 }
 
+void release_sized_array_owner(void*& storage) {
+    auto* owner = static_cast<RenderSizedArrayOwner*>(storage);
+    if (owner == nullptr) {
+        return;
+    }
+    if (owner->begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            static_cast<std::uint8_t*>(owner->capacity) -
+            static_cast<std::uint8_t*>(owner->begin));
+        engine_deallocate_sized(owner->begin, byte_count);
+    }
+    render_release(owner);
+    storage = nullptr;
+}
+
+void release_dynamic_resource(void*& storage) {
+    auto* resource = static_cast<RenderManagedObject*>(storage);
+    if (resource != nullptr) {
+        resource->dispatch->release_dynamic(resource);
+        storage = nullptr;
+    }
+}
+
 }  // namespace
 
 RenderResourceManager& render_system_resource_manager(RenderSystem& system) {
@@ -108,7 +147,7 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
     for (const auto index : {0U, 1U, 11U, 13U, 20U, 22U, 24U, 27U, 29U}) {
         manager.handle_state[index] = 0;
     }
-    std::fill_n(manager.runtime_state, 336, std::uint8_t{0});
+    manager.runtime = {};
 
     manager.pointer_array = static_cast<RenderResourcePointerArray*>(
         render_allocate(sizeof(RenderResourcePointerArray)));
@@ -132,6 +171,47 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
         }
         render_release(manager.pointer_array);
         manager.pointer_array = nullptr;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x641740.
+void render_resource_manager_shutdown(RenderResourceManager& manager) {
+    constexpr std::size_t kSizedHandleIndices[] = {
+        1, 11, 13, 20, 22, 24, 27, 29,
+    };
+    for (const auto index : kSizedHandleIndices) {
+        auto*& storage = reinterpret_cast<void*&>(manager.handle_state[index]);
+        release_sized_array_owner(storage);
+    }
+    for (auto*& storage : manager.runtime.sized_array_owners) {
+        release_sized_array_owner(storage);
+    }
+
+    auto*& names_storage = manager.runtime.name_array_owner;
+    auto* names = static_cast<RenderResourceNameArrayOwner*>(names_storage);
+    if (names != nullptr) {
+        for (auto* item = names->begin; item != names->end; item += 32) {
+            render_resource_name_destruct(item + 16);
+        }
+        if (names->begin != nullptr) {
+            const auto byte_count = static_cast<std::size_t>(
+                names->capacity - names->begin);
+            engine_deallocate_sized(names->begin, byte_count);
+        }
+        render_release(names);
+        names_storage = nullptr;
+    }
+
+    if (manager.runtime.specialized_state != nullptr) {
+        render_resource_specialized_state_destruct(
+            manager.runtime.specialized_state);
+        render_release(manager.runtime.specialized_state);
+        manager.runtime.specialized_state = nullptr;
+    }
+
+    release_dynamic_resource(manager.runtime.function_table_texture);
+    for (auto*& resource : manager.runtime.resources) {
+        release_dynamic_resource(resource);
     }
 }
 

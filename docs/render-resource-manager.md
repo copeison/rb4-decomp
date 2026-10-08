@@ -6,7 +6,9 @@ registry contains two cleared words and a disabled byte at offset `0x10`.
 
 The following handle-state region uses `-1` as its invalid sentinel, with the
 observed counters and optional handles initialized to zero. The 336-byte
-runtime region begins cleared. The constructor then allocates a 32-byte empty
+runtime region begins cleared. It now exposes three sized-array owners, a
+32-byte-record name-array owner, a specialized state, the function-table
+texture, and 35 dynamic resource slots. The constructor then allocates a 32-byte empty
 pointer-array owner and two 16-byte intrusive-list sentinels; each list node is
 self-linked when empty.
 
@@ -23,3 +25,11 @@ resource offset `0x0C`. When partial-framerate scenes are disabled, the second
 list also receives its observed dirty-byte update 395 bytes before each link.
 That secondary resource layout remains unnamed beyond this verified relative
 offset.
+
+Shutdown at `0x641740` is source-owned. It releases eight sized-array owners in
+the handle region and three in the runtime region, destroys every name record
+before freeing its array owner, tears down the specialized state, and invokes
+the dynamic release slot for the function-table texture and all 35 resource
+slots. Every owning slot is cleared immediately after release. Only the
+record-specific name and specialized-state destructors remain focused adapter
+boundaries.
