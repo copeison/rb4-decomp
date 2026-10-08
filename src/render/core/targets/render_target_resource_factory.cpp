@@ -20,10 +20,9 @@ void initialize_texture_descriptor(
     const char* name,
     std::int32_t attachment_index,
     std::uint32_t target_flags) {
-    state = {};
+    render_texture_descriptor_construct(state);
     state.descriptor_type = descriptor_type;
     state.creation_state = creation_state;
-    state.data_format = -1;
     state.target_flags = target_flags;
     state.attachment_index = attachment_index;
     state.name = name;

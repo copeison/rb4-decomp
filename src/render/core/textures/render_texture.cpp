@@ -28,6 +28,21 @@ static_assert(offsetof(RenderTextureDispatch, initialize_backend) == 120);
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x69B930.
+void render_texture_descriptor_construct(
+    RenderTextureDescriptorState& descriptor) {
+    descriptor = {};
+    descriptor.descriptor_type = -1;
+    descriptor.data_format = -1;
+    descriptor.attachment_index = -1;
+}
+
+// Reconstructed from eboot.elf at 0x69B990.
+bool render_texture_descriptor_has_source_data(
+    const RenderTextureDescriptorState& descriptor) {
+    return descriptor.backend_initialized || (descriptor.flags & 5U) != 0;
+}
+
 // Reconstructed from eboot.elf at 0x69B6E0.
 void render_texture_construct(RenderTexture& texture) {
     render_texture_set_base_dispatch(texture);

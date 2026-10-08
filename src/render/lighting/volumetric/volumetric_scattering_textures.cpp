@@ -134,14 +134,13 @@ RenderTexture3D* create_volumetric_texture(
         std::uint32_t, std::uint32_t, std::uint32_t)) {
     RenderTexture3DDescriptor descriptor{};
     auto& texture_state = descriptor.texture_state;
+    render_texture_descriptor_construct(texture_state);
     texture_state.descriptor_type = 2;
     texture_state.creation_state.values[8] = static_cast<std::uint32_t>(
         render_texture_default_address_mode(5));
     texture_state.creation_state.values[9] = static_cast<std::uint32_t>(
         render_texture_default_filter_mode(5));
     texture_state.creation_state.values[10] = 2;
-    texture_state.data_format = -1;
-    texture_state.attachment_index = -1;
     texture_state.name = texture_name(kind);
 
     const RenderDataFormatDescriptor format_descriptor{

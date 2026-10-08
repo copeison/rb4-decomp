@@ -21,12 +21,6 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
     std::memcpy(destination + offset, &value, sizeof(value));
 }
 
-bool descriptor_has_source_data(
-    const RenderTexture1DDescriptor& descriptor) {
-    return descriptor.texture_state.backend_initialized ||
-           (descriptor.texture_state.flags & 5U) != 0;
-}
-
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6F5870.
@@ -43,7 +37,7 @@ void render_texture_1d_construct(
     render_texture_mip_chain_construct(
         texture.mip_chain,
         &descriptor.mip_chain,
-        descriptor_has_source_data(descriptor));
+        render_texture_descriptor_has_source_data(descriptor.texture_state));
 
     write_value(
         texture.descriptor_state,

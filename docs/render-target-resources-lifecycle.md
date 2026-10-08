@@ -139,6 +139,12 @@ and name at their verified offsets. Target and volumetric factories now assign
 those fields directly, while all seven reconstructed texture families share
 the same layout declaration.
 
+The common constructor at `0x69B930` supplies the descriptor type, data-format,
+and attachment sentinels, and `0x69B990` centralizes the source-data test used
+by every texture-family copy constructor. This removes seven duplicated checks
+and keeps descriptor initialization consistent between target and volumetric
+creation paths.
+
 The virtuals return render textures directly: normal targets are 2D textures,
 and the shadow-contribution array is a 2D-array texture. Owner and per-scene
 slots therefore use the common `RenderTexture` base, including release and

@@ -21,12 +21,6 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
     std::memcpy(destination + offset, &value, sizeof(value));
 }
 
-bool descriptor_has_source_data(
-    const RenderTextureArrayCubeDescriptor& descriptor) {
-    return descriptor.texture_state.backend_initialized ||
-           (descriptor.texture_state.flags & 5U) != 0;
-}
-
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x69AAC0.
@@ -39,7 +33,7 @@ void render_texture_array_cube_construct(
         texture.descriptor_state,
         texture.cubes,
         descriptor,
-        descriptor_has_source_data(descriptor));
+        render_texture_descriptor_has_source_data(descriptor.texture_state));
     render_texture_cube_array_validate(texture.cubes);
 
     texture.resource_index = 2;

@@ -134,6 +134,10 @@ static_assert(sizeof(RenderTextureMipChainDescriptor) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptorRange) == 24);
 static_assert(sizeof(RenderTextureMipChainArray) == 32);
 
+void render_texture_descriptor_construct(
+    RenderTextureDescriptorState& descriptor);
+bool render_texture_descriptor_has_source_data(
+    const RenderTextureDescriptorState& descriptor);
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);
 void render_texture_delete(RenderTexture& texture);
