@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <kernel/equeue.h>
+#include <system_service.h>
 #include <video_out.h>
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
@@ -93,6 +94,10 @@ void orbis_delete_event_queue(OrbisRenderSystem& system) {
 
 void orbis_video_output_close(OrbisRenderSystem& system) {
     sceVideoOutClose(orbis_video_output_handle(system));
+}
+
+void orbis_hide_system_splash_screen() {
+    sceSystemServiceHideSplashScreen();
 }
 
 // Reconstructed from eboot.elf at 0x8D7B20.

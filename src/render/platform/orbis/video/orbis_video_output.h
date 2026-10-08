@@ -26,6 +26,7 @@ void orbis_unregister_gnm_event(
     std::uint32_t event_id);
 void orbis_delete_event_queue(OrbisRenderSystem& system);
 void orbis_video_output_close(OrbisRenderSystem& system);
+void orbis_hide_system_splash_screen();
 void orbis_render_system_initialize(OrbisRenderSystem& system);
 void orbis_render_system_shutdown(OrbisRenderSystem& system);
 void orbis_render_system_delete(OrbisRenderSystem& system);

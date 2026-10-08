@@ -29,7 +29,6 @@ void orbis_start_submit_thread(
     std::uint32_t priority);
 void orbis_initialize_submit_profiler(OrbisRenderSystem& system);
 void orbis_wait_for_submit_thread(OrbisRenderSystem& system);
-void orbis_hide_system_splash_screen();
 void orbis_join_submit_thread(OrbisRenderSystem& system);
 void orbis_destroy_submit_condition(OrbisRenderSystem& system);
 void orbis_release_frame_runtime(OrbisRenderSystem& system);
