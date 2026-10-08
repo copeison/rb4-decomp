@@ -47,6 +47,7 @@
 - [x] Reconstruct the partial-frame light-accumulation target.
 - [x] Reconstruct CMAA render targets and reuse behavior.
 - [x] Reconstruct primary and blurred light-accumulation targets.
+- [x] Reconstruct the four-level sky render-target chain.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
