@@ -29,9 +29,17 @@ owner and active back-buffer owner as separate pointers at offsets `0x38` and
 `0x70`.
 
 `src/render/core/system/render_system_state.h` centralizes the verified
-312-byte prefix shared by frame activation and lifetime code. It also exposes
-the frame epoch at `0xA0`, settings at `0x128`, and render factory at `0x130`,
-so these users no longer maintain overlapping private byte layouts.
+312-byte prefix shared by frame activation and lifetime code. The prefix now
+includes the recursive mutex and lock bookkeeping at `0x08`-`0x1F`, the copied
+16-byte startup options at `0x28`, active frame owner and render-object array at
+`0x78`/`0x80`, primary and auxiliary frame epochs at `0xA0`/`0xA8`, frame
+timing state at `0x100`-`0x127`, settings at `0x128`, and the render factory at
+`0x130`. Shared lock helpers live in `src/render/core/synchronization` and
+operate directly on this prefix.
+
+Ending a frame clears the active render-object array and owner directly. The
+array is a 32-byte begin/end/capacity/allocator record, distinct from the
+40-byte frame-owner array whose allocator carries two words of state.
 
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are

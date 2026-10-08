@@ -1,8 +1,10 @@
 #include "render/core/system/render_system_frame.h"
 
+#include "render/core/synchronization/render_system_lock.h"
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/system/render_system_state.h"
 
 namespace rb4 {
 
@@ -54,7 +56,10 @@ void render_system_end_frame() {
         return;
     }
 
-    render_system_clear_active_frame(*system);
+    auto& runtime = render_system_core_state(*system);
+    static_cast<void>(scePthreadSelf());
+    runtime.active_render_objects.end = runtime.active_render_objects.begin;
+    runtime.active_frame_owner = nullptr;
     render_system_finish_frame(*system, false);
 }
 

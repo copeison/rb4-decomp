@@ -285,6 +285,8 @@
   every common texture dimension.
 - [x] Centralize the verified 44-byte texture creation state within the common
   descriptor model.
+- [x] Recover the typed 312-byte render-system core prefix, including lock,
+  active-frame, epoch, timing, settings, and factory state.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.
