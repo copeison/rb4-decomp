@@ -122,3 +122,9 @@ one mip descriptor per layer and releases that temporary range after the
 factory copies it. The common initializer at `0x69B7A0` preserves texture
 reuse for platform backends and performs the source-free GPU update through
 virtual slots `+0x78` and `+0x68`.
+
+Sky target creation now calls this factory directly. Its four levels share the
+verified `{32, 4, 1, 1, -1}` data-format descriptor and common creation-state
+defaults; only creation-state value nine changes from `1` for the full target
+to `2` for reduced targets. This removes the sky-specific creation adapter
+while preserving the original first-owner and prior-owner reuse rules.

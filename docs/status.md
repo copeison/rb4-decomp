@@ -71,6 +71,8 @@
   propagation, and the typed tiled-light block overlay.
 - [x] Reconstruct render-target owner mode and partial-block controls.
 - [x] Reconstruct the four-level sky render-target chain.
+- [x] Replace the sky target creation adapter with direct descriptor assembly,
+  data-format resolution, and common 2D texture creation.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.

@@ -11,7 +11,7 @@ struct RenderTargetResources;
 struct RenderTexture;
 
 struct RenderTextureCreationState {
-    std::uint8_t fields[44];
+    std::uint32_t values[11];
 };
 
 static_assert(sizeof(RenderTextureCreationState) == 44);

@@ -1,7 +1,8 @@
 #include "render/sky/sky_targets.h"
 
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/sky/sky_target_adapters.h"
 
 namespace rb4 {
 
@@ -48,6 +49,15 @@ void render_sky_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
     const auto extent = resources.extent;
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = 1;
+    creation_state.values[10] = 10;
+    const RenderDataFormatDescriptor format_descriptor{
+        32, 4, 1, 1, -1,
+    };
+    const auto data_format =
+        render_data_format_resolve(format_descriptor, 7);
     RenderTexture* new_full_target = nullptr;
 
     for (std::uint32_t shift = 0; shift < 4; ++shift) {
@@ -59,10 +69,16 @@ void render_sky_targets_create(
             reusable_target = new_full_target;
         }
 
-        auto* target = render_target_resources_create_sky_target(
+        creation_state.values[9] = shift == 0 ? 1 : 2;
+
+        auto* target = render_target_resources_create_texture_2d(
             resources,
-            level,
+            "Sky Buffer",
+            creation_state,
+            data_format,
             scaled_extent(extent, shift),
+            -1,
+            0,
             reusable_target);
         target_slot(resources, level) = target;
         if (shift == 0) {

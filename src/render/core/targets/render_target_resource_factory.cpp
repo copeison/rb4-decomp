@@ -39,8 +39,8 @@ void initialize_texture_descriptor(
     write_value(state, kDescriptorTypeOffset, descriptor_type);
     std::memcpy(
         state + kCreationStateOffset,
-        creation_state.fields,
-        sizeof(creation_state.fields));
+        creation_state.values,
+        sizeof(creation_state.values));
     write_value<std::int32_t>(state, kDataFormatOffset, -1);
     write_value(state, kTargetFlagsOffset, target_flags);
     write_value(state, kAttachmentIndexOffset, attachment_index);
