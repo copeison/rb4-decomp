@@ -1,6 +1,7 @@
 #include "orbis_mesh.h"
 
 #include <cstddef>
+#include <cstring>
 
 #include "orbis_mesh_adapters.h"
 
@@ -21,12 +22,42 @@ bool is_supported_mesh_format(RenderMeshFormat format) {
     case RenderMeshFormat::kSkinnedCompressed:
         return true;
     case RenderMeshFormat::kParticle:
+    case RenderMeshFormat::kInvalid:
         return false;
     }
     return false;
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x442930.
+RenderMeshFormat render_mesh_format_from_name(const char* name) {
+    if (std::strcmp(name, "Color") == 0) {
+        return RenderMeshFormat::kColor;
+    }
+    if (std::strcmp(name, "ColorTex") == 0) {
+        return RenderMeshFormat::kColorTexture;
+    }
+    if (std::strcmp(name, "Unskinned") == 0) {
+        return RenderMeshFormat::kUnskinned;
+    }
+    if (std::strcmp(name, "Skinned") == 0) {
+        return RenderMeshFormat::kSkinned;
+    }
+    if (std::strcmp(name, "PosOnly") == 0) {
+        return RenderMeshFormat::kPositionOnly;
+    }
+    if (std::strcmp(name, "Particle") == 0) {
+        return RenderMeshFormat::kParticle;
+    }
+    if (std::strcmp(name, "UnskinnedCompressed") == 0) {
+        return RenderMeshFormat::kUnskinnedCompressed;
+    }
+    if (std::strcmp(name, "SkinnedCompressed") == 0) {
+        return RenderMeshFormat::kSkinnedCompressed;
+    }
+    return RenderMeshFormat::kInvalid;
+}
 
 // Reconstructed from eboot.elf at 0x8D85F0.
 OrbisMesh* orbis_create_mesh(RenderMeshFormat format, const char* name) {
