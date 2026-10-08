@@ -11066,9 +11066,9 @@ address,end,size,name,library,thunk
 0x3DE0B0,0x3DE0DB,43,sub_3DE0B0,False,False
 0x3DE0E0,0x3DE12E,78,render_system_poll,False,False
 0x3DE130,0x3DE169,57,render_system_begin_frame,False,False
-0x3DE170,0x3DE39A,554,sub_3DE170,False,False
-0x3DE3A0,0x3DE499,249,sub_3DE3A0,False,False
-0x3DE4A0,0x3DE7B9,793,sub_3DE4A0,False,False
+0x3DE170,0x3DE39A,554,render_system_prepare_frame,False,False
+0x3DE3A0,0x3DE499,249,render_system_attach_frame_owner,False,False
+0x3DE4A0,0x3DE7B9,793,render_system_finish_frame,False,False
 0x3DE7C0,0x3DE7F4,52,render_system_end_frame,False,False
 0x3DE830,0x3DE837,7,sub_3DE830,False,False
 0x3DE840,0x3DE847,7,sub_3DE840,False,False

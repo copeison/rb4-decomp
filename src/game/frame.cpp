@@ -1,5 +1,7 @@
 #include "startup.h"
 
+#include "render/render_system_frame.h"
+
 namespace rb4 {
 
 // These adapters stand in for member calls on global subsystem objects whose
@@ -28,15 +30,10 @@ void overshell_update();                       // 0xB0CE80
 void network_connection_monitor_update();      // 0xBD9430
 void resource_request_queue_update();          // 0x928FC0
 
-void render_system_poll();                     // 0x3DE0E0
-bool render_system_is_alive();
 bool ui_layout_consume_skip_frame();           // 0x8B1840
-void render_system_skip_frame();               // 0x3DEAA0
 bool platform_frame_callback_pending();         // 0x43B130
 void run_platform_frame_callback();             // 0x43B140
-bool render_system_begin_frame();              // 0x3DE130
 void ui_manager_render();                      // 0x8C9A80
-void render_system_end_frame();                // 0x3DE7C0
 bool exit_requested();
 
 namespace {
