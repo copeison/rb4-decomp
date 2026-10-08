@@ -10,6 +10,7 @@
 #include "render/core/context/render_context_adapters.h"
 #include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/frame/render_frame_owner.h"
+#include "render/core/settings/render_settings.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/synchronization/render_system_lock.h"
 #include "render/core/system/render_epoch.h"
@@ -163,6 +164,14 @@ void prepare_primary_context_submission(
         context, resources.data(), resource_count);
 }
 
+void update_frame_phase_state(RenderSystem& system) {
+    render_frame_phase_callbacks(false);
+    const auto& runtime = render_system_core_state(system);
+    if (runtime.settings->partial_framerate_enabled) {
+        render_set_partial_frame_phase(runtime.frame_epoch & 1U);
+    }
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x3DE170.
@@ -177,7 +186,7 @@ void render_system_prepare_frame(
 
     if (!auxiliary_frame) {
         if (render_system_frame_phase(system) == 0) {
-            render_system_update_frame_phase_metrics(system);
+            update_frame_phase_state(system);
         }
 
         const auto current_counter = performance_counter_read();
@@ -244,7 +253,7 @@ void render_system_finish_frame(
         render_system_platform_submit_frame(
             system, runtime.submitted_frame_owners, false);
         if (render_system_frame_phase(system) == 1) {
-            render_system_update_frame_phase_metrics(system);
+            update_frame_phase_state(system);
         }
         runtime.submitted_frame_owners.count = 0;
         ++runtime.frame_epoch;

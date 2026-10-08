@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace rb4 {
 
-struct RenderSystem;
-
-void render_system_update_frame_phase_metrics(RenderSystem& system);
+void render_frame_phase_callbacks(bool enabled);
+void render_set_partial_frame_phase(std::uint64_t phase);
 
 }  // namespace rb4

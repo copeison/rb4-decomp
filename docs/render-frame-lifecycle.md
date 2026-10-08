@@ -39,6 +39,12 @@ byte at `0x88` is set is converted for the current context and marked clean.
 See `docs/bink-render-resources.md` for the manager layout and conversion
 boundary.
 
+Frame-phase transitions dispatch the global callback registry at `0x249D40`.
+When `partial_framerate_enabled` is set at renderer-settings offset `0xB4`, the
+same transition publishes the low bit of the primary frame epoch as the
+partial-frame phase. Preparation performs this for platform phase zero;
+primary finish performs it for platform phase one.
+
 The attach helper at `0x3DE3A0` activates the current frame owner and validates
 that it has a nonzero output size. It records the owner and copies its transient
 render-object list into the render system. A failed validation immediately
@@ -56,5 +62,5 @@ Render-context vtable slot `0xA8` receives the completed list. This path now
 uses the typed target-resource owner and direct context dispatch rather than a
 whole-function adapter.
 
-Low-level audio sample extraction, Bink conversion draw setup, and the frame
-phase metric side effect remain behind focused adapters.
+Low-level audio sample extraction, Bink conversion draw setup, and the global
+phase callback registry remain behind focused adapters.
