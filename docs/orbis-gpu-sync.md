@@ -19,3 +19,5 @@ two-frame safety window before GPU-owned memory is returned to the allocator.
 and the current frame index to this queue. `orbis_release_all_retired_allocations`
 at `0x8D84B0` ignores frame age and drains every entry; it is used when the
 renderer needs a complete cleanup rather than normal rolling retirement.
+The exact 32-byte node allocation, sentinel links, unlinking, GPU allocation
+release, sized node deallocation, and count updates are now source-owned.

@@ -5,7 +5,6 @@
 
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/platform/orbis/synchronization/orbis_gpu_sync_adapters.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
@@ -44,15 +43,7 @@ void orbis_release_retired_allocations(OrbisRenderSystem& system) {
 
     const auto completed_frame = frame - 2;
     orbis_lock_retired_allocations(system);
-    std::size_t index = 0;
-    while (index < orbis_retired_allocation_count(system)) {
-        if (orbis_retired_allocation_frame(system, index) <= completed_frame) {
-            orbis_release_retired_allocation(system, index);
-            orbis_erase_retired_allocation(system, index);
-        } else {
-            ++index;
-        }
-    }
+    orbis_release_retired_allocations_through(system, completed_frame);
     orbis_unlock_retired_allocations(system);
 }
 
@@ -73,10 +64,7 @@ void orbis_defer_allocation_release(
 // Reconstructed from eboot.elf at 0x8D84B0.
 void orbis_release_all_retired_allocations(OrbisRenderSystem& system) {
     orbis_lock_retired_allocations(system);
-    while (orbis_retired_allocation_count(system) != 0) {
-        orbis_release_retired_allocation(system, 0);
-        orbis_erase_retired_allocation(system, 0);
-    }
+    orbis_release_all_retired_allocations_locked(system);
     orbis_unlock_retired_allocations(system);
 }
 

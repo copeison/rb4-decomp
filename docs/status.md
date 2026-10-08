@@ -61,6 +61,8 @@
   the self-linked retired-allocation list construction and destruction.
 - [x] Reconstruct the complete 17-entry Orbis render-system vtable and remove
   its final constructor adapter.
+- [x] Replace the deferred GPU-allocation queue adapters with direct typed
+  node allocation, linking, retirement, unlinking, and destruction.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and

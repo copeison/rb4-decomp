@@ -43,11 +43,15 @@ void orbis_submit_scope_begin(OrbisRenderSystem& system);
 void orbis_submit_scope_end(OrbisRenderSystem& system);
 void orbis_lock_retired_allocations(OrbisRenderSystem& system);
 void orbis_unlock_retired_allocations(OrbisRenderSystem& system);
-std::size_t orbis_retired_allocation_count(
-    const OrbisRenderSystem& system);
-std::uint64_t orbis_retired_allocation_frame(
-    const OrbisRenderSystem& system,
-    std::size_t index);
+void orbis_enqueue_retired_allocation(
+    OrbisRenderSystem& system,
+    void* allocation,
+    std::uint64_t frame);
+void orbis_release_retired_allocations_through(
+    OrbisRenderSystem& system,
+    std::uint64_t completed_frame);
+void orbis_release_all_retired_allocations_locked(
+    OrbisRenderSystem& system);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);

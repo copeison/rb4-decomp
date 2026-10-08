@@ -125,6 +125,21 @@ void destroy_recursive_mutex(
     scePthreadMutexDestroy(&mutex);
 }
 
+RetiredAllocationNode* retired_allocation_sentinel(
+    OrbisRenderSystemRuntimePrefix& runtime) {
+    return reinterpret_cast<RetiredAllocationNode*>(
+        &runtime.retired_allocations_head);
+}
+
+void erase_retired_allocation(
+    OrbisRenderSystemRuntimePrefix& runtime,
+    RetiredAllocationNode& node) {
+    node.next->previous = node.previous;
+    node.previous->next = node.next;
+    engine_deallocate_sized(&node, sizeof(node));
+    --runtime.retired_allocation_count;
+}
+
 }  // namespace
 
 OrbisRenderSystem* orbis_render_system_instance() {
@@ -188,8 +203,7 @@ void orbis_render_system_initialize_submission_state(
 
 void orbis_render_system_initialize_command_list(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    auto* sentinel = reinterpret_cast<RetiredAllocationNode*>(
-        &runtime->retired_allocations_head);
+    auto* sentinel = retired_allocation_sentinel(*runtime);
     runtime->retired_allocations_head = sentinel;
     runtime->retired_allocations_tail = sentinel;
     runtime->retired_allocation_count = 0;
@@ -197,8 +211,7 @@ void orbis_render_system_initialize_command_list(OrbisRenderSystem& system) {
 
 void orbis_render_system_destroy_command_list(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    auto* sentinel = reinterpret_cast<RetiredAllocationNode*>(
-        &runtime->retired_allocations_head);
+    auto* sentinel = retired_allocation_sentinel(*runtime);
     auto* node = runtime->retired_allocations_head;
     while (node != sentinel) {
         auto* next = node->next;
@@ -274,23 +287,50 @@ void orbis_unlock_retired_allocations(OrbisRenderSystem& system) {
     scePthreadMutexUnlock(&runtime->retired_allocation_mutex);
 }
 
-std::size_t orbis_retired_allocation_count(
-    const OrbisRenderSystem& system) {
-    const auto* runtime =
-        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
-    return runtime->retired_allocation_count;
+void orbis_enqueue_retired_allocation(
+    OrbisRenderSystem& system,
+    void* allocation,
+    std::uint64_t frame) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* sentinel = retired_allocation_sentinel(*runtime);
+    auto* node = static_cast<RetiredAllocationNode*>(
+        engine_allocate_sized(sizeof(RetiredAllocationNode)));
+    node->allocation = allocation;
+    node->frame = frame;
+    node->next = sentinel;
+    node->previous = runtime->retired_allocations_tail;
+    runtime->retired_allocations_tail->next = node;
+    runtime->retired_allocations_tail = node;
+    ++runtime->retired_allocation_count;
 }
 
-std::uint64_t orbis_retired_allocation_frame(
-    const OrbisRenderSystem& system,
-    std::size_t index) {
-    const auto* runtime =
-        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+void orbis_release_retired_allocations_through(
+    OrbisRenderSystem& system,
+    std::uint64_t completed_frame) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* sentinel = retired_allocation_sentinel(*runtime);
     auto* node = runtime->retired_allocations_head;
-    while (index-- != 0) {
-        node = node->next;
+    while (node != sentinel) {
+        auto* next = node->next;
+        if (node->frame <= completed_frame) {
+            render_release(node->allocation);
+            erase_retired_allocation(*runtime, *node);
+        }
+        node = next;
     }
-    return node->frame;
+}
+
+void orbis_release_all_retired_allocations_locked(
+    OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* sentinel = retired_allocation_sentinel(*runtime);
+    auto* node = runtime->retired_allocations_head;
+    while (node != sentinel) {
+        auto* next = node->next;
+        render_release(node->allocation);
+        erase_retired_allocation(*runtime, *node);
+        node = next;
+    }
 }
 
 void render_system_set_render_context(
