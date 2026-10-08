@@ -10,3 +10,17 @@ zeros the final 40 bytes of platform-specific backend state. Nearby resource
 registration identifies the common class as `RndTextureCubeResource`, with
 cube capture and flattened-output properties that corroborate the factory's
 type.
+
+Backend initialization at `0x8E6CE0` has separate color and depth paths. Color
+cubes create a 32-byte Gnm texture descriptor, allocate tiled storage, upload
+every available mip for all six faces, and optionally create a 64-byte render
+target view. Depth cubes create a 52-byte depth-target descriptor, allocate its
+depth and optional stencil surfaces, then create the matching 32-byte texture
+view. Both paths select resource memory type `109`.
+
+The final object fields contain the Gnm texture descriptor, primary and
+secondary allocations, color-target descriptor, and depth-target descriptor.
+Accessors at `0x8E7270` and `0x8E7280` expose the color and depth target views.
+Destruction at `0x8E6BE0` defers GPU allocations through the Orbis render
+system, releases the descriptor objects, and then invokes the common cube
+texture destructor. The deleting destructor follows at `0x8E6CC0`.
