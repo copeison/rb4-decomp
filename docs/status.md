@@ -48,6 +48,8 @@
 - [x] Reconstruct CMAA render targets and reuse behavior.
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
+- [x] Replace the shared light-accumulation creation adapter with direct
+  descriptor assembly and recover texture address/filter default tables.
 - [x] Reconstruct per-scene render-target resource-block initialization.
 - [x] Reconstruct top-level render-target resource-owner initialization.
 - [x] Reconstruct top-level render-target resource-owner teardown.

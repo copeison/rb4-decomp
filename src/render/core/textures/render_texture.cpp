@@ -78,4 +78,31 @@ void render_texture_initialize_backend(
     }
 }
 
+// Reconstructed from eboot.elf at 0x50CE00.
+std::int32_t render_texture_default_address_mode(
+    std::uint32_t resource_kind) {
+    constexpr std::uint64_t kAddressModeOneKinds = 0x1F80400E0ULL;
+    if (resource_kind > 32) {
+        return -1;
+    }
+    return (kAddressModeOneKinds & (1ULL << resource_kind)) != 0
+        ? 1
+        : -1;
+}
+
+// Reconstructed from eboot.elf at 0x50CE30.
+std::int32_t render_texture_default_filter_mode(
+    std::uint32_t resource_kind) {
+    constexpr std::uint64_t kFilterModeTwoKinds = 0x178040060ULL;
+    constexpr std::uint64_t kFilterModeOneKinds = 0x80000080ULL;
+    if (resource_kind > 32) {
+        return -1;
+    }
+    const auto kind_bit = 1ULL << resource_kind;
+    if ((kFilterModeTwoKinds & kind_bit) != 0) {
+        return 2;
+    }
+    return (kFilterModeOneKinds & kind_bit) != 0 ? 1 : -1;
+}
+
 }  // namespace rb4

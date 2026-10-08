@@ -2,8 +2,9 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture.h"
-#include "render/lighting/accumulation/light_accumulation_target_factory_adapters.h"
 
 namespace rb4 {
 
@@ -43,14 +44,30 @@ RenderTexture* render_light_accumulation_target_create(
               resources.attachment_cursor)
         : -1;
 
-    auto* target =
-        render_target_resources_create_light_accumulation_target_raw(
-            resources,
-            name,
-            use_64_bit_format,
-            extent,
-            attachment_index,
-            reusable_target);
+    const RenderDataFormatDescriptor format_descriptor{
+        use_64_bit_format ? 64U : 32U,
+        use_64_bit_format ? 4U : 2U,
+        2,
+        1,
+        -1,
+    };
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(18));
+    creation_state.values[9] = static_cast<std::uint32_t>(
+        render_texture_default_filter_mode(18));
+    creation_state.values[10] = 10;
+
+    auto* target = render_target_resources_create_texture_2d(
+        resources,
+        name,
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        extent,
+        attachment_index,
+        0,
+        reusable_target);
     const auto allocation_index = target->attachment_index;
     if (allocation_index != -1) {
         resources.attachment_cursor =

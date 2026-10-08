@@ -123,6 +123,12 @@ factory copies it. The common initializer at `0x69B7A0` preserves texture
 reuse for platform backends and performs the source-free GPU update through
 virtual slots `+0x78` and `+0x68`.
 
+The shared light-accumulation factory also uses the common path directly. Its
+32- and 64-bit variants select `{32, 2, 2, 1, -1}` and
+`{64, 4, 2, 1, -1}` format descriptors. The address- and filter-mode lookups
+at `0x50CE00` and `0x50CE30` are reconstructed as their exact resource-kind
+bit tables, so kind `18` no longer depends on adapter-provided defaults.
+
 Sky target creation now calls this factory directly. Its four levels share the
 verified `{32, 4, 1, 1, -1}` data-format descriptor and common creation-state
 defaults; only creation-state value nine changes from `1` for the full target
