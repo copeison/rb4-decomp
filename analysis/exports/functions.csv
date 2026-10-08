@@ -27904,7 +27904,7 @@ address,end,size,name,library,thunk
 0x8D5A90,0x8D5AE0,80,sub_8D5A90,False,False
 0x8D5AE0,0x8D5C74,404,sub_8D5AE0,False,False
 0x8D5DE0,0x8D5DE6,6,sub_8D5DE0,False,False
-0x8D5DF0,0x8D5E07,23,sub_8D5DF0,False,False
+0x8D5DF0,0x8D5E07,23,orbis_render_system_create,False,False
 0x8D5E10,0x8D5E2F,31,sub_8D5E10,False,False
 0x8D5E30,0x8D60CF,671,sub_8D5E30,False,False
 0x8D60D0,0x8D62B4,484,sub_8D60D0,False,False
@@ -27919,8 +27919,8 @@ address,end,size,name,library,thunk
 0x8D7320,0x8D733F,31,sub_8D7320,False,False
 0x8D7340,0x8D77DD,1181,sub_8D7340,False,False
 0x8D77E0,0x8D77ED,13,sub_8D77E0,False,False
-0x8D77F0,0x8D79A8,440,sub_8D77F0,False,False
-0x8D79B0,0x8D7AF9,329,sub_8D79B0,False,False
+0x8D77F0,0x8D79A8,440,orbis_render_system_construct,False,False
+0x8D79B0,0x8D7AF9,329,orbis_render_system_destruct,False,False
 0x8D7DB0,0x8D7EAF,255,sub_8D7DB0,False,False
 0x8D7EB0,0x8D8034,388,sub_8D7EB0,False,False
 0x8D8040,0x8D80BB,123,sub_8D8040,False,False
