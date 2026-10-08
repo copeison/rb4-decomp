@@ -70,6 +70,8 @@
   active-state header fields used for dimensions and debug modes.
 - [x] Reconstruct Orbis graphics/compute render-context allocation.
 - [x] Reconstruct Orbis graphics/compute frame submission and reset.
+- [x] Recover the common frame-owner collection, active owner, and active Orbis
+  frame indices used by render-target selection.
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.

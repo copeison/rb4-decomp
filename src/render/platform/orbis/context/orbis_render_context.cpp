@@ -23,6 +23,14 @@ constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
 
+struct OrbisRenderContextRuntimePrefix {
+    std::uint8_t reserved_0[0x40D90];
+    std::size_t active_frame;
+};
+
+static_assert(
+    offsetof(OrbisRenderContextRuntimePrefix, active_frame) == 0x40D90);
+
 }  // namespace
 
 OrbisRenderContext* orbis_render_context_create(
@@ -102,6 +110,21 @@ void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context) {
     orbis_render_context_initialize_timestamp_records(
         context, kTimestampBufferSize);
+}
+
+std::size_t orbis_render_context_active_frame(
+    const OrbisRenderContext& context) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
+    return runtime->active_frame;
+}
+
+void orbis_render_context_set_active_frame(
+    OrbisRenderContext& context,
+    std::size_t frame) {
+    auto* runtime =
+        reinterpret_cast<OrbisRenderContextRuntimePrefix*>(&context);
+    runtime->active_frame = frame;
 }
 
 // Reconstructed from eboot.elf at 0x8E8070.

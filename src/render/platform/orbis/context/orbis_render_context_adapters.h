@@ -72,8 +72,6 @@ void orbis_render_context_destruct_command_state(
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);
-std::size_t orbis_render_context_active_frame(
-    const OrbisRenderContext& context);
 void orbis_render_context_emit_end_of_frame_event(
     OrbisRenderContext& context,
     std::size_t frame);
@@ -97,9 +95,6 @@ void orbis_render_context_emit_gfx_completion(
     OrbisRenderContext& context,
     std::size_t frame);
 void orbis_render_context_submit_gfx(
-    OrbisRenderContext& context,
-    std::size_t frame);
-void orbis_render_context_set_active_frame(
     OrbisRenderContext& context,
     std::size_t frame);
 void orbis_render_context_reset_gfx_slot(
