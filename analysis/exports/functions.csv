@@ -9644,7 +9644,7 @@ address,end,size,name,library,thunk
 0x363FE0,0x364093,179,sub_363FE0,False,False
 0x3640A0,0x36419E,254,sub_3640A0,False,False
 0x3641A0,0x3641A5,5,sub_3641A0,False,True
-0x3641B0,0x364474,708,sub_3641B0,False,False
+0x3641B0,0x364474,708,render_supported_platform_ids,False,False
 0x364480,0x364579,249,sub_364480,False,False
 0x364670,0x364710,160,sub_364670,False,False
 0x364760,0x364829,201,sub_364760,False,False
@@ -11057,8 +11057,8 @@ address,end,size,name,library,thunk
 0x3DBE40,0x3DBFC2,386,sub_3DBE40,False,False
 0x3DBFD0,0x3DCFE6,4118,sub_3DBFD0,False,False
 0x3DD150,0x3DD367,535,sub_3DD150,False,False
-0x3DD410,0x3DD783,883,sub_3DD410,False,False
-0x3DD790,0x3DDAB8,808,sub_3DD790,False,False
+0x3DD410,0x3DD783,883,render_system_construct,False,False
+0x3DD790,0x3DDAB8,808,render_system_destruct,False,False
 0x3DDAE0,0x3DDC12,306,sub_3DDAE0,False,False
 0x3DDC20,0x3DDE56,566,sub_3DDC20,False,False
 0x3DDE60,0x3DDFE4,388,sub_3DDE60,False,False
@@ -21016,8 +21016,8 @@ address,end,size,name,library,thunk
 0x6B96F0,0x6B96F4,4,sub_6B96F0,False,False
 0x6B9850,0x6B9858,8,sub_6B9850,False,False
 0x6B9860,0x6B9868,8,sub_6B9860,False,False
-0x6B9940,0x6B99AC,108,sub_6B9940,False,False
-0x6B99B0,0x6B9FD4,1572,sub_6B99B0,False,False
+0x6B9940,0x6B99AC,108,render_platform_config_construct,False,False
+0x6B99B0,0x6B9FD4,1572,render_platform_config_initialize,False,False
 0x6B9FE0,0x6B9FFB,27,sub_6B9FE0,False,False
 0x6BA000,0x6BA3A6,934,sub_6BA000,False,False
 0x6BA3B0,0x6BA3CF,31,sub_6BA3B0,False,False
