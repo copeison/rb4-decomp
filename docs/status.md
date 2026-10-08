@@ -38,6 +38,7 @@
 - [x] Reconstruct base render-system construction and destruction ordering.
 - [x] Reconstruct render-system runtime initialization and shutdown ordering.
 - [x] Reconstruct Orbis render-system allocation and object lifetime.
+- [x] Reconstruct Orbis video-output and submit-thread startup.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

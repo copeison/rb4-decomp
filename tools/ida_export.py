@@ -241,6 +241,11 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-render-system-create": 0x8D5DF0,
     "orbis-render-system-construct": 0x8D77F0,
     "orbis-render-system-destruct": 0x8D79B0,
+    "orbis-submit-done-thread-run": 0x8D7340,
+    "orbis-submit-done-thread-entry": 0x8D77E0,
+    "orbis-render-system-delete": 0x8D7B00,
+    "orbis-create-default-vertex-buffer": 0x8D7DB0,
+    "orbis-create-identity-instance-buffer": 0x8D7EB0,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,
@@ -326,6 +331,10 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-file-close": 0x27A6D0,
     "fmod-file-async-read": 0x27A780,
     "fmod-file-async-cancel": 0x27A850,
+}
+
+FOCUSED_DISASSEMBLIES = {
+    "orbis-render-system-initialize": 0x8D7B20,
 }
 
 
@@ -475,6 +484,18 @@ def collect_analysis(
             (export_dir / f"{output_name}.c").write_text(
                 focused_pseudocode, encoding="utf-8"
             )
+
+    for output_name, address in FOCUSED_DISASSEMBLIES.items():
+        function = ida_funcs.get_func(address)
+        if function is None:
+            continue
+        focused_disassembly = [
+            f"{item:016X}: {idc.generate_disasm_line(item, 0) or ''}"
+            for item in idautils.FuncItems(function.start_ea)
+        ]
+        (export_dir / f"{output_name}.asm").write_text(
+            "\n".join(focused_disassembly) + "\n", encoding="utf-8"
+        )
 
     named_functions = sum(
         1
