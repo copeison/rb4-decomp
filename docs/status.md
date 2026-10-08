@@ -274,6 +274,7 @@
   it across every reconstructed texture family.
 - [x] Replace derived texture descriptor byte arrays and offset writes with
   typed format, extent, source, and array-count fields.
+- [x] Type the base texture's mirrored creation and resolved descriptor state.
 - [x] Centralize the verified 44-byte texture creation state within the common
   descriptor model.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.

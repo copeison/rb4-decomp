@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -18,7 +19,7 @@ struct RenderTextureDescriptorState {
     std::int32_t descriptor_type;
     RenderTextureCreationState creation_state;
     RenderTextureUsage usage_type;
-    std::uint8_t resolved_state[28];
+    std::array<std::uint8_t, 28> resolved_state;
     std::uint32_t address_mode;
     std::uint32_t filter_mode;
     std::uint32_t flags;
@@ -52,9 +53,9 @@ struct RenderTexture {
     void* implementation;
     std::int64_t frame_stamp;
     std::int32_t descriptor_type;
-    std::uint8_t descriptor_prefix[44];
+    RenderTextureCreationState creation_state;
     RenderTextureUsage usage_type;
-    std::uint8_t descriptor_suffix[28];
+    std::array<std::uint8_t, 28> resolved_state;
     std::uint32_t address_mode;
     std::uint32_t filter_mode;
     std::uint32_t flags;
@@ -121,6 +122,9 @@ struct RenderTextureMipChainArray {
 };
 
 static_assert(sizeof(RenderTexture) == 168);
+static_assert(offsetof(RenderTexture, creation_state) == 20);
+static_assert(offsetof(RenderTexture, usage_type) == 64);
+static_assert(offsetof(RenderTexture, resolved_state) == 68);
 static_assert(sizeof(RenderTextureCreationState) == 44);
 static_assert(sizeof(RenderTextureDescriptorState) == 144);
 static_assert(offsetof(RenderTextureDescriptorState, creation_state) == 4);

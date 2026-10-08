@@ -61,13 +61,9 @@ void render_texture_construct(RenderTexture& texture) {
     render_texture_set_base_dispatch(texture);
     texture.frame_stamp = -1;
     texture.descriptor_type = -1;
-    for (auto& value : texture.descriptor_prefix) {
-        value = 0;
-    }
+    texture.creation_state = {};
     texture.usage_type = RenderTextureUsage::kDefault;
-    for (auto& value : texture.descriptor_suffix) {
-        value = 0;
-    }
+    texture.resolved_state = {};
     texture.address_mode = 0;
     texture.filter_mode = 0;
     texture.flags = 0;
