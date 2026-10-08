@@ -5,13 +5,15 @@ Its constructor at `0x63F180` begins with four fixed 20-byte shader-parameter
 bindings. Each binding contains its encoded value range and bit placement plus
 an enabled byte at offset `0x10`; construction clears all four.
 
-The following handle-state region uses `-1` as its invalid sentinel, with the
-observed counters and optional handles initialized to zero. The 336-byte
-runtime region begins cleared. It now exposes three sized-array owners, a
-32-byte-record name-array owner, a shader-parameter registry set, the function-table
-texture, and 35 dynamic resource slots. The constructor then allocates a 32-byte empty
-pointer-array owner and two 16-byte intrusive-list sentinels; each list node is
-self-linked when empty.
+The following 304-byte shader-constant state begins with an eight-byte phase
+word, followed by eight named constant-block owners, their uniform handles,
+three transient constant blocks, and a constant-name registry. The original
+constructor initializes the first 34 words with the observed `-1` sentinels,
+then clears the phase word, block-owner slots, transient blocks, and registry.
+The 304-byte runtime region begins at manager offset `0x180`; it contains the
+shader-parameter registry set, function-table texture, and 35 dynamic resource
+slots. The constructor then allocates a 32-byte empty pointer-array owner and
+two 16-byte intrusive-list sentinels; each list node is self-linked when empty.
 
 The destructor at `0x63F350` unlinks and releases the two sentinel nodes, frees
 the pointer array's backing storage by its capacity, and releases the array
@@ -60,9 +62,9 @@ list also receives its observed dirty-byte update 395 bytes before each link.
 That secondary resource layout remains unnamed beyond this verified relative
 offset.
 
-Shutdown at `0x641740` is source-owned. It releases eight sized-array owners in
-the handle region and three in the runtime region, destroys every name record
-before freeing its array owner, tears down the shader-parameter registry set
+Shutdown at `0x641740` is source-owned. It releases the eight named
+shader-constant blocks and three transient blocks, destroys every constant-name
+record before freeing its registry, tears down the shader-parameter registry set
 containing six 40-byte arrays in reverse order, and invokes
 the dynamic release slot for the function-table texture and all 35 resource
 slots. Every owning slot is cleared immediately after release. Only the

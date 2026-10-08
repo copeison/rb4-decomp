@@ -154,13 +154,13 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
         binding = {};
     }
 
-    std::fill_n(
-        manager.handle_state,
-        34,
-        std::int64_t{-1});
+    auto* constant_words = reinterpret_cast<std::int64_t*>(
+        &manager.shader_constants);
+    std::fill_n(constant_words, 34, std::int64_t{-1});
     for (const auto index : {0U, 1U, 11U, 13U, 20U, 22U, 24U, 27U, 29U}) {
-        manager.handle_state[index] = 0;
+        constant_words[index] = 0;
     }
+    std::fill_n(constant_words + 34, 4, std::int64_t{0});
     manager.runtime = {};
 
     manager.pointer_array = static_cast<RenderResourcePointerArray*>(
@@ -223,7 +223,7 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
 
 // Reconstructed from eboot.elf at 0x641370.
 void render_resource_manager_finalize(RenderResourceManager& manager) {
-    reinterpret_cast<std::uint8_t*>(manager.handle_state)[1] = 1;
+    manager.shader_constants.initialization_phases[1] = 1;
     for (auto* node = manager.primary_list->next;
          node != manager.primary_list;
          node = node->next) {
@@ -299,18 +299,24 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
 
 // Reconstructed from eboot.elf at 0x641740.
 void render_resource_manager_shutdown(RenderResourceManager& manager) {
-    constexpr std::size_t kSizedHandleIndices[] = {
-        1, 11, 13, 20, 22, 24, 27, 29,
+    void** constant_blocks[] = {
+        &manager.shader_constants.scene_block,
+        &manager.shader_constants.render_target_block,
+        &manager.shader_constants.camera_block,
+        &manager.shader_constants.clip_planes_block,
+        &manager.shader_constants.skeleton_block,
+        &manager.shader_constants.misc_draw_state_block,
+        &manager.shader_constants.occlusion_query_block,
+        &manager.shader_constants.debug_block,
     };
-    for (const auto index : kSizedHandleIndices) {
-        auto*& storage = reinterpret_cast<void*&>(manager.handle_state[index]);
-        release_sized_array_owner(storage);
+    for (auto** block : constant_blocks) {
+        release_sized_array_owner(*block);
     }
-    for (auto*& storage : manager.runtime.sized_array_owners) {
+    for (auto*& storage : manager.shader_constants.transient_blocks) {
         release_sized_array_owner(storage);
     }
 
-    auto*& names_storage = manager.runtime.name_array_owner;
+    auto*& names_storage = manager.shader_constants.constant_registry;
     auto* names = static_cast<RenderResourceNameArrayOwner*>(names_storage);
     if (names != nullptr) {
         for (auto* item = names->begin; item != names->end; item += 32) {

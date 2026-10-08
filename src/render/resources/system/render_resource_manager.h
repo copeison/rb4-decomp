@@ -21,9 +21,46 @@ struct RenderResourceListNode {
     RenderResourceListNode* previous;
 };
 
+struct RenderShaderConstantState {
+    std::uint8_t initialization_phases[8];
+    void* scene_block;
+    void* time;
+    void* smoothness_decay;
+    void* sgraph_trans_infos;
+    void* scene_global_floats;
+    void* scene_global_colors;
+    void* tiled_lighting_params;
+    void* fog_params;
+    void* volumetric_params_0;
+    void* volumetric_params_1;
+    void* render_target_block;
+    void* target_dimensions;
+    void* camera_block;
+    void* camera_near_far_params;
+    void* camera_misc_params;
+    void* camera_view_extents;
+    void* reserved_216;
+    void* reserved_224;
+    void* camera_rt_sliced_data;
+    void* clip_planes_block;
+    void* clip_planes;
+    void* skeleton_block;
+    void* skeleton_bone_transforms;
+    void* misc_draw_state_block;
+    void* environment_index;
+    void* solid_color;
+    void* occlusion_query_block;
+    void* occlusion_query_coverage;
+    void* debug_block;
+    void* debug_modes;
+    void* debug_color;
+    void* batch_info;
+    void* preview_node_index;
+    void* transient_blocks[3];
+    void* constant_registry;
+};
+
 struct RenderResourceManagerRuntime {
-    void* sized_array_owners[3];
-    void* name_array_owner;
     RenderShaderParameterRegistrySet* shader_parameters;
     void* function_table_texture;
     void* resources[35];
@@ -32,7 +69,7 @@ struct RenderResourceManagerRuntime {
 
 struct RenderResourceManager {
     RenderShaderParameterBinding shader_parameter_bindings[4];
-    std::int64_t handle_state[34];
+    RenderShaderConstantState shader_constants;
     RenderResourceManagerRuntime runtime;
     RenderResourcePointerArray* pointer_array;
     RenderResourceListNode* primary_list;
@@ -41,11 +78,32 @@ struct RenderResourceManager {
 
 static_assert(sizeof(RenderResourcePointerArray) == 32);
 static_assert(sizeof(RenderResourceListNode) == 16);
+static_assert(sizeof(RenderShaderConstantState) == 304);
 static_assert(
     offsetof(RenderResourceManager, shader_parameter_bindings) == 0);
-static_assert(offsetof(RenderResourceManager, handle_state) == 80);
-static_assert(sizeof(RenderResourceManagerRuntime) == 336);
-static_assert(offsetof(RenderResourceManager, runtime) == 352);
+static_assert(offsetof(RenderResourceManager, shader_constants) == 80);
+static_assert(
+    offsetof(RenderShaderConstantState, scene_block) == 8);
+static_assert(
+    offsetof(RenderShaderConstantState, render_target_block) == 88);
+static_assert(
+    offsetof(RenderShaderConstantState, camera_block) == 104);
+static_assert(
+    offsetof(RenderShaderConstantState, clip_planes_block) == 160);
+static_assert(
+    offsetof(RenderShaderConstantState, skeleton_block) == 176);
+static_assert(
+    offsetof(RenderShaderConstantState, misc_draw_state_block) == 192);
+static_assert(
+    offsetof(RenderShaderConstantState, occlusion_query_block) == 216);
+static_assert(
+    offsetof(RenderShaderConstantState, debug_block) == 232);
+static_assert(
+    offsetof(RenderShaderConstantState, transient_blocks) == 272);
+static_assert(
+    offsetof(RenderShaderConstantState, constant_registry) == 296);
+static_assert(sizeof(RenderResourceManagerRuntime) == 304);
+static_assert(offsetof(RenderResourceManager, runtime) == 384);
 static_assert(
     offsetof(RenderResourceManager, runtime) +
         offsetof(RenderResourceManagerRuntime, function_table_texture) ==

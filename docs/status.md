@@ -354,6 +354,8 @@
   array destruction.
 - [x] Type the shared shader-parameter binding and registry layouts and
   reconstruct the resource manager's four built-in permutation bindings.
+- [x] Recover the resource manager's 304-byte shader-constant state, including
+  the named block owners, uniform handles, transient blocks, and registry.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
