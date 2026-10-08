@@ -41,3 +41,7 @@ The 80-byte unskinned specialization carries four float3 basis vectors, a
 float4 color, and two float2 texture coordinates. It is reconstructed in
 `src/render/orbis_unskinned_mesh.cpp` and documented in
 `docs/orbis-unskinned-mesh.md`.
+
+The 100-byte skinned specialization appends float4 bone weights and four
+packed bone indices. It is reconstructed in `src/render/orbis_skinned_mesh.cpp`
+and documented in `docs/orbis-skinned-mesh.md`.
