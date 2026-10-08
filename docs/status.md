@@ -41,6 +41,7 @@
 - [x] Reconstruct scene-mask render-target allocation and teardown.
 - [x] Reconstruct tiled scene-mask targets and grid mesh.
 - [x] Reconstruct per-scene linear and tiled depth targets.
+- [x] Reconstruct the per-scene ambient-occlusion target.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
