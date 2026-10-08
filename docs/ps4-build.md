@@ -28,10 +28,11 @@ can be supplied when needed:
 
 Products are written under the ignored `build/orbis/<configuration>/`
 directory. The script compiles every reconstructed translation unit, creates
-`librb4_reconstruction.a`, records object sizes and hashes in `objects.csv`,
-and records unresolved external dependencies in `undefined-symbols.txt`.
-Pass `-EmitDisassembly` to produce an assembly listing beside each object for
-structural comparison with IDA.
+`librb4_reconstruction.a`, combines the objects into the relocatable
+`rb4_reconstruction.o`, records object sizes and hashes in `objects.csv`, and
+records the combined object's unresolved external dependencies in
+`undefined-symbols.txt`. Pass `-EmitDisassembly` to produce an assembly listing
+beside each object for structural comparison with IDA.
 
 This build validates source syntax, target ABI compatibility, and recovered
 object structure. Producing a complete executable still requires reconstruction

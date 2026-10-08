@@ -29,10 +29,11 @@ $SdkDir = (Resolve-Path -LiteralPath $SdkDir).Path
 $toolDirectory = Join-Path $SdkDir "host_tools\bin"
 $compiler = Join-Path $toolDirectory "orbis-clang++.exe"
 $archiver = Join-Path $toolDirectory "orbis-ar.exe"
+$linker = Join-Path $toolDirectory "orbis-ld.exe"
 $objdump = Join-Path $toolDirectory "orbis-objdump.exe"
 $symbolTool = Join-Path $toolDirectory "orbis-nm.exe"
 
-foreach ($tool in @($compiler, $archiver, $objdump, $symbolTool)) {
+foreach ($tool in @($compiler, $archiver, $linker, $objdump, $symbolTool)) {
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
         throw "Required SDK tool is missing: $tool"
     }
@@ -107,14 +108,21 @@ if ($LASTEXITCODE -ne 0) {
 $manifestPath = Join-Path $outputDirectory "objects.csv"
 $manifest | Export-Csv -LiteralPath $manifestPath -NoTypeInformation
 
+$combinedObjectPath = Join-Path $outputDirectory "rb4_reconstruction.o"
+& $linker -r -o $combinedObjectPath @objects
+if ($LASTEXITCODE -ne 0) {
+    throw "Relocatable link failed: $combinedObjectPath"
+}
+
 $undefinedSymbolsPath = Join-Path $outputDirectory "undefined-symbols.txt"
-& $symbolTool -u -C $archivePath |
+& $symbolTool -u -C $combinedObjectPath |
     Set-Content -LiteralPath $undefinedSymbolsPath
 if ($LASTEXITCODE -ne 0) {
-    throw "Symbol extraction failed: $archivePath"
+    throw "Symbol extraction failed: $combinedObjectPath"
 }
 
 Write-Host "Compiled $($sources.Count) PS4 translation units."
 Write-Host "Archive: $archivePath"
+Write-Host "Combined object: $combinedObjectPath"
 Write-Host "Manifest: $manifestPath"
 Write-Host "Undefined symbols: $undefinedSymbolsPath"
