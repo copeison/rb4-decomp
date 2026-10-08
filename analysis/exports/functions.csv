@@ -27974,6 +27974,9 @@ address,end,size,name,library,thunk
 0x8E1070,0x8E125E,494,sub_8E1070,False,False
 0x8E1550,0x8E156F,31,sub_8E1550,False,False
 0x8E1570,0x8E15BD,77,orbis_fence_construct,False,False
+0x8E15F0,0x8E1638,72,orbis_fence_destruct,False,False
+0x8E1640,0x8E167A,58,orbis_fence_base_destruct,False,False
+0x8E1680,0x8E16C7,71,orbis_fence_delete,False,False
 0x8E16D0,0x8E1741,113,sub_8E16D0,False,False
 0x8E1750,0x8E176F,31,sub_8E1750,False,False
 0x8E1770,0x8E1789,25,sub_8E1770,False,False

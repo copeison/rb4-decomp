@@ -8,6 +8,17 @@ The constructor allocates one four-byte GPU-visible value named `PS4Fence`
 with alignment value 4 and initializes it to zero. The object retains that
 allocation as its fence value storage.
 
+The complete destructor at `0x8E15F0` and base destructor at `0x8E1640`
+release that value through the renderer's deferred-allocation queue while an
+Orbis render system exists. If renderer construction has not completed or its
+shutdown has already cleared the global instance, they release the allocation
+immediately instead. Both clear the stored pointer after release.
+
+The deleting destructor at `0x8E1680` follows the same conditional release and
+then frees the 24-byte fence object. Its two virtual-table entries are the
+complete and deleting destructors, which confirms that the fence has no other
+virtual operations in this class.
+
 Defining this factory also exposed ten neighboring Orbis resource-factory
 boundaries that IDA had previously treated as unowned code. They remain with
 address-based names until their resource types are supported by stronger
