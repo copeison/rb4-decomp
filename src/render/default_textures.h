@@ -69,6 +69,7 @@ RndTextureResource* render_create_default_texture_array_cube(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
+void rnd_texture_resource_release(RndTextureResource* texture);
 
 void render_create_default_textures(DefaultTextureSet& textures);
 RndTextureResource* render_get_default_texture(

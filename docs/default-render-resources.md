@@ -28,3 +28,17 @@ ordering and recovered arguments are explicit.
 The texture-family loop at `0x6BDE60` is reconstructed separately in
 `src/render/default_textures.cpp`. Low-level graphics allocation remains behind
 dimension-specific runtime adapters.
+
+## Per-frame and shutdown paths
+
+`render_poll_default_resources` at `0x6BFA00` forwards the resource poll to the
+primary scene and the separate lighting scene when present. The shared helper
+at `0xFD8B0` invokes virtual slot `0x90`; its use in `sound_manager_update` for
+every active sound scene confirms that this is the normal per-frame resource
+poll rather than a renderer-only callback.
+
+`render_release_default_resources` at `0x6BF860` releases the two scene
+resources, clears material and lighting references and both light-ID lists,
+releases all 49 texture resources, and finally releases the two compute
+buffers. The cleaned source also clears the camera pointer with the other
+borrowed scene components.

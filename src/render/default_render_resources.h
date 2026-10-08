@@ -21,5 +21,7 @@ struct DefaultRenderResources {
 void render_initialize_default_resources(
     DefaultRenderResources& resources,
     bool initialize_rendering);
+void render_poll_default_resources(DefaultRenderResources& resources);
+void render_release_default_resources(DefaultRenderResources& resources);
 
 }  // namespace rb4

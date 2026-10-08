@@ -3193,7 +3193,7 @@ address,end,size,name,library,thunk
 0xFD830,0xFD845,21,sub_FD830,False,False
 0xFD850,0xFD862,18,sub_FD850,False,False
 0xFD870,0xFD87A,10,sub_FD870,False,False
-0xFD8B0,0xFD8C2,18,sub_FD8B0,False,False
+0xFD8B0,0xFD8C2,18,rnd_scene_resource_poll,False,False
 0xFD8D0,0xFD8D8,8,sub_FD8D0,False,False
 0xFD8E0,0xFD931,81,sub_FD8E0,False,False
 0xFD940,0xFD941,1,nullsub_591,False,False
@@ -21091,8 +21091,8 @@ address,end,size,name,library,thunk
 0x6BEC50,0x6BEF33,739,render_create_default_materials,False,False
 0x6BEF40,0x6BF4E7,1447,render_load_default_lighting,False,False
 0x6BF4F0,0x6BF850,864,render_create_fallback_default_lighting,False,False
-0x6BF860,0x6BF9F6,406,sub_6BF860,False,False
-0x6BFA00,0x6BFA3C,60,sub_6BFA00,False,False
+0x6BF860,0x6BF9F6,406,render_release_default_resources,False,False
+0x6BFA00,0x6BFA3C,60,render_poll_default_resources,False,False
 0x6BFA60,0x6BFBA7,327,render_apply_default_lighting_mode,False,False
 0x6BFD40,0x6BFE9A,346,render_configure_default_shadowed_spot,False,False
 0x6BFEA0,0x6BFF6B,203,render_default_shadow_offset,False,False

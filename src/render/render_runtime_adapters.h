@@ -45,10 +45,12 @@ RndScene* rnd_scene_resource_scene(RndSceneResource& resource);
 RndSceneSettingsCom* rnd_scene_settings(RndScene& scene);
 void rnd_scene_resource_finalize_contents(RndSceneResource& resource);
 void rnd_scene_resource_finalize(RndSceneResource& resource);
+void rnd_scene_resource_poll(RndSceneResource& resource);
 bool render_force_default_resources();
 RndComputeBuffer* render_create_default_compute_buffer(
     std::uint32_t index,
     const char* name);
+void rnd_compute_buffer_release(RndComputeBuffer* buffer);
 
 std::size_t rnd_scene_object_count(const RndScene& scene);
 RndObject* rnd_scene_object_at(RndScene& scene, std::size_t index);
