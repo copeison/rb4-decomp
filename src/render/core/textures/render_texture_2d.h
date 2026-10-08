@@ -8,7 +8,7 @@ namespace rb4 {
 
 struct RenderTexture2DDescriptor {
     std::uint8_t texture_state[144];
-    std::uint8_t mip_source_state[24];
+    RenderTextureMipChainDescriptor mip_chain;
 };
 
 struct RenderTexture2D : RenderTexture {
@@ -18,7 +18,7 @@ struct RenderTexture2D : RenderTexture {
     std::int64_t linked_resource_index;
 };
 
-static_assert(sizeof(RenderTexture2DDescriptor) == 168);
+static_assert(sizeof(RenderTexture2DDescriptor) == 224);
 static_assert(sizeof(RenderTexture2D) == 408);
 
 void render_texture_2d_construct(

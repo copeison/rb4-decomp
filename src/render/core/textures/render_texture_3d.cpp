@@ -42,21 +42,21 @@ void render_texture_3d_construct(
         sizeof(texture.descriptor_state));
     render_texture_mip_chain_construct(
         texture.mip_chain,
-        descriptor.mip_source_state,
+        &descriptor.mip_chain,
         descriptor_has_source_data(descriptor));
 
     write_value(
         texture.descriptor_state,
         92,
-        read_value<std::uint32_t>(descriptor.mip_source_state, 20));
+        descriptor.mip_chain.fields.data_format);
     write_value(
         texture.descriptor_state,
         96,
-        read_value<std::uint64_t>(descriptor.mip_source_state, 8));
+        read_value<std::uint64_t>(descriptor.mip_chain.storage, 8));
     write_value(
         texture.descriptor_state,
         104,
-        read_value<std::uint32_t>(descriptor.mip_source_state, 16));
+        descriptor.mip_chain.fields.depth);
     std::memcpy(
         &texture.descriptor_type,
         texture.descriptor_state,

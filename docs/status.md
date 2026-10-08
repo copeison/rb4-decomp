@@ -216,6 +216,8 @@
 - [x] Reconstruct the common render-texture lifecycle and 168-byte base layout.
 - [x] Type the shared render-texture usage field and color/depth backend
   dispatch.
+- [x] Recover the complete 80-byte mip-chain descriptor and correct the 1D,
+  2D, and 3D texture descriptor layouts to 224 bytes.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

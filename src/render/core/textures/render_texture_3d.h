@@ -8,7 +8,7 @@ namespace rb4 {
 
 struct RenderTexture3DDescriptor {
     std::uint8_t texture_state[144];
-    std::uint8_t mip_source_state[24];
+    RenderTextureMipChainDescriptor mip_chain;
 };
 
 struct RenderTexture3D : RenderTexture {
@@ -16,7 +16,7 @@ struct RenderTexture3D : RenderTexture {
     RenderTextureMipChainState mip_chain;
 };
 
-static_assert(sizeof(RenderTexture3DDescriptor) == 168);
+static_assert(sizeof(RenderTexture3DDescriptor) == 224);
 static_assert(sizeof(RenderTexture3D) == 392);
 
 void render_texture_3d_construct(

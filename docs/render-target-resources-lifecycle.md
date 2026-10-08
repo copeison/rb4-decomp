@@ -94,3 +94,10 @@ slots `+0x28` and `+0x48` for 2D and 2D-array textures. Those slots now have
 typed common dispatch wrappers, matching the already reconstructed Orbis
 factory vtable and providing the final platform-neutral handoff needed by the
 owner's descriptor-building routines at `0x6B4120` and `0x6B41F0`.
+
+The 2D path proved that a single-texture descriptor contains a complete
+80-byte owned mip-chain descriptor after its 144-byte texture state. The 1D,
+2D, and 3D declarations now use the verified 224-byte size rather than the
+earlier 168-byte prefix view. The mip descriptor's implementation pointer,
+width, height, depth, and data-format offsets are typed; the remaining 56-byte
+ownership state stays opaque until its resource variants are reconstructed.

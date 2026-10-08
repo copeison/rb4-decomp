@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rb4 {
@@ -35,11 +36,22 @@ struct RenderTexture {
     std::uint8_t trailing_reserved[4];
 };
 
-struct RenderTextureMipChainState {
+struct RenderTextureMipChainFields {
+    void* implementation;
+    std::uint32_t width;
+    std::uint32_t height;
+    std::uint32_t depth;
+    std::int32_t data_format;
+    std::uint8_t source_state[56];
+};
+
+union RenderTextureMipChainState {
+    RenderTextureMipChainFields fields;
     std::uint8_t storage[80];
 };
 
-struct RenderTextureMipChainDescriptor {
+union RenderTextureMipChainDescriptor {
+    RenderTextureMipChainFields fields;
     std::uint8_t storage[80];
 };
 
@@ -57,6 +69,9 @@ struct RenderTextureMipChainArray {
 };
 
 static_assert(sizeof(RenderTexture) == 168);
+static_assert(sizeof(RenderTextureMipChainFields) == 80);
+static_assert(offsetof(RenderTextureMipChainFields, width) == 8);
+static_assert(offsetof(RenderTextureMipChainFields, data_format) == 20);
 static_assert(sizeof(RenderTextureMipChainState) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptor) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptorRange) == 24);
