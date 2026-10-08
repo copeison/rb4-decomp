@@ -29,4 +29,25 @@ void orbis_texture_1d_construct(
     orbis_texture_1d_clear_backend_state(texture);
 }
 
+// Reconstructed from eboot.elf at 0x8E4F90.
+void orbis_texture_1d_destruct(OrbisTexture1D& texture) {
+    orbis_defer_texture_allocation(orbis_texture_1d_allocation(texture));
+    if (auto* descriptor = orbis_texture_1d_gpu_texture(texture)) {
+        render_release(descriptor);
+    }
+    orbis_texture_1d_set_gpu_texture(texture, nullptr);
+    texture_1d_destruct(texture);
+}
+
+// Reconstructed from eboot.elf at 0x8E4FF0.
+void orbis_texture_1d_delete(OrbisTexture1D& texture) {
+    orbis_texture_1d_destruct(texture);
+    render_delete_texture_1d(texture);
+}
+
+// Reconstructed from eboot.elf at 0x8E5050.
+void orbis_texture_1d_initialize_backend(OrbisTexture1D& texture) {
+    orbis_texture_1d_initialize_storage(texture);
+}
+
 }  // namespace rb4
