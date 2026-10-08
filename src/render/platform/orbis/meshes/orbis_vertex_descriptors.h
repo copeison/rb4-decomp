@@ -54,7 +54,7 @@ struct MeshAttributeDescriptor {
     std::int64_t byte_offset;
     std::uint64_t component_count;
     MeshAttributeStorage storage;
-    std::uint32_t semantic;
+    std::uint32_t unknown;
 };
 
 struct RenderMeshFormatDescriptor {

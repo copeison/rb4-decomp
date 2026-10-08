@@ -13,8 +13,6 @@ void* render_allocate_named(
     std::size_t size,
     const char* name,
     std::size_t alignment);
-const RenderMeshFormatDescriptor* render_mesh_format_descriptor(
-    RenderMeshFormat format);
 void orbis_mesh_set_format_backend_defaults(
     OrbisMesh& mesh,
     RenderMeshFormat format);

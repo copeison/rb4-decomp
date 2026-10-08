@@ -4,6 +4,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
+#include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {

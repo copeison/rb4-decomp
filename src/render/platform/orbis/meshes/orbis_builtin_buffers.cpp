@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
+#include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/meshes/orbis_skinned_mesh.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"

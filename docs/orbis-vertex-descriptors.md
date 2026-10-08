@@ -20,6 +20,16 @@ four-component forms for every storage code and the float32 three-component
 form. Each descriptor uses `kResourceMemoryTypeRO`, and the helper records
 active descriptors in an eight-bit mask.
 
+The format table initialized at `0x4430C0` and indexed at `0x4435E0` is also
+source-owned. Its exact strides are 28 bytes for Color, 36 for ColorTex, 80
+for Unskinned, 100 for Skinned, 12 for PosOnly, 52 for Particle, 52 for
+UnskinnedCompressed, and 64 for SkinnedCompressed. The table records all ten
+attribute slots, including unused `-1` offsets, and the recovered float32,
+float16, signed-normalized 16-bit, and unsigned 8-bit storage codes. Compressed
+color, texture-coordinate, and bone-weight fields use the engine's float16
+storage code; packed normals, tangents, and bitangents use signed-normalized
+16-bit storage.
+
 A one-record buffer is represented with zero stride. Gnm then expects the
 element byte size in its record-count field. Larger buffers use the complete
 mesh stride and vertex count.
