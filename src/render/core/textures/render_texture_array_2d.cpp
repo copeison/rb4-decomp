@@ -4,6 +4,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_array_2d_adapters.h"
+#include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {
 

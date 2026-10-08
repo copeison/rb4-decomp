@@ -26,7 +26,7 @@ void render_texture_3d_construct(
     texture.descriptor_state = descriptor.texture_state;
     render_texture_mip_chain_construct(
         texture.mip_chain,
-        &descriptor.mip_chain,
+        descriptor.mip_chain,
         render_texture_descriptor_has_source_data(descriptor.texture_state));
 
     texture.descriptor_state.data_format =

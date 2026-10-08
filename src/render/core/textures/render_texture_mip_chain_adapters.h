@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "render/core/textures/render_texture.h"
@@ -45,5 +46,24 @@ void render_texture_mip_chain_descriptor_allocate_source(
 bool render_texture_mip_chain_descriptor_copy_float_image(
     RenderTextureMipChainDescriptor& descriptor,
     const RenderFloatImageView& source);
+void render_texture_mip_chain_construct(
+    RenderTextureMipChainState& mip_chain,
+    const RenderTextureMipChainDescriptor& descriptor,
+    bool has_source_data);
+void render_texture_mip_chain_destruct(
+    RenderTextureMipChainState& mip_chain);
+void render_texture_mip_chain_array_construct(
+    RenderTextureMipChainArray& mip_chains);
+void render_texture_mip_chain_array_reserve(
+    RenderTextureMipChainArray& mip_chains,
+    std::size_t capacity);
+void render_texture_mip_chain_array_append(
+    RenderTextureMipChainArray& mip_chains,
+    const RenderTextureMipChainDescriptor& descriptor,
+    bool has_source_data);
+void render_texture_mip_chain_array_validate(
+    const RenderTextureMipChainArray& mip_chains);
+void render_texture_mip_chain_array_destruct(
+    RenderTextureMipChainArray& mip_chains);
 
 }  // namespace rb4
