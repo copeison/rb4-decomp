@@ -34,5 +34,11 @@ A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the
 initial window resolution and sets the explicit-override flag.
 
+`render_parse_resolution` accepts `WIDTHxHEIGHT` using a lowercase `x`. A
+single positive number is treated as the height and expanded to a 16:9 width;
+for example, `1080` becomes 1,920 × 1,080. The runtime `set_resolution` command
+only enables the override when the resulting extent appears in the platform's
+advertised mode list. Calling the command without a value clears the override.
+
 Quality levels are the case-insensitive names `Low`, `Medium`, and `High`, with
 numeric values zero through two. Unknown names produce the invalid value `-1`.

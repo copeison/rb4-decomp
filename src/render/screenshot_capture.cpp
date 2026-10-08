@@ -51,6 +51,25 @@ bool screenshot_capture_pending() {
     return g_screenshot_pending;
 }
 
+// Reconstructed from eboot.elf at 0x43AF40.
+const char* screenshot_resolution_name(ScreenshotResolution resolution) {
+    switch (resolution) {
+    case ScreenshotResolution::kCurrent:
+        return "Window Dimensions";
+    case ScreenshotResolution::k720p:
+        return "1280 x 720 (16:9)";
+    case ScreenshotResolution::k1080p:
+        return "1920 x 1080 (16:9)";
+    case ScreenshotResolution::k4k:
+        return "3840 x 2160 (16:9)";
+    case ScreenshotResolution::k8k:
+        return "7680 x 4320 (16:9)";
+    case ScreenshotResolution::k9024x5076:
+        return "9024 x 5076 (16:9)";
+    }
+    return nullptr;
+}
+
 // Reconstructed from eboot.elf at 0x43B140 and 0x43B240.
 void screenshot_capture_frame(
     RenderFrameOwner& owner,

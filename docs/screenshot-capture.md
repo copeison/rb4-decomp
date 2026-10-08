@@ -19,6 +19,9 @@ fixed output sizes recovered from the two tables at `0x1281700` and
 | 4 | 7,680 | 4,320 |
 | 5 | 9,024 | 5,076 |
 
+The mode-name helper reports mode zero as `Window Dimensions`; fixed modes use
+their full dimensions followed by the reduced `16:9` aspect ratio.
+
 The capture remains pending when the selected extent has a zero dimension. A
 valid extent clears the request and recreates the resource named `Screenshot`
 when its dimensions differ from the cached target.

@@ -17,6 +17,7 @@ enum class ScreenshotResolution : std::uint32_t {
 
 void screenshot_request();
 bool screenshot_capture_pending();
+const char* screenshot_resolution_name(ScreenshotResolution resolution);
 void screenshot_capture_frame(
     RenderFrameOwner& owner,
     ScreenshotResolution resolution);

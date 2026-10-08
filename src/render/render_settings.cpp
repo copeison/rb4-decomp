@@ -1,6 +1,7 @@
 #include "render_settings.h"
 
 #include <cctype>
+#include <cstdlib>
 
 #include "render_settings_adapters.h"
 
@@ -123,6 +124,34 @@ void apply_platform_limits(RenderSettings& settings) {
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x441940.
+bool render_parse_resolution(const char* text, RenderExtent& extent) {
+    if (text == nullptr) {
+        return false;
+    }
+
+    char* separator = nullptr;
+    const auto first_value = std::strtol(text, &separator, 0);
+    if (first_value <= 0) {
+        return false;
+    }
+
+    if (*separator != 'x') {
+        extent.height = static_cast<std::uint32_t>(first_value);
+        extent.width = 16 * extent.height / 9;
+        return true;
+    }
+
+    const auto second_value = std::strtol(separator + 1, nullptr, 0);
+    if (second_value <= 0) {
+        return false;
+    }
+
+    extent.width = static_cast<std::uint32_t>(first_value);
+    extent.height = static_cast<std::uint32_t>(second_value);
+    return true;
+}
 
 // Reconstructed from eboot.elf at 0x442520.
 const char* render_quality_level_name(RenderQualityLevel level) {

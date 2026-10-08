@@ -11923,7 +11923,7 @@ address,end,size,name,library,thunk
 0x43AE80,0x43AE85,5,sub_43AE80,False,True
 0x43AE90,0x43AE95,5,sub_43AE90,False,False
 0x43AEA0,0x43AEA1,1,nullsub_1243,False,False
-0x43AF40,0x43B11B,475,sub_43AF40,False,False
+0x43AF40,0x43B11B,475,screenshot_resolution_name,False,False
 0x43B120,0x43B12B,11,screenshot_request,False,False
 0x43B130,0x43B13A,10,screenshot_capture_pending,False,False
 0x43B140,0x43B237,247,screenshot_capture_frame,False,False
@@ -12012,7 +12012,7 @@ address,end,size,name,library,thunk
 0x4415F0,0x441622,50,sub_4415F0,False,False
 0x441630,0x441736,262,sub_441630,False,False
 0x441740,0x441934,500,sub_441740,False,False
-0x441940,0x4419E7,167,sub_441940,False,False
+0x441940,0x4419E7,167,render_parse_resolution,False,False
 0x441C90,0x441D4A,186,sub_441C90,False,False
 0x441D50,0x441DE8,152,sub_441D50,False,False
 0x441DF0,0x441E0C,28,sub_441DF0,False,False

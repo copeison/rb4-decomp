@@ -65,6 +65,7 @@ struct RenderSettings {
 };
 
 void render_settings_initialize(RenderSettings& settings);
+bool render_parse_resolution(const char* text, RenderExtent& extent);
 const char* render_quality_level_name(RenderQualityLevel level);
 RenderQualityLevel render_quality_level_from_name(const char* name);
 
