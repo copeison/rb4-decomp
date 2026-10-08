@@ -45,6 +45,7 @@
 - [x] Reconstruct per-scene GBuffer targets.
 - [x] Reconstruct the per-scene depth/stencil target and attachment reuse.
 - [x] Reconstruct the partial-frame light-accumulation target.
+- [x] Reconstruct CMAA render targets and reuse behavior.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
