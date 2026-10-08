@@ -42,6 +42,13 @@ std::size_t orbis_render_context_active_frame(
     const OrbisRenderContext& context);
 bool orbis_render_context_submissions_complete(
     const OrbisRenderContext& context);
+void orbis_render_context_mark_compute_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot);
+void orbis_render_context_mark_gfx_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame);
 void orbis_render_context_set_active_frame(
     OrbisRenderContext& context,
     std::size_t frame);

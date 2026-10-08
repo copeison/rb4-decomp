@@ -139,6 +139,23 @@ bool orbis_render_context_submissions_complete(
     return true;
 }
 
+void orbis_render_context_mark_compute_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t slot) {
+    auto* runtime =
+        reinterpret_cast<OrbisRenderContextRuntimePrefix*>(&context);
+    runtime->submission_counters[frame][slot + 1] = 1;
+}
+
+void orbis_render_context_mark_gfx_completion_pending(
+    OrbisRenderContext& context,
+    std::size_t frame) {
+    auto* runtime =
+        reinterpret_cast<OrbisRenderContextRuntimePrefix*>(&context);
+    runtime->submission_counters[frame][0] = 1;
+}
+
 void orbis_render_context_set_active_frame(
     OrbisRenderContext& context,
     std::size_t frame) {

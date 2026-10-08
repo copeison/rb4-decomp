@@ -75,10 +75,6 @@ void render_system_set_render_context(
 void orbis_render_context_emit_end_of_frame_event(
     OrbisRenderContext& context,
     std::size_t frame);
-void orbis_render_context_mark_compute_completion_pending(
-    OrbisRenderContext& context,
-    std::size_t frame,
-    std::size_t slot);
 void orbis_render_context_emit_compute_completion(
     OrbisRenderContext& context,
     std::size_t frame,
@@ -88,9 +84,6 @@ void orbis_render_context_submit_compute(
     std::size_t frame,
     std::size_t slot,
     std::size_t queue);
-void orbis_render_context_mark_gfx_completion_pending(
-    OrbisRenderContext& context,
-    std::size_t frame);
 void orbis_render_context_emit_gfx_completion(
     OrbisRenderContext& context,
     std::size_t frame);
