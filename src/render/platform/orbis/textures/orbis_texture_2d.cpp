@@ -38,7 +38,35 @@ void orbis_texture_2d_construct(
 
 // Reconstructed from eboot.elf at 0x8D6310.
 void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
-    orbis_texture_2d_release_backend_state(texture);
+    orbis_texture_2d_install_vtable(texture);
+
+    for (auto*& target : texture.render_targets) {
+        if (target != nullptr) {
+            render_release(target);
+            target = nullptr;
+        }
+    }
+    for (auto*& color_texture : texture.color_textures) {
+        if (color_texture != nullptr) {
+            render_release(color_texture);
+            color_texture = nullptr;
+        }
+    }
+    if (texture.plane_texture != nullptr) {
+        render_release(texture.plane_texture);
+        texture.plane_texture = nullptr;
+    }
+    if (texture.depth_target != nullptr) {
+        render_release(texture.depth_target);
+        texture.depth_target = nullptr;
+    }
+    if (texture.auxiliary_backend != nullptr) {
+        orbis_texture_2d_release_auxiliary(texture.auxiliary_backend);
+        texture.auxiliary_backend = nullptr;
+    }
+    orbis_texture_2d_release_allocation(texture.allocation_control);
+    texture.allocation_control = nullptr;
+    texture.allocation_regions = nullptr;
     render_texture_2d_destruct(texture);
 }
 
@@ -52,7 +80,7 @@ void orbis_texture_2d_delete(OrbisTexture2D& texture) {
 void orbis_texture_2d_initialize_backend(
     OrbisTexture2D& texture,
     const OrbisTexture2D* storage_source) {
-    if (orbis_texture_2d_is_depth(texture)) {
+    if (texture.usage_type == 2) {
         orbis_texture_2d_initialize_depth_storage(texture);
     } else {
         orbis_texture_2d_initialize_color_storage(texture, storage_source);

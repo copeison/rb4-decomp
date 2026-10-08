@@ -50,7 +50,8 @@ Destruction at `0x8D6310` releases both color texture descriptors, the
 secondary plane view, both render-target descriptors, the depth descriptor,
 the auxiliary backend object, and the shared allocation control block before
 invoking the common texture destructor. The deleting destructor follows at
-`0x8D6440`.
+`0x8D6440`. The reconstruction now performs this teardown directly through the
+typed backend fields rather than hiding their order behind an opaque adapter.
 
 `analysis/exports/orbis-texture-2d-backend.asm` preserves the complete backend
 initializer because Hex-Rays does not currently produce pseudocode for that
