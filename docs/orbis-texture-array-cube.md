@@ -26,3 +26,7 @@ The final 16 bytes hold the Gnm texture descriptor pointer and its allocation.
 Destruction at `0x8E6670` defers the allocation through the Orbis render
 system, releases the descriptor, clears its object field, and invokes the
 common cube-array destructor. The deleting destructor follows at `0x8E66D0`.
+
+The six virtual methods at `0x8E6AB0` through `0x8E6B6F` forward the flattened
+cube-array texture view and common sampler state to the shared stage-binding
+layer.

@@ -25,5 +25,9 @@ void orbis_texture_array_cube_set_gpu_texture(
     void* descriptor);
 void texture_array_cube_destruct(OrbisTextureArrayCube& texture);
 void render_delete_texture_array_cube(OrbisTextureArrayCube& texture);
+OrbisSamplerAddressMode orbis_texture_array_cube_address_mode(
+    const OrbisTextureArrayCube& texture);
+std::uint32_t orbis_texture_array_cube_filter_mode(
+    const OrbisTextureArrayCube& texture);
 
 }  // namespace rb4
