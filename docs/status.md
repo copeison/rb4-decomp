@@ -295,8 +295,8 @@
   lifetime, fixed array accessor, and platform-seven boot predicate.
 - [x] Reconstruct common primary and auxiliary frame preparation, attachment,
   submission control flow, timing, and epoch advancement.
-- [x] Recover the 128-byte common GPU-stat block, typed frame query ID, and
-  direct begin, end, resolve, and history-ring transition points.
+- [x] Recover the 128-byte common GPU-stat block, typed frame query ID, direct
+  query-end dispatch, context scope pop, and history-ring transition.
 - [x] Reconstruct GPU-stat block construction, statistic ownership teardown,
   pointer-array release, and recursive mutex lifetime.
 - [x] Reconstruct primary-context submission-resource collection and direct

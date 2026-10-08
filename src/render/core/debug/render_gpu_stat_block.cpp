@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
+#include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 
 namespace rb4 {
@@ -119,6 +120,46 @@ void render_gpu_stat_block_destruct(RenderGpuStatBlock& block) {
         block.statistics_begin,
         block.statistics_end,
         block.statistics_capacity);
+}
+
+// Reconstructed from eboot.elf at 0x62B5B0.
+void render_gpu_stat_block_end(
+    RenderGpuStatBlock& block,
+    RenderContext& context,
+    std::int64_t query_id) {
+    if (query_id < 0 || block.backend == nullptr) {
+        return;
+    }
+
+    render_context_pop_gpu_stat_scope(context);
+    render_context_end_gpu_stat(
+        context, static_cast<std::uint64_t>(query_id));
+}
+
+// Reconstructed from eboot.elf at 0x62B960.
+void render_gpu_stat_block_finish_frame(RenderGpuStatBlock& block) {
+    render_gpu_stat_block_resolve_frame(block);
+
+    scePthreadMutexLock(&block.mutex);
+    const auto previous_lock_depth = block.lock_depth;
+    block.lock_depth = previous_lock_depth + 1;
+    block.frame_slot =
+        (static_cast<std::uint8_t>(block.frame_slot) + 1U) & 3U;
+
+    const auto history_offset = 56 + 32 * block.frame_slot;
+    for (auto** item = block.statistics_begin;
+         item != block.statistics_end;
+         ++item) {
+        auto* statistic = static_cast<std::uint8_t*>(*item);
+        auto*& begin = *reinterpret_cast<void***>(
+            statistic + history_offset);
+        auto*& end = *reinterpret_cast<void***>(
+            statistic + history_offset + sizeof(void*));
+        end = begin;
+    }
+
+    block.lock_depth = previous_lock_depth;
+    scePthreadMutexUnlock(&block.mutex);
 }
 
 }  // namespace rb4

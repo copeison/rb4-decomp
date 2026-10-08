@@ -77,7 +77,9 @@ instantaneous frames per second, and applies the original 59-to-1 rolling
 average. It then marks the primary context active, consumes pending activation,
 and begins GPU frame tracking. Only the phase-metric side effect and GPU
 resource preparation remain behind narrow adapters; the typed common GPU-stat
-block owns the begin/end query dispatch directly.
+block owns query-end dispatch directly. Ending pops the 16-byte scope record
+from the render context and invokes vtable slot `0x100`; query begin remains a
+focused adapter while its statistic lookup and creation path is recovered.
 
 Frame finish at `0x3DE4A0` now mirrors that ownership: it resolves pending
 activation, ends GPU tracking, dispatches primary or auxiliary submission,
@@ -140,12 +142,15 @@ The lifecycle constructor now owns the complete contiguous backend-state setup
 from the resource manager at `0x9F0` through the four null built-in buffer
 slots at `0xE80`. Resource-manager runtime algorithms and lighting
 initialization retain narrow adapters, while their placement and ordering are
-direct. The
-128-byte GPU-stat block at `0xE00` initializes both pointer arrays, the total
-statistic pointer, query counters, four-frame history slot, backend pointer,
+direct. The 128-byte GPU-stat block at `0xE00` initializes both pointer arrays,
+the total statistic pointer, query counters, four-frame history slot, backend pointer,
 recursive lock depth, and mutex. Its destructor dynamically releases every
 ordinary statistic, destroys and frees each root statistic, unwinds the mutex,
 and frees both pointer arrays by their recorded capacities.
+
+GPU-stat frame finish resolves completed queries through one narrow adapter,
+advances the four-slot history ring directly, and resets every statistic's new
+slot query list under the block's recursive mutex.
 
 The adjacent 304-byte lighting block is typed separately under
 `src/render/resources/lighting`. Its constructor defaults, two pointer arrays,
