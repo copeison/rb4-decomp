@@ -8,8 +8,6 @@ struct OrbisRenderSystem;
 struct RenderSystem;
 
 void* render_allocate(std::size_t size);
-RenderSystem& orbis_render_system_base(OrbisRenderSystem& system);
-
 void orbis_render_system_initialize_video_state(OrbisRenderSystem& system);
 void orbis_render_system_initialize_worker_state(
     OrbisRenderSystem& system,

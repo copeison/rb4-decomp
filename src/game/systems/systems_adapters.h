@@ -9,7 +9,6 @@ struct OrbisRenderSystem;
 
 using GameCleanupCallback = void (*)(void* context);
 
-RenderSystem& game_render_system_base(OrbisRenderSystem& system);
 DefaultRenderResources& game_default_render_resources(RenderSystem& system);
 void game_render_backend_post_initialize(
     RenderSystem& system,

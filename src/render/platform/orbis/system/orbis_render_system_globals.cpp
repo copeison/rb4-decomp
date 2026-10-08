@@ -26,6 +26,10 @@ OrbisRenderSystem* orbis_render_system_instance() {
     return g_orbis_render_system;
 }
 
+RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
+    return reinterpret_cast<RenderSystem&>(system);
+}
+
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return *runtime->render_context;
