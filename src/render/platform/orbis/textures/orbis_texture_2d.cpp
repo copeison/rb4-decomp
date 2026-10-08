@@ -78,7 +78,7 @@ void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
 // Reconstructed from eboot.elf at 0x8D6440.
 void orbis_texture_2d_delete(OrbisTexture2D& texture) {
     orbis_texture_2d_destruct(texture);
-    render_delete_texture_2d_storage(texture);
+    render_release(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8D6460.

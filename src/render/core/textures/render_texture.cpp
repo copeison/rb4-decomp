@@ -24,7 +24,9 @@ struct RenderTextureDispatch {
     std::int32_t (*descriptor_type)(const RenderTexture& texture);
     void (*reserved_methods[10])();
     void (*update_gpu_data)(RenderTexture& texture);
-    RenderTexture* (*identity)(RenderTexture& texture);
+    RenderTexture* (*identity)(
+        RenderTexture& texture,
+        std::int64_t& resource_index);
     void (*initialize_backend)(
         RenderTexture& texture,
         const RenderTexture* reusable_texture);
@@ -35,7 +37,7 @@ std::int32_t base_descriptor_type(const RenderTexture& texture) {
     return texture.descriptor_type;
 }
 
-RenderTexture* base_identity(RenderTexture& texture) {
+RenderTexture* base_identity(RenderTexture& texture, std::int64_t&) {
     return &texture;
 }
 

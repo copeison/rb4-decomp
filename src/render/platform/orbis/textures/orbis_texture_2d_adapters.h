@@ -14,7 +14,6 @@ void orbis_texture_2d_initialize_color_storage(
     const OrbisTexture2D* storage_source);
 void orbis_texture_2d_flip_active_storage(OrbisTexture2D& texture);
 void orbis_texture_2d_upload_active_mips(OrbisTexture2D& texture);
-void render_delete_texture_2d_storage(RenderTexture2D& texture);
 const void* orbis_texture_2d_binding_view(
     const OrbisTexture2D& texture,
     std::uint32_t flags);

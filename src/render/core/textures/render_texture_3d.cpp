@@ -22,7 +22,9 @@ struct RenderTexture3DDispatch {
         RenderTexture3D& texture,
         const RenderTextureCreationState& state);
     void (*release_source_data)(RenderTexture3D& texture);
-    RenderTexture3D* (*identity)(RenderTexture3D& texture);
+    RenderTexture3D* (*identity)(
+        RenderTexture3D& texture,
+        std::int64_t& resource_index);
     void (*initialize_backend)(
         RenderTexture3D& texture,
         const RenderTexture3D* reusable_texture);
@@ -52,7 +54,7 @@ void release_source_data(RenderTexture3D& texture) {
     render_texture_mip_chain_release_source_data(texture.mip_chain);
 }
 
-RenderTexture3D* identity(RenderTexture3D& texture) {
+RenderTexture3D* identity(RenderTexture3D& texture, std::int64_t&) {
     return &texture;
 }
 
