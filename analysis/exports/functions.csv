@@ -21486,8 +21486,8 @@ address,end,size,name,library,thunk
 0x6EA8B0,0x6EAA82,466,sub_6EA8B0,False,False
 0x6EAB30,0x6EAC26,246,sub_6EAB30,False,False
 0x6EAE30,0x6EAF86,342,sub_6EAE30,False,False
-0x6EAFD0,0x6EAFF6,38,sub_6EAFD0,False,False
-0x6EB000,0x6EB042,66,sub_6EB000,False,False
+0x6EAFD0,0x6EAFF6,38,render_create_particle_buffer,False,False
+0x6EB000,0x6EB042,66,particle_buffer_construct,False,False
 0x6EB050,0x6EB522,1234,sub_6EB050,False,False
 0x6EB6B0,0x6EBB95,1253,sub_6EB6B0,False,False
 0x6EBBA0,0x6EBD61,449,sub_6EBBA0,False,False
@@ -27948,7 +27948,7 @@ address,end,size,name,library,thunk
 0x8D8AD0,0x8D8B30,96,orbis_create_constant_buffer,False,False
 0x8D8B30,0x8D8BB3,131,sub_8D8B30,False,False
 0x8D8BC0,0x8D8BEA,42,orbis_create_compute_buffer,False,False
-0x8D8BF0,0x8D8C29,57,sub_8D8BF0,False,False
+0x8D8BF0,0x8D8C29,57,orbis_create_particle_buffer,False,False
 0x8D8C30,0x8D8C5A,42,sub_8D8C30,False,False
 0x8D8C60,0x8D8C61,1,nullsub_3154,False,False
 0x8D8C70,0x8D8C75,5,sub_8D8C70,False,True
@@ -27995,7 +27995,7 @@ address,end,size,name,library,thunk
 0x8E28C0,0x8E28EB,43,sub_8E28C0,False,False
 0x8E28F0,0x8E28F5,5,sub_8E28F0,False,True
 0x8E2A80,0x8E2A9F,31,sub_8E2A80,False,False
-0x8E2AA0,0x8E2D2B,651,sub_8E2AA0,False,False
+0x8E2AA0,0x8E2D2B,651,orbis_particle_buffer_construct,False,False
 0x8E3250,0x8E3287,55,orbis_compute_buffer_construct,False,False
 0x8E3540,0x8E3541,1,nullsub_3155,False,False
 0x8E37D0,0x8E37D1,1,nullsub_3156,False,False
