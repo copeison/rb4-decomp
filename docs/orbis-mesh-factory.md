@@ -50,3 +50,8 @@ The 52-byte compressed unskinned specialization retains float positions and
 packs the remaining six attributes into 16-bit components. It is reconstructed
 in `src/render/orbis_unskinned_compressed_mesh.cpp` and documented in
 `docs/orbis-unskinned-compressed-mesh.md`.
+
+The 64-byte compressed skinned specialization adds packed bone weights and
+four packed bone indices. It is reconstructed in
+`src/render/orbis_skinned_compressed_mesh.cpp` and documented in
+`docs/orbis-skinned-compressed-mesh.md`.

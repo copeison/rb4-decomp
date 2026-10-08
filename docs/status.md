@@ -57,6 +57,7 @@
 - [x] Reconstruct the 80-byte unskinned mesh vertex layout and GPU update path.
 - [x] Reconstruct the 100-byte skinned mesh vertex layout and GPU update path.
 - [x] Reconstruct the 52-byte compressed unskinned mesh and GPU update path.
+- [x] Reconstruct the 64-byte compressed skinned mesh and GPU update path.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 1D texture factory and platform constructor.

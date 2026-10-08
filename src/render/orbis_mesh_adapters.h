@@ -51,5 +51,11 @@ void orbis_unskinned_compressed_mesh_grow_vertices(
 void orbis_unskinned_compressed_mesh_release_vertices(OrbisMesh& mesh);
 void orbis_unskinned_compressed_mesh_rebuild_vertex_buffers(OrbisMesh& mesh);
 void orbis_unskinned_compressed_mesh_rebuild_index_buffer(OrbisMesh& mesh);
+void orbis_skinned_compressed_mesh_grow_vertices(
+    OrbisMesh& mesh,
+    std::size_t additional_count);
+void orbis_skinned_compressed_mesh_release_vertices(OrbisMesh& mesh);
+void orbis_skinned_compressed_mesh_rebuild_vertex_buffers(OrbisMesh& mesh);
+void orbis_skinned_compressed_mesh_rebuild_index_buffer(OrbisMesh& mesh);
 
 }  // namespace rb4
