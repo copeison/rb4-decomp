@@ -6,6 +6,7 @@
 
 #include "render/platform/orbis/synchronization/orbis_fence_adapters.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {
 
@@ -14,7 +15,7 @@ namespace {
 constexpr const char* kFenceAllocationName = "PS4Fence";
 
 void release_fence_value(OrbisFence& fence) {
-    if (auto* system = current_orbis_render_system()) {
+    if (auto* system = orbis_render_system_instance()) {
         orbis_defer_allocation_release(*system, fence.value);
     } else {
         render_release(fence.value);

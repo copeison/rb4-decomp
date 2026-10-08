@@ -15,7 +15,6 @@ std::uint32_t* orbis_allocate_fence_value(
     std::size_t size,
     const char* name,
     std::uint32_t alignment);
-OrbisRenderSystem* current_orbis_render_system();
 void render_release(void* allocation);
 void render_delete_fence_storage(OrbisFence& fence);
 bool orbis_render_context_recording_graphics(

@@ -17,9 +17,6 @@ void orbis_render_system_initialize_worker_state(
 void orbis_render_system_initialize_submission_state(
     OrbisRenderSystem& system);
 void orbis_render_system_initialize_command_list(OrbisRenderSystem& system);
-void orbis_render_system_publish_instance(OrbisRenderSystem& system);
-
-void orbis_render_system_clear_instance();
 void orbis_render_system_destroy_command_list(OrbisRenderSystem& system);
 void orbis_render_system_destroy_submission_state(OrbisRenderSystem& system);
 void orbis_render_system_destroy_profile_state(OrbisRenderSystem& system);

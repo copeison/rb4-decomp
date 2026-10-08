@@ -39,6 +39,7 @@
 - [x] Recover the common render-system singleton and shared epoch accessor.
 - [x] Reconstruct render-system runtime initialization and shutdown ordering.
 - [x] Reconstruct Orbis render-system allocation and object lifetime.
+- [x] Recover the separate Orbis render-system singleton lifecycle.
 - [x] Reconstruct Orbis video-output and submit-thread startup.
 - [x] Reconstruct Orbis video-output and submit-thread shutdown.
 - [x] Reconstruct Orbis GPU idle waits and deferred-allocation retirement.
