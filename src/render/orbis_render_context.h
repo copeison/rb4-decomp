@@ -7,6 +7,10 @@ namespace rb4 {
 
 struct OrbisRenderSystem;
 struct OrbisRenderContext;
+struct OrbisBlendConfiguration;
+struct OrbisRenderTargetBinding;
+
+enum class RndMaterialBlendMode : std::int32_t;
 
 constexpr std::size_t kOrbisFrameSlotCount = 2;
 constexpr std::size_t kOrbisComputeContextCount = 18;
@@ -24,5 +28,14 @@ void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context);
 void orbis_render_context_submit_frame(OrbisRenderContext& context);
 void orbis_render_context_reset_active_frame(OrbisRenderContext& context);
+void orbis_render_context_reset_pipeline_state(OrbisRenderContext& context);
+void orbis_render_context_bind_render_targets(
+    OrbisRenderContext& context,
+    std::int32_t target_kind,
+    const OrbisRenderTargetBinding& binding);
+void orbis_render_context_set_blend_mode(
+    OrbisRenderContext& context,
+    RndMaterialBlendMode mode,
+    const OrbisBlendConfiguration& configuration);
 
 }  // namespace rb4
