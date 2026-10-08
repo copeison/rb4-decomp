@@ -124,15 +124,6 @@ void render_display_texture_cube_shader_construct(void* shader) {
     shader_field(shader, 408) = -1;
 }
 
-// Reconstructed from eboot.elf at 0x635FE0.
-void render_downsample_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_downsample_shader_install_dispatch, 3);
-    shader_field(shader, 352) = -1;
-    shader_field(shader, 360) = 0;
-    shader_field(shader, 368) = -1;
-}
-
 // Reconstructed from eboot.elf at 0x63EF70.
 void render_linearize_depth_shader_construct(void* shader) {
     auto* fields = construct_shader(

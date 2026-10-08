@@ -404,6 +404,8 @@
   reciprocal-dimensions constant, and constant-block extent.
 - [x] Reconstruct the DOF sprite graphics shader, bokeh texture binding, and
   typed `CSBokehSprite` vertex-stage buffer input.
+- [x] Reconstruct the downsample graphics shader, all color/bloom permutations,
+  texel-offset constant, and pixel-stage texture binding metadata.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

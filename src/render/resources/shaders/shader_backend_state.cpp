@@ -111,6 +111,44 @@ std::uint64_t render_shader_backend_add_texture_binding(
     return resource_index;
 }
 
+// Reconstructed from eboot.elf at 0x6438D0.
+std::uint64_t render_shader_backend_add_graphics_texture_binding(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    const char* sampler_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t stage_mask) {
+    constexpr std::uint32_t kPixelStage = 4;
+    const Symbol resource_symbol(resource_name);
+    const Symbol sampler_symbol(sampler_name);
+    static const Symbol empty_symbol("");
+
+    std::uint64_t resource_index = 0;
+    constexpr std::uint32_t kBindingArrayGroups[]{0, 6, 12};
+    for (const auto array_offset : kBindingArrayGroups) {
+        const auto& array = state.binding_arrays[kPixelStage + array_offset];
+        resource_index += static_cast<std::uint64_t>(
+            array.begin == nullptr ? 0 : array.end - array.begin);
+    }
+
+    const auto array_offset = sampler_symbol.value() == empty_symbol.value()
+        ? 6U
+        : 0U;
+    auto& binding = append_binding(
+        state.binding_arrays[kPixelStage + array_offset]);
+    binding.resource_dimension = resource_dimension;
+    binding.stage_mask = stage_mask;
+    binding.binding_index = -1;
+    binding.resource_name = resource_symbol.value();
+    binding.sampler_name = sampler_symbol.value();
+    binding.default_sampler_name = empty_symbol.value();
+    binding.reserved_40 = 1;
+    binding.resource_index = resource_index;
+    binding.stage_resource_count =
+        state.stage_resource_counts[kPixelStage]++;
+    return resource_index;
+}
+
 // Reconstructed from eboot.elf at 0x643670.
 std::uint64_t render_shader_backend_add_output_binding(
     RenderShaderBackendState& state,

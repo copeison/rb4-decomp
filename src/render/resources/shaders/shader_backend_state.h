@@ -43,6 +43,12 @@ std::uint64_t render_shader_backend_add_texture_binding(
     std::uint32_t resource_dimension,
     std::uint32_t stage,
     std::uint32_t stage_mask);
+std::uint64_t render_shader_backend_add_graphics_texture_binding(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    const char* sampler_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t stage_mask);
 std::uint64_t render_shader_backend_add_output_binding(
     RenderShaderBackendState& state,
     const char* resource_name,
