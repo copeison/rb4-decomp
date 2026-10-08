@@ -72,6 +72,7 @@
 - [x] Recover Orbis GPU fence sequencing, signaling, and command-buffer waits.
 - [x] Recover Orbis compute dispatch and graphics/compute debug markers.
 - [x] Recover the Orbis GPU-stat timestamp lifecycle and clock conversion.
+- [x] Recover the Orbis compute-buffer counter copy command.
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 1D texture factory and platform constructor.
 - [x] Recover the Orbis 2D texture factory and platform constructor.
