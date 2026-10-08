@@ -40,3 +40,7 @@ Sixteen handlers are now source-owned. Twelve directly toggle their typed
 scene-limit gate, the screenshot handlers publish the pending request and
 advance the six-mode setting, and HDR normalizes the render-system mode at
 offset `0x68` between zero and one.
+
+`reload_shaders` now enters the typed render resource manager directly. It
+releases the six compiled-object arrays for every primary shader resource and
+marks the applicable secondary resources for refresh.

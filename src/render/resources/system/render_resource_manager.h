@@ -40,5 +40,6 @@ static_assert(sizeof(RenderResourceManager) == 712);
 RenderResourceManager& render_system_resource_manager(RenderSystem& system);
 void render_resource_manager_construct(RenderResourceManager& manager);
 void render_resource_manager_destruct(RenderResourceManager& manager);
+void render_resource_manager_reload_shaders(RenderResourceManager& manager);
 
 }  // namespace rb4

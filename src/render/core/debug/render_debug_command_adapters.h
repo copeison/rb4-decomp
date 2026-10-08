@@ -10,7 +10,6 @@ void register_debug_command(
 
 void render_command_toggle_overlay();
 void render_command_overlay_help();
-void render_command_reload_shaders();
 void render_command_set_resolution();
 void render_command_set_quality_level();
 void render_command_set_drawn_scene_range();

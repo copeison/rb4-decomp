@@ -38,6 +38,8 @@
 - [x] Recover and name the 24-command renderer debug console registry.
 - [x] Reconstruct the settings, HDR, screenshot, and screenshot-resolution
   debug command handlers directly.
+- [x] Reconstruct shader-reload traversal, compiled-object release, and dirty
+  publication through the typed resource manager.
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
 - [x] Recover the exact 232-byte renderer-settings layout, allocation/release,
   and signed limit fields.

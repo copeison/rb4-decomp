@@ -8,6 +8,7 @@ void render_command_toggle_shadows();
 void render_command_toggle_postproc();
 void render_command_toggle_tonemapping();
 void render_command_toggle_vscat();
+void render_command_reload_shaders();
 void render_command_toggle_multithreaded_rendering();
 void render_command_toggle_async_compute();
 void render_command_toggle_async_copy();
