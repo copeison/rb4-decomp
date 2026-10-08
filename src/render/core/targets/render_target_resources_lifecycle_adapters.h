@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include "render/core/targets/render_target_resources.h"
 
@@ -25,6 +26,12 @@ const RenderTargetResourceBlock& render_target_resources_block_at(
     const RenderTargetResources& resources,
     std::size_t index);
 void render_target_resources_propagate_resource_mode(
+    RenderTargetResources& resources);
+std::int32_t& render_target_resources_resource_mode(
+    RenderTargetResources& resources);
+std::size_t& render_target_resources_active_block_index(
+    RenderTargetResources& resources);
+std::int64_t& render_target_resources_active_scene_context(
     RenderTargetResources& resources);
 void render_target_resources_release_unclassified_target(
     RenderTargetResources& resources);

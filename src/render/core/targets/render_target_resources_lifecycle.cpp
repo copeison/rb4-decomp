@@ -149,4 +149,46 @@ void render_target_resources_release(RenderTargetResources& resources) {
     render_target_resources_finish_release(resources);
 }
 
+// Reconstructed from eboot.elf at 0x6B28D0.
+void render_target_resources_set_resource_mode(
+    RenderTargetResources& resources,
+    std::int32_t mode) {
+    auto& current_mode = render_target_resources_resource_mode(resources);
+    if (current_mode != mode) {
+        current_mode = mode;
+        render_target_resources_propagate_resource_mode(resources);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6B2910.
+void* render_target_resources_acquire_partial_frame_state(
+    RenderTargetResources& resources,
+    std::size_t partial_scene_index) {
+    const auto block_index = partial_scene_index + 1;
+    const auto block_count = render_target_resources_block_count(resources);
+    if (block_index >= block_count) {
+        const auto required_count = block_index + 1;
+        render_target_resources_resize_blocks(resources, required_count);
+        for (auto index = block_count; index < required_count; ++index) {
+            render_target_resource_block_initialize(
+                resources,
+                render_target_resources_block_at(resources, index),
+                true,
+                nullptr);
+        }
+    }
+    return render_target_resource_block_partial_frame_state(
+        render_target_resources_block_at(resources, block_index));
+}
+
+// Reconstructed from eboot.elf at 0x6B2A20.
+void render_target_resources_select_partial_frame(
+    RenderTargetResources& resources,
+    std::int64_t partial_scene_index,
+    std::int64_t scene_context) {
+    render_target_resources_active_block_index(resources) =
+        static_cast<std::size_t>(partial_scene_index + 1);
+    render_target_resources_active_scene_context(resources) = scene_context;
+}
+
 }  // namespace rb4

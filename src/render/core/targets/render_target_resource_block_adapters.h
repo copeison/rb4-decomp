@@ -10,6 +10,8 @@ struct RenderTarget;
 
 void render_target_resource_block_create_partial_frame_state(
     RenderTargetResourceBlock& block);
+void* render_target_resource_block_partial_frame_state(
+    RenderTargetResourceBlock& block);
 void render_target_resource_block_release_partial_frame_state(
     RenderTargetResourceBlock& block);
 void render_target_resource_block_release_unclassified_targets(

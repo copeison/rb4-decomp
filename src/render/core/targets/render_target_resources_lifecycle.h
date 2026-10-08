@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "render/core/targets/render_target_resources.h"
@@ -33,5 +34,15 @@ void render_target_resources_initialize(
     RenderTexture& source_texture,
     const RenderTargetResources* reusable_resources);
 void render_target_resources_release(RenderTargetResources& resources);
+void render_target_resources_set_resource_mode(
+    RenderTargetResources& resources,
+    std::int32_t mode);
+void* render_target_resources_acquire_partial_frame_state(
+    RenderTargetResources& resources,
+    std::size_t partial_scene_index);
+void render_target_resources_select_partial_frame(
+    RenderTargetResources& resources,
+    std::int64_t partial_scene_index,
+    std::int64_t scene_context);
 
 }  // namespace rb4

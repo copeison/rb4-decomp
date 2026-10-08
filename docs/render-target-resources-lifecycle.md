@@ -39,3 +39,14 @@ The owner pointer at `0x188` and per-scene pointers at `0x18` and `0x20` are
 confirmed virtual resources but do not yet have feature identities. Their
 exact null-safe virtual teardown and slot clearing are retained behind narrow
 unclassified-resource adapters.
+
+Three adjacent owner helpers complete the active-block controls:
+
+- `render_target_resources_set_resource_mode` at `0x6B28D0` updates the owner
+  mode only when it changes, then propagates it to registered resources.
+- `render_target_resources_acquire_partial_frame_state` at `0x6B2910` maps a
+  partial-scene index to block `index + 1`, grows and initializes the block
+  array as needed, and returns the block's 80-byte state.
+- `render_target_resources_select_partial_frame` at `0x6B2A20` stores the
+  active block index and scene context. Passing `-1, -1` selects the primary
+  block and clears the context.
