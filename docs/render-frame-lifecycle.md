@@ -36,5 +36,12 @@ object list, then calls the shared finish helper at `0x3DE4A0`. The finish path
 submits the frame, advances the frame counter, drains deferred material work,
 releases the render lock, and polls both default scene resources.
 
-The low-level platform context, frame-owner virtual interface, and mutex fields
-remain behind narrow adapters until their complete class layouts are recovered.
+Before primary submission, the finish helper builds the original 12-entry
+inline resource list. Each 32-byte record contains the source texture from
+render-target resource offset `0x170`, resource index `-1`, and flags `4`.
+Render-context vtable slot `0xA8` receives the completed list. This path now
+uses the typed target-resource owner and direct context dispatch rather than a
+whole-function adapter.
+
+The remaining low-level platform command-resource preparation stays behind a
+narrow adapter until its two owning object layouts are recovered.

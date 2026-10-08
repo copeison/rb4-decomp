@@ -14,4 +14,12 @@ void render_context_shutdown(RenderContext& context) {
     context.virtual_table->shutdown(&context);
 }
 
+void render_context_prepare_submission_resources(
+    RenderContext& context,
+    const RenderContextSubmissionResource* resources,
+    std::size_t resource_count) {
+    context.virtual_table->prepare_submission_resources(
+        &context, resource_count, resources);
+}
+
 }  // namespace rb4

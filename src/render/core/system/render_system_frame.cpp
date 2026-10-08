@@ -1,6 +1,7 @@
 #include "render/core/system/render_system_frame.h"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
@@ -16,6 +17,7 @@
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
+#include "render/core/targets/render_target_resources.h"
 #include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
@@ -118,6 +120,46 @@ bool render_system_attach_frame_owner(
     return true;
 }
 
+// Reconstructed from the primary-frame branch of eboot.elf at 0x3DE4A0.
+void prepare_primary_context_submission(
+    RenderSystem& system,
+    RenderContext& context) {
+    constexpr std::size_t kMaxSubmissionResources = 12;
+    std::array<
+        RenderContextSubmissionResource,
+        kMaxSubmissionResources> resources{};
+    std::size_t resource_count = 0;
+
+    const auto& owners =
+        render_system_core_state(system).submitted_frame_owners;
+    for (std::size_t owner_index = 0;
+         owner_index < owners.count;
+         ++owner_index) {
+        const auto& owner = *owners.items[owner_index];
+        if (render_frame_owner_output_extent(owner).empty()) {
+            continue;
+        }
+
+        const auto targets = render_frame_owner_target_states(owner);
+        for (std::size_t target_index = 0;
+             target_index < targets.count;
+             ++target_index) {
+            const auto& target_resources =
+                reinterpret_cast<const RenderTargetResources&>(
+                    *targets.states[target_index]);
+            resources[resource_count++] = {
+                nullptr,
+                target_resources.source_texture,
+                -1,
+                4,
+            };
+        }
+    }
+
+    render_context_prepare_submission_resources(
+        context, resources.data(), resource_count);
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x3DE170.
@@ -189,7 +231,7 @@ void render_system_finish_frame(
     } else {
         render_gpu_stat_block_finish_frame(
             render_system_gpu_stat_block(system));
-        render_system_finalize_primary_context_resources(
+        prepare_primary_context_submission(
             system, *runtime.render_context);
         render_system_platform_submit_frame(
             system, runtime.submitted_frame_owners, false);
