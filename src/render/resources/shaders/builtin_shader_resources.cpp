@@ -44,22 +44,6 @@ std::int64_t& shader_field(void* shader, std::size_t offset) {
 
 }  // namespace
 
-// Reconstructed from eboot.elf at 0x63E650.
-void render_error_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_error_shader_install_dispatch, 2);
-}
-
-// Reconstructed from eboot.elf at 0x6398D0.
-void render_basic_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_basic_shader_install_dispatch, 4);
-    shader_field(shader, 368) = -1;
-    shader_field(shader, 376) = 0;
-    shader_field(shader, 384) = -1;
-    shader_field(shader, 392) = -1;
-}
-
 // Reconstructed from eboot.elf at 0x5F4980.
 void render_bink_convert_shader_construct(void* shader) {
     construct_parameterized_shader(

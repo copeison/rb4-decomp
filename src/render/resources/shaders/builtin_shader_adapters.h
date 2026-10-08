@@ -2,8 +2,6 @@
 
 namespace rb4 {
 
-void render_error_shader_install_dispatch(void* shader);
-void render_basic_shader_install_dispatch(void* shader);
 void render_bink_convert_shader_install_dispatch(void* shader);
 void render_bloom_shader_install_dispatch(void* shader);
 void render_blur_shader_install_dispatch(void* shader);
