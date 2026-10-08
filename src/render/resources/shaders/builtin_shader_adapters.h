@@ -7,7 +7,6 @@ void render_basic_shader_install_dispatch(void* shader);
 void render_bink_convert_shader_install_dispatch(void* shader);
 void render_bloom_shader_install_dispatch(void* shader);
 void render_blur_shader_install_dispatch(void* shader);
-void render_dof_sprite_shader_install_dispatch(void* shader);
 void render_display_shading_mode_shader_install_dispatch(void* shader);
 void render_display_sphere_map_shader_install_dispatch(void* shader);
 void render_display_texture_cube_shader_install_dispatch(void* shader);

@@ -402,6 +402,8 @@
   generic compute-dispatch adapter from the built-in shader constructors.
 - [x] Reconstruct the FXAA graphics-shader dispatch, sampled source texture,
   reciprocal-dimensions constant, and constant-block extent.
+- [x] Reconstruct the DOF sprite graphics shader, bokeh texture binding, and
+  typed `CSBokehSprite` vertex-stage buffer input.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
