@@ -61,7 +61,8 @@ the owner-tracked frame lock, marks the frame active, invokes platform slot
 instantaneous frames per second, and applies the original 59-to-1 rolling
 average. It then marks the primary context active, consumes pending activation,
 and begins GPU frame tracking. Only the phase-metric side effect and GPU
-tracking internals remain behind narrow adapters.
+resource preparation remain behind narrow adapters; the typed common GPU-stat
+block owns the begin/end query dispatch directly.
 
 Frame finish at `0x3DE4A0` now mirrors that ownership: it resolves pending
 activation, ends GPU tracking, dispatches primary or auxiliary submission,

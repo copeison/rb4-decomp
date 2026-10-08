@@ -289,6 +289,8 @@
   active-frame, epoch, timing, settings, and factory state.
 - [x] Reconstruct common primary and auxiliary frame preparation, attachment,
   submission control flow, timing, and epoch advancement.
+- [x] Recover the 128-byte common GPU-stat block, typed frame query ID, and
+  direct begin, end, resolve, and history-ring transition points.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU

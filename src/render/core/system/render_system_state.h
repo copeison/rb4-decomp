@@ -63,7 +63,7 @@ struct RenderSystemCoreState {
     std::uint64_t initial_frame_tick_span;
     std::uint32_t frame_timing_initialized;
     std::uint32_t reserved_276;
-    void* gpu_frame_stat;
+    std::int64_t gpu_frame_stat_id;
     float instantaneous_frame_rate;
     float smoothed_frame_rate;
     RenderSettings* settings;
@@ -94,7 +94,7 @@ static_assert(
     offsetof(RenderSystemCoreState, previous_frame_counter) == 256);
 static_assert(
     offsetof(RenderSystemCoreState, frame_timing_initialized) == 272);
-static_assert(offsetof(RenderSystemCoreState, gpu_frame_stat) == 280);
+static_assert(offsetof(RenderSystemCoreState, gpu_frame_stat_id) == 280);
 static_assert(
     offsetof(RenderSystemCoreState, instantaneous_frame_rate) == 288);
 static_assert(offsetof(RenderSystemCoreState, smoothed_frame_rate) == 292);

@@ -7,6 +7,7 @@
 #include "core/time/performance_counter.h"
 #include "render/core/context/render_context.h"
 #include "render/core/context/render_context_adapters.h"
+#include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/synchronization/render_system_lock.h"
@@ -160,8 +161,11 @@ void render_system_prepare_frame(
     if (runtime.frame_activation_pending) {
         render_system_activate_pending_frame(system);
     }
-    runtime.gpu_frame_stat = render_system_begin_gpu_frame_tracking(
-        system, *runtime.render_context);
+    runtime.gpu_frame_stat_id = render_gpu_stat_block_begin(
+        render_system_gpu_stat_block(system),
+        *runtime.render_context,
+        "GPU Total");
+    render_system_prepare_frame_resources(system, *runtime.render_context);
 }
 
 // Reconstructed from eboot.elf at 0x3DE4A0.
@@ -173,17 +177,19 @@ void render_system_finish_frame(
         render_system_activate_pending_frame(system);
     }
 
-    render_system_end_gpu_frame_tracking(
-        system,
+    render_gpu_stat_block_end(
+        render_system_gpu_stat_block(system),
         *runtime.render_context,
-        runtime.gpu_frame_stat);
+        runtime.gpu_frame_stat_id);
 
     if (auxiliary_frame) {
         render_system_platform_submit_frame(
             system, runtime.submitted_frame_owners, true);
         ++runtime.auxiliary_frame_epoch;
     } else {
-        render_system_finalize_primary_context(
+        render_gpu_stat_block_finish_frame(
+            render_system_gpu_stat_block(system));
+        render_system_finalize_primary_context_resources(
             system, *runtime.render_context);
         render_system_platform_submit_frame(
             system, runtime.submitted_frame_owners, false);

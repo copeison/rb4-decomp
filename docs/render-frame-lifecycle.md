@@ -20,7 +20,11 @@ whether the global render system survived the virtual call.
 `render_system_begin_frame` at `0x3DE130` first calls the preparation helper at
 `0x3DE170`. That helper records the calling thread, updates instantaneous and
 smoothed frame-rate values, begins the `GPU Total` timing scope, and prepares
-the platform command context.
+the platform command context. The common GPU-stat manager is the exact 128-byte
+block at render-system offset `0xE00`. Its query ID at core-state offset
+`0x118` now remains an integer throughout begin/end tracking. A normal frame
+resolves the accumulated queries and advances the manager's four-slot history
+ring before constructing the primary context's submission resources.
 
 The attach helper at `0x3DE3A0` activates the current frame owner and validates
 that it has a nonzero output size. It records the owner and copies its transient
