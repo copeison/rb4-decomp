@@ -33,6 +33,12 @@ them with the live texture widths, rebuilds mismatched resources, and updates
 them for the current context. See `docs/audio-analysis-textures.md` for the
 resource layout and eight-source update behavior.
 
+The global 72-byte Bink render manager follows the audio-analysis update. Its
+four fixed conversion slots are scanned directly; each video whose pending
+byte at `0x88` is set is converted for the current context and marked clean.
+See `docs/bink-render-resources.md` for the manager layout and conversion
+boundary.
+
 The attach helper at `0x3DE3A0` activates the current frame owner and validates
 that it has a nonzero output size. It records the owner and copies its transient
 render-object list into the render system. A failed validation immediately
@@ -50,5 +56,5 @@ Render-context vtable slot `0xA8` receives the completed list. This path now
 uses the typed target-resource owner and direct context dispatch rather than a
 whole-function adapter.
 
-The remaining low-level platform command-resource preparation stays behind a
-narrow adapter until its two owning object layouts are recovered.
+Low-level audio sample extraction, Bink conversion draw setup, and the frame
+phase metric side effect remain behind focused adapters.

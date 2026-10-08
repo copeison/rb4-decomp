@@ -295,6 +295,8 @@
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its
   per-frame width validation and rebuild decision.
+- [x] Recover the global Bink render manager and reconstruct its four-slot
+  pending-video conversion loop.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU
