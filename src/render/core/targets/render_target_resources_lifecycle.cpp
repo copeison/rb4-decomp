@@ -37,6 +37,13 @@ struct RenderTargetResourcesDispatch {
         RenderTexture& source_texture);
 };
 
+struct RenderResourceModePrefix {
+    std::uint8_t reserved_0[0xA0];
+    std::int32_t resource_mode;
+};
+
+static_assert(offsetof(RenderResourceModePrefix, resource_mode) == 0xA0);
+
 const RenderTargetResourcesDispatch& dispatch(
     const RenderTargetResources& resources) {
     return *static_cast<const RenderTargetResourcesDispatch*>(
@@ -64,6 +71,26 @@ void release_target(RenderTarget*& target) {
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
+    }
+}
+
+void resize_blocks(
+    RenderTargetResources& resources,
+    std::size_t count) {
+    while (resources.block_count < count) {
+        resources.blocks_begin[resources.block_count++] =
+            RenderTargetResourceBlock{};
+    }
+    resources.block_count = count;
+}
+
+void propagate_resource_mode(RenderTargetResources& resources) {
+    for (std::size_t index = 0;
+         index < resources.registered_resource_count;
+         ++index) {
+        auto* resource = static_cast<RenderResourceModePrefix*>(
+            resources.registered_resources_begin[index]);
+        resource->resource_mode = resources.resource_mode;
     }
 }
 
@@ -137,7 +164,7 @@ void render_target_resources_initialize(
         render_scene_mask_tiles_create(resources, reusable_resources);
     }
 
-    render_target_resources_resize_blocks(resources, 1);
+    resize_blocks(resources, 1);
     render_target_resource_block_initialize(
         resources,
         resources.blocks_begin[0],
@@ -149,8 +176,7 @@ void render_target_resources_initialize(
             *render_system_settings(*render_system_instance());
         const auto partial_block_count = static_cast<std::size_t>(
             settings.max_partial_framerate_scenes);
-        render_target_resources_resize_blocks(
-            resources, partial_block_count + 1);
+        resize_blocks(resources, partial_block_count + 1);
         for (std::size_t index = 1;
              index <= partial_block_count;
              ++index) {
@@ -162,7 +188,7 @@ void render_target_resources_initialize(
         }
     }
 
-    render_target_resources_propagate_resource_mode(resources);
+    propagate_resource_mode(resources);
 }
 
 // Reconstructed from eboot.elf at 0x6AFFE0.
@@ -215,7 +241,7 @@ void render_target_resources_set_resource_mode(
     auto& current_mode = resources.resource_mode;
     if (current_mode != mode) {
         current_mode = mode;
-        render_target_resources_propagate_resource_mode(resources);
+        propagate_resource_mode(resources);
     }
 }
 
@@ -227,7 +253,7 @@ void* render_target_resources_acquire_partial_frame_state(
     const auto block_count = resources.block_count;
     if (block_index >= block_count) {
         const auto required_count = block_index + 1;
-        render_target_resources_resize_blocks(resources, required_count);
+        resize_blocks(resources, required_count);
         for (auto index = block_count; index < required_count; ++index) {
             render_target_resource_block_initialize(
                 resources,

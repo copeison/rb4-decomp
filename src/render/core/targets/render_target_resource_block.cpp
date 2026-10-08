@@ -13,6 +13,18 @@
 
 namespace rb4 {
 
+static_assert(
+    offsetof(RenderTargetResourceBlock, tiled_light_ids) ==
+    offsetof(TiledLightTargetResources, light_ids));
+static_assert(
+    offsetof(RenderTargetResourceBlock, stereo_tiled_light_id_ranges) ==
+    offsetof(TiledLightTargetResources, stereo_light_id_ranges));
+
+TiledLightTargetResources& render_target_resource_block_tiled_light_resources(
+    RenderTargetResourceBlock& block) {
+    return reinterpret_cast<TiledLightTargetResources&>(block);
+}
+
 namespace {
 
 enum class ResourceFlag : std::uint32_t {

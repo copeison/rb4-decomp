@@ -31,6 +31,13 @@ tears down the three still-unidentified target slots and resets block count,
 extent, attachment cursor, and registered-resource count. Stereo target
 selection is the observed `resource_mode == 3` test.
 
+The block container is the binary's fixed inline array: growing value-clears
+new 216-byte records, shrinking only changes the count, and the constructor's
+capacity is four. Mode propagation walks registered pointers and writes the
+common resource-mode field at offset `0xA0`. The tiled-light view is now a
+verified typed overlay on the scene block rather than an external offset
+adapter.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.

@@ -12,11 +12,6 @@ void render_target_resource_block_create_partial_frame_state(
     RenderTargetResourceBlock& block);
 void render_target_resource_block_release_partial_frame_state(
     RenderTargetResourceBlock& block);
-TiledLightTargetResources& render_target_resource_block_tiled_light_resources(
-    RenderTargetResourceBlock& block);
-const TiledLightTargetResources&
-render_target_resource_block_tiled_light_resources(
-    const RenderTargetResourceBlock& block);
 RenderTarget* render_target_resources_tiled_light_fallback_target(
     RenderTargetResources& resources,
     RenderExtent interpolation_extent);
