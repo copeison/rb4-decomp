@@ -296,6 +296,18 @@ void render_texture_mip_chain_descriptor_destruct(
     destroy_mip_chain_fields(descriptor.fields);
 }
 
+// Reconstructed from eboot.elf at 0x6830D0.
+void render_texture_mip_chain_descriptor_initialize(
+    RenderTextureMipChainDescriptor& descriptor,
+    const RenderTextureExtent3D& extent,
+    std::int32_t data_format) {
+    destroy_mip_chain_fields(descriptor.fields);
+    descriptor.fields.width = extent.width;
+    descriptor.fields.height = extent.height;
+    descriptor.fields.depth = extent.depth;
+    descriptor.fields.data_format = data_format;
+}
+
 // Reconstructed from eboot.elf at 0x682E80.
 void render_texture_mip_chain_descriptor_allocate_source(
     RenderTextureMipChainDescriptor& descriptor,

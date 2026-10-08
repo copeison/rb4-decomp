@@ -17,14 +17,23 @@ the original misspelled string `Slice Zero Ligth Ids`, which is retained for
 binary provenance. Directional lights are deliberately absent from that
 buffer's capacity sum, matching the executable.
 
-The final call to `0x48AB30` continues initialization of the enclosing lighting
-system. Its implementation remains behind a narrow adapter until that larger
-owner layout is reconstructed.
+The final call to `0x48AB30` rebuilds the shared spot-shadow depth texture
+array. It first disables and releases the previous array, then reads the active
+16-byte shadow configuration from the lighting system. The configuration
+selects a layer count and one of seven exact square resolutions: 256, 512,
+1024, 1600, 2048, 3200, or 4096 pixels.
+
+Each layer receives an empty mip descriptor using the resolved
+`{16, 12, 0, 1, -1}` depth format. The array uses the original depth creation
+mode, resource flags, sampler defaults, and `Spot Shadow Depth TexArray` name.
+The texture factory deep-copies those temporary descriptors before their
+storage is released. The owner flag, configuration pointer/index, texture
+slot, and five noncontiguous tiled-buffer slots are now modeled directly,
+removing the tiled-light adapter.
 
 The matching section of the lighting-system destructor at `0x480AD0` invokes
 each buffer's virtual deleting destructor and clears all five owner slots in
-the same order. The source models those noncontiguous fields through a typed
-buffer-kind accessor until the complete enclosing layout is available.
+the same order.
 
 `render_tiled_light_target_buffers_create` at `0x6B3380` allocates two
 light-ID buffers and one range buffer for each target. The number of ranges is
