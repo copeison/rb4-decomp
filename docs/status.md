@@ -36,6 +36,8 @@
 - [x] Reconstruct pre-frame screenshot capture and its resolution table.
 - [x] Recover renderer draw-mode and buffer debug-view tables and setters.
 - [x] Recover and name the 24-command renderer debug console registry.
+- [x] Reconstruct the settings, HDR, screenshot, and screenshot-resolution
+  debug command handlers directly.
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
 - [x] Recover the exact 232-byte renderer-settings layout, allocation/release,
   and signed limit fields.

@@ -21,7 +21,8 @@ struct RenderContextArray {
     RenderContext** end;
     RenderContext** capacity;
     void* allocator;
-    void* allocator_state;
+    std::uint32_t hdr_output_mode;
+    std::uint32_t reserved_36;
 };
 
 struct RenderTargetStateArray {
@@ -82,6 +83,10 @@ static_assert(
     offsetof(RenderSystemCoreState, frame_activation_pending) == 64);
 static_assert(offsetof(RenderSystemCoreState, frame_activation_flags) == 68);
 static_assert(offsetof(RenderSystemCoreState, render_contexts) == 72);
+static_assert(
+    offsetof(RenderSystemCoreState, render_contexts) +
+        offsetof(RenderContextArray, hdr_output_mode) ==
+    104);
 static_assert(offsetof(RenderSystemCoreState, frame_owner) == 112);
 static_assert(offsetof(RenderSystemCoreState, active_frame_owner) == 120);
 static_assert(offsetof(RenderSystemCoreState, active_target_states) == 128);

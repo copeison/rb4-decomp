@@ -34,3 +34,9 @@ The screenshot resolution command wraps modulo six, covering the current
 target plus the five fixed dimensions documented in `docs/screenshot-capture.md`.
 The final two commands accept a mode name, and accept `help` to enumerate their
 respective name tables.
+
+Sixteen handlers are now source-owned. Twelve directly toggle their typed
+`RenderSettings` byte, partial-framerate toggling also enforces the nonzero
+scene-limit gate, the screenshot handlers publish the pending request and
+advance the six-mode setting, and HDR normalizes the render-system mode at
+offset `0x68` between zero and one.

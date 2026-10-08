@@ -8,7 +8,6 @@ namespace rb4 {
 
 struct ScreenshotRenderTarget;
 
-ScreenshotResolution screenshot_resolution_mode();
 ScreenshotRenderTarget* screenshot_recreate_render_target(
     ScreenshotRenderTarget* previous,
     RenderExtent extent,
