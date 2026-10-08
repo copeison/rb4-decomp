@@ -1,12 +1,15 @@
 #include "render/lighting/volumetric/volumetric_scattering_textures.h"
 
 #include <array>
+#include <cstring>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_3d.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/lighting/volumetric/volumetric_scattering_texture_adapters.h"
 
 namespace rb4 {
 
@@ -28,6 +31,14 @@ constexpr std::uint64_t kEvenAccumulatedScatteringVoxel =
     0x3C003C003C000000ULL;
 constexpr std::uint64_t kOddAccumulatedScatteringVoxel =
     0x3C00000038003C00ULL;
+
+template <typename T>
+void write_descriptor_value(
+    std::uint8_t* destination,
+    std::size_t offset,
+    T value) {
+    std::memcpy(destination + offset, &value, sizeof(value));
+}
 
 std::uint32_t divide_round_up(
     std::uint32_t value,
@@ -112,8 +123,79 @@ RenderTexture3D* first_creation_reuse_texture(
     return texture_slot(block, kind, VolumetricScatteringDepth::k512);
 }
 
+const char* texture_name(VolumetricScatteringTextureKind kind) {
+    switch (kind) {
+    case VolumetricScatteringTextureKind::kInscattering:
+        return "VScat Inscattering";
+    case VolumetricScatteringTextureKind::kStereoInscattering:
+        return "VScat Inscattering (Stereo)";
+    case VolumetricScatteringTextureKind::kAccumulatedScattering:
+        return "VScat Accum Scattering";
+    }
+    return "VScat Inscattering";
+}
+
+RenderTexture3D* create_volumetric_texture(
+    VolumetricScatteringTextureKind kind,
+    RenderVolumeExtent extent,
+    RenderTexture3D* reusable_texture,
+    std::uint64_t (*initializer)(
+        std::uint32_t, std::uint32_t, std::uint32_t)) {
+    RenderTexture3DDescriptor descriptor{};
+    write_descriptor_value<std::int32_t>(
+        descriptor.texture_state, 0, 2);
+    write_descriptor_value<std::uint32_t>(
+        descriptor.texture_state,
+        4 + 8 * sizeof(std::uint32_t),
+        static_cast<std::uint32_t>(render_texture_default_address_mode(5)));
+    write_descriptor_value<std::uint32_t>(
+        descriptor.texture_state,
+        4 + 9 * sizeof(std::uint32_t),
+        static_cast<std::uint32_t>(render_texture_default_filter_mode(5)));
+    write_descriptor_value<std::uint32_t>(
+        descriptor.texture_state,
+        4 + 10 * sizeof(std::uint32_t),
+        2);
+    write_descriptor_value<std::int32_t>(
+        descriptor.texture_state, 92, -1);
+    write_descriptor_value<std::int32_t>(
+        descriptor.texture_state, 128, -1);
+    write_descriptor_value(
+        descriptor.texture_state, 136, texture_name(kind));
+
+    const RenderDataFormatDescriptor format_descriptor{
+        64, 4, 2, 1, -1,
+    };
+    auto& mip = descriptor.mip_chain.fields;
+    mip.width = extent.width;
+    mip.height = extent.height;
+    mip.depth = extent.depth;
+    mip.data_format = render_data_format_resolve(format_descriptor, 7);
+
+    if (initializer != nullptr) {
+        const auto voxel_count =
+            static_cast<std::size_t>(extent.width) * extent.height *
+            extent.depth;
+        mip.source_size = voxel_count * sizeof(std::uint64_t);
+        mip.source_data = engine_allocate_sized(mip.source_size);
+        auto* voxels = static_cast<std::uint64_t*>(mip.source_data);
+        for (std::uint32_t z = 0; z < extent.depth; ++z) {
+            for (std::uint32_t y = 0; y < extent.height; ++y) {
+                for (std::uint32_t x = 0; x < extent.width; ++x) {
+                    *voxels++ = initializer(x, y, z);
+                }
+            }
+        }
+    }
+
+    auto* texture = render_create_texture_3d(descriptor, reusable_texture);
+    if (mip.source_data != nullptr) {
+        engine_deallocate_sized(mip.source_data, mip.source_size);
+    }
+    return texture;
+}
+
 void create_texture(
-    RenderTargetResources& resources,
     RenderTargetResourceBlock& block,
     const RenderTargetResourceBlock* reusable_block,
     VolumetricScatteringTextureKind kind,
@@ -132,9 +214,8 @@ void create_texture(
         ? accumulated_scattering_voxel
         : nullptr;
 
-    texture_slot(block, kind, depth) =
-        render_target_resources_create_volumetric_scattering_texture(
-            resources, kind, volume_extent, reusable_texture, initializer);
+    texture_slot(block, kind, depth) = create_volumetric_texture(
+        kind, volume_extent, reusable_texture, initializer);
 }
 
 void release_texture(
@@ -171,14 +252,12 @@ void render_volumetric_scattering_textures_create(
 
     for (const auto depth : kDescendingDepths) {
         create_texture(
-            resources,
             block,
             reusable_block,
             VolumetricScatteringTextureKind::kInscattering,
             depth,
             tile_extent);
         create_texture(
-            resources,
             block,
             reusable_block,
             VolumetricScatteringTextureKind::kAccumulatedScattering,
@@ -189,7 +268,6 @@ void render_volumetric_scattering_textures_create(
     if (resources.resource_mode == 3) {
         for (const auto depth : kAscendingDepths) {
             create_texture(
-                resources,
                 block,
                 reusable_block,
                 VolumetricScatteringTextureKind::kStereoInscattering,

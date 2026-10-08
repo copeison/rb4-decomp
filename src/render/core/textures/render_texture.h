@@ -51,7 +51,9 @@ struct RenderTextureMipChainFields {
     std::uint32_t height;
     std::uint32_t depth;
     std::int32_t data_format;
-    std::uint8_t source_state[56];
+    void* source_data;
+    std::size_t source_size;
+    std::uint8_t source_state[40];
 };
 
 union RenderTextureMipChainState {
@@ -81,6 +83,8 @@ static_assert(sizeof(RenderTexture) == 168);
 static_assert(sizeof(RenderTextureMipChainFields) == 80);
 static_assert(offsetof(RenderTextureMipChainFields, width) == 8);
 static_assert(offsetof(RenderTextureMipChainFields, data_format) == 20);
+static_assert(offsetof(RenderTextureMipChainFields, source_data) == 24);
+static_assert(offsetof(RenderTextureMipChainFields, source_size) == 32);
 static_assert(sizeof(RenderTextureMipChainState) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptor) == 80);
 static_assert(sizeof(RenderTextureMipChainDescriptorRange) == 24);

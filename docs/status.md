@@ -96,6 +96,8 @@
 - [x] Inline shadow-contribution 2D-array, stencil, scratch, and soften-tile
   descriptors and owner registration.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.
+- [x] Inline volumetric 3D descriptors, direct factory creation, reusable
+  backend initialization, and accumulated-scattering voxel data.
 - [x] Reconstruct the fallback light-probe accumulation target.
 - [x] Inline the fallback light-probe accumulation descriptor, correct its
   tiled-lighting feature gate, and register the resulting texture directly.

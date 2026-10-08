@@ -53,6 +53,13 @@ and format `{64, 4, 2, 1, -1}`. Reuse prefers the prior block's interpolation
 texture, then the owner's primary shadow-contribution scratch texture when it
 is large enough for the requested extent.
 
+Volumetric scattering now reaches the common 3D factory directly. Mono,
+stereo, and accumulated textures use resource-kind `5` defaults, creation
+value ten `2`, and format `{64, 4, 2, 1, -1}`. Accumulated textures provide
+the recovered alternating half-float voxel pattern as source data; the common
+texture constructor copies that temporary data before its local allocation is
+released. Existing depth-by-depth reuse behavior is preserved.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.
