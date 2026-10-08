@@ -427,6 +427,8 @@
   and deleting storage release.
 - [x] Reconstruct common render-target base dispatch, owned-state teardown,
   and deleting storage release.
+- [x] Reconstruct common render-shader base dispatch, backend initialization,
+  release routing, and deleting storage release.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

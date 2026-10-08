@@ -1,10 +1,49 @@
 #include "render/core/shaders/render_shader.h"
 
-#include "render/core/shaders/render_shader_adapters.h"
+#include <cstddef>
+
+#include "core/memory/engine_memory.h"
+#include "render/core/context/render_context.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
+
+namespace {
+
+struct RenderShaderDispatch {
+    void (*destruct)(RenderShader& shader);
+    void (*delete_shader)(RenderShader& shader);
+    bool (*initialize)(
+        RenderShader& shader,
+        const RenderShaderBinary& binary);
+    void (*bind)(const RenderShader& shader, RenderContext& context);
+    void (*release)(RenderShader& shader);
+    RenderShaderStage (*stage)();
+};
+
+static_assert(offsetof(RenderShaderDispatch, initialize) == 16);
+static_assert(offsetof(RenderShaderDispatch, release) == 32);
+static_assert(sizeof(RenderShaderDispatch) == 6 * sizeof(void*));
+
+RenderShaderDispatch kBaseShaderDispatch{
+    render_shader_destruct,
+    render_shader_delete,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+};
+
+void set_base_dispatch(RenderShader& shader) {
+    shader.implementation = &kBaseShaderDispatch;
+}
+
+const RenderShaderDispatch& dispatch(const RenderShader& shader) {
+    return *static_cast<const RenderShaderDispatch*>(shader.implementation);
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x642250.
 RenderShader* render_create_shader(RenderShaderStage stage) {
@@ -14,7 +53,7 @@ RenderShader* render_create_shader(RenderShaderStage stage) {
 
 // Reconstructed from eboot.elf at 0x642270.
 void render_shader_construct(RenderShader& shader) {
-    render_shader_set_base_dispatch(shader);
+    set_base_dispatch(shader);
     shader.owner = nullptr;
     shader.initialized = false;
     shader.variant_index = -1;
@@ -27,7 +66,7 @@ void render_shader_destruct(RenderShader&) {
 
 // Reconstructed from eboot.elf at 0x6422B0.
 void render_shader_delete(RenderShader& shader) {
-    render_delete_shader_storage(shader);
+    render_release(&shader);
 }
 
 // Reconstructed from eboot.elf at 0x6422C0.
@@ -44,7 +83,7 @@ bool render_shader_initialize(
         return true;
     }
 
-    shader.initialized = render_shader_initialize_backend(shader, *binary);
+    shader.initialized = dispatch(shader).initialize(shader, *binary);
     return shader.initialized;
 }
 
@@ -54,7 +93,7 @@ void render_shader_release(RenderShader& shader) {
         return;
     }
 
-    render_shader_release_backend(shader);
+    dispatch(shader).release(shader);
     shader.initialized = false;
 }
 
