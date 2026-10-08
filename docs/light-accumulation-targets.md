@@ -11,6 +11,8 @@ reuse the corresponding target from a previous owner and is registered in the
 new owner's resource list.
 
 The matching portion of `render_target_resources_release` at `0x6AFFE0`
-virtually deletes and clears all five slots. The common scaled-target helper at
-`0x6B2E80` remains behind an adapter pending reconstruction of its full target
-descriptor.
+virtually deletes and clears all five slots. The common factory at `0x6B2E80`
+selects the 32- or 64-bit format, scales each dimension with a minimum of one,
+assigns sequential attachments to the primary pair, and advances the owner's
+attachment cursor from the created target's allocation range. Only the final
+platform target descriptor remains behind an adapter.

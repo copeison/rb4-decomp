@@ -47,6 +47,7 @@
 - [x] Reconstruct the partial-frame light-accumulation target.
 - [x] Reconstruct CMAA render targets and reuse behavior.
 - [x] Reconstruct primary and blurred light-accumulation targets.
+- [x] Reconstruct the shared light-accumulation target factory.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.

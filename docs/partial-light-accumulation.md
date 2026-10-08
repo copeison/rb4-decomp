@@ -10,5 +10,6 @@ the block rather than registered in the primary owner's target list. The
 matching portion of `render_target_resources_release` at `0x6AFFE0` invokes
 its virtual deleting destructor and clears the slot.
 
-The shared light-accumulation target helper at `0x6B2E80` remains behind an
-adapter until its scale, format, and attachment arguments are fully typed.
+The shared light-accumulation target factory at `0x6B2E80` is reconstructed.
+This path uses full resolution and the unassigned attachment value while
+sharing its 32- versus 64-bit format selection with the primary targets.

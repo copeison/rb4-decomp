@@ -1,6 +1,7 @@
 #include "render/lighting/accumulation/light_accumulation_targets.h"
 
 #include "render/core/targets/render_target_adapters.h"
+#include "render/lighting/accumulation/light_accumulation_target_factory.h"
 #include "render/lighting/accumulation/light_accumulation_target_adapters.h"
 
 namespace rb4 {
@@ -19,10 +20,35 @@ void create_target(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources,
     LightAccumulationTargetKind kind) {
+    const char* name = "Light Accum Buffer";
+    std::uint32_t scale_shift = 0;
+    bool allocate_attachment = true;
+    switch (kind) {
+    case LightAccumulationTargetKind::kPrimary0:
+    case LightAccumulationTargetKind::kPrimary1:
+        break;
+    case LightAccumulationTargetKind::kBlurredHalf:
+        name = "Blurred Light Accum Buffer";
+        scale_shift = 1;
+        allocate_attachment = false;
+        break;
+    case LightAccumulationTargetKind::kBlurredQuarter:
+        name = "Blurred Light Accum Buffer";
+        scale_shift = 2;
+        allocate_attachment = false;
+        break;
+    case LightAccumulationTargetKind::kBlurredEighth:
+        name = "Blurred Light Accum Buffer";
+        scale_shift = 3;
+        allocate_attachment = false;
+        break;
+    }
     render_target_resources_light_accumulation_target(resources, kind) =
-        render_target_resources_create_light_accumulation_target(
+        render_light_accumulation_target_create(
             resources,
-            kind,
+            name,
+            scale_shift,
+            allocate_attachment,
             reusable_target(reusable_resources, kind));
 }
 
