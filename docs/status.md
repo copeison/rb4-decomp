@@ -410,6 +410,8 @@
   texture binding beside its compute-path counterpart.
 - [x] Reconstruct the refine and stencil scene-mask graphics shaders, including
   stage-specific mask inputs, tile counts, and the vertex-only variant.
+- [x] Reconstruct the shading-mode, sphere-map, and cube-texture display
+  shaders with their debug constants, permutations, and sampled resources.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

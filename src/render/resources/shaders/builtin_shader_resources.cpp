@@ -95,35 +95,6 @@ void render_blur_shader_construct(void* shader) {
     shader_field(shader, 472) = -1;
 }
 
-// Reconstructed from eboot.elf at 0x63DC90.
-void render_display_shading_mode_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_display_shading_mode_shader_install_dispatch);
-    fields[0] = -1;
-    fields[1] = 0;
-    fields[2] = -1;
-}
-
-// Reconstructed from eboot.elf at 0x6F4270.
-void render_display_sphere_map_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_display_sphere_map_shader_install_dispatch);
-    fields[0] = -1;
-}
-
-// Reconstructed from eboot.elf at 0x63DFD0.
-void render_display_texture_cube_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_display_texture_cube_shader_install_dispatch, 3);
-    for (std::size_t offset = 352; offset <= 376; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-    shader_field(shader, 384) = 0;
-    shader_field(shader, 392) = -1;
-    shader_field(shader, 400) = -1;
-    shader_field(shader, 408) = -1;
-}
-
 // Reconstructed from eboot.elf at 0x6367A0.
 void render_output_conversion_shader_construct(void* shader) {
     construct_parameterized_shader(
