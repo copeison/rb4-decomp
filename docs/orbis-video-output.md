@@ -12,8 +12,9 @@ Startup performs the following work:
 2. Apply the 1,080-line window-mode margin configuration.
 3. Create the `EOP QUEUE`, register GNM event 64, and add the video flip event.
 4. Create `DefaultVBuffer` and the 120-byte `IdentityInstanceVBuffer`.
-5. Create and register the double-buffered display render target.
-6. Register the Orbis render factories and initialize a condition variable.
+5. Register the Orbis render factories, create the double-buffered display
+   target, and allocate the platform render context.
+6. Initialize the submit condition variable.
 7. Start `SubmitDoneThread` at priority 699 and initialize its profiling state.
 8. Wait until the worker publishes readiness, then hide the system splash
    screen.

@@ -61,6 +61,7 @@
 - [x] Reconstruct shared mesh and instance Gnm vertex-descriptor generation.
 - [x] Reconstruct the common Orbis mesh draw and instancing path.
 - [x] Reconstruct Orbis back-buffer allocation and video-output registration.
+- [x] Reconstruct Orbis graphics/compute render-context allocation.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 1D texture factory and platform constructor.

@@ -4,6 +4,7 @@
 #include <cstddef>
 
 #include "orbis_back_buffer.h"
+#include "orbis_render_context.h"
 #include "orbis_render_system.h"
 #include "orbis_video_output_adapters.h"
 
@@ -33,8 +34,9 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 
     orbis_create_default_vertex_buffer(system);
     orbis_create_identity_instance_buffer(system);
-    orbis_create_back_buffer(system);
     orbis_register_render_factories(system);
+    orbis_create_back_buffer(system);
+    orbis_create_render_context(system);
 
     orbis_initialize_submit_condition(system);
     orbis_start_submit_thread(
@@ -76,6 +78,10 @@ void orbis_create_identity_instance_buffer(OrbisRenderSystem& system) {
 
 void orbis_create_back_buffer(OrbisRenderSystem& system) {
     static_cast<void>(orbis_back_buffer_create(system));
+}
+
+void orbis_create_render_context(OrbisRenderSystem& system) {
+    static_cast<void>(orbis_render_context_create(system));
 }
 
 // Reconstructed from eboot.elf at 0x8D77E0.
