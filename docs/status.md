@@ -354,6 +354,8 @@
   array destruction.
 - [x] Type the shared shader-parameter binding and registry layouts and
   reconstruct the resource manager's four built-in permutation bindings.
+- [x] Reconstruct shader-parameter range packing, bit-mask generation,
+  record-array growth, and caller binding publication.
 - [x] Recover the resource manager's 304-byte shader-constant state, including
   the named block owners, uniform handles, transient blocks, and registry.
 - [x] Reconstruct shader constant-block construction, member-array growth,

@@ -69,7 +69,7 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& parameters) {
     for (auto* parameter = parameters.begin;
          parameter != parameters.end;
          ++parameter) {
-        render_resource_name_destruct(parameter->resource_name);
+        render_resource_name_destruct(&parameter->name);
     }
     if (parameters.begin != nullptr) {
         const auto byte_count = static_cast<std::size_t>(

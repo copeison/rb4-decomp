@@ -115,7 +115,7 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& registry) {
     for (auto* parameter = registry.begin;
          parameter != registry.end;
          ++parameter) {
-        render_resource_name_destruct(parameter->resource_name);
+        render_resource_name_destruct(&parameter->name);
     }
     release_array_storage(
         registry.begin,
@@ -303,7 +303,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
     const Symbol render_target_slices("HX_NUM_RT_SLICES");
     render_shader_parameter_registry_add(
         &shader.render_target_slice_binding,
-        parameters,
+        &parameters->registries[0],
         render_target_slices.value(),
         0,
         7);

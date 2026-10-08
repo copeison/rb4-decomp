@@ -51,8 +51,8 @@ manager offset `0x2A8`.
 
 Shader-parameter setup at `0x640BF0` is source-owned. It allocates six 40-byte
 registries, enables the first, and registers four manager bindings:
-`HX_BT709_TO_BT2020` over `[0, 2]`, `HX_NUM_RT_SLICES` over `[0, 7]`,
-`HX_SHADING_MODE` over `[0, 19]`, and `HX_GEO_TYPE` over `[0, 2]`. Geometry
+`HX_BT709_TO_BT2020` over `[0, 2)`, `HX_NUM_RT_SLICES` over `[0, 7)`,
+`HX_SHADING_MODE` over `[0, 19)`, and `HX_GEO_TYPE` over `[0, 2)`. Geometry
 type uses the second registry; the other fields share the first registry's bit
 cursor. The binding and registry layouts are shared with primary-shader lazy
 preparation under `src/render/resources/shaders`.
@@ -74,8 +74,8 @@ state, and 864-byte backend state. The first parameter registry is enabled,
 the others begin disabled, and the compile state records resource kind eight,
 the virtual shader variant, and the virtual source identifier. Preparation
 then registers the three-bit `HX_NUM_RT_SLICES` field and passes all four
-support objects to virtual slot `0x20`. Parameter-record insertion and the
-backend-initialize operation remain focused boundaries.
+support objects to virtual slot `0x20`. The backend-initialize operation
+remains a focused boundary.
 
 The shader constant registry at `0x63F920` is source-owned. It preserves all
 13 comment groups and 116 definitions used by generated shader source,
