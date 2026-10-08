@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -27,10 +26,10 @@ public:
     const std::string& resolved_path() const;
 
     static std::string resolve_platform_path(std::string path);
-    static std::string strings_bank_path(std::string_view master_bank_path);
-    static std::string master_bank_path(std::string_view strings_bank_path);
-    static std::string_view category_name();
-    static std::string_view supported_extension();
+    static std::string strings_bank_path(const std::string& master_bank_path);
+    static std::string master_bank_path(const std::string& strings_bank_path);
+    static const char* category_name();
+    static const char* supported_extension();
 
 private:
     bool load_into_system(FMOD::Studio::System& system);

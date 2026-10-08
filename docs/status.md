@@ -45,16 +45,20 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
-- [ ] Establish a compatible PS4 build and structural-comparison loop.
+- [x] Establish a compatible PS4 object-build and structural-comparison loop.
+- [ ] Link a complete reconstructed executable after recovering the remaining
+  engine adapters and external FMOD libraries.
 
 ## Validation constraint
 
 The game targets the PS4 SDK 5.000 generation. The local 5.008 installed files
 contain headers and stub libraries but no Sony compiler or linker, and the
 matching toolchain is unavailable. Static reconstruction, IDA naming, import
-resolution, and documentation continue independently. A complete later SDK,
-such as 6.000, can establish compilation and structural comparison, but its
-code generation is not expected to match the original build byte for byte.
+resolution, and documentation continue independently. The installed SDK 5.500
+toolchain now compiles every reconstructed translation unit and generates an
+object archive, hash manifest, unresolved-symbol report, and optional assembly
+listings. Its code generation is not expected to match the original build byte
+for byte.
 
 ## Naming conventions
 

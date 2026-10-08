@@ -7,7 +7,6 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "audio_clip_fmod.h"
@@ -29,7 +28,7 @@ struct FmodStudioSoundOptions {
     std::vector<AudioClipFmodParameter> parameters;
 };
 
-std::string fmod_studio_event_path(std::string_view path);
+std::string fmod_studio_event_path(const std::string& path);
 
 class FmodStudioSoundGenerator {
 public:

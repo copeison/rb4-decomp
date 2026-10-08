@@ -7,7 +7,6 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "audio_clip_fmod.h"
@@ -24,7 +23,7 @@ struct FmodDialogGeneratorOptions {
     FmodStudioSoundOptions sound;
 };
 
-std::string fmod_dialog_event_path(std::string_view path);
+std::string fmod_dialog_event_path(const std::string& path);
 
 class FmodDialogGenerator {
 public:

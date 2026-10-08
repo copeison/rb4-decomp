@@ -94,21 +94,21 @@ void FmodAudioStreamResource::mark_decode_failed() {
 
 // Reconstructed from eboot.elf at 0x271C20.
 FmodAudioStreamResource* FmodAudioStreamResource::find(
-    std::string_view resolved_path) {
+    const std::string& resolved_path) {
     std::lock_guard lock(g_stream_resource_mutex);
-    const auto found = g_stream_resources.find(std::string(resolved_path));
+    const auto found = g_stream_resources.find(resolved_path);
     return found != g_stream_resources.end() ? found->second : nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x271D00.
-const std::array<std::string_view, 5>&
+const std::array<const char*, 5>&
 FmodAudioStreamResource::supported_extensions() {
-    static constexpr std::array<std::string_view, 5> extensions = {
+    static const std::array<const char*, 5> extensions = {
         "mp3", "wav", "aac", "ogg", "m4a"};
     return extensions;
 }
 
-std::string_view FmodAudioStreamResource::category_name() {
+const char* FmodAudioStreamResource::category_name() {
     return "Streaming Audio";
 }
 

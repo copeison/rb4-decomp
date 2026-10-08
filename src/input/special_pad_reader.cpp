@@ -6,6 +6,13 @@
 #include <cstring>
 
 namespace rb4 {
+
+void pad_reader_open_special(
+    SpecialPadReaderState& reader,
+    std::int32_t user_id);
+void input_state_lock();
+void input_state_unlock();
+
 namespace {
 
 constexpr std::int32_t kSpecialPadPortType = 2;
@@ -69,10 +76,6 @@ int scePadSetFeatureReport(
 int scePadClose(std::int32_t handle);
 int usleep(std::uint32_t microseconds);
 }
-
-void pad_reader_open_special(SpecialPadReaderState& reader, std::int32_t user_id);
-void input_state_lock();
-void input_state_unlock();
 
 class InputStateGuard {
 public:

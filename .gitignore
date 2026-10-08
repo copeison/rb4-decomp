@@ -17,6 +17,9 @@
 /PS4_SDK/
 /tools/ps4-sdk/
 
+# Local build products
+/build/
+
 # Python caches
 __pycache__/
 *.py[cod]

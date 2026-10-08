@@ -176,11 +176,10 @@ const std::string& FmodBankResource::resolved_path() const {
 
 // Reconstructed from eboot.elf at 0x274710.
 std::string FmodBankResource::resolve_platform_path(std::string path) {
-    for (const auto desktop : {std::string_view("desktop"),
-                               std::string_view("Desktop")}) {
+    for (const auto* desktop : {"desktop", "Desktop"}) {
         const auto position = path.find(desktop);
         if (position != std::string::npos) {
-            path.replace(position, desktop.size(), "PS4");
+            path.replace(position, 7, "PS4");
             break;
         }
     }
@@ -189,29 +188,29 @@ std::string FmodBankResource::resolve_platform_path(std::string path) {
 
 // Reconstructed from eboot.elf at 0x274C40.
 std::string FmodBankResource::strings_bank_path(
-    std::string_view master_bank_path) {
+    const std::string& master_bank_path) {
     const auto extension = master_bank_path.rfind('.');
-    const auto base = extension == std::string_view::npos
+    const auto base = extension == std::string::npos
         ? master_bank_path
         : master_bank_path.substr(0, extension);
-    return std::string(base) + ".strings.bank";
+    return base + ".strings.bank";
 }
 
 // Reconstructed from eboot.elf at 0x274CF0.
 std::string FmodBankResource::master_bank_path(
-    std::string_view strings_bank_path) {
+    const std::string& strings_bank_path) {
     const auto suffix = strings_bank_path.rfind(".strings.bank");
-    if (suffix == std::string_view::npos) {
-        return std::string(strings_bank_path);
+    if (suffix == std::string::npos) {
+        return strings_bank_path;
     }
-    return std::string(strings_bank_path.substr(0, suffix)) + ".bank";
+    return strings_bank_path.substr(0, suffix) + ".bank";
 }
 
-std::string_view FmodBankResource::category_name() {
+const char* FmodBankResource::category_name() {
     return "FMod Banks";
 }
 
-std::string_view FmodBankResource::supported_extension() {
+const char* FmodBankResource::supported_extension() {
     return "bank";
 }
 

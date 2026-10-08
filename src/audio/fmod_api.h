@@ -126,7 +126,7 @@ struct FMOD_STUDIO_SOUND_INFO {
     const char* name_or_data;
     FMOD_MODE mode;
     std::uint32_t padding;
-    std::byte create_sound_info[232];
+    std::uint8_t create_sound_info[232];
     std::int32_t subsound_index;
 };
 

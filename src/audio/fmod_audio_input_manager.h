@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "fmod_api.h"
@@ -16,7 +15,7 @@ public:
     bool bind_record_driver(
         FMOD::System& system,
         std::int32_t driver,
-        std::string_view expected_name);
+        const std::string& expected_name);
     bool refresh_record_driver(FMOD::System& system);
     void disconnect();
 
@@ -52,7 +51,7 @@ public:
     void initialize_device_slots(std::int32_t count);
     bool refresh_record_devices();
 
-    static bool is_general_record_driver(std::string_view name);
+    static bool is_general_record_driver(const std::string& name);
 
 private:
     struct BusRoute {
@@ -62,7 +61,7 @@ private:
     };
 
     bool bind_buses();
-    bool has_active_device(std::string_view name) const;
+    bool has_active_device(const std::string& name) const;
     FmodAudioInputDevice* first_available_device();
 
     FMOD::Studio::System& studio_system_;

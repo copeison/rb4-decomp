@@ -17,8 +17,8 @@ constexpr std::uint32_t kGenerationMask = 0x00003FFF;
 constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
 constexpr std::int32_t kDialogFormat = 4;
-constexpr std::string_view kEventPrefix = "event:/";
-constexpr std::string_view kSnapshotPrefix = "snapshot:/";
+constexpr char kEventPrefix[] = "event:/";
+constexpr char kSnapshotPrefix[] = "snapshot:/";
 
 float decibels_to_linear(float decibels) {
     return std::pow(10.0F, decibels * 0.05F);
@@ -27,15 +27,15 @@ float decibels_to_linear(float decibels) {
 }  // namespace
 
 // Reconstructed from the path handling at eboot.elf 0x270B20.
-std::string fmod_studio_event_path(std::string_view path) {
-    const auto has_prefix = [&path](std::string_view prefix) {
-        return path.size() >= prefix.size() &&
-            path.substr(0, prefix.size()) == prefix;
+std::string fmod_studio_event_path(const std::string& path) {
+    const auto has_prefix = [&path](const char* prefix) {
+        return path.compare(0, std::char_traits<char>::length(prefix), prefix) ==
+            0;
     };
     if (has_prefix(kEventPrefix) || has_prefix(kSnapshotPrefix)) {
-        return std::string(path);
+        return path;
     }
-    return std::string(kEventPrefix) + std::string(path);
+    return std::string(kEventPrefix) + path;
 }
 
 void FmodStudioSoundGenerator::initialize_pool_slot(
@@ -358,8 +358,8 @@ bool FmodStudioSoundGenerator::advance_fade(
     }
 
     fade.elapsed_ms += elapsed_ms;
-    fade.progress = std::clamp(
-        fade.elapsed_ms / fade.duration_ms, 0.0F, 1.0F);
+    fade.progress = std::max(
+        0.0F, std::min(fade.elapsed_ms / fade.duration_ms, 1.0F));
     fade.current = fade.start +
         (fade.target - fade.start) * fade.progress;
     return fade.progress >= 1.0F;

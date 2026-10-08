@@ -11,18 +11,18 @@ constexpr std::uint32_t kGenerationMask = 0x00003FFF;
 constexpr std::uint32_t kPoolIndexMask = 0x00FFC000;
 constexpr std::uint32_t kPoolIndexShift = 14;
 constexpr std::int32_t kDialogFormat = 4;
-constexpr std::string_view kEventPrefix = "event:/";
+constexpr char kEventPrefix[] = "event:/";
+constexpr std::size_t kEventPrefixLength = sizeof(kEventPrefix) - 1;
 constexpr FMOD_MODE kProgrammerSoundMode = 0x00014200;
 
 }  // namespace
 
 // Reconstructed from the path handling at eboot.elf 0x26EC60.
-std::string fmod_dialog_event_path(std::string_view path) {
-    if (path.size() >= kEventPrefix.size() &&
-        path.substr(0, kEventPrefix.size()) == kEventPrefix) {
-        return std::string(path);
+std::string fmod_dialog_event_path(const std::string& path) {
+    if (path.compare(0, kEventPrefixLength, kEventPrefix) == 0) {
+        return path;
     }
-    return std::string(kEventPrefix) + std::string(path);
+    return std::string(kEventPrefix) + path;
 }
 
 void FmodDialogGenerator::initialize_pool_slot(

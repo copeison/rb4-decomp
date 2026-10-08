@@ -3,7 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <string>
-#include <string_view>
 
 #include "fmod_audio_system.h"
 
@@ -33,9 +32,9 @@ public:
     bool decode_failed() const;
     void mark_decode_failed();
 
-    static FmodAudioStreamResource* find(std::string_view resolved_path);
-    static const std::array<std::string_view, 5>& supported_extensions();
-    static std::string_view category_name();
+    static FmodAudioStreamResource* find(const std::string& resolved_path);
+    static const std::array<const char*, 5>& supported_extensions();
+    static const char* category_name();
 
 private:
     void register_resource();

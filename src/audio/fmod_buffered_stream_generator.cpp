@@ -64,8 +64,9 @@ FmodBufferedStereoSample fmod_buffered_stream_interpolate_pcm16_stereo(
         return {};
     }
 
-    const auto clamped_position = std::clamp(
-        frame_position, 0.0F, static_cast<float>(frame_count - 1));
+    const auto clamped_position = std::max(
+        0.0F,
+        std::min(frame_position, static_cast<float>(frame_count - 1)));
     const auto current_frame =
         static_cast<std::size_t>(std::floor(clamped_position));
     const auto next_frame = std::min(current_frame + 1, frame_count - 1);

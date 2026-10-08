@@ -89,9 +89,13 @@ tracked. Those installed files provide headers and stubs for import recovery;
 they do not include the compiler toolchain used for the game's 5.000 SDK
 generation.
 
-A complete later Orbis toolchain, such as SDK 6.000, can provide compilation,
-linking, ABI validation, and structural comparison. Exact code generation is
-not expected to match the unavailable original toolchain.
+A complete later Orbis toolchain can provide compilation, linking, ABI
+validation, and structural comparison. Exact code generation is not expected
+to match the unavailable original toolchain.
+
+The current build uses the installed SDK 5.500 toolchain. See
+[docs/ps4-build.md](docs/ps4-build.md) for the build command and generated
+comparison artifacts.
 
 ## Repository policy
 

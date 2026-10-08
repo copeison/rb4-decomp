@@ -39,7 +39,7 @@ private:
     FmodAudioStreamResource* resource_ = nullptr;
     FmodPcmDecodeConsumer* consumer_ = nullptr;
     FMOD::Sound* sound_ = nullptr;
-    std::vector<std::byte> buffer_;
+    std::vector<std::uint8_t> buffer_;
     std::atomic_bool cancel_requested_{false};
 };
 

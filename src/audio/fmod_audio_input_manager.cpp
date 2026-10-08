@@ -8,7 +8,9 @@ namespace rb4 {
 namespace {
 
 constexpr std::size_t kRecordDriverNameCapacity = 256;
-constexpr std::string_view kGeneralDriverSuffix = "GENERAL";
+constexpr char kGeneralDriverSuffix[] = "GENERAL";
+constexpr std::size_t kGeneralDriverSuffixLength =
+    sizeof(kGeneralDriverSuffix) - 1;
 
 struct RecordDriverInfo {
     std::array<char, kRecordDriverNameCapacity> name{};
@@ -44,10 +46,10 @@ FmodAudioInputDevice::FmodAudioInputDevice(std::int32_t slot)
 bool FmodAudioInputDevice::bind_record_driver(
     FMOD::System& system,
     std::int32_t driver,
-    std::string_view expected_name) {
+    const std::string& expected_name) {
     RecordDriverInfo info;
     if (!query_record_driver(system, driver, info) ||
-        std::string_view(info.name.data()) != expected_name) {
+        info.name.data() != expected_name) {
         return false;
     }
 
@@ -72,7 +74,7 @@ bool FmodAudioInputDevice::refresh_record_driver(FMOD::System& system) {
     for (std::int32_t driver = 0; driver < driver_count; ++driver) {
         RecordDriverInfo info;
         if (!query_record_driver(system, driver, info) ||
-            std::string_view(info.name.data()) != name_) {
+            info.name.data() != name_) {
             continue;
         }
         if ((info.state & FMOD_DRIVER_STATE_CONNECTED) != 0) {
@@ -254,13 +256,15 @@ bool FmodAudioInputManager::refresh_record_devices() {
 
 // Reconstructed from eboot.elf at 0x275910.
 bool FmodAudioInputManager::is_general_record_driver(
-    std::string_view name) {
-    return name.size() >= kGeneralDriverSuffix.size() &&
-        name.substr(name.size() - kGeneralDriverSuffix.size()) ==
-            kGeneralDriverSuffix;
+    const std::string& name) {
+    return name.size() >= kGeneralDriverSuffixLength &&
+        name.compare(
+            name.size() - kGeneralDriverSuffixLength,
+            kGeneralDriverSuffixLength,
+            kGeneralDriverSuffix) == 0;
 }
 
-bool FmodAudioInputManager::has_active_device(std::string_view name) const {
+bool FmodAudioInputManager::has_active_device(const std::string& name) const {
     return std::any_of(
         devices_.begin(), devices_.end(), [name](const auto& device) {
             return device.is_active() && device.name() == name;
