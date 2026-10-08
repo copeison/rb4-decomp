@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "render/core/frame/render_frame_owner.h"
@@ -18,6 +19,7 @@ struct RenderSettings {
     RenderExtent content_resolution{1920, 1080};
     RenderExtent pc_window_resolution{1280, 720};
     bool pc_fullscreen = false;
+    std::uint8_t reserved_17[3]{};
     std::int32_t vsync_mode = 0;
 
     bool use_lod = true;
@@ -25,12 +27,24 @@ struct RenderSettings {
     bool use_64_bit_light_accum = false;
     bool use_40_bit_depth_stencil = true;
     bool use_tiled_lighting = false;
+    std::uint8_t reserved_29[3]{};
 
-    std::int32_t max_partial_framerate_scenes = 0;
-    std::int32_t max_shadow_contrib_buffers = 0;
+    // These defaults are exact, but their engine-facing meanings have not
+    // yet been recovered from consumers of the settings block.
+    std::int64_t unknown_32[4]{32, 8, 16, 256};
+    std::int64_t unknown_64 = 256;
+    std::int64_t unknown_72[2]{32, 16};
+    std::int64_t unknown_88 = 128;
+    bool unknown_96 = true;
+    std::uint8_t reserved_97[7]{};
+
+    std::int64_t max_partial_framerate_scenes = 0;
+    std::int64_t max_shadow_contrib_buffers = 0;
+    std::int64_t unknown_120[2]{16, 16};
 
     RenderExtent output_resolution{1920, 1080};
     bool resolution_overridden = false;
+    std::uint8_t reserved_145[3]{};
     RenderQualityLevel quality_level = RenderQualityLevel::kMedium;
     bool vsync_enabled = true;
 
@@ -39,6 +53,7 @@ struct RenderSettings {
     bool postproc_enabled = true;
     bool tonemapping_enabled = true;
     bool volumetric_scattering_enabled = true;
+    std::uint8_t reserved_158[2]{};
 
     std::int64_t first_drawn_scene = -1;
     std::int64_t last_drawn_scene = -1;
@@ -48,11 +63,13 @@ struct RenderSettings {
     bool tiled_light_interpolation_enabled = true;
     bool partial_framerate_enabled = false;
     bool stereo_optimizations_enabled = true;
+    std::uint8_t reserved_182[2]{};
     ScreenshotResolution screenshot_resolution = ScreenshotResolution::kCurrent;
+    std::uint8_t reserved_188[4]{};
 
-    std::int32_t max_geo_overdraw = 10;
-    std::int32_t max_lighting_overdraw = 20;
-    std::int32_t max_light_probe_overdraw = 10;
+    std::int64_t max_geo_overdraw = 10;
+    std::int64_t max_lighting_overdraw = 20;
+    std::int64_t max_light_probe_overdraw = 10;
 
     bool graphics_api_validation_enabled = false;
     bool break_on_graphics_warning = false;
@@ -63,7 +80,23 @@ struct RenderSettings {
     bool print_verbose_shader_compilation = false;
     bool output_shader_intermediates = false;
     bool generate_shader_debug_info = false;
+    std::uint8_t reserved_225[7]{};
 };
+
+static_assert(offsetof(RenderSettings, vsync_mode) == 20);
+static_assert(offsetof(RenderSettings, unknown_32) == 32);
+static_assert(offsetof(RenderSettings, max_partial_framerate_scenes) == 104);
+static_assert(offsetof(RenderSettings, max_shadow_contrib_buffers) == 112);
+static_assert(offsetof(RenderSettings, output_resolution) == 136);
+static_assert(offsetof(RenderSettings, quality_level) == 148);
+static_assert(offsetof(RenderSettings, vsync_enabled) == 152);
+static_assert(offsetof(RenderSettings, first_drawn_scene) == 160);
+static_assert(offsetof(RenderSettings, multithreaded_rendering_enabled) == 176);
+static_assert(offsetof(RenderSettings, screenshot_resolution) == 184);
+static_assert(offsetof(RenderSettings, max_geo_overdraw) == 192);
+static_assert(offsetof(RenderSettings, graphics_api_validation_enabled) == 216);
+static_assert(offsetof(RenderSettings, generate_shader_debug_info) == 224);
+static_assert(sizeof(RenderSettings) == 232);
 
 void render_settings_initialize(RenderSettings& settings);
 std::int32_t render_settings_active_vsync_mode(

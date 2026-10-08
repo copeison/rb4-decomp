@@ -1,7 +1,6 @@
 #include "render/core/settings/render_settings.h"
 
 #include <cctype>
-#include <cstddef>
 #include <cstdlib>
 
 #include "render/core/settings/render_settings_adapters.h"
@@ -9,17 +8,6 @@
 namespace rb4 {
 
 namespace {
-
-struct RenderSettingsVsyncPrefix {
-    std::uint8_t reserved_0[20];
-    std::int32_t configured_mode;
-    std::uint8_t reserved_24[128];
-    bool enabled;
-};
-
-static_assert(
-    offsetof(RenderSettingsVsyncPrefix, configured_mode) == 20);
-static_assert(offsetof(RenderSettingsVsyncPrefix, enabled) == 152);
 
 bool equals_ignore_ascii_case(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
@@ -30,6 +18,15 @@ bool equals_ignore_ascii_case(const char* left, const char* right) {
         }
     }
     return *left == *right;
+}
+
+void read_sign_extended_int32(
+    const DataConfig& config,
+    const char* key,
+    std::int64_t& destination) {
+    auto value = static_cast<std::int32_t>(destination);
+    config_read_int32(config, key, value);
+    destination = value;
 }
 
 void read_validation_settings(
@@ -89,11 +86,11 @@ void read_render_config(RenderSettings& settings, const DataConfig& config) {
     config_read_bool(
         config, "use_40_bit_depth_stencil", settings.use_40_bit_depth_stencil);
     config_read_bool(config, "use_tiled_lighting", settings.use_tiled_lighting);
-    config_read_int32(
+    read_sign_extended_int32(
         config,
         "max_partial_framerate_scenes",
         settings.max_partial_framerate_scenes);
-    config_read_int32(
+    read_sign_extended_int32(
         config,
         "max_shadow_contrib_buffers",
         settings.max_shadow_contrib_buffers);
@@ -109,10 +106,11 @@ void read_render_config(RenderSettings& settings, const DataConfig& config) {
         settings.multithreaded_rendering_enabled);
     config_read_bool(
         config, "async_compute_enabled", settings.async_compute_enabled);
-    config_read_int32(config, "max_geo_overdraw", settings.max_geo_overdraw);
-    config_read_int32(
+    read_sign_extended_int32(
+        config, "max_geo_overdraw", settings.max_geo_overdraw);
+    read_sign_extended_int32(
         config, "max_lighting_overdraw", settings.max_lighting_overdraw);
-    config_read_int32(
+    read_sign_extended_int32(
         config,
         "max_light_probe_overdraw",
         settings.max_light_probe_overdraw);
@@ -139,9 +137,7 @@ void apply_platform_limits(RenderSettings& settings) {
 
 std::int32_t render_settings_active_vsync_mode(
     const RenderSettings& settings) {
-    const auto* runtime =
-        reinterpret_cast<const RenderSettingsVsyncPrefix*>(&settings);
-    return runtime->enabled ? runtime->configured_mode : 0;
+    return settings.vsync_enabled ? settings.vsync_mode : 0;
 }
 
 // Reconstructed from eboot.elf at 0x441940.

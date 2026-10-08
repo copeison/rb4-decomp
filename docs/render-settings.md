@@ -1,6 +1,6 @@
 # Renderer settings
 
-`render_settings_initialize` at `0x6BB470` constructs the packed renderer
+`render_settings_initialize` at `0x6BB470` constructs the 232-byte renderer
 configuration block, reads the `rnd` data section, applies platform capability
 rules, and processes the command-line `resolution` override.
 
@@ -33,10 +33,16 @@ async compute and tiled lighting off.
 
 The numeric `vsync_mode` loaded from configuration is separate from the
 runtime `vsync_enabled` flag. `toggle_vsync` at `0x6BA880` flips the latter;
-its default is true. The submit worker reads the packed runtime fields at
-offsets `0x14` and `0x98` respectively; the cleaned settings structure remains
-a logical source model, so exact runtime access goes through a checked prefix
-view rather than relying on its C++ member offsets.
+its default is true. The exact structure places those fields at `0x14` and
+`0x98`, matching the submit worker directly.
+
+Five values look like 32-bit settings at the config boundary but occupy signed
+64-bit slots in memory. These are the two scene/buffer limits at `0x68` and
+`0x70`, followed by the geometry, lighting, and light-probe overdraw limits at
+`0xC0`, `0xC8`, and `0xD0`. The original reads a 32-bit value and sign-extends
+it into each slot. Unknown default fields between `0x20` and `0x87` remain
+explicitly named by offset until their consumers establish their meanings;
+their exact defaults and all padding are preserved.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the
