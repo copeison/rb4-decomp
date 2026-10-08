@@ -3,7 +3,6 @@
 #include <cstddef>
 
 #include "core/memory/engine_memory.h"
-#include "render/core/targets/render_target_adapters.h"
 #include "render/core/targets/render_target_resources.h"
 #include "render/core/targets/render_target_resources_lifecycle.h"
 
@@ -14,11 +13,20 @@ namespace {
 constexpr std::size_t kRenderTargetStateSize = 1552;
 
 struct RenderTargetDispatch {
-    void* reserved_destruct;
+    void (*destruct)(RenderTarget& target);
     void (*release_dynamic)(RenderTarget& target);
 };
 
 static_assert(offsetof(RenderTargetDispatch, release_dynamic) == 8);
+
+RenderTargetDispatch kBaseTargetDispatch{
+    render_target_destruct,
+    render_target_delete,
+};
+
+void set_base_dispatch(RenderTarget& target) {
+    target.implementation = &kBaseTargetDispatch;
+}
 
 const RenderTargetDispatch& dispatch(const RenderTarget& target) {
     return *static_cast<const RenderTargetDispatch*>(target.implementation);
@@ -66,7 +74,7 @@ void render_target_construct(
     RenderTarget& target,
     std::uint32_t state_flags,
     bool create_state) {
-    render_target_set_base_dispatch(target);
+    set_base_dispatch(target);
     target.attachment_index = -1;
     target.owns_state = create_state;
     target.owned_state = nullptr;
@@ -83,7 +91,7 @@ void render_target_construct(
 
 // Reconstructed from eboot.elf at 0x11B2D40.
 void render_target_destruct(RenderTarget& target) {
-    render_target_set_base_dispatch(target);
+    set_base_dispatch(target);
     if (target.owns_state) {
         if (target.owned_state != nullptr) {
             delete_target_state(*target.owned_state);
@@ -96,7 +104,7 @@ void render_target_destruct(RenderTarget& target) {
 // Reconstructed from eboot.elf at 0x11B2D90.
 void render_target_delete(RenderTarget& target) {
     render_target_destruct(target);
-    render_delete_target_storage(target);
+    render_release(&target);
 }
 
 void render_target_release_dynamic(RenderTarget& target) {
