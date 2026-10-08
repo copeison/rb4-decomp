@@ -3,7 +3,7 @@
 namespace rb4 {
 
 struct RenderFactory {
-    void* vtable;
+    const void* vtable;
 };
 
 static_assert(sizeof(RenderFactory) == 8);

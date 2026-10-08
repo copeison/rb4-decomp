@@ -24,8 +24,9 @@ Runtime shutdown remains a separate phase. `render_system_shutdown` closes the
 active backend and owned GPU resources before the virtual deleting destructor
 reaches this object destructor.
 
-The Orbis factory vtable contains destructors followed by creation methods for
-fences, meshes, all seven texture shapes, constant and compute buffers,
-shaders, particle buffers, and occlusion queries. Startup allocates the exact
-eight-byte factory object, installs that vtable, and publishes it through the
-typed common renderer field.
+The source-owned Orbis factory vtable contains destructors followed by creation
+methods for fences, meshes, all seven texture shapes, constant and compute
+buffers, shaders, particle buffers, and occlusion queries. Startup allocates
+the exact eight-byte factory object, installs that 16-entry table, and
+publishes it through the typed common renderer field. Each entry forwards to
+the reconstructed concrete factory for that resource type.
