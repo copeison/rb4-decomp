@@ -43,3 +43,7 @@ resources, clears material and lighting references and both light-ID lists,
 releases all 49 texture resources, and finally releases the two compute
 buffers. The cleaned source also clears the camera pointer with the other
 borrowed scene components.
+
+The complete block is 568 bytes and begins at render-system offset `0x7B8`.
+The common frame and shutdown paths now use that typed block directly for
+polling and release.

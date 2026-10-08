@@ -10,6 +10,8 @@
 
 namespace rb4 {
 
+struct RenderSystem;
+
 struct DefaultRenderResources {
     RndSceneResource* scene_resource = nullptr;
     DefaultTextureSet textures;
@@ -18,6 +20,11 @@ struct DefaultRenderResources {
     DefaultMaterialSet materials;
     DefaultLightingState lighting;
 };
+
+static_assert(sizeof(DefaultRenderResources) == 568);
+
+DefaultRenderResources& render_system_default_resources(
+    RenderSystem& system);
 
 void render_initialize_default_resources(
     DefaultRenderResources& resources,

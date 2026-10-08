@@ -1,6 +1,7 @@
 #include "render/resources/system/default_render_resources.h"
 
 #include "render/core/buffers/render_compute_buffer_adapters.h"
+#include "render/core/system/render_system.h"
 #include "render/core/textures/render_texture_adapters.h"
 
 namespace rb4 {
@@ -8,6 +9,7 @@ namespace rb4 {
 namespace {
 
 constexpr const char* kDefaultComputeBufferName = "Default Compute Buffer";
+constexpr std::size_t kDefaultRenderResourcesOffset = 1976;
 
 void replace_scene_resource(
     RndSceneResource*& destination,
@@ -37,6 +39,13 @@ void release_texture_family(DefaultTextureFamily& family) {
 }
 
 }  // namespace
+
+DefaultRenderResources& render_system_default_resources(
+    RenderSystem& system) {
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
+    return *reinterpret_cast<DefaultRenderResources*>(
+        bytes + kDefaultRenderResourcesOffset);
+}
 
 // Reconstructed from eboot.elf at 0x6BDCA0.
 void render_initialize_default_resources(

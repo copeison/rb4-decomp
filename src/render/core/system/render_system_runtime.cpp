@@ -5,6 +5,7 @@
 #include "render/core/context/render_context.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
+#include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
 
@@ -43,7 +44,8 @@ void render_system_initialize_builtin_buffers(RenderSystem& system) {
 void render_system_shutdown(RenderSystem& system) {
     render_system_begin_shutdown(system);
     render_system_flush_deferred_releases(system);
-    render_system_release_default_resources(system);
+    render_release_default_resources(
+        render_system_default_resources(system));
     render_system_backend_resources_shutdown(system);
     render_system_release_builtin_buffers(system);
 

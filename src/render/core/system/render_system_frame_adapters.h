@@ -16,6 +16,5 @@ void render_system_end_gpu_frame_tracking(
 void render_system_finalize_primary_context(
     RenderSystem& system,
     RenderContext& context);
-void render_system_poll_default_resources(RenderSystem& system);
 
 }  // namespace rb4

@@ -15,6 +15,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
+#include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
 
@@ -199,7 +200,8 @@ void render_system_finish_frame(
     render_system_release_frame_lock(system);
 
     if (!auxiliary_frame) {
-        render_system_poll_default_resources(system);
+        render_poll_default_resources(
+            render_system_default_resources(system));
     }
 }
 

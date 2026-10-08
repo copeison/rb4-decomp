@@ -72,6 +72,11 @@ exit functions at `0x3DE8F0`/`0x3DE9E0` also own their exact optional
 single-target-state behavior. Construction of primary GPU submission records
 remains isolated behind one adapter.
 
+The default-resource block is the exact 568-byte range at render-system offset
+`0x7B8` (`1976`) through `0x9EF`. Frame finish polls this typed block directly,
+and shutdown releases it directly, removing the previous system-level wrapper
+for both operations.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.
