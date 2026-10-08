@@ -8,6 +8,7 @@
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "render/core/system/render_system_frame_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
@@ -164,6 +165,16 @@ void orbis_create_render_context(OrbisRenderSystem& system) {
     static_cast<void>(orbis_render_context_create(system));
 }
 
+void orbis_wait_for_submit_thread(OrbisRenderSystem& system) {
+    orbis_lock_submission(system);
+    orbis_submit_scope_begin(system);
+    while (!orbis_submit_token_available(system)) {
+        orbis_wait_for_submit_token(system);
+    }
+    orbis_submit_scope_end(system);
+    orbis_unlock_submission(system);
+}
+
 // Reconstructed from eboot.elf at 0x8D77E0.
 void orbis_submit_done_thread_entry(OrbisRenderSystem& system) {
     orbis_submit_done_thread_run(system);
@@ -171,6 +182,20 @@ void orbis_submit_done_thread_entry(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D7340.
 void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
+    auto& base = orbis_render_system_base(system);
+    render_system_lock(base);
+    render_system_enter_locked_call(base);
+    if (orbis_frame_is_active(system)) {
+        orbis_flush_active_frame(system);
+    }
+    render_system_leave_locked_call(base);
+    render_system_unlock(base);
+
+    orbis_lock_submission(system);
+    orbis_publish_submit_token(system);
+    orbis_unlock_submission(system);
+    orbis_signal_submit_condition(system);
+
     std::array<OrbisSubmitEvent, 4> events{};
     while (orbis_submit_thread_running(system)) {
         std::size_t event_count = 0;

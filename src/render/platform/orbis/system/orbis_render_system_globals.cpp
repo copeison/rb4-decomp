@@ -222,9 +222,19 @@ bool orbis_submit_token_available(const OrbisRenderSystem& system) {
     return runtime->submit_token != 0;
 }
 
+void orbis_publish_submit_token(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->submit_token = 1;
+}
+
 void orbis_consume_submit_token(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->submit_token = 0;
+}
+
+void orbis_signal_submit_condition(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    scePthreadCondSignal(&runtime->submit_condition);
 }
 
 bool orbis_submit_thread_running(const OrbisRenderSystem& system) {

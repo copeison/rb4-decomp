@@ -8,8 +8,6 @@ namespace rb4 {
 struct OrbisRenderContext;
 struct OrbisRenderSystem;
 
-void orbis_flush_active_frame(OrbisRenderSystem& system);
-
 void orbis_release_retired_allocation(
     OrbisRenderSystem& system,
     std::size_t index);
