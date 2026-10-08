@@ -10,9 +10,13 @@ enum class RenderTextureUsage : std::int32_t {
     kDepth = 2,
 };
 
+struct RenderTextureCreationState {
+    std::uint32_t values[11];
+};
+
 struct RenderTextureDescriptorState {
     std::int32_t descriptor_type;
-    std::uint32_t creation_values[11];
+    RenderTextureCreationState creation_state;
     RenderTextureUsage usage_type;
     std::uint8_t resolved_state[28];
     std::uint32_t address_mode;
@@ -111,8 +115,9 @@ struct RenderTextureMipChainArray {
 };
 
 static_assert(sizeof(RenderTexture) == 168);
+static_assert(sizeof(RenderTextureCreationState) == 44);
 static_assert(sizeof(RenderTextureDescriptorState) == 144);
-static_assert(offsetof(RenderTextureDescriptorState, creation_values) == 4);
+static_assert(offsetof(RenderTextureDescriptorState, creation_state) == 4);
 static_assert(offsetof(RenderTextureDescriptorState, usage_type) == 48);
 static_assert(offsetof(RenderTextureDescriptorState, flags) == 88);
 static_assert(offsetof(RenderTextureDescriptorState, data_format) == 92);

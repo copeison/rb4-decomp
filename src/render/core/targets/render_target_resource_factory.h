@@ -4,18 +4,11 @@
 #include <cstdint>
 
 #include "render/core/frame/render_frame_owner.h"
+#include "render/core/textures/render_texture.h"
 
 namespace rb4 {
 
 struct RenderTargetResources;
-struct RenderTexture;
-
-struct RenderTextureCreationState {
-    std::uint32_t values[11];
-};
-
-static_assert(sizeof(RenderTextureCreationState) == 44);
-
 RenderTexture* render_target_resources_create_texture_2d(
     RenderTargetResources& resources,
     const char* name,

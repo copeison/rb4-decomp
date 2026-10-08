@@ -1,7 +1,5 @@
 #include "render/core/targets/render_target_resource_factory.h"
 
-#include <cstring>
-
 #include "core/memory/engine_memory.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
@@ -24,10 +22,7 @@ void initialize_texture_descriptor(
     std::uint32_t target_flags) {
     state = {};
     state.descriptor_type = descriptor_type;
-    std::memcpy(
-        state.creation_values,
-        creation_state.values,
-        sizeof(creation_state.values));
+    state.creation_state = creation_state;
     state.data_format = -1;
     state.target_flags = target_flags;
     state.attachment_index = attachment_index;
@@ -51,7 +46,7 @@ void resolve_descriptor(
     render_texture_resolve_descriptor_fields(
         &state.usage_type,
         descriptor_type,
-        state.creation_values,
+        state.creation_state.values,
         -1);
 }
 

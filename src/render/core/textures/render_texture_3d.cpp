@@ -73,7 +73,7 @@ RenderTexture3D* render_create_texture_3d(
     render_texture_resolve_descriptor_fields(
         &descriptor.texture_state.usage_type,
         2,
-        descriptor.texture_state.creation_values,
+        descriptor.texture_state.creation_state.values,
         -1);
     auto& factory = *render_system_factory(*render_system_instance());
     auto* texture = render_factory_create_texture_3d(factory, descriptor);

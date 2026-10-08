@@ -260,6 +260,8 @@
   2D, and 3D texture descriptor layouts to 224 bytes.
 - [x] Recover the exact typed 144-byte common texture-descriptor state and use
   it across every reconstructed texture family.
+- [x] Centralize the verified 44-byte texture creation state within the common
+  descriptor model.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
