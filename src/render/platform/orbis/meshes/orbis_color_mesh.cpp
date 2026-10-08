@@ -71,7 +71,7 @@ ColorMeshVertex* orbis_color_mesh_copy_vertices(const OrbisMesh& mesh) {
 
 // Reconstructed from eboot.elf at 0x8DA430.
 void orbis_color_mesh_finalize_backend(OrbisMesh& mesh) {
-    mesh_layout<ColorMeshVertex>(mesh).vertex_count =
+    mesh_layout<ColorMeshVertex>(mesh).base.vertex_count =
         orbis_color_mesh_vertex_count(mesh);
     orbis_color_mesh_rebuild_vertex_buffers(mesh);
     orbis_color_mesh_rebuild_index_buffer(mesh);
@@ -87,7 +87,7 @@ void orbis_color_mesh_update_backend(
 
     auto& layout = mesh_layout<ColorMeshVertex>(mesh);
     const auto vertex_count = orbis_color_mesh_vertex_count(mesh);
-    layout.vertex_count = vertex_count;
+    layout.base.vertex_count = vertex_count;
     layout.active_vertex_buffer ^= 1;
 
     const auto byte_count = sizeof(ColorMeshVertex) * vertex_count;

@@ -7,8 +7,9 @@ files. This includes `src/game`, `src/input`, `src/ui`, and future subsystems as
 they grow, not only rendering, audio, or platform code.
 
 - Put platform-neutral renderer code under a matching domain in
-  `src/render/core`: `buffers`, `capture`, `debug`, `frame`, `platform`,
-  `settings`, `shaders`, `synchronization`, `system`, `targets`, or `textures`.
+  `src/render/core`: `buffers`, `capture`, `debug`, `frame`, `meshes`,
+  `platform`, `settings`, `shaders`, `synchronization`, `system`, `targets`,
+  or `textures`.
 - Group default renderer resources by responsibility under
   `src/render/resources`, such as `camera`, `lighting`, `materials`, `system`,
   and `textures`.

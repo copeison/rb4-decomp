@@ -5,6 +5,20 @@ system. Every supported format allocates a 472-byte mesh, invokes the common
 constructor at `0x5C2700`, installs the format-specific Orbis vtables, and
 zeros the shared backend state.
 
+The common mesh base is exactly 128 bytes. It owns an update-listener link, a
+vector of 12-byte triangle records, vertex and triangle counts, geometry and
+usage state, an all-ones metadata sentinel, a pending-update mask, the last
+frame that used the mesh, and its diagnostic name. The complete destructor at
+`0x5C27B0` releases the triangle vector and unregisters the update link; the
+deleting destructor is at `0x5C2870`. Secondary-base destructor entries at
+`0x5C2810` and `0x5C28D0` account for the update-link subobject at offset 8.
+
+The typed base lives in `src/render/core/meshes/render_mesh.cpp`. The Orbis
+layout now embeds it directly before the platform vertex arrays and GPU
+descriptors instead of representing the first 128 bytes as padding. Combined
+IDA evidence is preserved in `analysis/exports/render-mesh.asm` and
+`analysis/exports/render-mesh.c`.
+
 The format-name parser at `0x442930` fixes the enum values:
 
 | Value | Format | Factory result |

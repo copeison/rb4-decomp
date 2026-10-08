@@ -67,7 +67,7 @@ OrbisMesh* orbis_create_mesh(RenderMeshFormat format, const char* name) {
 
     auto* storage = render_allocate(kOrbisMeshSize);
     auto* mesh = reinterpret_cast<OrbisMesh*>(storage);
-    mesh_construct(*mesh, name);
+    render_mesh_construct(*mesh, name);
     orbis_mesh_set_format_backend_defaults(*mesh, format);
     return mesh;
 }

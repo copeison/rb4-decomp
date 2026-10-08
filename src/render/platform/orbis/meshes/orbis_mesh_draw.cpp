@@ -15,9 +15,9 @@ constexpr std::size_t kIndicesPerTriangle = 3;
 
 using MeshDrawLayout = OrbisMeshLayout<std::uint8_t>;
 
-static_assert(offsetof(MeshDrawLayout, triangle_count) == 64,
+static_assert(offsetof(RenderMesh, triangle_count) == 64,
               "unexpected mesh triangle-count offset");
-static_assert(offsetof(MeshDrawLayout, last_draw_frame) == 112,
+static_assert(offsetof(RenderMesh, last_used_frame) == 112,
               "unexpected mesh frame-stamp offset");
 static_assert(offsetof(MeshDrawLayout, vertex_descriptors) == 160,
               "unexpected mesh descriptor offset");
@@ -73,7 +73,7 @@ void draw_indexed(
     const MeshDrawRange& range) {
     const auto triangle_count = range.triangle_count ==
             MeshDrawRange::kAllTriangles
-        ? mesh.triangle_count
+        ? mesh.base.triangle_count
         : range.triangle_count;
     const auto index_count = static_cast<std::uint32_t>(
         kIndicesPerTriangle * triangle_count);
@@ -95,7 +95,7 @@ void draw_nonindexed(
     const MeshDrawLayout& mesh) {
     gnmx_prepare_draw(context);
     gnm_draw_command_buffer_draw_index_auto(
-        context, static_cast<std::uint32_t>(mesh.vertex_count));
+        context, static_cast<std::uint32_t>(mesh.base.vertex_count));
 }
 
 }  // namespace
@@ -120,7 +120,7 @@ void orbis_mesh_draw(
 
     gnmx_finish_draw(context);
     gnm_draw_command_buffer_set_num_instances(context, 1);
-    layout.last_draw_frame = render_frame_counter();
+    layout.base.last_used_frame = render_frame_counter();
 }
 
 }  // namespace rb4

@@ -75,7 +75,7 @@ SkinnedCompressedMeshVertex* orbis_skinned_compressed_mesh_copy_vertices(
 
 // Reconstructed from eboot.elf at 0x8E0660.
 void orbis_skinned_compressed_mesh_finalize_backend(OrbisMesh& mesh) {
-    mesh_layout<SkinnedCompressedMeshVertex>(mesh).vertex_count =
+    mesh_layout<SkinnedCompressedMeshVertex>(mesh).base.vertex_count =
         orbis_skinned_compressed_mesh_vertex_count(mesh);
     orbis_skinned_compressed_mesh_rebuild_vertex_buffers(mesh);
     orbis_skinned_compressed_mesh_rebuild_index_buffer(mesh);
@@ -91,7 +91,7 @@ void orbis_skinned_compressed_mesh_update_backend(
 
     auto& layout = mesh_layout<SkinnedCompressedMeshVertex>(mesh);
     const auto vertex_count = orbis_skinned_compressed_mesh_vertex_count(mesh);
-    layout.vertex_count = vertex_count;
+    layout.base.vertex_count = vertex_count;
     layout.active_vertex_buffer ^= 1;
 
     const auto byte_count = sizeof(SkinnedCompressedMeshVertex) * vertex_count;

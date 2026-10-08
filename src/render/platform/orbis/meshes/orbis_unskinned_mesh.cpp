@@ -75,7 +75,7 @@ UnskinnedMeshVertex* orbis_unskinned_mesh_copy_vertices(
 
 // Reconstructed from eboot.elf at 0x8DC970.
 void orbis_unskinned_mesh_finalize_backend(OrbisMesh& mesh) {
-    mesh_layout<UnskinnedMeshVertex>(mesh).vertex_count =
+    mesh_layout<UnskinnedMeshVertex>(mesh).base.vertex_count =
         orbis_unskinned_mesh_vertex_count(mesh);
     orbis_unskinned_mesh_rebuild_vertex_buffers(mesh);
     orbis_unskinned_mesh_rebuild_index_buffer(mesh);
@@ -91,7 +91,7 @@ void orbis_unskinned_mesh_update_backend(
 
     auto& layout = mesh_layout<UnskinnedMeshVertex>(mesh);
     const auto vertex_count = orbis_unskinned_mesh_vertex_count(mesh);
-    layout.vertex_count = vertex_count;
+    layout.base.vertex_count = vertex_count;
     layout.active_vertex_buffer ^= 1;
 
     const auto byte_count = sizeof(UnskinnedMeshVertex) * vertex_count;

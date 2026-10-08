@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "render/core/meshes/render_mesh.h"
+
 namespace rb4 {
 
 enum class RenderMeshFormat : std::uint32_t {
@@ -16,7 +18,9 @@ enum class RenderMeshFormat : std::uint32_t {
     kInvalid = 0xFFFFFFFF,
 };
 
-struct OrbisMesh;
+struct OrbisMesh : RenderMesh {};
+
+static_assert(sizeof(OrbisMesh) == 128);
 
 enum class MeshUpdateFlags : std::uint32_t {
     kVertices = 1,
