@@ -4,6 +4,10 @@
 configuration block, reads the `rnd` data section, applies platform capability
 rules, and processes the command-line `resolution` override.
 
+The render-system lifecycle now allocates this exact typed size through the
+renderer allocator and releases the same block directly. The settings pointer
+at render-system offset `0x128` is cleared immediately during destruction.
+
 The principal defaults recovered from its constant stores are:
 
 | Setting | Default |

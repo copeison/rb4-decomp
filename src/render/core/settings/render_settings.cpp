@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdlib>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings_adapters.h"
 
 namespace rb4 {
@@ -134,6 +135,16 @@ void apply_platform_limits(RenderSettings& settings) {
 }
 
 }  // namespace
+
+RenderSettings* render_settings_allocate() {
+    return static_cast<RenderSettings*>(render_allocate(sizeof(RenderSettings)));
+}
+
+void render_settings_release(RenderSettings* settings) {
+    if (settings != nullptr) {
+        render_release(settings);
+    }
+}
 
 std::int32_t render_settings_active_vsync_mode(
     const RenderSettings& settings) {

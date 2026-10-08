@@ -20,6 +20,10 @@ Construction proceeds in this order:
    in this build, so its precise source-level purpose remains open.
 8. Allocate the 232-byte renderer settings block and initialize it.
 
+Settings allocation and release now use the typed `RenderSettings` size
+directly through the renderer allocator. Only installation of the binary's
+base render-system vtable remains as a lifecycle adapter.
+
 The common 312-byte prefix construction is now source-owned. It installs the
 base vtable, creates the recursive frame mutex, applies the three true startup
 option defaults, initializes both dynamic pointer arrays, points the submitted

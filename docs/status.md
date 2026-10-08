@@ -37,7 +37,8 @@
 - [x] Recover renderer draw-mode and buffer debug-view tables and setters.
 - [x] Recover and name the 24-command renderer debug console registry.
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
-- [x] Recover the exact 232-byte renderer-settings layout and signed limit fields.
+- [x] Recover the exact 232-byte renderer-settings layout, allocation/release,
+  and signed limit fields.
 - [x] Identify renderer tile dimensions and light-capacity settings.
 - [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Reconstruct shared tiled-light compute-buffer teardown.

@@ -111,6 +111,8 @@ static_assert(offsetof(RenderSettings, graphics_api_validation_enabled) == 216);
 static_assert(offsetof(RenderSettings, generate_shader_debug_info) == 224);
 static_assert(sizeof(RenderSettings) == 232);
 
+RenderSettings* render_settings_allocate();
+void render_settings_release(RenderSettings* settings);
 void render_settings_initialize(RenderSettings& settings);
 std::int32_t render_settings_active_vsync_mode(
     const RenderSettings& settings);
