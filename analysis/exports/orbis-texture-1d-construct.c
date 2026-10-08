@@ -1,0 +1,9 @@
+// Constructs common 1D texture state and clears Orbis backend state.
+// Reconstructed from eboot.elf at 0x8E4F60.
+void orbis_texture_1d_construct(
+    OrbisTexture1D* texture,
+    const RenderTexture1DDescriptor* descriptor) {
+    texture_1d_construct(texture, descriptor);
+    texture->vtable = &orbis_texture_1d_vtable;
+    clear_orbis_texture_1d_backend_state(texture);
+}

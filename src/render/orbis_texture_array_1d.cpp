@@ -8,11 +8,11 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisTextureArray1DSize = 392;
+constexpr std::size_t kOrbisTextureArray1DSize = 360;
 
 }  // namespace
 
-// Reconstructed from eboot.elf at 0x8D8A70.
+// Reconstructed from eboot.elf at 0x8D8A40.
 OrbisTextureArray1D* orbis_create_texture_array_1d(
     const RenderTextureArray1DDescriptor& descriptor) {
     auto* storage = render_allocate(kOrbisTextureArray1DSize);
@@ -21,7 +21,7 @@ OrbisTextureArray1D* orbis_create_texture_array_1d(
     return texture;
 }
 
-// Reconstructed from eboot.elf at 0x8E5D40.
+// Reconstructed from eboot.elf at 0x8E5870.
 void orbis_texture_array_1d_construct(
     OrbisTextureArray1D& texture,
     const RenderTextureArray1DDescriptor& descriptor) {

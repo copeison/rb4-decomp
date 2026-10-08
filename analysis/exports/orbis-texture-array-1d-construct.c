@@ -1,5 +1,5 @@
 // Constructs common 1D texture-array state and clears Orbis backend state.
-// Reconstructed from eboot.elf at 0x8E5D40.
+// Reconstructed from eboot.elf at 0x8E5870.
 void orbis_texture_array_1d_construct(
     OrbisTextureArray1D* texture,
     const RenderTextureArray1DDescriptor* descriptor) {
