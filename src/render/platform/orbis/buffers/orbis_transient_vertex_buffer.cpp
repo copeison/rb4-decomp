@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
@@ -12,6 +13,21 @@ namespace {
 constexpr const char* kAllocationName = "TransientBuffer";
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x8EC7C0.
+void orbis_transient_vertex_buffer_construct(
+    OrbisTransientVertexBuffer& buffer) {
+    buffer.data = nullptr;
+    buffer.vertex_stride = 0;
+    buffer.vertex_capacity = 0;
+    buffer.vertex_count = 0;
+}
+
+// Reconstructed from eboot.elf at 0x8EC7D0.
+void orbis_transient_vertex_buffer_destruct(
+    OrbisTransientVertexBuffer& buffer) {
+    render_release(buffer.data);
+}
 
 // Reconstructed from eboot.elf at 0x8EC7E0.
 void orbis_transient_vertex_buffer_initialize(

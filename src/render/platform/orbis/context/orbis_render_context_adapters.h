@@ -19,10 +19,6 @@ void orbis_render_context_construct_compute_slot(
     std::size_t slot);
 void orbis_render_context_initialize_state_defaults(
     OrbisRenderContext& context);
-void orbis_transient_vertex_buffer_construct(
-    OrbisRenderContext& context,
-    std::size_t bank,
-    std::size_t format);
 void orbis_render_context_initialize_allocation_map(
     OrbisRenderContext& context);
 void orbis_render_context_initialize_gfx_slot(
@@ -53,10 +49,6 @@ void orbis_render_context_initialize_label_pool(
     std::size_t initial_capacity);
 void orbis_render_context_release_label_pool(OrbisRenderContext& context);
 void orbis_render_context_release_timestamp_pool(OrbisRenderContext& context);
-void orbis_transient_vertex_buffer_destruct(
-    OrbisRenderContext& context,
-    std::size_t bank,
-    std::size_t format);
 void orbis_render_context_destruct_compute_slot(
     OrbisRenderContext& context,
     std::size_t slot);

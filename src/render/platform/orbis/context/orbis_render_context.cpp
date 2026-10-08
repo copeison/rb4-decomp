@@ -74,7 +74,9 @@ void orbis_render_context_construct(OrbisRenderContext& context) {
         for (std::size_t format = 0;
              format < kOrbisTransientFormatCount;
              ++format) {
-            orbis_transient_vertex_buffer_construct(context, bank, format);
+            orbis_transient_vertex_buffer_construct(
+                orbis_render_context_transient_vertex_buffer(
+                    context, bank, format));
         }
     }
     orbis_render_context_initialize_allocation_map(context);
@@ -216,7 +218,9 @@ void orbis_render_context_destruct(OrbisRenderContext& context) {
     orbis_render_context_release_timestamp_pool(context);
     for (std::size_t bank = kOrbisFrameSlotCount; bank-- > 0;) {
         for (std::size_t format = kOrbisTransientFormatCount; format-- > 0;) {
-            orbis_transient_vertex_buffer_destruct(context, bank, format);
+            orbis_transient_vertex_buffer_destruct(
+                orbis_render_context_transient_vertex_buffer(
+                    context, bank, format));
         }
     }
     for (std::size_t slot = kOrbisComputeContextCount; slot-- > 0;) {

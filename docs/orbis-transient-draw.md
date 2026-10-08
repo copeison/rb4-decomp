@@ -28,3 +28,8 @@ vertices for each mesh format and builds its descriptors. Binding at `0x8EC910`
 selects each active descriptor and substitutes the renderer's typed default
 descriptor for every absent stream. The draw then binds the nine identity
 instance descriptors directly from `OrbisRenderSystem + 0xF98`.
+
+Construction at `0x8EC7C0` clears the allocation pointer, stride, capacity,
+and count. Destruction at `0x8EC7D0` releases the tracked allocation. The
+render context constructs all 16 records in forward order and destroys them in
+reverse order.

@@ -27,6 +27,10 @@ static_assert(offsetof(OrbisTransientVertexBuffer, vertex_stride) == 144);
 static_assert(offsetof(OrbisTransientVertexBuffer, vertex_capacity) == 152);
 static_assert(offsetof(OrbisTransientVertexBuffer, vertex_count) == 160);
 
+void orbis_transient_vertex_buffer_construct(
+    OrbisTransientVertexBuffer& buffer);
+void orbis_transient_vertex_buffer_destruct(
+    OrbisTransientVertexBuffer& buffer);
 void orbis_transient_vertex_buffer_initialize(
     OrbisTransientVertexBuffer& buffer,
     RenderMeshFormat format,
