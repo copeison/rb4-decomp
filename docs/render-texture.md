@@ -5,7 +5,8 @@ by every recovered texture shape. The object starts with virtual dispatch and
 a frame stamp of `-1`. Its descriptor-backed state includes sampler address and
 filter modes at offsets `+96` and `+100`, flags at `+104`, a format sentinel at
 `+108`, dimensions at `+112` through `+120`, an allocation name at `+152`, and
-two resource indices initialized to `-1`.
+two resource indices initialized to `-1`. The texture-usage field at `+64` is
+read directly by Orbis color-versus-depth initialization paths.
 
 The constructor clears the observed descriptor, dimension, source, and runtime
 state while leaving compiler padding untouched. Names for fields that have not

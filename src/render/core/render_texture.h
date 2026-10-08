@@ -8,7 +8,9 @@ struct RenderTexture {
     void* implementation;
     std::int64_t frame_stamp;
     std::int32_t descriptor_type;
-    std::uint8_t descriptor_state[76];
+    std::uint8_t descriptor_prefix[44];
+    std::int32_t usage_type;
+    std::uint8_t descriptor_suffix[28];
     std::uint32_t address_mode;
     std::uint32_t filter_mode;
     std::uint32_t flags;
@@ -22,7 +24,7 @@ struct RenderTexture {
     bool backend_initialized;
     std::uint8_t reserved_141[3];
     std::int32_t bindless_index;
-    std::uint32_t usage;
+    std::uint32_t resource_flags;
     const char* name;
     std::int32_t resource_index;
     std::uint8_t trailing_reserved[4];
@@ -32,8 +34,28 @@ struct RenderTextureMipChainState {
     std::uint8_t storage[80];
 };
 
+struct RenderTextureMipChainDescriptor {
+    std::uint8_t storage[80];
+};
+
+struct RenderTextureMipChainDescriptorRange {
+    const RenderTextureMipChainDescriptor* begin;
+    const RenderTextureMipChainDescriptor* end;
+    const RenderTextureMipChainDescriptor* capacity;
+};
+
+struct RenderTextureMipChainArray {
+    RenderTextureMipChainState* begin;
+    RenderTextureMipChainState* end;
+    RenderTextureMipChainState* capacity;
+    void* allocator;
+};
+
 static_assert(sizeof(RenderTexture) == 168);
 static_assert(sizeof(RenderTextureMipChainState) == 80);
+static_assert(sizeof(RenderTextureMipChainDescriptor) == 80);
+static_assert(sizeof(RenderTextureMipChainDescriptorRange) == 24);
+static_assert(sizeof(RenderTextureMipChainArray) == 32);
 
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);

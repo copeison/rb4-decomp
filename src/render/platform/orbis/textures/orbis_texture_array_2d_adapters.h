@@ -7,26 +7,16 @@
 namespace rb4 {
 
 void* render_allocate(std::size_t size);
-void texture_array_2d_construct(
-    OrbisTextureArray2D& texture,
-    const RenderTextureArray2DDescriptor& descriptor);
-void orbis_texture_array_2d_clear_backend_state(
+void orbis_texture_array_2d_install_vtable(
     OrbisTextureArray2D& texture);
-void orbis_texture_array_2d_release_backend_state(
-    OrbisTextureArray2D& texture);
-bool orbis_texture_array_2d_is_depth(
-    const OrbisTextureArray2D& texture);
+void orbis_defer_texture_allocation(void* allocation);
+void* orbis_color_target_metadata_allocation(void* color_target);
+void render_release(void* allocation);
 void orbis_texture_array_2d_initialize_depth_storage(
     OrbisTextureArray2D& texture);
 void orbis_texture_array_2d_initialize_color_storage(
     OrbisTextureArray2D& texture);
-void texture_array_2d_destruct(OrbisTextureArray2D& texture);
-void render_delete_texture_array_2d(OrbisTextureArray2D& texture);
-const void* orbis_texture_array_2d_gpu_texture(
-    const OrbisTextureArray2D& texture);
-OrbisSamplerAddressMode orbis_texture_array_2d_address_mode(
-    const OrbisTextureArray2D& texture);
-std::uint32_t orbis_texture_array_2d_filter_mode(
-    const OrbisTextureArray2D& texture);
+void render_delete_texture_array_2d_storage(
+    OrbisTextureArray2D& texture);
 
 }  // namespace rb4

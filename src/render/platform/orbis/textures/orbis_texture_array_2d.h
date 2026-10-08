@@ -2,13 +2,23 @@
 
 #include <cstdint>
 
+#include "render/core/render_texture_array_2d.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {
 
-struct OrbisTextureArray2D;
 struct OrbisRenderContext;
-struct RenderTextureArray2DDescriptor;
+
+struct OrbisTextureArray2D : RenderTextureArray2D {
+    void* gpu_texture;
+    void* primary_allocation;
+    void* stencil_allocation;
+    void* metadata_allocation;
+    void* color_target;
+    void* depth_target;
+};
+
+static_assert(sizeof(OrbisTextureArray2D) == 392);
 
 OrbisTextureArray2D* orbis_create_texture_array_2d(
     const RenderTextureArray2DDescriptor& descriptor);

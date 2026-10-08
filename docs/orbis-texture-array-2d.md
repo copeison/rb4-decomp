@@ -11,6 +11,13 @@ descriptor elements into 80-byte texture records and stores their count. The
 wrapper at `0x698100` assigns descriptor type 5, which the type-to-resource
 map identifies as `RndTextureArray2DResource`.
 
+The common object has the same exact 344-byte shape as the 1D array: the
+168-byte shared texture base, a normalized 144-byte descriptor snapshot, and
+a 32-byte vector of 80-byte mip-chain states. Its constructor additionally
+resolves the 2D descriptor state and resets the common resource index to zero.
+The typed 392-byte Orbis subclass exposes the texture view, depth/stencil/HTILE
+allocations, optional color target, and depth target at their observed offsets.
+
 Backend initialization at `0x8E5E70` branches on the common usage field. A
 depth array creates a 52-byte Gnm depth-target descriptor, allocates aligned
 depth, optional stencil, and HTILE surfaces, assigns their 256-byte addresses,
@@ -33,6 +40,10 @@ deleting destructor follows at `0x8E5E50`.
 `analysis/exports/orbis-texture-array-2d-backend.asm` is the authoritative
 initializer evidence because Hex-Rays does not currently produce pseudocode
 for that function.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-array-2d.asm` and
+`analysis/exports/render-texture-array-2d.c`.
 
 The six virtual methods at `0x8E64C0` through `0x8E657F` forward the color or
 depth shader texture view and common sampler state to the shared stage-binding

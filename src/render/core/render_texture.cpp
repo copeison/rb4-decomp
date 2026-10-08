@@ -9,7 +9,11 @@ void render_texture_construct(RenderTexture& texture) {
     render_texture_set_base_dispatch(texture);
     texture.frame_stamp = -1;
     texture.descriptor_type = -1;
-    for (auto& value : texture.descriptor_state) {
+    for (auto& value : texture.descriptor_prefix) {
+        value = 0;
+    }
+    texture.usage_type = 0;
+    for (auto& value : texture.descriptor_suffix) {
         value = 0;
     }
     texture.address_mode = 0;
@@ -23,7 +27,7 @@ void render_texture_construct(RenderTexture& texture) {
     texture.source_size = 0;
     texture.backend_initialized = false;
     texture.bindless_index = -1;
-    texture.usage = 0;
+    texture.resource_flags = 0;
     texture.name = nullptr;
     texture.resource_index = -1;
 }
