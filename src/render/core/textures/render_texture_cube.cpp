@@ -3,6 +3,10 @@
 #include <cstddef>
 #include <cstring>
 
+#include "render/core/settings/render_settings.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_cube_adapters.h"
 
 namespace rb4 {
@@ -57,6 +61,29 @@ void render_texture_cube_construct(
         &texture.descriptor_type,
         texture.descriptor_state,
         sizeof(texture.descriptor_state));
+}
+
+// Reconstructed from eboot.elf at 0x6A0D10.
+RenderTextureCube* render_create_texture_cube(
+    RenderTextureCubeDescriptor& descriptor,
+    RenderTextureCube* reusable_texture) {
+    render_texture_resolve_descriptor_fields(
+        &descriptor.texture_state.usage_type,
+        3,
+        descriptor.texture_state.creation_state.values,
+        -1);
+    render_texture_cube_prepare_descriptor(descriptor.cube);
+
+    auto& factory = *render_system_factory(*render_system_instance());
+    auto* texture = render_factory_create_texture_cube(factory, descriptor);
+    const auto& settings = *render_system_settings(*render_system_instance());
+    const auto deferred_usage = static_cast<RenderTextureUsage>(10);
+    if (texture->usage_type != deferred_usage ||
+        (texture->flags & 2U) != 0 ||
+        !settings.use_tiled_lighting) {
+        render_texture_initialize_backend(*texture, reusable_texture);
+    }
+    return texture;
 }
 
 // Reconstructed from eboot.elf at 0x6A0EA0.

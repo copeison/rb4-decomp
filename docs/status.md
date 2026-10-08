@@ -172,6 +172,8 @@
   factory creation, and reusable backend initialization.
 - [x] Reconstruct common 2D and 2D-array descriptor creation paths for
   non-reusable textures.
+- [x] Reconstruct common cube descriptor resolution, face preparation, factory
+  creation, and conditional backend initialization.
 - [x] Reconstruct common 3D descriptor resolution, factory creation, and
   reusable backend initialization.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
