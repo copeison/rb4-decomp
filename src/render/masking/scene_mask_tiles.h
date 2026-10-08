@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-namespace rb4 {
+#include "render/core/targets/render_target_resources.h"
 
-struct RenderTargetResources;
+namespace rb4 {
 
 enum class SceneMaskTileTargetKind : std::uint32_t {
     kPrimary,
