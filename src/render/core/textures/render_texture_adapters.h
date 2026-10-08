@@ -6,5 +6,6 @@ namespace rb4 {
 
 void render_texture_set_base_dispatch(RenderTexture& texture);
 void render_delete_texture_storage(RenderTexture& texture);
+void render_texture_release_dynamic(RenderTexture& texture);
 
 }  // namespace rb4
