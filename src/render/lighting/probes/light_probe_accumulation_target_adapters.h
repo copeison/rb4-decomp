@@ -6,10 +6,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resources_light_probe_accumulation_target(
-    RenderTargetResources& resources);
-RenderTarget* render_target_resources_light_probe_accumulation_target(
-    const RenderTargetResources& resources);
 RenderTarget* render_target_resources_create_light_probe_accumulation_target(
     RenderTargetResources& resources,
     RenderTarget* reusable_target);

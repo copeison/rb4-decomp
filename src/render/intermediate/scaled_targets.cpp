@@ -35,21 +35,38 @@ RenderExtent scaled_extent(RenderExtent extent, ScaledTargetLevel level) {
     };
 }
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    ScaledTargetLevel level,
+    ScaledTargetLane lane) {
+    const auto level_index = static_cast<std::uint32_t>(level) - 1;
+    return resources.scaled_targets[level_index]
+                                   [static_cast<std::uint32_t>(lane)];
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    ScaledTargetLevel level,
+    ScaledTargetLane lane) {
+    const auto level_index = static_cast<std::uint32_t>(level) - 1;
+    return resources.scaled_targets[level_index]
+                                   [static_cast<std::uint32_t>(lane)];
+}
+
 RenderTarget* reusable_target(
     const RenderTargetResources* resources,
     ScaledTargetLevel level,
     ScaledTargetLane lane) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_scaled_target(*resources, level, lane);
+        : target_slot(*resources, level, lane);
 }
 
 void release_target(
     RenderTargetResources& resources,
     ScaledTargetLevel level,
     ScaledTargetLane lane) {
-    auto*& target =
-        render_target_resources_scaled_target(resources, level, lane);
+    auto*& target = target_slot(resources, level, lane);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
@@ -72,8 +89,7 @@ void render_scaled_targets_create(
                 level,
                 extent,
                 reusable_target(reusable_resources, level, lane));
-            render_target_resources_scaled_target(resources, level, lane) =
-                target;
+            target_slot(resources, level, lane) = target;
         }
     }
 }

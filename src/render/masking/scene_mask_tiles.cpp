@@ -14,6 +14,18 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    SceneMaskTileTargetKind kind) {
+    return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    SceneMaskTileTargetKind kind) {
+    return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
+}
+
 std::uint32_t divide_round_up(
     std::uint32_t value,
     std::uint32_t divisor) {
@@ -25,7 +37,7 @@ RenderTarget* reusable_target(
     SceneMaskTileTargetKind kind) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_scene_mask_tile_target(*resources, kind);
+        : target_slot(*resources, kind);
 }
 
 void create_target(
@@ -33,7 +45,7 @@ void create_target(
     const RenderTargetResources* reusable_resources,
     SceneMaskTileTargetKind kind,
     RenderExtent extent) {
-    render_target_resources_scene_mask_tile_target(resources, kind) =
+    target_slot(resources, kind) =
         render_target_resources_create_scene_mask_tile_target(
             resources,
             kind,
@@ -44,8 +56,7 @@ void create_target(
 void release_target(
     RenderTargetResources& resources,
     SceneMaskTileTargetKind kind) {
-    auto*& target =
-        render_target_resources_scene_mask_tile_target(resources, kind);
+    auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
@@ -144,7 +155,7 @@ void render_scene_mask_tiles_create(
         render_create_mesh(RenderMeshFormat::kPositionOnly, "Scene Mask Mesh");
     build_tile_mesh(*mesh, extent, tile_size, tile_extent);
     render_mesh_finalize(*mesh);
-    render_target_resources_scene_mask_mesh(resources) = mesh;
+    resources.tiled_scene_mask_mesh = mesh;
 }
 
 // Reconstructed from the scene-mask tile portion of eboot.elf at 0x6AFFE0.
@@ -152,7 +163,7 @@ void render_scene_mask_tiles_release(RenderTargetResources& resources) {
     release_target(resources, SceneMaskTileTargetKind::kPrimary);
     release_target(resources, SceneMaskTileTargetKind::kSecondary);
 
-    auto*& mesh = render_target_resources_scene_mask_mesh(resources);
+    auto*& mesh = resources.tiled_scene_mask_mesh;
     if (mesh != nullptr) {
         render_mesh_release_dynamic(*mesh);
         mesh = nullptr;

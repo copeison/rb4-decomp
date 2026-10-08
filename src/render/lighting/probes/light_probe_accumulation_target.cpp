@@ -19,9 +19,8 @@ void render_light_probe_accumulation_target_create(
 
     auto* reusable_target = reusable_resources == nullptr
         ? nullptr
-        : render_target_resources_light_probe_accumulation_target(
-              *reusable_resources);
-    render_target_resources_light_probe_accumulation_target(resources) =
+        : reusable_resources->light_probe_accumulation;
+    resources.light_probe_accumulation =
         render_target_resources_create_light_probe_accumulation_target(
             resources, reusable_target);
 }
@@ -29,8 +28,7 @@ void render_light_probe_accumulation_target_create(
 // Reconstructed from the light-probe portion of eboot.elf at 0x6AFFE0.
 void render_light_probe_accumulation_target_release(
     RenderTargetResources& resources) {
-    auto*& target =
-        render_target_resources_light_probe_accumulation_target(resources);
+    auto*& target = resources.light_probe_accumulation;
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

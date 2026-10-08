@@ -7,12 +7,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resource_block_linear_depth_target(
-    RenderTargetResourceBlock& block,
-    LinearDepthTargetKind kind);
-RenderTarget* render_target_resource_block_linear_depth_target(
-    const RenderTargetResourceBlock& block,
-    LinearDepthTargetKind kind);
 RenderTarget* render_target_resources_create_linear_depth_target(
     RenderTargetResources& resources,
     LinearDepthTargetKind kind,

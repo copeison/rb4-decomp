@@ -10,9 +10,10 @@ table before running the common release path.
 
 Code that consumes the verified layout now reads stable owner fields directly:
 flags, extent, attachment cursor, source texture, block storage and count,
-resource mode, active block, and scene context. Adapters remain only where an
-operation still performs container growth, registration, allocation, or
-virtual dispatch.
+resource mode, active block, scene context, and every identified target or
+texture slot. Small local enum-to-field helpers keep multi-target subsystem
+code readable. Adapters remain only where an operation still performs
+container growth, registration, allocation, or virtual dispatch.
 
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that

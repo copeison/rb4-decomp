@@ -7,10 +7,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resource_block_ambient_occlusion_target(
-    RenderTargetResourceBlock& block);
-RenderTarget* render_target_resource_block_ambient_occlusion_target(
-    const RenderTargetResourceBlock& block);
 RenderTarget* render_target_resources_create_ambient_occlusion_target(
     RenderTargetResources& resources,
     RenderExtent extent,

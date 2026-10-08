@@ -7,12 +7,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resources_sky_target(
-    RenderTargetResources& resources,
-    SkyTargetLevel level);
-RenderTarget* render_target_resources_sky_target(
-    const RenderTargetResources& resources,
-    SkyTargetLevel level);
 RenderTarget* render_target_resources_create_sky_target(
     RenderTargetResources& resources,
     SkyTargetLevel level,

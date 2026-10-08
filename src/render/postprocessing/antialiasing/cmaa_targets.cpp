@@ -10,12 +10,44 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    CmaaTargetKind kind) {
+    switch (kind) {
+    case CmaaTargetKind::kColor:
+        return resources.cmaa_color;
+    case CmaaTargetKind::kEdge0:
+        return resources.cmaa_edges[0];
+    case CmaaTargetKind::kEdge1:
+        return resources.cmaa_edges[1];
+    case CmaaTargetKind::kCompressedEdge:
+        return resources.cmaa_compressed_edges;
+    }
+    return resources.cmaa_color;
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    CmaaTargetKind kind) {
+    switch (kind) {
+    case CmaaTargetKind::kColor:
+        return resources.cmaa_color;
+    case CmaaTargetKind::kEdge0:
+        return resources.cmaa_edges[0];
+    case CmaaTargetKind::kEdge1:
+        return resources.cmaa_edges[1];
+    case CmaaTargetKind::kCompressedEdge:
+        return resources.cmaa_compressed_edges;
+    }
+    return nullptr;
+}
+
 RenderTarget* reusable_target(
     const RenderTargetResources* resources,
     CmaaTargetKind kind) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_cmaa_target(*resources, kind);
+        : target_slot(*resources, kind);
 }
 
 void create_target(
@@ -24,7 +56,7 @@ void create_target(
     CmaaTargetKind kind,
     RenderExtent extent,
     bool use_64_bit_color) {
-    render_target_resources_cmaa_target(resources, kind) =
+    target_slot(resources, kind) =
         render_target_resources_create_cmaa_target(
             resources,
             kind,
@@ -36,7 +68,7 @@ void create_target(
 void release_target(
     RenderTargetResources& resources,
     CmaaTargetKind kind) {
-    auto*& target = render_target_resources_cmaa_target(resources, kind);
+    auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
@@ -60,8 +92,7 @@ void render_cmaa_targets_create(
     auto* reusable_color = reusable_target(
         reusable_resources, CmaaTargetKind::kColor);
     if (reusable_color != nullptr) {
-        render_target_resources_cmaa_target(
-            resources, CmaaTargetKind::kColor) =
+        resources.cmaa_color =
             render_target_resources_create_cmaa_target(
                 resources,
                 CmaaTargetKind::kColor,
@@ -69,8 +100,7 @@ void render_cmaa_targets_create(
                 settings.use_64_bit_light_accum,
                 reusable_color);
     } else {
-        render_target_resources_cmaa_target(
-            resources, CmaaTargetKind::kColor) = nullptr;
+        resources.cmaa_color = nullptr;
     }
 
     create_target(
@@ -96,7 +126,7 @@ void render_cmaa_targets_create(
         CmaaTargetKind::kCompressedEdge,
         compressed_extent,
         false);
-    render_target_resources_reset_cmaa_state(resources);
+    resources.cmaa_state = 0;
 }
 
 // Reconstructed from the CMAA portion of eboot.elf at 0x6AFFE0.

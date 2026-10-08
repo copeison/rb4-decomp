@@ -20,10 +20,22 @@ RenderExtent scaled_extent(RenderExtent extent, std::uint32_t shift) {
     };
 }
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    SkyTargetLevel level) {
+    return resources.sky[static_cast<std::uint32_t>(level)];
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    SkyTargetLevel level) {
+    return resources.sky[static_cast<std::uint32_t>(level)];
+}
+
 void release_target(
     RenderTargetResources& resources,
     SkyTargetLevel level) {
-    auto*& target = render_target_resources_sky_target(resources, level);
+    auto*& target = target_slot(resources, level);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
@@ -43,8 +55,7 @@ void render_sky_targets_create(
         const auto level = static_cast<SkyTargetLevel>(shift);
         RenderTarget* reusable_target = nullptr;
         if (reusable_resources != nullptr) {
-            reusable_target =
-                render_target_resources_sky_target(*reusable_resources, level);
+            reusable_target = target_slot(*reusable_resources, level);
         } else if (shift != 0) {
             reusable_target = new_full_target;
         }
@@ -54,7 +65,7 @@ void render_sky_targets_create(
             level,
             scaled_extent(extent, shift),
             reusable_target);
-        render_target_resources_sky_target(resources, level) = target;
+        target_slot(resources, level) = target;
         if (shift == 0) {
             new_full_target = target;
         }

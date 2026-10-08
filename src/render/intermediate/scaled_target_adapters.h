@@ -7,14 +7,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resources_scaled_target(
-    RenderTargetResources& resources,
-    ScaledTargetLevel level,
-    ScaledTargetLane lane);
-RenderTarget* render_target_resources_scaled_target(
-    const RenderTargetResources& resources,
-    ScaledTargetLevel level,
-    ScaledTargetLane lane);
 RenderTarget* render_target_resources_create_scaled_target(
     RenderTargetResources& resources,
     ScaledTargetLevel level,

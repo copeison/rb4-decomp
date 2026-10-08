@@ -55,6 +55,8 @@
   per-scene block layouts, including inline storage and lifecycle defaults.
 - [x] Replace opaque render-target owner offset accessors with typed field
   access throughout the reconstructed target creation and lifecycle paths.
+- [x] Replace identified owner and per-scene target-slot adapters with direct
+  typed fields and local enum-to-field mappings.
 - [x] Reconstruct render-target owner mode and partial-block controls.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.

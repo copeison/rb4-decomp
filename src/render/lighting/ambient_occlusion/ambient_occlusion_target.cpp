@@ -14,9 +14,8 @@ void render_ambient_occlusion_target_create(
     const RenderTargetResourceBlock* reusable_block) {
     auto* reusable_target = reusable_block == nullptr
         ? nullptr
-        : render_target_resource_block_ambient_occlusion_target(
-              *reusable_block);
-    render_target_resource_block_ambient_occlusion_target(block) =
+        : reusable_block->ambient_occlusion;
+    block.ambient_occlusion =
         render_target_resources_create_ambient_occlusion_target(
             resources,
             resources.extent,
@@ -27,8 +26,7 @@ void render_ambient_occlusion_target_create(
 // Reconstructed from the AO-target portion of eboot.elf at 0x6AFFE0.
 void render_ambient_occlusion_target_release(
     RenderTargetResourceBlock& block) {
-    auto*& target =
-        render_target_resource_block_ambient_occlusion_target(block);
+    auto*& target = block.ambient_occlusion;
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

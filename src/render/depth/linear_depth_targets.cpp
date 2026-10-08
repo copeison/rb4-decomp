@@ -10,6 +10,22 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResourceBlock& block,
+    LinearDepthTargetKind kind) {
+    return kind == LinearDepthTargetKind::kLinearDepth
+        ? block.linear_depth
+        : block.tiled_depth_range;
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResourceBlock& block,
+    LinearDepthTargetKind kind) {
+    return kind == LinearDepthTargetKind::kLinearDepth
+        ? block.linear_depth
+        : block.tiled_depth_range;
+}
+
 std::uint32_t divide_round_up(
     std::uint32_t value,
     std::uint32_t divisor) {
@@ -21,7 +37,7 @@ RenderTarget* reusable_target(
     LinearDepthTargetKind kind) {
     return block == nullptr
         ? nullptr
-        : render_target_resource_block_linear_depth_target(*block, kind);
+        : target_slot(*block, kind);
 }
 
 void create_target(
@@ -31,7 +47,7 @@ void create_target(
     LinearDepthTargetKind kind,
     RenderExtent extent,
     bool register_with_owner) {
-    render_target_resource_block_linear_depth_target(block, kind) =
+    target_slot(block, kind) =
         render_target_resources_create_linear_depth_target(
             resources,
             kind,
@@ -43,8 +59,7 @@ void create_target(
 void release_target(
     RenderTargetResourceBlock& block,
     LinearDepthTargetKind kind) {
-    auto*& target =
-        render_target_resource_block_linear_depth_target(block, kind);
+    auto*& target = target_slot(block, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

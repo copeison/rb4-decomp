@@ -9,12 +9,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resources_shadow_contribution_target(
-    RenderTargetResources& resources,
-    ShadowContributionTargetKind kind);
-RenderTarget* render_target_resources_shadow_contribution_target(
-    const RenderTargetResources& resources,
-    ShadowContributionTargetKind kind);
 RenderTarget* render_target_resources_create_shadow_contribution_target(
     RenderTargetResources& resources,
     ShadowContributionTargetKind kind,

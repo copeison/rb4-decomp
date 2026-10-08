@@ -2,18 +2,35 @@
 
 #include "render/core/targets/render_target_adapters.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory.h"
-#include "render/lighting/accumulation/light_accumulation_target_adapters.h"
 
 namespace rb4 {
 
 namespace {
+
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    LightAccumulationTargetKind kind) {
+    const auto index = static_cast<std::uint32_t>(kind);
+    return index < 2
+        ? resources.light_accumulation[index]
+        : resources.blurred_light_accumulation[index - 2];
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    LightAccumulationTargetKind kind) {
+    const auto index = static_cast<std::uint32_t>(kind);
+    return index < 2
+        ? resources.light_accumulation[index]
+        : resources.blurred_light_accumulation[index - 2];
+}
 
 RenderTarget* reusable_target(
     const RenderTargetResources* resources,
     LightAccumulationTargetKind kind) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_light_accumulation_target(*resources, kind);
+        : target_slot(*resources, kind);
 }
 
 void create_target(
@@ -43,7 +60,7 @@ void create_target(
         allocate_attachment = false;
         break;
     }
-    render_target_resources_light_accumulation_target(resources, kind) =
+    target_slot(resources, kind) =
         render_light_accumulation_target_create(
             resources,
             name,
@@ -55,8 +72,7 @@ void create_target(
 void release_target(
     RenderTargetResources& resources,
     LightAccumulationTargetKind kind) {
-    auto*& target =
-        render_target_resources_light_accumulation_target(resources, kind);
+    auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

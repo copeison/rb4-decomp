@@ -6,12 +6,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resources_scene_mask_target(
-    RenderTargetResources& resources,
-    SceneMaskTargetKind kind);
-RenderTarget* render_target_resources_scene_mask_target(
-    const RenderTargetResources& resources,
-    SceneMaskTargetKind kind);
 RenderTarget* render_target_resources_create_scene_mask_target(
     RenderTargetResources& resources,
     SceneMaskTargetKind kind,

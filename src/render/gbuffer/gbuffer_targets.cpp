@@ -10,12 +10,40 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResourceBlock& block,
+    GBufferTargetKind kind) {
+    switch (kind) {
+    case GBufferTargetKind::kColor:
+        return block.gbuffer_color;
+    case GBufferTargetKind::kPixelNormals:
+        return block.gbuffer_pixel_normals;
+    case GBufferTargetKind::kVertexNormals:
+        return block.gbuffer_vertex_normals;
+    }
+    return block.gbuffer_color;
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResourceBlock& block,
+    GBufferTargetKind kind) {
+    switch (kind) {
+    case GBufferTargetKind::kColor:
+        return block.gbuffer_color;
+    case GBufferTargetKind::kPixelNormals:
+        return block.gbuffer_pixel_normals;
+    case GBufferTargetKind::kVertexNormals:
+        return block.gbuffer_vertex_normals;
+    }
+    return nullptr;
+}
+
 RenderTarget* reusable_target(
     const RenderTargetResourceBlock* block,
     GBufferTargetKind kind) {
     return block == nullptr
         ? nullptr
-        : render_target_resource_block_gbuffer_target(*block, kind);
+        : target_slot(*block, kind);
 }
 
 void create_target(
@@ -25,7 +53,7 @@ void create_target(
     GBufferTargetKind kind,
     RenderExtent extent,
     bool register_with_owner) {
-    render_target_resource_block_gbuffer_target(block, kind) =
+    target_slot(block, kind) =
         render_target_resources_create_gbuffer_target(
             resources,
             kind,
@@ -37,7 +65,7 @@ void create_target(
 void release_target(
     RenderTargetResourceBlock& block,
     GBufferTargetKind kind) {
-    auto*& target = render_target_resource_block_gbuffer_target(block, kind);
+    auto*& target = target_slot(block, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
@@ -81,8 +109,7 @@ void render_gbuffer_targets_create(
             extent,
             register_with_owner);
     } else {
-        render_target_resource_block_gbuffer_target(
-            block, GBufferTargetKind::kVertexNormals) = nullptr;
+        block.gbuffer_vertex_normals = nullptr;
     }
 }
 

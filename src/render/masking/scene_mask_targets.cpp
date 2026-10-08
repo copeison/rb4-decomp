@@ -12,6 +12,34 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    SceneMaskTargetKind kind) {
+    switch (kind) {
+    case SceneMaskTargetKind::kMask:
+        return resources.scene_mask;
+    case SceneMaskTargetKind::kScratch:
+        return resources.scene_mask_scratch;
+    case SceneMaskTargetKind::kTile:
+        return resources.scene_mask_tiles;
+    }
+    return resources.scene_mask;
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    SceneMaskTargetKind kind) {
+    switch (kind) {
+    case SceneMaskTargetKind::kMask:
+        return resources.scene_mask;
+    case SceneMaskTargetKind::kScratch:
+        return resources.scene_mask_scratch;
+    case SceneMaskTargetKind::kTile:
+        return resources.scene_mask_tiles;
+    }
+    return nullptr;
+}
+
 std::uint32_t divide_round_up(
     std::uint32_t value,
     std::uint32_t divisor) {
@@ -23,7 +51,7 @@ RenderTarget* reusable_target(
     SceneMaskTargetKind kind) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_scene_mask_target(*resources, kind);
+        : target_slot(*resources, kind);
 }
 
 void create_target(
@@ -31,7 +59,7 @@ void create_target(
     const RenderTargetResources* reusable_resources,
     SceneMaskTargetKind kind,
     RenderExtent extent) {
-    render_target_resources_scene_mask_target(resources, kind) =
+    target_slot(resources, kind) =
         render_target_resources_create_scene_mask_target(
             resources,
             kind,
@@ -42,7 +70,7 @@ void create_target(
 void release_target(
     RenderTargetResources& resources,
     SceneMaskTargetKind kind) {
-    auto*& target = render_target_resources_scene_mask_target(resources, kind);
+    auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

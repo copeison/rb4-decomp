@@ -23,7 +23,7 @@ void render_depth_stencil_target_create(
     const RenderTargetResourceBlock* reusable_block) {
     auto* reusable_target = reusable_block == nullptr
         ? nullptr
-        : render_target_resource_block_depth_stencil_target(*reusable_block);
+        : reusable_block->depth_stencil;
 
     auto attachment_index = partial_frame
         ? kUnassignedAttachment
@@ -45,14 +45,13 @@ void render_depth_stencil_target_create(
         attachment_index,
         reusable_target,
         !partial_frame);
-    render_target_resource_block_depth_stencil_target(block) = target;
+    block.depth_stencil = target;
     render_target_resources_update_depth_attachment_end(resources, *target);
 }
 
 // Reconstructed from the depth/stencil portion of eboot.elf at 0x6AFFE0.
 void render_depth_stencil_target_release(RenderTargetResourceBlock& block) {
-    auto*& target =
-        render_target_resource_block_depth_stencil_target(block);
+    auto*& target = block.depth_stencil;
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;

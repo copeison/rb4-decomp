@@ -8,10 +8,6 @@ namespace rb4 {
 
 struct RenderTarget;
 
-RenderTarget*& render_target_resource_block_depth_stencil_target(
-    RenderTargetResourceBlock& block);
-RenderTarget* render_target_resource_block_depth_stencil_target(
-    const RenderTargetResourceBlock& block);
 std::int32_t& render_target_resources_depth_attachment_end(
     RenderTargetResources& resources);
 bool render_depth_stencil_target_has_unassigned_attachment(

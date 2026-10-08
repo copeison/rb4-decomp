@@ -13,14 +13,6 @@ using VolumetricVoxelInitializer = std::uint64_t (*)(
     std::uint32_t y,
     std::uint32_t z);
 
-RenderTexture3D*& render_target_resource_block_volumetric_scattering_texture(
-    RenderTargetResourceBlock& block,
-    VolumetricScatteringTextureKind kind,
-    VolumetricScatteringDepth depth);
-RenderTexture3D* render_target_resource_block_volumetric_scattering_texture(
-    const RenderTargetResourceBlock& block,
-    VolumetricScatteringTextureKind kind,
-    VolumetricScatteringDepth depth);
 RenderTexture3D* render_target_resources_create_volumetric_scattering_texture(
     RenderTargetResources& resources,
     VolumetricScatteringTextureKind kind,

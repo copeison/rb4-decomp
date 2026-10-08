@@ -10,6 +10,46 @@ namespace rb4 {
 
 namespace {
 
+RenderTarget*& target_slot(
+    RenderTargetResources& resources,
+    ShadowContributionTargetKind kind) {
+    switch (kind) {
+    case ShadowContributionTargetKind::kTextureArray:
+        return resources.shadow_contribution_texture_array;
+    case ShadowContributionTargetKind::kStencil:
+        return resources.shadow_contribution_stencil;
+    case ShadowContributionTargetKind::kScratchPrimary:
+        return resources.shadow_contribution_scratch[0];
+    case ShadowContributionTargetKind::kScratchSecondary:
+        return resources.shadow_contribution_scratch[1];
+    case ShadowContributionTargetKind::kSoftenTilesPrimary:
+        return resources.shadow_soften_tiles[0];
+    case ShadowContributionTargetKind::kSoftenTilesSecondary:
+        return resources.shadow_soften_tiles[1];
+    }
+    return resources.shadow_contribution_texture_array;
+}
+
+RenderTarget* target_slot(
+    const RenderTargetResources& resources,
+    ShadowContributionTargetKind kind) {
+    switch (kind) {
+    case ShadowContributionTargetKind::kTextureArray:
+        return resources.shadow_contribution_texture_array;
+    case ShadowContributionTargetKind::kStencil:
+        return resources.shadow_contribution_stencil;
+    case ShadowContributionTargetKind::kScratchPrimary:
+        return resources.shadow_contribution_scratch[0];
+    case ShadowContributionTargetKind::kScratchSecondary:
+        return resources.shadow_contribution_scratch[1];
+    case ShadowContributionTargetKind::kSoftenTilesPrimary:
+        return resources.shadow_soften_tiles[0];
+    case ShadowContributionTargetKind::kSoftenTilesSecondary:
+        return resources.shadow_soften_tiles[1];
+    }
+    return nullptr;
+}
+
 std::uint32_t divide_round_up(
     std::uint32_t value,
     std::uint32_t divisor) {
@@ -21,7 +61,7 @@ RenderTarget* reusable_target(
     ShadowContributionTargetKind kind) {
     return resources == nullptr
         ? nullptr
-        : render_target_resources_shadow_contribution_target(*resources, kind);
+        : target_slot(*resources, kind);
 }
 
 void create_target(
@@ -30,7 +70,7 @@ void create_target(
     ShadowContributionTargetKind kind,
     RenderExtent extent,
     std::uint32_t texture_array_layers = 1) {
-    render_target_resources_shadow_contribution_target(resources, kind) =
+    target_slot(resources, kind) =
         render_target_resources_create_shadow_contribution_target(
             resources,
             kind,
@@ -42,8 +82,7 @@ void create_target(
 void release_target(
     RenderTargetResources& resources,
     ShadowContributionTargetKind kind) {
-    auto*& target =
-        render_target_resources_shadow_contribution_target(resources, kind);
+    auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
         render_target_release_dynamic(*target);
         target = nullptr;
