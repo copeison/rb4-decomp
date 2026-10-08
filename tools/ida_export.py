@@ -260,6 +260,7 @@ FOCUSED_DECOMPILATIONS = {
     "render-command-set-buffer-inspection-mode": 0x6BAF40,
     "render-command-set-buffer-inspection-mode-for-owner": 0x6BAF80,
     "render-register-debug-commands": 0x6BB0E0,
+    "render-settings-initialize": 0x6BB470,
     "render-construct-default-resources": 0x6BDB30,
     "render-initialize-default-resources": 0x6BDCA0,
     "render-release-default-resources": 0x6BF860,

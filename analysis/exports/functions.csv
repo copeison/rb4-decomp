@@ -21048,7 +21048,7 @@ address,end,size,name,library,thunk
 0x6BAF40,0x6BAF79,57,render_command_set_buffer_inspection_mode,False,False
 0x6BAF80,0x6BB0DC,348,render_command_set_buffer_inspection_mode_for_owner,False,False
 0x6BB0E0,0x6BB44E,878,render_register_debug_commands,False,False
-0x6BB470,0x6BBDB6,2374,sub_6BB470,False,False
+0x6BB470,0x6BBDB6,2374,render_settings_initialize,False,False
 0x6BBDE0,0x6BC061,641,sub_6BBDE0,False,False
 0x6BC070,0x6BC113,163,sub_6BC070,False,False
 0x6BC120,0x6BC18B,107,sub_6BC120,False,False
