@@ -28,7 +28,12 @@ struct RenderTexture {
     std::uint8_t trailing_reserved[4];
 };
 
+struct RenderTextureMipChainState {
+    std::uint8_t storage[80];
+};
+
 static_assert(sizeof(RenderTexture) == 168);
+static_assert(sizeof(RenderTextureMipChainState) == 80);
 
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);

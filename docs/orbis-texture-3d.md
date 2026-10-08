@@ -10,6 +10,12 @@ zeros the final 16 bytes of backend state. The wrapper at `0x6F5C50` assigns
 descriptor type 2. The type-to-resource map at `0x6ACF40` identifies type 2
 as `RndTexture3DResource`.
 
+Like the 1D shape, the common 3D type is exactly 392 bytes: the 168-byte
+`RenderTexture` base, a normalized 144-byte descriptor snapshot, and the
+80-byte mip-chain state. The reconstruction preserves the constructor's three
+descriptor-field moves before publishing the snapshot to the shared base. The
+Orbis subclass adds only the Gnm descriptor and allocation pointers.
+
 Backend initialization at `0x8E54B0` creates a 32-byte Gnm texture descriptor
 with texture type 10. It carries the common width, height, depth, mip count,
 format, tile mode, and fragment count into the descriptor and calculates its
@@ -30,3 +36,7 @@ texture destructor. The deleting destructor follows at `0x8E5450`.
 The six virtual methods at `0x8E5770` through `0x8E582F` forward the texture
 view and common sampler state to the shared vertex, hull, domain, geometry,
 pixel, and compute binding functions.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-3d.asm` and
+`analysis/exports/render-texture-3d.c`.

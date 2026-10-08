@@ -8,8 +8,6 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisTexture3DSize = 408;
-
 void bind_texture_stage(
     const OrbisTexture3D& texture,
     OrbisRenderContext& context,
@@ -18,9 +16,9 @@ void bind_texture_stage(
     std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_texture(
-        context, stage, slot, orbis_texture_3d_gpu_texture(texture),
-        orbis_texture_3d_address_mode(texture),
-        orbis_texture_3d_filter_mode(texture), flags, border_color);
+        context, stage, slot, texture.gpu_texture,
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 }  // namespace
@@ -28,7 +26,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D89E0.
 OrbisTexture3D* orbis_create_texture_3d(
     const RenderTexture3DDescriptor& descriptor) {
-    auto* storage = render_allocate(kOrbisTexture3DSize);
+    auto* storage = render_allocate(sizeof(OrbisTexture3D));
     auto* texture = reinterpret_cast<OrbisTexture3D*>(storage);
     orbis_texture_3d_construct(*texture, descriptor);
     return texture;
@@ -38,24 +36,27 @@ OrbisTexture3D* orbis_create_texture_3d(
 void orbis_texture_3d_construct(
     OrbisTexture3D& texture,
     const RenderTexture3DDescriptor& descriptor) {
-    texture_3d_construct(texture, descriptor);
-    orbis_texture_3d_clear_backend_state(texture);
+    render_texture_3d_construct(texture, descriptor);
+    orbis_texture_3d_install_vtable(texture);
+    texture.gpu_texture = nullptr;
+    texture.allocation = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8E53F0.
 void orbis_texture_3d_destruct(OrbisTexture3D& texture) {
-    orbis_defer_texture_allocation(orbis_texture_3d_allocation(texture));
-    if (auto* descriptor = orbis_texture_3d_gpu_texture(texture)) {
+    orbis_texture_3d_install_vtable(texture);
+    orbis_defer_texture_allocation(texture.allocation);
+    if (auto* descriptor = texture.gpu_texture) {
         render_release(descriptor);
     }
-    orbis_texture_3d_set_gpu_texture(texture, nullptr);
-    texture_3d_destruct(texture);
+    texture.gpu_texture = nullptr;
+    render_texture_3d_destruct(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E5450.
 void orbis_texture_3d_delete(OrbisTexture3D& texture) {
     orbis_texture_3d_destruct(texture);
-    render_delete_texture_3d(texture);
+    render_delete_texture_3d_storage(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E54B0.

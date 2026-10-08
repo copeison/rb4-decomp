@@ -2,13 +2,19 @@
 
 #include <cstdint>
 
+#include "render/core/render_texture_3d.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {
 
-struct OrbisTexture3D;
 struct OrbisRenderContext;
-struct RenderTexture3DDescriptor;
+
+struct OrbisTexture3D : RenderTexture3D {
+    void* gpu_texture;
+    void* allocation;
+};
+
+static_assert(sizeof(OrbisTexture3D) == 408);
 
 OrbisTexture3D* orbis_create_texture_3d(
     const RenderTexture3DDescriptor& descriptor);
