@@ -21,7 +21,6 @@ void render_test_pattern_shader_install_dispatch(void* shader);
 void render_test_shader_install_dispatch(void* shader);
 void render_compute_shader_install_dispatch(void* shader);
 void render_blur_classify_compute_shader_install_dispatch(void* shader);
-void render_calc_depth_range_compute_shader_install_dispatch(void* shader);
 void render_clear_buffer_compute_shader_install_dispatch(void* shader);
 void render_copy_buffer_compute_shader_install_dispatch(void* shader);
 void render_dof_disc_blur_compute_shader_install_dispatch(void* shader);

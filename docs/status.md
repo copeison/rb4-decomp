@@ -64,6 +64,8 @@
 - [x] Inline linear and tiled-depth creation-state and format descriptors.
 - [x] Reconstruct the linear-depth compute shader's dispatch, orthographic
   permutation, tile definitions, resource bindings, and dimensions constant.
+- [x] Reconstruct the tiled-depth-range compute shader's dispatch, tile-size
+  definition, input/output bindings, and tile-count constant.
 - [x] Reconstruct the per-scene ambient-occlusion target.
 - [x] Inline the ambient-occlusion texture descriptor and primary-block
   registration path.

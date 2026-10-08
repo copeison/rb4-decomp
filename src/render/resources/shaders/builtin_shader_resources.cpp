@@ -238,16 +238,6 @@ void render_blur_classify_compute_shader_construct(void* shader) {
     }
 }
 
-// Reconstructed from eboot.elf at 0x636DE0.
-void render_calc_depth_range_compute_shader_construct(void* shader) {
-    auto* fields = construct_compute_shader(
-        shader, render_calc_depth_range_compute_shader_install_dispatch);
-    fields[0] = -1;
-    fields[1] = -1;
-    fields[2] = -1;
-    fields[3] = 0;
-}
-
 // Reconstructed from eboot.elf at 0x637210.
 void render_clear_buffer_compute_shader_construct(void* shader) {
     construct_parameterized_compute_shader(
