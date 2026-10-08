@@ -15,6 +15,9 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system);
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
 bool orbis_frame_is_active(const OrbisRenderSystem& system);
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system);
+bool orbis_submit_token_available(const OrbisRenderSystem& system);
+void orbis_consume_submit_token(OrbisRenderSystem& system);
+bool orbis_submit_thread_running(const OrbisRenderSystem& system);
 void orbis_render_system_publish_instance(OrbisRenderSystem& system);
 void orbis_render_system_clear_instance();
 

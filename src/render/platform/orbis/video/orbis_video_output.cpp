@@ -6,6 +6,7 @@
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
 
 namespace rb4 {

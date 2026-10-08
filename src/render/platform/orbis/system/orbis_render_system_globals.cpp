@@ -14,11 +14,17 @@ struct OrbisRenderSystemRuntimePrefix {
     bool frame_active;
     std::uint8_t reserved_65[95];
     std::uint64_t frame_epoch;
+    std::uint8_t reserved_168[3672];
+    std::uint64_t submit_token;
+    bool submit_thread_running;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_epoch) == 160);
+static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
 
 }  // namespace
 
@@ -45,6 +51,23 @@ std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system) {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
     return runtime->frame_epoch;
+}
+
+bool orbis_submit_token_available(const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->submit_token != 0;
+}
+
+void orbis_consume_submit_token(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->submit_token = 0;
+}
+
+bool orbis_submit_thread_running(const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->submit_thread_running;
 }
 
 void orbis_render_system_publish_instance(OrbisRenderSystem& system) {

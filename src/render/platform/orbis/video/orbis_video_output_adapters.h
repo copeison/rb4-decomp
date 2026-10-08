@@ -76,7 +76,6 @@ void orbis_bind_identity_instance_buffer(
     OrbisRenderSystem& system,
     OrbisVertexBuffer& buffer);
 
-bool orbis_submit_thread_running(const OrbisRenderSystem& system);
 bool orbis_wait_for_submit_events(
     OrbisRenderSystem& system,
     OrbisSubmitEvent* events,
