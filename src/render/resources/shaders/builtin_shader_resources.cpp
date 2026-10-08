@@ -333,18 +333,6 @@ void render_signed_distance_classify_compute_shader_construct(void* shader) {
     }
 }
 
-// Reconstructed from eboot.elf at 0x637C10.
-void render_linearize_depth_compute_shader_construct(void* shader) {
-    construct_parameterized_compute_shader(
-        shader,
-        render_linearize_depth_compute_shader_install_dispatch,
-        1);
-    shader_field(shader, 312) = -1;
-    shader_field(shader, 320) = -1;
-    shader_field(shader, 328) = -1;
-    shader_field(shader, 336) = 0;
-}
-
 // Reconstructed from eboot.elf at 0x6F3E00.
 void render_test_compute_shader_construct(void* shader) {
     construct_parameterized_compute_shader(
