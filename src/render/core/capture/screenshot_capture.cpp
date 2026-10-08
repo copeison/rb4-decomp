@@ -1,6 +1,7 @@
 #include "render/core/capture/screenshot_capture.h"
 
 #include "render/core/capture/screenshot_capture_adapters.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 

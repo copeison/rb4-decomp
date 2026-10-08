@@ -4,6 +4,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_lifecycle_adapters.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 

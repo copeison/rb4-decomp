@@ -10,8 +10,6 @@ struct RenderTarget;
 struct RenderTargetStateHandle;
 struct RenderSystem;
 
-RenderSystem* render_system_instance();
-
 void render_system_lock(RenderSystem& system);
 void render_system_unlock(RenderSystem& system);
 void render_system_enter_locked_call(RenderSystem& system);

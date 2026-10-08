@@ -1,6 +1,7 @@
 #include "render/core/system/render_system_frame.h"
 
 #include "render/core/system/render_system_frame_adapters.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 

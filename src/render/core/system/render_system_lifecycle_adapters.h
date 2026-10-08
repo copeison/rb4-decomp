@@ -31,7 +31,6 @@ void render_system_destroy_backend_state(RenderSystem& system);
 void render_system_construct_callback_state(RenderSystem& system);
 void render_system_destroy_callback_state(RenderSystem& system);
 
-void render_system_publish_instance(RenderSystem& system);
 RenderSettings* render_settings_allocate();
 void render_settings_release(RenderSettings* settings);
 RenderSettings* render_system_settings(RenderSystem& system);

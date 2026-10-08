@@ -36,6 +36,7 @@
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
 - [x] Reconstruct base render-system construction and destruction ordering.
+- [x] Recover the common render-system singleton and shared epoch accessor.
 - [x] Reconstruct render-system runtime initialization and shutdown ordering.
 - [x] Reconstruct Orbis render-system allocation and object lifetime.
 - [x] Reconstruct Orbis video-output and submit-thread startup.

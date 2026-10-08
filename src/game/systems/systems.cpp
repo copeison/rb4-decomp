@@ -4,6 +4,7 @@
 #include "render/resources/system/default_render_resources.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
 #include "render/core/platform/render_platform.h"
+#include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime.h"
 
 namespace rb4 {
@@ -26,7 +27,7 @@ void game_systems_initialize(const GameSystemInitOptions& options) {
 
 // Reconstructed from eboot.elf at 0x402D30.
 void game_systems_shutdown(void* context) {
-    auto* render_system = game_render_system_instance();
+    auto* render_system = render_system_instance();
     if (render_system == nullptr || game_systems_shutdown_in_progress()) {
         return;
     }
@@ -35,7 +36,7 @@ void game_systems_shutdown(void* context) {
     game_render_dependents_shutdown(context);
     render_system_shutdown(*render_system);
     game_render_system_delete(*render_system);
-    game_clear_render_system_instance();
+    render_system_clear_instance();
     game_systems_set_shutdown_in_progress(false);
 }
 
