@@ -1,8 +1,10 @@
 #include "render/core/textures/render_texture.h"
 
+#include <cstddef>
 #include <cstring>
 
-#include "render/core/textures/render_texture_adapters.h"
+#include "core/memory/engine_memory.h"
+#include "core/resources/resource_mode.h"
 
 namespace rb4 {
 
@@ -17,16 +19,44 @@ struct RenderTextureResolvedFields {
 };
 
 struct RenderTextureDispatch {
-    void* reserved_destruct;
+    void (*destruct)(RenderTexture& texture);
     void (*release_dynamic)(RenderTexture& texture);
     std::int32_t (*descriptor_type)(const RenderTexture& texture);
-    std::uint8_t reserved_24[10 * sizeof(void*)];
+    void (*reserved_methods[10])();
     void (*update_gpu_data)(RenderTexture& texture);
-    void* reserved_112;
+    RenderTexture* (*identity)(RenderTexture& texture);
     void (*initialize_backend)(
         RenderTexture& texture,
         const RenderTexture* reusable_texture);
+    bool (*reserved_predicate)(const RenderTexture& texture);
 };
+
+std::int32_t base_descriptor_type(const RenderTexture& texture) {
+    return texture.descriptor_type;
+}
+
+RenderTexture* base_identity(RenderTexture& texture) {
+    return &texture;
+}
+
+bool base_predicate(const RenderTexture&) {
+    return false;
+}
+
+RenderTextureDispatch kBaseTextureDispatch{
+    render_texture_destruct,
+    render_texture_delete,
+    base_descriptor_type,
+    {},
+    nullptr,
+    base_identity,
+    nullptr,
+    base_predicate,
+};
+
+void set_base_dispatch(RenderTexture& texture) {
+    texture.implementation = &kBaseTextureDispatch;
+}
 
 const RenderTextureDispatch& dispatch(const RenderTexture& texture) {
     return *static_cast<const RenderTextureDispatch*>(
@@ -37,6 +67,7 @@ static_assert(offsetof(RenderTextureDispatch, update_gpu_data) == 104);
 static_assert(offsetof(RenderTextureDispatch, descriptor_type) == 16);
 static_assert(offsetof(RenderTextureDispatch, release_dynamic) == 8);
 static_assert(offsetof(RenderTextureDispatch, initialize_backend) == 120);
+static_assert(sizeof(RenderTextureDispatch) == 17 * sizeof(void*));
 static_assert(sizeof(RenderTextureResolvedFields) == 44);
 
 }  // namespace
@@ -138,7 +169,7 @@ void render_texture_apply_descriptor_state(
 
 // Reconstructed from eboot.elf at 0x69B6E0.
 void render_texture_construct(RenderTexture& texture) {
-    render_texture_set_base_dispatch(texture);
+    set_base_dispatch(texture);
     texture.frame_stamp = -1;
     texture.descriptor_type = -1;
     texture.creation_state = {};
@@ -167,7 +198,7 @@ void render_texture_destruct(RenderTexture&) {
 // Reconstructed from eboot.elf at 0x69B780.
 void render_texture_delete(RenderTexture& texture) {
     render_texture_destruct(texture);
-    render_delete_texture_storage(texture);
+    render_release(&texture);
 }
 
 void render_texture_release_dynamic(RenderTexture& texture) {
@@ -178,7 +209,7 @@ void render_texture_release_dynamic(RenderTexture& texture) {
 void render_texture_initialize_backend(
     RenderTexture& texture,
     const RenderTexture* reusable_texture) {
-    if (render_texture_backend_initialization_disabled()) {
+    if (g_resource_precache_mode) {
         return;
     }
 

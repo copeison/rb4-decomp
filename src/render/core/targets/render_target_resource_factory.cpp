@@ -6,7 +6,6 @@
 #include "render/core/targets/render_target_resources.h"
 #include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_2d.h"
-#include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_array_2d.h"
 
 namespace rb4 {

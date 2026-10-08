@@ -1,11 +1,11 @@
 #include "render/postprocessing/antialiasing/cmaa_targets.h"
 
+#include "render/core/textures/render_texture.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture_adapters.h"
 
 namespace rb4 {
 

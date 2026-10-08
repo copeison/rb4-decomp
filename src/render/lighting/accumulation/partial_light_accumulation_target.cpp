@@ -1,6 +1,6 @@
 #include "render/lighting/accumulation/partial_light_accumulation_target.h"
 
-#include "render/core/textures/render_texture_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory.h"
 
 namespace rb4 {

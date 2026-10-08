@@ -2,7 +2,6 @@
 
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_3d_adapters.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 

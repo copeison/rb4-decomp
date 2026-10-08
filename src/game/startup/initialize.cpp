@@ -5,6 +5,7 @@
 
 #include "game/systems/systems.h"
 #include "core/command_line/command_line.h"
+#include "core/resources/resource_mode.h"
 #include "ui/layout/ui_layout_id.h"
 
 namespace rb4 {
@@ -38,7 +39,6 @@ void ui_load_layout_by_id(
 
 extern DingoService g_dingo_service;
 extern UiLayoutController g_ui_layout_controller;
-extern bool g_exit_after_initialization;
 
 // Reconstructed from eboot.elf at 0xA0.
 bool game_initialize() {
@@ -70,7 +70,7 @@ bool game_initialize() {
     audio_configure_time_stretch();
     input_refresh_player_assignments();
 
-    if (g_exit_after_initialization) {
+    if (g_resource_precache_mode) {
         runtime_terminate(0);
     }
 
