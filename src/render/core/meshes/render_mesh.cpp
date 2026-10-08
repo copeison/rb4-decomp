@@ -4,8 +4,19 @@
 
 #include "render/core/meshes/render_mesh_adapters.h"
 #include "render/core/system/render_epoch.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
+
+// Reconstructed from eboot.elf at 0x5C26D0.
+RenderMesh* render_create_mesh(
+    RenderMeshFormat format,
+    const char* name) {
+    auto& system = *render_system_instance();
+    return render_factory_create_mesh(
+        *render_system_factory(system), format, name);
+}
 
 // Reconstructed from eboot.elf at 0x5C2700.
 void render_mesh_construct(RenderMesh& mesh, const char* name) {

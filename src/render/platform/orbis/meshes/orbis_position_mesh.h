@@ -6,10 +6,6 @@
 
 namespace rb4 {
 
-struct PositionMeshVertex {
-    float position[3];
-};
-
 std::size_t orbis_position_mesh_vertex_count(const OrbisMesh& mesh);
 void orbis_position_mesh_resize_vertices(
     OrbisMesh& mesh,

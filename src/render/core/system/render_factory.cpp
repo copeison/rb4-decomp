@@ -4,8 +4,13 @@ namespace rb4 {
 
 namespace {
 
-struct RenderFactoryDispatchTail {
-    std::uint8_t reserved[11 * sizeof(void*)];
+struct RenderFactoryDispatch {
+    std::uint8_t reserved_0[3 * sizeof(void*)];
+    RenderMesh* (*create_mesh)(
+        RenderFactory& factory,
+        RenderMeshFormat format,
+        const char* name);
+    std::uint8_t reserved_32[7 * sizeof(void*)];
     RenderConstantBuffer* (*create_constant_buffer)(
         RenderFactory& factory,
         const RenderConstantBufferDescriptor& descriptor,
@@ -26,11 +31,22 @@ struct RenderFactoryDispatchTail {
         void* owner);
 };
 
-const RenderFactoryDispatchTail& dispatch(const RenderFactory& factory) {
-    return *static_cast<const RenderFactoryDispatchTail*>(factory.vtable);
+const RenderFactoryDispatch& dispatch(const RenderFactory& factory) {
+    return *static_cast<const RenderFactoryDispatch*>(factory.vtable);
 }
 
+static_assert(offsetof(RenderFactoryDispatch, create_mesh) == 24);
+static_assert(
+    offsetof(RenderFactoryDispatch, create_constant_buffer) == 88);
+
 }  // namespace
+
+RenderMesh* render_factory_create_mesh(
+    RenderFactory& factory,
+    RenderMeshFormat format,
+    const char* name) {
+    return dispatch(factory).create_mesh(factory, format, name);
+}
 
 RenderConstantBuffer* render_factory_create_constant_buffer(
     RenderFactory& factory,

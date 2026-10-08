@@ -9,11 +9,13 @@ struct RenderComputeBuffer;
 struct RenderComputeBufferDescriptor;
 struct RenderConstantBuffer;
 struct RenderConstantBufferDescriptor;
+struct RenderMesh;
 struct RenderOcclusionQuery;
 struct RenderParticleBuffer;
 struct RenderShader;
 
 enum class RenderShaderStage : std::uint32_t;
+enum class RenderMeshFormat : std::uint32_t;
 
 struct RenderFactory {
     const void* vtable;
@@ -21,6 +23,10 @@ struct RenderFactory {
 
 static_assert(sizeof(RenderFactory) == 8);
 
+RenderMesh* render_factory_create_mesh(
+    RenderFactory& factory,
+    RenderMeshFormat format,
+    const char* name);
 RenderConstantBuffer* render_factory_create_constant_buffer(
     RenderFactory& factory,
     const RenderConstantBufferDescriptor& descriptor,

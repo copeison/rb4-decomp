@@ -6,6 +6,22 @@
 
 namespace rb4 {
 
+enum class RenderMeshFormat : std::uint32_t {
+    kColor = 0,
+    kColorTexture = 1,
+    kUnskinned = 2,
+    kSkinned = 3,
+    kPositionOnly = 4,
+    kParticle = 5,
+    kUnskinnedCompressed = 6,
+    kSkinnedCompressed = 7,
+    kInvalid = 0xFFFFFFFF,
+};
+
+struct PositionMeshVertex {
+    float position[3];
+};
+
 struct RenderMeshUpdateLink {
     void* implementation;
     void* registry;
@@ -44,7 +60,9 @@ static_assert(sizeof(RenderMeshUpdateLink) == 16);
 static_assert(sizeof(RenderMeshTriangle) == 12);
 static_assert(sizeof(RenderMeshTriangleArray) == 32);
 static_assert(sizeof(RenderMesh) == 128);
+static_assert(sizeof(PositionMeshVertex) == 12);
 
+RenderMesh* render_create_mesh(RenderMeshFormat format, const char* name);
 void render_mesh_construct(RenderMesh& mesh, const char* name);
 void render_mesh_destruct(RenderMesh& mesh);
 void render_mesh_delete(RenderMesh& mesh);
