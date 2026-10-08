@@ -39,6 +39,8 @@
 - [x] Reconstruct per-target tiled-light and stereo compute-buffer allocation.
 - [x] Reconstruct per-target tiled-light resource teardown.
 - [x] Reconstruct scene-mask render-target allocation and teardown.
+- [x] Inline full-resolution, scratch, and tile scene-mask descriptors and
+  owner registration.
 - [x] Reconstruct tiled scene-mask targets and grid mesh.
 - [x] Reconstruct per-scene linear and tiled depth targets.
 - [x] Inline linear and tiled-depth creation-state and format descriptors.

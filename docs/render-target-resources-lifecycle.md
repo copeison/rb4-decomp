@@ -141,3 +141,10 @@ eight, and nine set to `1`, value ten set to `10`, and the verified
 `{64, 4, 2, 1, -1}` format descriptor. The resulting full-resolution texture
 is registered with the owner and can reuse the matching texture from the
 previous owner.
+
+The three scene-mask textures share the verified `{8, 10, 0, 1, -1}` format
+and resource-kind `32` address/filter defaults. The mask and scratch textures
+use the owner's full extent; the mask-tile texture rounds each dimension up by
+the configured mask tile size and overrides creation-state filter value nine
+to `1`. All three use the common 2D factory, register with the owner, and
+accept matching reusable textures.
