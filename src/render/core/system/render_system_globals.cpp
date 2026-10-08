@@ -1,5 +1,6 @@
 #include "render/core/system/render_system_globals.h"
 
+#include "render/core/context/render_context.h"
 #include "render/core/context/render_context_adapters.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_state.h"

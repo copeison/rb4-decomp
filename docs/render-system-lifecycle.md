@@ -27,6 +27,9 @@ The frame prefix contains a typed 40-byte render-context array at offset
 begin, end, capacity, and the allocator's two-word state. Shutdown walks this
 array backward and deletes each remaining context. The primary render context
 at `0x38` is separate from the active back-buffer frame owner at `0x70`.
+The common context prefix now owns the deleting, initialize, and shutdown
+dispatch slots at vtable offsets `0x08`, `0x10`, and `0x18`; runtime lifecycle
+code no longer models those context calls as frame-owner operations.
 
 `src/render/core/system/render_system_state.h` centralizes the verified
 312-byte prefix shared by frame activation and lifetime code. The prefix now

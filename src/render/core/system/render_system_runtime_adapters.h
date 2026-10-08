@@ -4,7 +4,6 @@
 
 namespace rb4 {
 
-struct RenderContext;
 struct RenderSystem;
 
 void render_system_begin_initialization(
@@ -21,9 +20,6 @@ void render_builtin_zero_pair_buffer(RenderSystem& system);
 void render_builtin_invalid_vector_buffer(RenderSystem& system);
 void render_builtin_sentinel_buffer(RenderSystem& system);
 void render_builtin_default_buffer(RenderSystem& system);
-
-void render_context_initialize(RenderContext& context);
-void render_context_shutdown(RenderContext& context);
 
 void render_system_platform_finish_initialization(RenderSystem& system);
 void render_system_begin_runtime_epoch(RenderSystem& system);
