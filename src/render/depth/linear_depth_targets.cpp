@@ -2,14 +2,14 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/depth/linear_depth_target_adapters.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResourceBlock& block,
     LinearDepthTargetKind kind) {
     return kind == LinearDepthTargetKind::kLinearDepth
@@ -17,7 +17,7 @@ RenderTarget*& target_slot(
         : block.tiled_depth_range;
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResourceBlock& block,
     LinearDepthTargetKind kind) {
     return kind == LinearDepthTargetKind::kLinearDepth
@@ -31,7 +31,7 @@ std::uint32_t divide_round_up(
     return value / divisor + (value % divisor != 0);
 }
 
-RenderTarget* reusable_target(
+RenderTexture* reusable_target(
     const RenderTargetResourceBlock* block,
     LinearDepthTargetKind kind) {
     return block == nullptr
@@ -60,7 +60,7 @@ void release_target(
     LinearDepthTargetKind kind) {
     auto*& target = target_slot(block, kind);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

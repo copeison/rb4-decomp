@@ -8,13 +8,13 @@
 namespace rb4 {
 
 struct RenderComputeBuffer;
-struct RenderTarget;
+struct RenderTexture;
 
 struct TiledLightTargetResources {
     std::uint8_t reserved_0[88]{};
     RenderComputeBuffer* light_ids[2]{};
     RenderComputeBuffer* light_id_ranges = nullptr;
-    RenderTarget* interpolation_target = nullptr;
+    RenderTexture* interpolation_target = nullptr;
     RenderComputeBuffer* stereo_light_ids[2]{};
     RenderComputeBuffer* stereo_light_id_ranges = nullptr;
 };
@@ -32,7 +32,7 @@ void render_tiled_light_target_buffers_create(
     RenderExtent extent,
     bool create_interpolation_target,
     bool stereo,
-    RenderTarget* existing_interpolation_target);
+    RenderTexture* existing_interpolation_target);
 void render_tiled_light_target_buffers_release(
     TiledLightTargetResources& resources);
 

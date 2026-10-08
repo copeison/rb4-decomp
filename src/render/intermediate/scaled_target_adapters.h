@@ -5,12 +5,12 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_scaled_target(
+RenderTexture* render_target_resources_create_scaled_target(
     RenderTargetResources& resources,
     ScaledTargetLevel level,
     RenderExtent extent,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4

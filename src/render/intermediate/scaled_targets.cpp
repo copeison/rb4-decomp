@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/intermediate/scaled_target_adapters.h"
 
 namespace rb4 {
@@ -34,7 +34,7 @@ RenderExtent scaled_extent(RenderExtent extent, ScaledTargetLevel level) {
     };
 }
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResources& resources,
     ScaledTargetLevel level,
     ScaledTargetLane lane) {
@@ -43,7 +43,7 @@ RenderTarget*& target_slot(
                                    [static_cast<std::uint32_t>(lane)];
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResources& resources,
     ScaledTargetLevel level,
     ScaledTargetLane lane) {
@@ -52,7 +52,7 @@ RenderTarget* target_slot(
                                    [static_cast<std::uint32_t>(lane)];
 }
 
-RenderTarget* reusable_target(
+RenderTexture* reusable_target(
     const RenderTargetResources* resources,
     ScaledTargetLevel level,
     ScaledTargetLane lane) {
@@ -67,7 +67,7 @@ void release_target(
     ScaledTargetLane lane) {
     auto*& target = target_slot(resources, level, lane);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

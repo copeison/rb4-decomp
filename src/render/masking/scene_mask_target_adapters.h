@@ -4,12 +4,12 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_scene_mask_target(
+RenderTexture* render_target_resources_create_scene_mask_target(
     RenderTargetResources& resources,
     SceneMaskTargetKind kind,
     RenderExtent extent,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4

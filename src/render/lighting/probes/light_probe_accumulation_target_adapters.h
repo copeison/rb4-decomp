@@ -4,10 +4,10 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_light_probe_accumulation_target(
+RenderTexture* render_target_resources_create_light_probe_accumulation_target(
     RenderTargetResources& resources,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4

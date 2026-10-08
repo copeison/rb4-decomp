@@ -48,7 +48,7 @@ RenderExtent tiled_light_interpolation_extent(RenderExtent extent) {
     };
 }
 
-RenderTarget* tiled_light_reuse_target(
+RenderTexture* tiled_light_reuse_target(
     RenderTargetResources& resources,
     const RenderTargetResourceBlock* reusable_block,
     RenderExtent extent) {

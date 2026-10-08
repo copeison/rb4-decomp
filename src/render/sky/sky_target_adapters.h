@@ -5,12 +5,12 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_sky_target(
+RenderTexture* render_target_resources_create_sky_target(
     RenderTargetResources& resources,
     SkyTargetLevel level,
     RenderExtent extent,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4

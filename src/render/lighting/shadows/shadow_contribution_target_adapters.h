@@ -7,13 +7,13 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_shadow_contribution_target(
+RenderTexture* render_target_resources_create_shadow_contribution_target(
     RenderTargetResources& resources,
     ShadowContributionTargetKind kind,
     RenderExtent extent,
     std::uint32_t texture_array_layers,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4

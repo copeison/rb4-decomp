@@ -4,7 +4,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/core/targets/render_target_resource_block.h"
 #include "render/core/targets/render_target_resource_block_adapters.h"
 #include "render/core/targets/render_target_resources_lifecycle_adapters.h"
@@ -67,9 +67,9 @@ void bind_source_texture(
         resources.registered_resource_count++] = &source_texture;
 }
 
-void release_target(RenderTarget*& target) {
+void release_target(RenderTexture*& target) {
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

@@ -101,3 +101,9 @@ The 2D path proved that a single-texture descriptor contains a complete
 earlier 168-byte prefix view. The mip descriptor's implementation pointer,
 width, height, depth, and data-format offsets are typed; the remaining 56-byte
 ownership state stays opaque until its resource variants are reconstructed.
+
+The virtuals return render textures directly: normal targets are 2D textures,
+and the shadow-contribution array is a 2D-array texture. Owner and per-scene
+slots therefore use the common `RenderTexture` base, including release and
+reuse paths. The separate 32-byte `RenderTarget` wrapper remains limited to
+its own active-state lifecycle.

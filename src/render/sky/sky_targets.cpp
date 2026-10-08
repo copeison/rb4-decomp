@@ -1,6 +1,6 @@
 #include "render/sky/sky_targets.h"
 
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/sky/sky_target_adapters.h"
 
 namespace rb4 {
@@ -19,13 +19,13 @@ RenderExtent scaled_extent(RenderExtent extent, std::uint32_t shift) {
     };
 }
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResources& resources,
     SkyTargetLevel level) {
     return resources.sky[static_cast<std::uint32_t>(level)];
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResources& resources,
     SkyTargetLevel level) {
     return resources.sky[static_cast<std::uint32_t>(level)];
@@ -36,7 +36,7 @@ void release_target(
     SkyTargetLevel level) {
     auto*& target = target_slot(resources, level);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }
@@ -48,11 +48,11 @@ void render_sky_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
     const auto extent = resources.extent;
-    RenderTarget* new_full_target = nullptr;
+    RenderTexture* new_full_target = nullptr;
 
     for (std::uint32_t shift = 0; shift < 4; ++shift) {
         const auto level = static_cast<SkyTargetLevel>(shift);
-        RenderTarget* reusable_target = nullptr;
+        RenderTexture* reusable_target = nullptr;
         if (reusable_resources != nullptr) {
             reusable_target = target_slot(*reusable_resources, level);
         } else if (shift != 0) {

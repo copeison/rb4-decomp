@@ -2,14 +2,14 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/gbuffer/gbuffer_target_adapters.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResourceBlock& block,
     GBufferTargetKind kind) {
     switch (kind) {
@@ -23,7 +23,7 @@ RenderTarget*& target_slot(
     return block.gbuffer_color;
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResourceBlock& block,
     GBufferTargetKind kind) {
     switch (kind) {
@@ -37,7 +37,7 @@ RenderTarget* target_slot(
     return nullptr;
 }
 
-RenderTarget* reusable_target(
+RenderTexture* reusable_target(
     const RenderTargetResourceBlock* block,
     GBufferTargetKind kind) {
     return block == nullptr
@@ -66,7 +66,7 @@ void release_target(
     GBufferTargetKind kind) {
     auto*& target = target_slot(block, kind);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

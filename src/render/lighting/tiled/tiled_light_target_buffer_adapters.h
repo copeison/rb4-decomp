@@ -4,10 +4,10 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_create_tiled_light_interpolation_target(
+RenderTexture* render_create_tiled_light_interpolation_target(
     RenderExtent extent,
-    RenderTarget* existing_target);
+    RenderTexture* existing_target);
 
 }  // namespace rb4

@@ -6,7 +6,7 @@
 #include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/lighting/tiled/tiled_light_target_buffer_adapters.h"
 
 namespace rb4 {
@@ -58,9 +58,9 @@ void release_compute_buffer(RenderComputeBuffer*& buffer) {
     }
 }
 
-void release_render_target(RenderTarget*& target) {
+void release_render_target(RenderTexture*& target) {
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }
@@ -73,7 +73,7 @@ void render_tiled_light_target_buffers_create(
     RenderExtent extent,
     bool create_interpolation_target,
     bool stereo,
-    RenderTarget* existing_interpolation_target) {
+    RenderTexture* existing_interpolation_target) {
     const auto& settings =
         *render_system_settings(*render_system_instance());
     if (!settings.use_tiled_lighting) {

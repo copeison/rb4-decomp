@@ -6,20 +6,20 @@
 #include "render/core/meshes/render_mesh_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/masking/scene_mask_tile_adapters.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResources& resources,
     SceneMaskTileTargetKind kind) {
     return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResources& resources,
     SceneMaskTileTargetKind kind) {
     return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
@@ -31,7 +31,7 @@ std::uint32_t divide_round_up(
     return value / divisor + (value % divisor != 0);
 }
 
-RenderTarget* reusable_target(
+RenderTexture* reusable_target(
     const RenderTargetResources* resources,
     SceneMaskTileTargetKind kind) {
     return resources == nullptr
@@ -57,7 +57,7 @@ void release_target(
     SceneMaskTileTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

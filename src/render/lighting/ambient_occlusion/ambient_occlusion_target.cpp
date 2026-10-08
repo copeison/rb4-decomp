@@ -1,6 +1,6 @@
 #include "render/lighting/ambient_occlusion/ambient_occlusion_target.h"
 
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/lighting/ambient_occlusion/ambient_occlusion_target_adapters.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void render_ambient_occlusion_target_release(
     RenderTargetResourceBlock& block) {
     auto*& target = block.ambient_occlusion;
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

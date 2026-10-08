@@ -5,13 +5,13 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_target_resources_create_gbuffer_target(
+RenderTexture* render_target_resources_create_gbuffer_target(
     RenderTargetResources& resources,
     GBufferTargetKind kind,
     RenderExtent extent,
-    RenderTarget* reusable_target,
+    RenderTexture* reusable_target,
     bool register_with_owner);
 
 }  // namespace rb4

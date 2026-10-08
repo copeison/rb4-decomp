@@ -21,12 +21,12 @@ std::uint32_t scaled_dimension(std::uint32_t value, std::uint32_t shift) {
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6B2E80.
-RenderTarget* render_light_accumulation_target_create(
+RenderTexture* render_light_accumulation_target_create(
     RenderTargetResources& resources,
     const char* name,
     std::uint32_t scale_shift,
     bool allocate_attachment,
-    RenderTarget* reusable_target) {
+    RenderTexture* reusable_target) {
     const auto& settings =
         *render_system_settings(*render_system_instance());
     const bool use_64_bit_format = settings.use_64_bit_light_accum ||

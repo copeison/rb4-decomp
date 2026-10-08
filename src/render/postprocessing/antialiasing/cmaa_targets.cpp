@@ -2,14 +2,14 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/postprocessing/antialiasing/cmaa_target_adapters.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTarget*& target_slot(
+RenderTexture*& target_slot(
     RenderTargetResources& resources,
     CmaaTargetKind kind) {
     switch (kind) {
@@ -25,7 +25,7 @@ RenderTarget*& target_slot(
     return resources.cmaa_color;
 }
 
-RenderTarget* target_slot(
+RenderTexture* target_slot(
     const RenderTargetResources& resources,
     CmaaTargetKind kind) {
     switch (kind) {
@@ -41,7 +41,7 @@ RenderTarget* target_slot(
     return nullptr;
 }
 
-RenderTarget* reusable_target(
+RenderTexture* reusable_target(
     const RenderTargetResources* resources,
     CmaaTargetKind kind) {
     return resources == nullptr
@@ -69,7 +69,7 @@ void release_target(
     CmaaTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

@@ -4,7 +4,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/targets/render_target_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/depth/depth_stencil_target_adapters.h"
 
 namespace rb4 {
@@ -53,7 +53,7 @@ void render_depth_stencil_target_create(
 void render_depth_stencil_target_release(RenderTargetResourceBlock& block) {
     auto*& target = block.depth_stencil;
     if (target != nullptr) {
-        render_target_release_dynamic(*target);
+        render_texture_release_dynamic(*target);
         target = nullptr;
     }
 }

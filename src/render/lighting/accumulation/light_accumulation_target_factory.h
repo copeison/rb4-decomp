@@ -6,13 +6,13 @@
 
 namespace rb4 {
 
-struct RenderTarget;
+struct RenderTexture;
 
-RenderTarget* render_light_accumulation_target_create(
+RenderTexture* render_light_accumulation_target_create(
     RenderTargetResources& resources,
     const char* name,
     std::uint32_t scale_shift,
     bool allocate_attachment,
-    RenderTarget* reusable_target);
+    RenderTexture* reusable_target);
 
 }  // namespace rb4
