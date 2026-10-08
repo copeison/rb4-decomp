@@ -21,6 +21,11 @@ Finalization at `0x5C29A0` records the current triangle count, dispatches the
 format-specific backend finalizer, and releases CPU vertex and triangle
 storage when the residency and usage flags permit it.
 
+The shared update path at `0x5C2DF0` stamps the current render epoch,
+recalculates the triangle count when triangle data changed, and dispatches the
+format-specific backend update. Both primary and embedded update-listener
+callbacks use that path before atomically clearing the pending flags.
+
 The typed base lives in `src/render/core/meshes/render_mesh.cpp`. The Orbis
 layout now embeds it directly before the platform vertex arrays and GPU
 descriptors instead of representing the first 128 bytes as padding. Combined

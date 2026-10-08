@@ -58,6 +58,11 @@ void render_mesh_set_triangle_usage_flags(
 bool render_mesh_requires_vertex_storage(const RenderMesh& mesh);
 bool render_mesh_requires_triangle_storage(const RenderMesh& mesh);
 void render_mesh_finalize(RenderMesh& mesh);
+void render_mesh_apply_updates(
+    RenderMesh& mesh,
+    void* update_context,
+    std::uint32_t flags);
 void render_mesh_process_pending_updates(RenderMesh& mesh);
+void render_mesh_process_pending_updates_secondary(RenderMeshUpdateLink& link);
 
 }  // namespace rb4

@@ -254,6 +254,23 @@
 005C2A70  retn
 005C2A71  call    __stack_chk_fail; PS4 SDK 5.008 import resolved from NID Ou3iL1abvng; stub: target/lib/libkernel_stub_weak.a
 
+; render_mesh_apply_updates @ 0x5C2DF0
+005C2DF0  lea     rax, g_render_system; Stamps the render epoch, refreshes triangle count for flag 2, and dispatches the backend update.
+005C2DF7  test    dl, 2
+005C2DFA  mov     rax, [rax]
+005C2DFD  mov     rax, [rax+0A0h]
+005C2E04  mov     [rdi+70h], rax
+005C2E08  jz      short loc_5C2E28
+005C2E0A  mov     rax, [rdi+20h]
+005C2E0E  mov     rcx, 0AAAAAAAAAAAAAAABh
+005C2E18  sub     rax, [rdi+18h]
+005C2E1C  sar     rax, 2
+005C2E20  imul    rcx, rax
+005C2E24  mov     [rdi+40h], rcx
+005C2E28  mov     rax, [rdi]
+005C2E2B  mov     rax, [rax+50h]
+005C2E2F  jmp     rax
+
 ; render_mesh_process_pending_updates @ 0x5C2E40
 005C2E40  push    rbp; Processes the atomic dirty mask, refreshes triangle count, dispatches the backend update, and clears the mask.
 005C2E41  mov     rbp, rsp
@@ -287,7 +304,7 @@
 005C2E9F  retn
 
 ; render_mesh_process_pending_updates_secondary @ 0x5C2EA0
-005C2EA0  push    rbp
+005C2EA0  push    rbp; Embedded update-listener callback for the RenderMesh at this-8.
 005C2EA1  mov     rbp, rsp
 005C2EA4  push    rbx
 005C2EA5  push    rax

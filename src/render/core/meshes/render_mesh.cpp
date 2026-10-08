@@ -92,6 +92,21 @@ void render_mesh_finalize(RenderMesh& mesh) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x5C2DF0.
+void render_mesh_apply_updates(
+    RenderMesh& mesh,
+    void* update_context,
+    std::uint32_t flags) {
+    (void)update_context;
+
+    mesh.last_used_frame = current_render_epoch();
+    if ((flags & 2U) != 0) {
+        mesh.triangle_count = static_cast<std::size_t>(
+            mesh.triangles.end - mesh.triangles.begin);
+    }
+    render_mesh_update_backend(mesh);
+}
+
 // Reconstructed from eboot.elf at 0x5C2E40.
 void render_mesh_process_pending_updates(RenderMesh& mesh) {
     const auto flags =
@@ -100,13 +115,16 @@ void render_mesh_process_pending_updates(RenderMesh& mesh) {
         return;
     }
 
-    mesh.last_used_frame = current_render_epoch();
-    if ((flags & 2U) != 0) {
-        mesh.triangle_count = static_cast<std::size_t>(
-            mesh.triangles.end - mesh.triangles.begin);
-    }
-    render_mesh_update_backend(mesh);
+    render_mesh_apply_updates(mesh, nullptr, flags);
     mesh.pending_update_flags.exchange(0);
+}
+
+// Reconstructed from eboot.elf at 0x5C2EA0.
+void render_mesh_process_pending_updates_secondary(RenderMeshUpdateLink& link) {
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&link);
+    auto& mesh = *reinterpret_cast<RenderMesh*>(
+        bytes - offsetof(RenderMesh, update_link));
+    render_mesh_process_pending_updates(mesh);
 }
 
 }  // namespace rb4

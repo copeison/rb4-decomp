@@ -210,6 +210,16 @@ __int64 __fastcall render_mesh_finalize(_BYTE *a1)
 }
 
 
+// render_mesh_apply_updates @ 0x5C2DF0
+__int64 __fastcall render_mesh_apply_updates(_QWORD *a1, __int64 a2, char a3)
+{
+  a1[14] = *(_QWORD *)(g_render_system + 160);
+  if ( (a3 & 2) != 0 )
+    a1[8] = 0xAAAAAAAAAAAAAAABLL * ((__int64)(a1[4] - a1[3]) >> 2);
+  return (*(__int64 (__fastcall **)(_QWORD *, __int64))(*a1 + 80LL))(a1, a2);
+}
+
+
 // render_mesh_process_pending_updates @ 0x5C2E40
 // Processes mesh dirty flags, updates counts, invokes virtual backend update, then clears the flags.
 __int64 __fastcall render_mesh_process_pending_updates(__int64 a1)
