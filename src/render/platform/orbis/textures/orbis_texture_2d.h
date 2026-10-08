@@ -11,10 +11,27 @@ struct OrbisRenderContext;
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
 
-struct OrbisTexture2D : RenderTexture2D {
-    std::uint8_t backend_state[112];
+struct OrbisTextureMemoryRequirements {
+    std::uint32_t size;
+    std::uint32_t alignment;
 };
 
+struct OrbisTexture2D : RenderTexture2D {
+    void* color_textures[2];
+    void* plane_texture;
+    OrbisTextureMemoryRequirements depth_memory;
+    OrbisTextureMemoryRequirements stencil_memory;
+    OrbisTextureMemoryRequirements metadata_memory;
+    std::uint64_t active_storage;
+    void* allocation_regions;
+    void* allocation_control;
+    std::uint8_t reserved_480[8];
+    OrbisGpuRenderTarget* render_targets[2];
+    OrbisGpuDepthRenderTarget* depth_target;
+    void* auxiliary_backend;
+};
+
+static_assert(sizeof(OrbisTextureMemoryRequirements) == 8);
 static_assert(sizeof(OrbisTexture2D) == 520);
 
 OrbisTexture2D* orbis_create_texture_2d(

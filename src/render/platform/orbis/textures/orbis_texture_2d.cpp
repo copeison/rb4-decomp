@@ -21,7 +21,19 @@ void orbis_texture_2d_construct(
     const RenderTexture2DDescriptor& descriptor) {
     render_texture_2d_construct(texture, descriptor);
     orbis_texture_2d_install_vtable(texture);
-    orbis_texture_2d_clear_backend_state(texture);
+    texture.color_textures[0] = nullptr;
+    texture.color_textures[1] = nullptr;
+    texture.plane_texture = nullptr;
+    texture.depth_memory = {};
+    texture.stencil_memory = {};
+    texture.metadata_memory = {};
+    texture.active_storage = 0;
+    texture.allocation_regions = nullptr;
+    texture.allocation_control = nullptr;
+    texture.render_targets[0] = nullptr;
+    texture.render_targets[1] = nullptr;
+    texture.depth_target = nullptr;
+    texture.auxiliary_backend = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8D6310.
@@ -56,13 +68,15 @@ void orbis_texture_2d_update_gpu_data(OrbisTexture2D& texture) {
 // Reconstructed from eboot.elf at 0x8D71E0.
 const OrbisGpuRenderTarget* orbis_texture_2d_render_target(
     const OrbisTexture2D& texture) {
-    return orbis_texture_2d_mutable_render_target(texture);
+    const auto active_frame = orbis_active_render_frame_index();
+    auto* target = texture.render_targets[active_frame];
+    return target != nullptr ? target : texture.render_targets[0];
 }
 
 // Reconstructed from eboot.elf at 0x8D7240.
 const OrbisGpuDepthRenderTarget* orbis_texture_2d_depth_target(
     const OrbisTexture2D& texture) {
-    return orbis_texture_2d_mutable_depth_target(texture);
+    return texture.depth_target;
 }
 
 // Reconstructed from eboot.elf at 0x8D6E40.
@@ -74,8 +88,8 @@ void orbis_texture_2d_bind_vertex(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_vertex_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, border_color);
 }
 
 // Reconstructed from eboot.elf at 0x8D6F10.
@@ -87,8 +101,8 @@ void orbis_texture_2d_bind_hull(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_hull_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), flags, border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 // Reconstructed from eboot.elf at 0x8D6F80.
@@ -100,8 +114,8 @@ void orbis_texture_2d_bind_domain(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_domain_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), flags, border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 // Reconstructed from eboot.elf at 0x8D6FF0.
@@ -113,8 +127,8 @@ void orbis_texture_2d_bind_geometry(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_geometry_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), flags, border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 // Reconstructed from eboot.elf at 0x8D7060.
@@ -126,8 +140,8 @@ void orbis_texture_2d_bind_pixel(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_pixel_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), flags, border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 // Reconstructed from eboot.elf at 0x8D70D0.
@@ -139,8 +153,8 @@ void orbis_texture_2d_bind_compute(
     const OrbisSamplerBorderColor& border_color) {
     orbis_bind_compute_texture(
         context, slot, orbis_texture_2d_binding_view(texture, flags),
-        orbis_texture_2d_address_mode(texture),
-        orbis_texture_2d_filter_mode(texture), flags, border_color);
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
 }
 
 }  // namespace rb4

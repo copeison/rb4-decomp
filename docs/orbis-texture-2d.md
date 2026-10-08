@@ -16,7 +16,11 @@ a normalized 144-byte descriptor snapshot, one 80-byte mip-chain state, and an
 optional linked-resource pointer with a signed index. Construction initializes
 the link to `nullptr` and `-1`, publishes the mip properties through the base
 texture state, and selects resource index zero. The Orbis subclass adds 112
-bytes of backend descriptor and allocation state.
+bytes holding two color texture views, an auxiliary plane view, three memory
+requirement records, the active storage bank, allocation ownership, two color
+targets, one depth target, and auxiliary backend state. The eight bytes at
+offset 480 are not initialized or read by the recovered methods and remain
+reserved.
 
 Backend initialization at `0x8D6460` selects a depth path when the common
 texture usage field is 2. That path creates a 52-byte Gnm depth-target
