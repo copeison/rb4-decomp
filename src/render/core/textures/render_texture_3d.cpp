@@ -3,6 +3,9 @@
 #include <cstddef>
 #include <cstring>
 
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_3d_adapters.h"
 
 namespace rb4 {
@@ -61,6 +64,21 @@ void render_texture_3d_construct(
         &texture.descriptor_type,
         texture.descriptor_state,
         sizeof(texture.descriptor_state));
+}
+
+// Reconstructed from eboot.elf at 0x6F5C50.
+RenderTexture3D* render_create_texture_3d(
+    RenderTexture3DDescriptor& descriptor,
+    RenderTexture3D* reusable_texture) {
+    render_texture_resolve_descriptor_fields(
+        descriptor.texture_state + 48,
+        2,
+        descriptor.texture_state + 4,
+        -1);
+    auto& factory = *render_system_factory(*render_system_instance());
+    auto* texture = render_factory_create_texture_3d(factory, descriptor);
+    render_texture_initialize_backend(*texture, reusable_texture);
+    return texture;
 }
 
 // Reconstructed from eboot.elf at 0x6F5DB0.

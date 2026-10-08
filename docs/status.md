@@ -160,6 +160,8 @@
   render-target resource creation.
 - [x] Recover the common 3D texture factory dispatch used by volumetric
   scattering resources.
+- [x] Reconstruct common 3D descriptor resolution, factory creation, and
+  reusable backend initialization.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
 - [x] Unify the render-system epoch used by common mesh updates, Orbis mesh
   draws, and resource synchronization.

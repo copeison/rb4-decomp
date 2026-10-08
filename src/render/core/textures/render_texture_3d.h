@@ -22,6 +22,9 @@ static_assert(sizeof(RenderTexture3D) == 392);
 void render_texture_3d_construct(
     RenderTexture3D& texture,
     const RenderTexture3DDescriptor& descriptor);
+RenderTexture3D* render_create_texture_3d(
+    RenderTexture3DDescriptor& descriptor,
+    RenderTexture3D* reusable_texture);
 void render_texture_3d_destruct(RenderTexture3D& texture);
 void render_texture_3d_delete(RenderTexture3D& texture);
 
