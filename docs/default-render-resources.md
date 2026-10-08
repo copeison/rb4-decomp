@@ -47,3 +47,10 @@ borrowed scene components.
 The complete block is 568 bytes and begins at render-system offset `0x7B8`.
 The common frame and shutdown paths now use that typed block directly for
 polling and release.
+
+Construction at `0x6BDB30` is source-owned through placement construction of
+the typed block. This initializes every pointer, both light-ID vectors, the
+directional lighting mode, and the `100.0f` scale using their declared types.
+The destructor at `0x6BDC20` destroys both vector allocations in reverse order
+and releases any retained lighting and primary scene resources, matching the
+binary's fallback cleanup when runtime shutdown has not already cleared them.

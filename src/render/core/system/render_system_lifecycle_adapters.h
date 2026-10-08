@@ -23,9 +23,6 @@ void render_platform_config_destroy(RenderPlatformConfig& config);
 bool render_platform_config_boot_probe(const RenderPlatformConfig& config);
 std::vector<std::uint32_t> render_supported_platform_ids();
 
-void render_system_construct_default_resources(RenderSystem& system);
-void render_system_destroy_default_resources(RenderSystem& system);
-
 RenderSettings* render_settings_allocate();
 void render_settings_release(RenderSettings* settings);
 }  // namespace rb4

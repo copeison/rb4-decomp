@@ -86,8 +86,9 @@ remains isolated behind one adapter.
 
 The default-resource block is the exact 568-byte range at render-system offset
 `0x7B8` (`1976`) through `0x9EF`. Frame finish polls this typed block directly,
-and shutdown releases it directly, removing the previous system-level wrapper
-for both operations.
+shutdown releases it directly, and the render-system constructor/destructor now
+invoke its typed placement construction and reverse vector/scene teardown
+directly. No system-level default-resource lifecycle wrapper remains.
 
 The deferred-release state at `0xEA0` contains a typed 48-byte recursive-lock
 queue followed by a reserved pointer and the frame-phase value at `0xED8`.

@@ -26,6 +26,8 @@ static_assert(sizeof(DefaultRenderResources) == 568);
 DefaultRenderResources& render_system_default_resources(
     RenderSystem& system);
 
+void render_construct_default_resources(DefaultRenderResources& resources);
+void render_destruct_default_resources(DefaultRenderResources& resources);
 void render_initialize_default_resources(
     DefaultRenderResources& resources,
     bool initialize_rendering);

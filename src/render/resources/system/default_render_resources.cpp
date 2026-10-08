@@ -1,5 +1,7 @@
 #include "render/resources/system/default_render_resources.h"
 
+#include <new>
+
 #include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/system/render_system.h"
 #include "render/core/textures/render_texture_adapters.h"
@@ -45,6 +47,25 @@ DefaultRenderResources& render_system_default_resources(
     auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
     return *reinterpret_cast<DefaultRenderResources*>(
         bytes + kDefaultRenderResourcesOffset);
+}
+
+// Reconstructed from eboot.elf at 0x6BDB30.
+void render_construct_default_resources(DefaultRenderResources& resources) {
+    new (&resources) DefaultRenderResources{};
+}
+
+// Reconstructed from eboot.elf at 0x6BDC20.
+void render_destruct_default_resources(DefaultRenderResources& resources) {
+    using LightList = std::vector<RndObjectId>;
+    resources.lighting.shadowed_spot_lights.~LightList();
+    resources.lighting.directional_lights.~LightList();
+
+    if (resources.lighting.resource != nullptr) {
+        rnd_scene_resource_release(resources.lighting.resource);
+    }
+    if (resources.scene_resource != nullptr) {
+        rnd_scene_resource_release(resources.scene_resource);
+    }
 }
 
 // Reconstructed from eboot.elf at 0x6BDCA0.

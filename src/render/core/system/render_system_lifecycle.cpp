@@ -11,6 +11,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/lighting/render_lighting_resources.h"
+#include "render/resources/system/default_render_resources.h"
 #include "render/resources/system/render_resource_manager.h"
 
 namespace rb4 {
@@ -147,7 +148,8 @@ void render_system_construct(RenderSystem& system) {
             render_system_platform_config_at(system, index));
     }
 
-    render_system_construct_default_resources(system);
+    render_construct_default_resources(
+        render_system_default_resources(system));
     construct_backend_state(system);
     render_system_construct_deferred_release_state(system);
     render_system_publish_instance(system);
@@ -177,7 +179,8 @@ void render_system_destruct(RenderSystem& system) {
 
     render_system_destroy_deferred_release_state(system);
     destroy_backend_state(system);
-    render_system_destroy_default_resources(system);
+    render_destruct_default_resources(
+        render_system_default_resources(system));
 
     for (std::size_t index = kPlatformConfigCount; index != 0; --index) {
         render_platform_config_destroy(
