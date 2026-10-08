@@ -9,6 +9,13 @@ The platform constructor invokes the common 1D texture constructor at
 zeros the final 16 bytes of backend state. The wrapper at `0x6F5810` assigns
 descriptor type 0 and dispatches through the matching factory slot.
 
+The common type is exactly 392 bytes: the 168-byte `RenderTexture` base, a
+144-byte shape-specific descriptor snapshot, and an 80-byte mip-chain state.
+The Orbis subclass adds the Gnm descriptor and allocation pointers, preserving
+the observed 408-byte size. The descriptor and mip-chain internals remain
+opaque where member semantics are not yet supported by callers, while their
+sizes, lifetime, and placement are exact.
+
 Backend initialization at `0x8E5050` creates a 32-byte Gnm texture descriptor
 with texture type 8, the authored width, unit height and depth, and the common
 format, mip-count, tile-mode, and fragment settings. It calculates the tiled
@@ -24,3 +31,7 @@ texture destructor. The deleting destructor follows at `0x8E4FF0`.
 The six virtual methods at `0x8E52D0` through `0x8E538F` forward the texture
 view and common sampler state to the shared vertex, hull, domain, geometry,
 pixel, and compute binding functions.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-1d.asm` and
+`analysis/exports/render-texture-1d.c`.
