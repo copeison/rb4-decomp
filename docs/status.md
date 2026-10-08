@@ -74,6 +74,8 @@
 - [x] Replace the sky target creation adapter with direct descriptor assembly,
   data-format resolution, and common 2D texture creation.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.
+- [x] Replace scaled intermediate creation adapters with shared texture
+  descriptor and data-format construction.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.
 - [x] Reconstruct the fallback light-probe accumulation target.
