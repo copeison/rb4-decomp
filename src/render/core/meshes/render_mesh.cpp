@@ -22,7 +22,7 @@ void render_mesh_construct(RenderMesh& mesh, const char* name) {
     for (auto& value : mesh.metadata_sentinel) {
         value = std::numeric_limits<std::uint32_t>::max();
     }
-    mesh.pending_update_flags = 0;
+    mesh.pending_update_flags.store(0, std::memory_order_relaxed);
     mesh.last_used_frame = std::numeric_limits<std::uint64_t>::max();
     mesh.name = name;
 }
@@ -38,6 +38,54 @@ void render_mesh_destruct(RenderMesh& mesh) {
 void render_mesh_delete(RenderMesh& mesh) {
     render_mesh_destruct(mesh);
     render_delete_mesh_storage(mesh);
+}
+
+// Reconstructed from eboot.elf at 0x5C2930.
+void render_mesh_set_vertices_resident(RenderMesh& mesh, bool resident) {
+    mesh.vertices_resident = resident;
+}
+
+// Reconstructed from eboot.elf at 0x5C2940.
+void render_mesh_set_vertex_usage_flags(
+    RenderMesh& mesh,
+    std::uint32_t flags) {
+    mesh.vertex_usage_flags = flags;
+}
+
+// Reconstructed from eboot.elf at 0x5C2950.
+void render_mesh_set_triangle_usage_flags(
+    RenderMesh& mesh,
+    std::uint32_t flags) {
+    mesh.triangle_usage_flags = flags;
+}
+
+// Reconstructed from eboot.elf at 0x5C2960.
+bool render_mesh_requires_vertex_storage(const RenderMesh& mesh) {
+    return mesh.vertices_resident || mesh.triangles_resident ||
+           (mesh.vertex_usage_flags & 5U) != 0;
+}
+
+// Reconstructed from eboot.elf at 0x5C2980.
+bool render_mesh_requires_triangle_storage(const RenderMesh& mesh) {
+    return mesh.vertices_resident || mesh.triangles_resident ||
+           (mesh.triangle_usage_flags & 5U) != 0;
+}
+
+// Reconstructed from eboot.elf at 0x5C2E40.
+void render_mesh_process_pending_updates(RenderMesh& mesh) {
+    const auto flags =
+        mesh.pending_update_flags.load(std::memory_order_relaxed);
+    if (flags == 0) {
+        return;
+    }
+
+    mesh.last_used_frame = current_render_epoch();
+    if ((flags & 2U) != 0) {
+        mesh.triangle_count = static_cast<std::size_t>(
+            mesh.triangles.end - mesh.triangles.begin);
+    }
+    render_mesh_update_backend(mesh);
+    mesh.pending_update_flags.exchange(0);
 }
 
 }  // namespace rb4

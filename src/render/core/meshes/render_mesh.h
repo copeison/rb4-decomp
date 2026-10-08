@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 
@@ -34,7 +35,7 @@ struct RenderMesh {
     std::uint32_t vertex_usage_flags;
     std::uint32_t triangle_usage_flags;
     std::uint32_t metadata_sentinel[4];
-    std::uint32_t pending_update_flags;
+    std::atomic<std::uint32_t> pending_update_flags;
     std::uint64_t last_used_frame;
     const char* name;
 };
@@ -47,5 +48,15 @@ static_assert(sizeof(RenderMesh) == 128);
 void render_mesh_construct(RenderMesh& mesh, const char* name);
 void render_mesh_destruct(RenderMesh& mesh);
 void render_mesh_delete(RenderMesh& mesh);
+void render_mesh_set_vertices_resident(RenderMesh& mesh, bool resident);
+void render_mesh_set_vertex_usage_flags(
+    RenderMesh& mesh,
+    std::uint32_t flags);
+void render_mesh_set_triangle_usage_flags(
+    RenderMesh& mesh,
+    std::uint32_t flags);
+bool render_mesh_requires_vertex_storage(const RenderMesh& mesh);
+bool render_mesh_requires_triangle_storage(const RenderMesh& mesh);
+void render_mesh_process_pending_updates(RenderMesh& mesh);
 
 }  // namespace rb4

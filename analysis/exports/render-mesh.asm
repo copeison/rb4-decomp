@@ -157,3 +157,100 @@
 005C2928  pop     r14
 005C292A  pop     rbp
 005C292B  jmp     sub_37BF50
+
+; render_mesh_set_vertices_resident @ 0x5C2930
+005C2930  mov     [rdi+50h], sil
+005C2934  retn
+
+; render_mesh_set_vertex_usage_flags @ 0x5C2940
+005C2940  mov     [rdi+54h], esi
+005C2943  retn
+
+; render_mesh_set_triangle_usage_flags @ 0x5C2950
+005C2950  mov     [rdi+58h], esi
+005C2953  retn
+
+; render_mesh_requires_vertex_storage @ 0x5C2960
+005C2960  cmp     byte ptr [rdi+50h], 0; Returns whether the current residency and usage flags require CPU vertex storage.
+005C2964  mov     al, 1
+005C2966  jnz     short locret_5C2975
+005C2968  cmp     byte ptr [rdi+51h], 0
+005C296C  jnz     short locret_5C2975
+005C296E  test    byte ptr [rdi+54h], 5
+005C2972  setnz   al
+005C2975  retn
+
+; render_mesh_requires_triangle_storage @ 0x5C2980
+005C2980  cmp     byte ptr [rdi+50h], 0; Returns whether the current residency and usage flags require CPU triangle storage.
+005C2984  mov     al, 1
+005C2986  jnz     short locret_5C2995
+005C2988  cmp     byte ptr [rdi+51h], 0
+005C298C  jnz     short locret_5C2995
+005C298E  test    byte ptr [rdi+58h], 5
+005C2992  setnz   al
+005C2995  retn
+
+; render_mesh_process_pending_updates @ 0x5C2E40
+005C2E40  push    rbp; Processes the atomic dirty mask, refreshes triangle count, dispatches the backend update, and clears the mask.
+005C2E41  mov     rbp, rsp
+005C2E44  push    rbx
+005C2E45  push    rax
+005C2E46  mov     rbx, rdi
+005C2E49  mov     eax, [rbx+6Ch]
+005C2E4C  test    eax, eax
+005C2E4E  jz      short loc_5C2E99
+005C2E50  lea     rax, g_render_system
+005C2E57  mov     edx, [rbx+6Ch]
+005C2E5A  mov     rax, [rax]
+005C2E5D  test    dl, 2
+005C2E60  mov     rax, [rax+0A0h]
+005C2E67  mov     [rbx+70h], rax
+005C2E6B  jz      short loc_5C2E8B
+005C2E6D  mov     rax, [rbx+20h]
+005C2E71  mov     rcx, 0AAAAAAAAAAAAAAABh
+005C2E7B  sub     rax, [rbx+18h]
+005C2E7F  sar     rax, 2
+005C2E83  imul    rcx, rax
+005C2E87  mov     [rbx+40h], rcx
+005C2E8B  mov     rax, [rbx]
+005C2E8E  mov     rdi, rbx
+005C2E91  call    qword ptr [rax+50h]
+005C2E94  xor     eax, eax
+005C2E96  xchg    eax, [rbx+6Ch]
+005C2E99  add     rsp, 8
+005C2E9D  pop     rbx
+005C2E9E  pop     rbp
+005C2E9F  retn
+
+; render_mesh_process_pending_updates_secondary @ 0x5C2EA0
+005C2EA0  push    rbp
+005C2EA1  mov     rbp, rsp
+005C2EA4  push    rbx
+005C2EA5  push    rax
+005C2EA6  mov     rbx, rdi
+005C2EA9  mov     eax, [rbx+64h]
+005C2EAC  test    eax, eax
+005C2EAE  jz      short loc_5C2EFD
+005C2EB0  lea     rax, g_render_system
+005C2EB7  add     rbx, 0FFFFFFFFFFFFFFF8h
+005C2EBB  mov     edx, [rbx+6Ch]
+005C2EBE  mov     rax, [rax]
+005C2EC1  test    dl, 2
+005C2EC4  mov     rax, [rax+0A0h]
+005C2ECB  mov     [rbx+70h], rax
+005C2ECF  jz      short loc_5C2EEF
+005C2ED1  mov     rax, [rbx+20h]
+005C2ED5  mov     rcx, 0AAAAAAAAAAAAAAABh
+005C2EDF  sub     rax, [rbx+18h]
+005C2EE3  sar     rax, 2
+005C2EE7  imul    rcx, rax
+005C2EEB  mov     [rbx+40h], rcx
+005C2EEF  mov     rax, [rbx]
+005C2EF2  mov     rdi, rbx
+005C2EF5  call    qword ptr [rax+50h]
+005C2EF8  xor     eax, eax
+005C2EFA  xchg    eax, [rbx+6Ch]
+005C2EFD  add     rsp, 8
+005C2F01  pop     rbx
+005C2F02  pop     rbp
+005C2F03  retn

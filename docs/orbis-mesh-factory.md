@@ -12,6 +12,10 @@ frame that used the mesh, and its diagnostic name. The complete destructor at
 `0x5C27B0` releases the triangle vector and unregisters the update link; the
 deleting destructor is at `0x5C2870`. Secondary-base destructor entries at
 `0x5C2810` and `0x5C28D0` account for the update-link subobject at offset 8.
+The adjacent state methods set CPU-residency and usage flags, test whether
+vertex or triangle storage must be retained, and process the atomic pending
+update mask. Pending triangle updates recalculate the triangle count before
+dispatching the platform backend update and clearing the mask.
 
 The typed base lives in `src/render/core/meshes/render_mesh.cpp`. The Orbis
 layout now embeds it directly before the platform vertex arrays and GPU

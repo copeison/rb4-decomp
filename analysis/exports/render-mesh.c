@@ -133,3 +133,91 @@ double __fastcall render_mesh_secondary_delete(_QWORD *a1)
   return sub_37BF50(_R14);
 }
 
+
+// render_mesh_set_vertices_resident @ 0x5C2930
+void __fastcall render_mesh_set_vertices_resident(__int64 a1, char a2)
+{
+  *(_BYTE *)(a1 + 80) = a2;
+}
+
+
+// render_mesh_set_vertex_usage_flags @ 0x5C2940
+void __fastcall render_mesh_set_vertex_usage_flags(__int64 a1, int a2)
+{
+  *(_DWORD *)(a1 + 84) = a2;
+}
+
+
+// render_mesh_set_triangle_usage_flags @ 0x5C2950
+void __fastcall render_mesh_set_triangle_usage_flags(__int64 a1, int a2)
+{
+  *(_DWORD *)(a1 + 88) = a2;
+}
+
+
+// render_mesh_requires_vertex_storage @ 0x5C2960
+bool __fastcall render_mesh_requires_vertex_storage(_BYTE *a1)
+{
+  bool result; // al
+
+  result = true;
+  if ( a1[80] == 0 && a1[81] == 0 )
+    return (a1[84] & 5) != 0;
+  return result;
+}
+
+
+// render_mesh_requires_triangle_storage @ 0x5C2980
+bool __fastcall render_mesh_requires_triangle_storage(_BYTE *a1)
+{
+  bool result; // al
+
+  result = true;
+  if ( a1[80] == 0 && a1[81] == 0 )
+    return (a1[88] & 5) != 0;
+  return result;
+}
+
+
+// render_mesh_process_pending_updates @ 0x5C2E40
+// Processes mesh dirty flags, updates counts, invokes virtual backend update, then clears the flags.
+__int64 __fastcall render_mesh_process_pending_updates(__int64 a1)
+{
+  __int64 result; // rax
+  int v3; // edx
+
+  result = *(unsigned int *)(a1 + 108);
+  if ( (_DWORD)result != 0 )
+  {
+    v3 = *(_DWORD *)(a1 + 108);
+    *(_QWORD *)(a1 + 112) = *(_QWORD *)(g_render_system + 160);
+    if ( (v3 & 2) != 0 )
+      *(_QWORD *)(a1 + 64) = 0xAAAAAAAAAAAAAAABLL * ((__int64)(*(_QWORD *)(a1 + 32) - *(_QWORD *)(a1 + 24)) >> 2);
+    (*(void (__fastcall **)(__int64))(*(_QWORD *)a1 + 80LL))(a1);
+    return (unsigned int)_InterlockedExchange((volatile __int32 *)(a1 + 108), 0);
+  }
+  return result;
+}
+
+
+// render_mesh_process_pending_updates_secondary @ 0x5C2EA0
+__int64 __fastcall render_mesh_process_pending_updates_secondary(__int64 a1)
+{
+  __int64 result; // rax
+  __int64 v2; // rbx
+  int v3; // edx
+
+  result = *(unsigned int *)(a1 + 100);
+  if ( (_DWORD)result != 0 )
+  {
+    v2 = a1 - 8;
+    v3 = *(_DWORD *)(a1 - 8 + 108);
+    *(_QWORD *)(a1 - 8 + 112) = *(_QWORD *)(g_render_system + 160);
+    if ( (v3 & 2) != 0 )
+      *(_QWORD *)(v2 + 64) = 0xAAAAAAAAAAAAAAABLL * ((__int64)(*(_QWORD *)(v2 + 32) - *(_QWORD *)(v2 + 24)) >> 2);
+    (*(void (__fastcall **)(__int64))(*(_QWORD *)v2 + 80LL))(v2);
+    return (unsigned int)_InterlockedExchange((volatile __int32 *)(v2 + 108), 0);
+  }
+  return result;
+}
+
