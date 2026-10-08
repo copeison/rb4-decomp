@@ -10,9 +10,6 @@ namespace rb4 {
 
 struct RenderPlatformConfig;
 
-void render_platform_config_apply_capabilities(
-    RenderPlatformConfig& config,
-    RenderPlatform platform);
 std::vector<const char*> render_configured_resolutions(
     const char* platform_name);
 std::vector<std::uint32_t> render_configured_supported_platform_ids(

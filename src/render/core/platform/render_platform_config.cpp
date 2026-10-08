@@ -20,6 +20,73 @@ bool extent_less(RenderExtent left, RenderExtent right) {
     return left.height < right.height;
 }
 
+void set_uniform_capabilities(
+    RenderPlatformConfig& config,
+    std::uint64_t resource_tier,
+    std::uint32_t feature_flags,
+    std::uint64_t capability_mask) {
+    config.resource_tier = resource_tier;
+    config.feature_flags = feature_flags;
+    for (auto& value : config.capability_values) {
+        value = 16;
+    }
+    config.enabled = true;
+    config.capability_mask[0] = capability_mask;
+    config.capability_mask[1] = 0;
+}
+
+void set_restricted_capabilities(
+    RenderPlatformConfig& config,
+    std::uint64_t resource_tier,
+    std::uint64_t capability_mask) {
+    config.resource_tier = resource_tier;
+    config.feature_flags = 9;
+    config.capability_values[0] = 15;
+    config.capability_values[1] = 0;
+    config.capability_values[2] = 0;
+    config.capability_values[3] = 15;
+    config.capability_values[4] = 15;
+    config.enabled = true;
+    config.capability_mask[0] = capability_mask;
+    config.capability_mask[1] = 0;
+}
+
+void apply_platform_capabilities(
+    RenderPlatformConfig& config,
+    RenderPlatform platform) {
+    switch (static_cast<std::uint32_t>(platform)) {
+    case 3:
+        set_uniform_capabilities(
+            config, 8, 31, 0x1A01FFFFFF7FCC3ULL);
+        break;
+    case 5:
+    case 7:
+        set_uniform_capabilities(
+            config, 8, 31, 0x1601FFFFFF7FCC3ULL);
+        break;
+    case 8:
+        set_uniform_capabilities(
+            config, 8, 9, 0xFFBFE00007E57FC3ULL);
+        config.capability_mask[1] = 0x1FFFFFULL;
+        break;
+    case 9:
+    case 11:
+        set_restricted_capabilities(
+            config, 4, 0x11FE00007F79CC3ULL);
+        break;
+    case 10:
+        set_restricted_capabilities(
+            config, 8, 0x1201FFFFFF7FCC3ULL);
+        break;
+    case 12:
+        set_uniform_capabilities(
+            config, 8, 9, 0x1A01FFFFFF7FFC3ULL);
+        break;
+    default:
+        break;
+    }
+}
+
 }  // namespace
 
 RenderPlatformConfig& render_system_platform_config_at(
@@ -55,7 +122,7 @@ void render_platform_config_initialize(
     RenderPlatformConfig& config,
     std::uint32_t platform_id) {
     const auto platform = static_cast<RenderPlatform>(platform_id);
-    render_platform_config_apply_capabilities(config, platform);
+    apply_platform_capabilities(config, platform);
 
     const auto configured_resolutions = render_configured_resolutions(
         render_platform_name(platform));

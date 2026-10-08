@@ -21,9 +21,10 @@ The supported IDs come from `platform_mgr.supported_platforms` through
 constructs every fixed slot but populates only the platform configurations
 selected by data.
 
-The exact meanings of several packed capability masks remain unresolved. Their
-per-platform constants stay behind the capability adapter while the confirmed
-platform selection and resolution behavior are expressed directly.
+The exact meanings of several packed capability masks remain unresolved, but
+their per-platform values are direct. IDs 3, 5, 7, 8, 9, 10, 11, and 12 apply
+the observed resource tier, feature flags, five capability values, enabled
+state, and both 64-bit mask words before resolution loading.
 
 The platform-seven boot predicate at `0x6B9FE0` is also direct: the resource
 tier must be at least four and feature bits zero and three must both be set.

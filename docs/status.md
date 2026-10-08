@@ -295,6 +295,8 @@
   list setup, dynamic-array teardown, and recursive mutex lifetime.
 - [x] Type the 128-byte platform configuration, its defaults, resolution-vector
   lifetime, fixed array accessor, and platform-seven boot predicate.
+- [x] Reconstruct all fixed platform capability profiles and both capability
+  mask words without an adapter.
 - [x] Reconstruct common primary and auxiliary frame preparation, attachment,
   submission control flow, timing, and epoch advancement.
 - [x] Recover the 128-byte common GPU-stat block, typed frame query ID, direct
