@@ -36,7 +36,7 @@ bool render_system_begin_frame() {
     }
 
     render_system_prepare_frame(*system, false);
-    auto* frame_owner = render_system_active_frame_owner(*system);
+    auto* frame_owner = render_system_frame_owner(*system);
     if (frame_owner != nullptr &&
         render_system_attach_frame_owner(*system, *frame_owner)) {
         return true;

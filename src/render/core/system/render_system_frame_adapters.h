@@ -15,8 +15,6 @@ void render_system_unlock(RenderSystem& system);
 void render_system_enter_locked_call(RenderSystem& system);
 void render_system_leave_locked_call(RenderSystem& system);
 
-RenderFrameOwner* render_system_frame_owner(RenderSystem& system);
-RenderFrameOwner* render_system_active_frame_owner(RenderSystem& system);
 void render_frame_owner_poll(RenderFrameOwner& owner);
 RenderTargetStateHandle render_frame_owner_target_states(
     const RenderFrameOwner& owner);

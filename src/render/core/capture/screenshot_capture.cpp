@@ -110,7 +110,7 @@ void screenshot_capture_current_frame() {
         return;
     }
 
-    auto* owner = render_system_active_frame_owner(*system);
+    auto* owner = render_system_frame_owner(*system);
     if (owner != nullptr) {
         screenshot_capture_frame(*owner, screenshot_resolution_mode());
     }

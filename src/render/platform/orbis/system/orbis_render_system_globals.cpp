@@ -2,6 +2,9 @@
 
 #include <cstddef>
 
+#include "render/core/frame/render_frame_owner.h"
+#include "render/core/system/render_system_globals.h"
+
 namespace rb4 {
 
 OrbisRenderSystem* g_orbis_render_system = nullptr;
@@ -12,25 +15,16 @@ struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_0[56];
     OrbisRenderContext* render_context;
     bool frame_active;
-    std::uint8_t reserved_65[47];
-    void* frame_owner;
-    std::uint8_t reserved_120[40];
+    std::uint8_t reserved_65[95];
     std::uint64_t frame_epoch;
     std::uint8_t reserved_168[3672];
     std::uint64_t submit_token;
     bool submit_thread_running;
 };
 
-struct RenderFrameOwnerRuntimePrefix {
-    std::uint8_t reserved_0[32];
-    std::size_t active_frame;
-};
-
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
-static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_owner) == 112);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_epoch) == 160);
-static_assert(offsetof(RenderFrameOwnerRuntimePrefix, active_frame) == 32);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
@@ -80,13 +74,9 @@ bool orbis_submit_thread_running(const OrbisRenderSystem& system) {
 }
 
 std::size_t orbis_active_render_frame_index() {
-    const auto* runtime =
-        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(
-            g_orbis_render_system);
-    const auto* frame_owner =
-        static_cast<const RenderFrameOwnerRuntimePrefix*>(
-            runtime->frame_owner);
-    return frame_owner->active_frame;
+    auto& base = orbis_render_system_base(*g_orbis_render_system);
+    return render_frame_owner_active_frame_index(
+        *render_system_frame_owner(base));
 }
 
 void orbis_render_system_publish_instance(OrbisRenderSystem& system) {
