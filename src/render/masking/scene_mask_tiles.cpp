@@ -6,8 +6,9 @@
 #include "render/core/meshes/render_mesh_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/masking/scene_mask_tile_adapters.h"
 
 namespace rb4 {
 
@@ -44,12 +45,28 @@ void create_target(
     const RenderTargetResources* reusable_resources,
     SceneMaskTileTargetKind kind,
     RenderExtent extent) {
-    target_slot(resources, kind) =
-        render_target_resources_create_scene_mask_tile_target(
-            resources,
-            kind,
-            extent,
-            reusable_target(reusable_resources, kind));
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = 1;
+    creation_state.values[9] = 1;
+    creation_state.values[10] = 10;
+    const RenderDataFormatDescriptor format_descriptor{
+        8, 10, 0, 1, -1,
+    };
+    const auto target_flags =
+        kind == SceneMaskTileTargetKind::kPrimary ? 4U : 0U;
+    auto* target = render_target_resources_create_texture_2d(
+        resources,
+        "Scene Mask",
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        extent,
+        -1,
+        target_flags,
+        reusable_target(reusable_resources, kind));
+    target_slot(resources, kind) = target;
+    resources.registered_resources_begin[
+        resources.registered_resource_count++] = target;
 }
 
 void release_target(

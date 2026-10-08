@@ -42,6 +42,8 @@
 - [x] Inline full-resolution, scratch, and tile scene-mask descriptors and
   owner registration.
 - [x] Reconstruct tiled scene-mask targets and grid mesh.
+- [x] Inline tiled scene-mask texture descriptors, primary-target flags, and
+  owner registration.
 - [x] Reconstruct per-scene linear and tiled depth targets.
 - [x] Inline linear and tiled-depth creation-state and format descriptors.
 - [x] Reconstruct the per-scene ambient-occlusion target.

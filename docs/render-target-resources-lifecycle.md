@@ -148,3 +148,9 @@ use the owner's full extent; the mask-tile texture rounds each dimension up by
 the configured mask tile size and overrides creation-state filter value nine
 to `1`. All three use the common 2D factory, register with the owner, and
 accept matching reusable textures.
+
+The separate pair used by the scene-mask grid shares the same
+`{8, 10, 0, 1, -1}` format at the light-tile extent. Both textures use fixed
+address and filter values of `1`; the primary carries target flag `4`, while
+the secondary carries zero. Both textures are owner-registered after direct
+common 2D creation.
