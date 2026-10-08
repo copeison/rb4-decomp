@@ -61,6 +61,7 @@
 - [x] Reconstruct shared mesh and instance Gnm vertex-descriptor generation.
 - [x] Reconstruct the common Orbis mesh draw and instancing path.
 - [x] Reconstruct Orbis back-buffer allocation and video-output registration.
+- [x] Reconstruct the common render-target lifecycle and 32-byte base layout.
 - [x] Reconstruct Orbis graphics/compute render-context allocation.
 - [x] Reconstruct Orbis graphics/compute frame submission and reset.
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.

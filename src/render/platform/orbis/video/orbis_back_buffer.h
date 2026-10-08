@@ -3,13 +3,13 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/core/render_target.h"
+
 namespace rb4 {
 
 struct OrbisRenderSystem;
 
-struct OrbisBackBuffer {
-    void* vtable;
-    std::uint8_t render_target_state[24];
+struct OrbisBackBuffer : RenderTarget {
     std::size_t active_buffer;
 };
 

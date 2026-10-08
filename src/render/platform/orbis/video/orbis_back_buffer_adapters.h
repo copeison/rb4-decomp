@@ -11,11 +11,6 @@ struct OrbisTexture2D;
 
 void* render_allocate(std::size_t size);
 void render_free(void* allocation);
-void orbis_back_buffer_construct_base(
-    OrbisBackBuffer& back_buffer,
-    std::uint32_t render_target_flags,
-    bool allocate_target_state);
-void orbis_back_buffer_destruct_base(OrbisBackBuffer& back_buffer);
 void orbis_back_buffer_install_vtable(OrbisBackBuffer& back_buffer);
 OrbisBackBufferSpecification orbis_back_buffer_specification(
     const OrbisRenderSystem& system,

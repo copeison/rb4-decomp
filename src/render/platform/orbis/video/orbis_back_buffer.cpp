@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "render/core/render_target.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
 
 namespace rb4 {
@@ -36,7 +37,7 @@ OrbisBackBuffer* orbis_back_buffer_create(OrbisRenderSystem& system) {
 void orbis_back_buffer_construct(
     OrbisBackBuffer& back_buffer,
     OrbisRenderSystem& system) {
-    orbis_back_buffer_construct_base(
+    render_target_construct(
         back_buffer, kRenderTargetFlags, true);
     orbis_back_buffer_install_vtable(back_buffer);
     back_buffer.active_buffer = 0;
@@ -64,7 +65,7 @@ void orbis_back_buffer_construct(
 
 // Reconstructed from the thunk at 0x8E2860.
 void orbis_back_buffer_destruct(OrbisBackBuffer& back_buffer) {
-    orbis_back_buffer_destruct_base(back_buffer);
+    render_target_destruct(back_buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E2870.
