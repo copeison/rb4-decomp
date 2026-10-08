@@ -2,7 +2,7 @@
 
 #include "render/core/context/render_context.h"
 #include "render/core/context/render_context_adapters.h"
-#include "render/core/system/render_system_frame_adapters.h"
+#include "render/core/frame/render_frame_owner.h"
 #include "render/core/system/render_system_state.h"
 
 namespace rb4 {

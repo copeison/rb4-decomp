@@ -4,6 +4,23 @@
 
 namespace rb4 {
 
+void render_frame_owner_delete(RenderFrameOwner& owner) {
+    owner.virtual_table->delete_owner(&owner);
+}
+
+void render_frame_owner_poll(RenderFrameOwner& owner) {
+    owner.virtual_table->poll(&owner);
+}
+
+void render_frame_owner_begin(RenderFrameOwner& owner) {
+    owner.virtual_table->begin(&owner);
+}
+
+RenderTargetStateHandle render_frame_owner_target_states(
+    const RenderFrameOwner& owner) {
+    return owner.virtual_table->target_states(&owner);
+}
+
 // Reconstructed from eboot.elf at 0x448730.
 RenderExtent render_frame_owner_output_extent(const RenderFrameOwner& owner) {
     const auto targets = render_frame_owner_target_states(owner);

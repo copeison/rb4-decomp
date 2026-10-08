@@ -10,6 +10,7 @@
 #include "core/memory/engine_memory.h"
 #include "core/threading/engine_thread.h"
 #include "core/time/performance_counter.h"
+#include "render/core/frame/render_frame_owner.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/synchronization/render_system_lock.h"
 #include "render/core/system/render_system_globals.h"

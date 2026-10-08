@@ -45,6 +45,10 @@ mutex and depth-counter sequence found in its own function.
 Ending a frame clears the active target-state array and owner directly. The
 array is a 32-byte begin/end/capacity/allocator record, distinct from the
 40-byte render-context array whose allocator carries two words of state.
+The back-buffer frame-owner prefix now exposes its deleting, target-state,
+poll, and begin dispatch slots directly. Output extents and frame attachment
+therefore share the same typed target-state handle instead of separate opaque
+adapter contracts.
 
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
