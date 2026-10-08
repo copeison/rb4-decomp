@@ -26,6 +26,7 @@ FOCUSED_DECOMPILATIONS = {
     "game-initialize": 0xA0,
     "game-run-frame": 0x190,
     "game-main": 0x3C0,
+    "game-systems-shutdown": 0x402D30,
     "audio-get-sample-rate": 0xD3BA0,
     "audio-set-mix-format": 0xD3BC0,
     "audio-dispatch-output-blocks": 0x1127880,

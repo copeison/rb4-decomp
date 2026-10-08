@@ -11261,7 +11261,7 @@ address,end,size,name,library,thunk
 0x4024B0,0x402868,952,sub_4024B0,False,False
 0x402870,0x402C28,952,sub_402870,False,False
 0x402C30,0x402D28,248,game_systems_initialize,False,False
-0x402D30,0x402DA7,119,sub_402D30,False,False
+0x402D30,0x402DA7,119,game_systems_shutdown,False,False
 0x403EC0,0x403EE5,37,sub_403EC0,False,False
 0x403EF0,0x403F15,37,sub_403EF0,False,False
 0x403F20,0x403F45,37,sub_403F20,False,False

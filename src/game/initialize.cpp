@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "system_init_options.h"
+#include "systems.h"
 #include "../core/command_line.h"
 #include "../ui/ui_layout_id.h"
 
@@ -26,7 +26,6 @@ void engine_register_types();
 void animation_register_types();
 void physics_register_types();
 void game_audio_register_types();
-void game_systems_initialize(const GameSystemInitOptions& options);
 void ui_register_types();
 void dingo_initialize(DingoService& service);
 void audio_configure_time_stretch();
