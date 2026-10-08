@@ -12,6 +12,7 @@ namespace {
 constexpr std::size_t kOrbisParticleBufferSize = 360;
 constexpr std::size_t kVertexBytesPerParticle = 208;
 constexpr std::size_t kIndexBytesPerParticle = 12;
+constexpr std::uint32_t kIndicesPerParticle = 6;
 constexpr const char* kParticleBufferAllocationName = "ParticleBuffer";
 
 }  // namespace
@@ -52,6 +53,50 @@ void orbis_particle_buffer_construct(
         *indices++ = static_cast<std::uint16_t>(base + 2);
         *indices++ = static_cast<std::uint16_t>(base + 3);
     }
+}
+
+// Reconstructed from eboot.elf at 0x8E2D30.
+void orbis_particle_buffer_destruct(OrbisParticleBuffer& buffer) {
+    orbis_particle_buffer_release_allocations(buffer);
+}
+
+// Reconstructed from eboot.elf at 0x8E2D80.
+void orbis_particle_buffer_delete(OrbisParticleBuffer& buffer) {
+    orbis_particle_buffer_destruct(buffer);
+    render_delete_particle_buffer(buffer);
+}
+
+// Reconstructed from eboot.elf at 0x8E2DE0 and inlined at 0x8E2E43.
+void orbis_particle_buffer_upload_vertices(
+    OrbisParticleBuffer& buffer,
+    OrbisRenderContext& context) {
+    orbis_particle_buffer_flip_vertex_stream(buffer);
+    particle_buffer_generate_vertices(
+        buffer,
+        context,
+        orbis_particle_buffer_active_vertex_stream(buffer));
+}
+
+// Reconstructed from eboot.elf at 0x8E2E10.
+void orbis_particle_buffer_draw(
+    OrbisParticleBuffer& buffer,
+    OrbisRenderContext& context,
+    const ParticleDrawState& draw_state) {
+    orbis_particle_buffer_upload_vertices(buffer, context);
+
+    const auto particle_count = particle_buffer_active_count(buffer);
+    if (particle_count == 0) {
+        return;
+    }
+
+    orbis_particle_buffer_bind_vertex_streams(buffer, context);
+    orbis_particle_buffer_bind_instance_streams(context, draw_state);
+
+    const auto index_count = kIndicesPerParticle * particle_count;
+    orbis_particle_buffer_draw_indices(
+        context,
+        index_count,
+        orbis_particle_buffer_indices(buffer));
 }
 
 }  // namespace rb4

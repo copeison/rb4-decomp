@@ -1,4 +1,4 @@
-# Orbis particle-buffer factory
+# Orbis particle buffer
 
 `orbis_create_particle_buffer` at `0x8D8BF0` is virtual slot 33 of the Orbis
 render system. It allocates a 360-byte object and forwards the requested
@@ -14,3 +14,27 @@ each subsequent particle. All three allocations use the embedded name
 
 The wrapper at `0x6EAFD0` dispatches through slot 33. Its caller clamps the
 particle capacity to at least one before creating the buffer.
+
+The platform vtable contains three methods. `orbis_particle_buffer_destruct`
+at `0x8E2D30` defers release of both vertex-stream allocations and the index
+allocation. The deleting destructor at `0x8E2D80` performs the same release
+before freeing the 360-byte object. The common base destructor is empty.
+
+`orbis_particle_buffer_upload_vertices` at `0x8E2DE0` toggles the active
+vertex bank and invokes the common particle vertex generator at `0x6EBD70`.
+The generator writes four vertices per active particle directly into the
+selected GPU allocation. Each particle occupies 208 bytes, so every generated
+vertex is 52 bytes and matches mesh format 5 (`Particle`).
+
+`orbis_particle_buffer_draw` at `0x8E2E10` inlines that upload operation. If
+the generated active count is nonzero, it binds eight mesh vertex streams.
+Streams present in the particle descriptor mask use the active bank; absent
+streams use the renderer's default descriptors. It then builds and binds nine
+instance streams beginning at vertex slot 8, selects triangle-list rendering,
+selects 16-bit indices, and submits six indices per particle from the static
+quad-index allocation. The draw is enclosed by the usual Gnmx prepare/finish
+pair.
+
+IDA evidence is preserved in
+`analysis/exports/orbis-particle-buffer-backend.asm` and
+`analysis/exports/orbis-particle-buffer-backend.c`.
