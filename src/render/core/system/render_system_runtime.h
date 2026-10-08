@@ -10,6 +10,7 @@ void render_system_initialize(
     RenderSystem& system,
     const GameSystemInitOptions& options);
 void render_system_initialize_builtin_buffers(RenderSystem& system);
+void render_system_release_builtin_buffers(RenderSystem& system);
 void render_system_shutdown(RenderSystem& system);
 
 }  // namespace rb4

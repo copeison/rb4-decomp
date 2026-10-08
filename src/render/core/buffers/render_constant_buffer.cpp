@@ -1,5 +1,6 @@
 #include "render/core/buffers/render_constant_buffer.h"
 
+#include "core/memory/engine_memory.h"
 #include "render/core/buffers/render_constant_buffer_adapters.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
@@ -56,6 +57,15 @@ void render_constant_buffer_destruct(RenderConstantBuffer&) {
 // Reconstructed from eboot.elf at 0x63A040.
 void render_constant_buffer_delete(RenderConstantBuffer& buffer) {
     render_delete_constant_buffer_storage(buffer);
+}
+
+void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer) {
+    buffer.dispatch->initialize_backend(&buffer);
+}
+
+void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer) {
+    buffer.dispatch->destruct(&buffer);
+    render_release(&buffer);
 }
 
 }  // namespace rb4

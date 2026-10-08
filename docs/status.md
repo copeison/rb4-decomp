@@ -291,6 +291,8 @@
   submission control flow, timing, and epoch advancement.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
+- [x] Reconstruct the four built-in render constant buffers, their fixed CPU
+  values, backend uploads, ownership, and shutdown release.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.

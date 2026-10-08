@@ -8,7 +8,6 @@
 namespace rb4 {
 
 void render_constant_buffer_set_base_dispatch(RenderConstantBuffer& buffer);
-void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer);
 void render_delete_constant_buffer_storage(RenderConstantBuffer& buffer);
 
 }  // namespace rb4

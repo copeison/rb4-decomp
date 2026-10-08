@@ -93,3 +93,11 @@ slot `0x18`. Slot `0x20` completes initialization. The runtime epoch increments
 the timing-state counter and captures the first performance counter when that
 counter transitions from zero. Shutdown marks the shared state at `0xB1`
 before resource release and invokes platform slot `0x28` last.
+
+The four built-in constant buffers initialized at `0x3DDC20` are now direct
+typed runtime state. Their descriptors and element indices occupy the verified
+range beginning at system offset `0xA98`; their owned buffer pointers occupy
+`0xE80` through `0xE98`. Initialization creates each buffer with deferred
+upload, writes the two-zero, four-zero-vector, negative/zero sentinel, and
+`{0.0, 1.0}` defaults, then invokes the backend upload dispatch at vtable slot
+`0x10`. Shutdown destroys, releases, and clears all four owned pointers.

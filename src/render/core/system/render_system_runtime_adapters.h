@@ -10,11 +10,5 @@ void render_system_resource_manager_initialize(RenderSystem& system);
 void render_system_resource_manager_finalize(RenderSystem& system);
 void render_system_backend_resources_initialize(RenderSystem& system);
 
-void render_builtin_zero_pair_buffer(RenderSystem& system);
-void render_builtin_invalid_vector_buffer(RenderSystem& system);
-void render_builtin_sentinel_buffer(RenderSystem& system);
-void render_builtin_default_buffer(RenderSystem& system);
-
 void render_system_backend_resources_shutdown(RenderSystem& system);
-void render_system_release_builtin_buffers(RenderSystem& system);
 }  // namespace rb4

@@ -6,6 +6,14 @@
 
 namespace rb4 {
 
+struct RenderConstantBuffer;
+
+struct RenderConstantBufferDispatch {
+    void (*destruct)(RenderConstantBuffer* buffer);
+    void (*delete_buffer)(RenderConstantBuffer* buffer);
+    void (*initialize_backend)(RenderConstantBuffer* buffer);
+};
+
 enum RenderConstantBufferStageMask : std::uint32_t {
     kConstantBufferVertexStage = 1U << 0,
     kConstantBufferTessellationStages = 1U << 1,
@@ -23,7 +31,7 @@ struct RenderConstantBufferDescriptor {
 };
 
 struct RenderConstantBuffer {
-    void* implementation;
+    const RenderConstantBufferDispatch* dispatch;
     void* owner;
     std::uint32_t flags;
     std::uint32_t slot;
@@ -54,5 +62,7 @@ void render_constant_buffer_construct(
     void* data);
 void render_constant_buffer_destruct(RenderConstantBuffer& buffer);
 void render_constant_buffer_delete(RenderConstantBuffer& buffer);
+void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer);
+void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer);
 
 }  // namespace rb4
