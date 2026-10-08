@@ -18,6 +18,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/core/targets/render_target_resources.h"
+#include "render/resources/audio/audio_analysis_textures.h"
 #include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
@@ -207,7 +208,10 @@ void render_system_prepare_frame(
         render_system_gpu_stat_block(system),
         *runtime.render_context,
         "GPU Total");
-    render_system_prepare_frame_resources(system, *runtime.render_context);
+    audio_analysis_textures_prepare_frame(
+        render_system_audio_analysis_textures(system),
+        *runtime.render_context);
+    render_system_prepare_global_frame_resources(*runtime.render_context);
 }
 
 // Reconstructed from eboot.elf at 0x3DE4A0.

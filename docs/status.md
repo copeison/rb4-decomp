@@ -293,6 +293,8 @@
   direct begin, end, resolve, and history-ring transition points.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
+- [x] Recover the two-slot audio-analysis texture owner and reconstruct its
+  per-frame width validation and rebuild decision.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU
