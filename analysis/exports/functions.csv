@@ -27931,7 +27931,8 @@ address,end,size,name,library,thunk
 0x8D8200,0x8D82F5,245,orbis_release_retired_allocations,False,False
 0x8D8300,0x8D83E0,224,orbis_render_system_submit_frame,False,False
 0x8D83E0,0x8D83E3,3,sub_8D83E0,False,False
-0x8D83F0,0x8D84A6,182,sub_8D83F0,False,False
+0x8D83F0,0x8D84A6,182,orbis_defer_allocation_release,False,False
+0x8D84B0,0x8D8580,208,orbis_release_all_retired_allocations,False,False
 0x8D8580,0x8D8581,1,nullsub_3153,False,False
 0x8D8590,0x8D8593,3,sub_8D8590,False,False
 0x8D85A0,0x8D85BF,31,sub_8D85A0,False,False

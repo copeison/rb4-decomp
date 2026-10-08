@@ -42,6 +42,7 @@
 - [x] Reconstruct Orbis video-output and submit-thread shutdown.
 - [x] Reconstruct Orbis GPU idle waits and deferred-allocation retirement.
 - [x] Reconstruct the Orbis frame-submit handshake.
+- [x] Complete the Orbis deferred GPU-allocation queue lifecycle.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

@@ -49,4 +49,28 @@ void orbis_release_retired_allocations(OrbisRenderSystem& system) {
     orbis_unlock_retired_allocations(system);
 }
 
+// Reconstructed from eboot.elf at 0x8D83F0.
+void orbis_defer_allocation_release(
+    OrbisRenderSystem& system,
+    void* allocation) {
+    if (allocation == nullptr) {
+        return;
+    }
+
+    orbis_lock_retired_allocations(system);
+    orbis_enqueue_retired_allocation(
+        system, allocation, orbis_current_frame_index(system));
+    orbis_unlock_retired_allocations(system);
+}
+
+// Reconstructed from eboot.elf at 0x8D84B0.
+void orbis_release_all_retired_allocations(OrbisRenderSystem& system) {
+    orbis_lock_retired_allocations(system);
+    while (orbis_retired_allocation_count(system) != 0) {
+        orbis_release_retired_allocation(system, 0);
+        orbis_erase_retired_allocation(system, 0);
+    }
+    orbis_unlock_retired_allocations(system);
+}
+
 }  // namespace rb4

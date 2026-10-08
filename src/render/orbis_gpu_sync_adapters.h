@@ -30,5 +30,9 @@ void orbis_release_retired_allocation(
 void orbis_erase_retired_allocation(
     OrbisRenderSystem& system,
     std::size_t index);
+void orbis_enqueue_retired_allocation(
+    OrbisRenderSystem& system,
+    void* allocation,
+    std::uint64_t frame);
 
 }  // namespace rb4

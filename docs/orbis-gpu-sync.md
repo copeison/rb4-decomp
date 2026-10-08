@@ -13,3 +13,8 @@ Deferred allocations are protected by a recursive mutex. The retirement pass
 at `0x8D8200` starts only once the frame index reaches two and releases entries
 whose recorded frame is no newer than `current_frame - 2`. This preserves a
 two-frame safety window before GPU-owned memory is returned to the allocator.
+
+`orbis_defer_allocation_release` at `0x8D83F0` appends a non-null allocation
+and the current frame index to this queue. `orbis_release_all_retired_allocations`
+at `0x8D84B0` ignores frame age and drains every entry; it is used when the
+renderer needs a complete cleanup rather than normal rolling retirement.
