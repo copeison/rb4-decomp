@@ -305,6 +305,8 @@
   phase publication.
 - [x] Recover the render runtime's resource-manager, lighting, backend,
   primitive-mesh, audio-analysis, and GPU-stat initialization/teardown order.
+- [x] Recover the 712-byte resource-manager construction layout, fixed
+  registries, handle sentinels, pointer-array owner, and list teardown.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder

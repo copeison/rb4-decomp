@@ -131,8 +131,9 @@ built-in constant buffers are released.
 
 The lifecycle constructor now owns the complete contiguous backend-state setup
 from the resource manager at `0x9F0` through the four null built-in buffer
-slots at `0xE80`. The resource-manager internals and lighting initialization
-retain narrow adapters, while their placement and ordering are direct. The
+slots at `0xE80`. Resource-manager runtime algorithms and lighting
+initialization retain narrow adapters, while their placement and ordering are
+direct. The
 128-byte GPU-stat block at `0xE00` initializes both pointer arrays, the total
 statistic pointer, query counters, four-frame history slot, backend pointer,
 recursive lock depth, and mutex. Its destructor dynamically releases every
@@ -144,3 +145,10 @@ The adjacent 304-byte lighting block is typed separately under
 fixed resource owners, runtime shutdown order, capacity teardown, and three
 special state handles are direct. Only the subordinate initialization routine
 and special-state release operation remain adapters.
+
+The 712-byte resource manager at `0x9F0` is also typed. Its four fixed
+registries, invalid-handle defaults, cleared runtime region, allocated pointer
+array owner, and two self-linked list sentinels are constructed directly. Its
+destructor unlinks both sentinels and frees the pointer-array owner and backing
+storage. Runtime registry initialization, finalization, and shutdown remain
+typed adapters.

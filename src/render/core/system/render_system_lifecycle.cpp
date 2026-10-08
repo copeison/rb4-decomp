@@ -11,6 +11,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/lighting/render_lighting_resources.h"
+#include "render/resources/system/render_resource_manager.h"
 
 namespace rb4 {
 
@@ -18,7 +19,6 @@ namespace {
 
 constexpr std::size_t kPlatformConfigCount = 13;
 constexpr std::size_t kCurrentPlatformConfig = 7;
-constexpr std::size_t kResourceManagerOffset = 2544;
 constexpr std::size_t kBackendResourceOffset = 3560;
 constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
@@ -113,7 +113,7 @@ void destroy_core_state(RenderSystem& system) {
 
 void construct_backend_state(RenderSystem& system) {
     render_resource_manager_construct(
-        state_at(system, kResourceManagerOffset));
+        render_system_resource_manager(system));
     render_lighting_resources_construct(
         render_system_lighting_resources(system));
     pointer_at(system, kBackendResourceOffset) = nullptr;
@@ -132,8 +132,8 @@ void destroy_backend_state(RenderSystem& system) {
     render_gpu_stat_block_destruct(render_system_gpu_stat_block(system));
     render_lighting_resources_destruct(
         render_system_lighting_resources(system));
-    render_resource_manager_destroy(
-        state_at(system, kResourceManagerOffset));
+    render_resource_manager_destruct(
+        render_system_resource_manager(system));
 }
 
 }  // namespace

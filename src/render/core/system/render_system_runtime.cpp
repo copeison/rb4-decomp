@@ -20,6 +20,8 @@
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/resources/system/default_render_resources.h"
+#include "render/resources/system/render_resource_manager.h"
+#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 
@@ -28,7 +30,6 @@ namespace {
 constexpr std::size_t kBuiltinBufferDescriptorOffset = 2712;
 constexpr std::size_t kBuiltinBufferStorageOffset = 3712;
 constexpr std::size_t kFloatsPerConstantBufferElement = 4;
-constexpr std::size_t kResourceManagerOffset = 2544;
 constexpr std::size_t kBackendResourceOffset = 3560;
 constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
@@ -128,7 +129,7 @@ void shutdown_runtime_resources(RenderSystem& system) {
     render_lighting_resources_shutdown(
         render_system_lighting_resources(system));
     render_resource_manager_shutdown(
-        runtime_state_at(system, kResourceManagerOffset));
+        render_system_resource_manager(system));
 
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
@@ -158,8 +159,7 @@ void render_system_initialize(
     auto& runtime = render_system_core_state(system);
     runtime.initialized = true;
     runtime.init_options = options;
-    auto* resource_manager =
-        runtime_state_at(system, kResourceManagerOffset);
+    auto& resource_manager = render_system_resource_manager(system);
     render_resource_manager_initialize(resource_manager);
     render_system_platform_initialize(system, options);
     render_resource_manager_finalize(resource_manager);
