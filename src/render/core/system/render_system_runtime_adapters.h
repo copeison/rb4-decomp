@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstddef>
-
 #include "game/startup/system_init_options.h"
 
 namespace rb4 {
@@ -24,11 +22,6 @@ void render_builtin_invalid_vector_buffer(RenderSystem& system);
 void render_builtin_sentinel_buffer(RenderSystem& system);
 void render_builtin_default_buffer(RenderSystem& system);
 
-RenderFrameOwner& render_system_primary_frame_owner(RenderSystem& system);
-std::size_t render_system_frame_owner_count(const RenderSystem& system);
-RenderFrameOwner& render_system_frame_owner_at(
-    RenderSystem& system,
-    std::size_t index);
 void render_frame_owner_initialize(RenderFrameOwner& owner);
 void render_frame_owner_shutdown(RenderFrameOwner& owner);
 

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
 
 namespace rb4 {
