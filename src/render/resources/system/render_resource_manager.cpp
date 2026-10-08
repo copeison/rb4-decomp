@@ -7,14 +7,13 @@
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
+#include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
@@ -22,7 +21,6 @@ namespace rb4 {
 namespace {
 
 constexpr std::size_t kResourceManagerOffset = 2544;
-constexpr std::size_t kPrimaryShaderLinkOffset = 272;
 constexpr std::ptrdiff_t kSecondaryShaderDirtyOffset = -395;
 
 struct RenderManagedObjectDispatch {
@@ -32,13 +30,6 @@ struct RenderManagedObjectDispatch {
 
 struct RenderManagedObject {
     RenderManagedObjectDispatch* dispatch;
-};
-
-struct RenderManagedObjectArray {
-    RenderManagedObject** begin;
-    RenderManagedObject** end;
-    RenderManagedObject** capacity;
-    void* allocator;
 };
 
 struct RenderSizedArrayOwner {
@@ -70,97 +61,13 @@ struct RenderResourceNameArray {
     std::uint8_t reserved_37[3];
 };
 
-struct RenderShaderParameterRegistrySet {
+struct RenderResourceSpecializedState {
     RenderResourceNameArray arrays[6];
-};
-
-struct RenderShaderNameRecordArray {
-    void* begin;
-    void* end;
-    void* capacity;
-    void* allocator;
-};
-
-struct RenderShaderCompileState {
-    const void* source_identifier;
-    std::int32_t resource_type;
-    std::int32_t shader_variant;
-    void* owner;
-    void* reserved_24;
-    bool initialized;
-    std::uint8_t reserved_33[7];
-    void* entries_begin;
-    void* entries_end;
-    void* entries_capacity;
-    void* entries_allocator;
-};
-
-struct RenderShaderBackendState {
-    std::uint8_t storage[864];
-};
-
-struct RenderShaderParameterBinding {
-    std::uint32_t first_value;
-    std::uint32_t bit_offset;
-    std::uint32_t shifted_mask;
-    std::uint32_t shift;
-    bool enabled;
-    std::uint8_t reserved_17[3];
 };
 
 static_assert(sizeof(RenderResourceNameRecord) == 40);
 static_assert(sizeof(RenderResourceNameArray) == 40);
-static_assert(sizeof(RenderShaderParameterRegistrySet) == 240);
-static_assert(sizeof(RenderShaderNameRecordArray) == 32);
-static_assert(sizeof(RenderShaderCompileState) == 72);
-static_assert(sizeof(RenderShaderBackendState) == 864);
-static_assert(sizeof(RenderShaderParameterBinding) == 20);
-
-struct RenderPrimaryShaderResource {
-    struct Dispatch {
-        void* reserved_0[2];
-        const void* (*source_identifier)(RenderPrimaryShaderResource* shader);
-        void* (*backend_name)(RenderPrimaryShaderResource* shader);
-        void (*initialize_support_objects)(
-            RenderPrimaryShaderResource* shader,
-            RenderShaderNameRecordArray* names,
-            RenderShaderParameterRegistrySet* parameters,
-            RenderShaderCompileState* compile_state,
-            RenderShaderBackendState* backend_state);
-        std::int32_t (*mode)(RenderPrimaryShaderResource* shader);
-        std::int32_t (*variant)(RenderPrimaryShaderResource* shader);
-    };
-
-    Dispatch* dispatch;
-    std::uint8_t reserved_8[4];
-    bool compiled;
-    std::uint8_t reserved_13[3];
-    RenderManagedObjectArray compiled_objects[6];
-    void* backend_name;
-    RenderShaderNameRecordArray* names;
-    RenderShaderParameterRegistrySet* parameters;
-    RenderShaderCompileState* compile_state;
-    RenderShaderBackendState* backend_state;
-    RenderShaderParameterBinding render_target_slice_binding;
-    std::uint8_t reserved_268[4];
-    RenderResourceListNode manager_link;
-};
-
-static_assert(sizeof(RenderManagedObjectArray) == 32);
-static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, mode) == 40);
-static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, variant) == 48);
-static_assert(offsetof(RenderPrimaryShaderResource, compiled) == 12);
-static_assert(offsetof(RenderPrimaryShaderResource, compiled_objects) == 16);
-static_assert(offsetof(RenderPrimaryShaderResource, backend_name) == 208);
-static_assert(offsetof(RenderPrimaryShaderResource, names) == 216);
-static_assert(offsetof(RenderPrimaryShaderResource, parameters) == 224);
-static_assert(offsetof(RenderPrimaryShaderResource, compile_state) == 232);
-static_assert(offsetof(RenderPrimaryShaderResource, backend_state) == 240);
-static_assert(
-    offsetof(RenderPrimaryShaderResource, render_target_slice_binding) == 248);
-static_assert(
-    offsetof(RenderPrimaryShaderResource, manager_link) ==
-    kPrimaryShaderLinkOffset);
+static_assert(sizeof(RenderResourceSpecializedState) == 240);
 
 void initialize_registry(std::uint8_t* registry) {
     std::fill_n(registry, 20, std::uint8_t{0});
@@ -183,22 +90,6 @@ void release_list_sentinel(RenderResourceListNode*& node) {
     node->previous->next = node->next;
     render_release(node);
     node = nullptr;
-}
-
-RenderPrimaryShaderResource& primary_shader_from_link(
-    RenderResourceListNode& link) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&link);
-    return *reinterpret_cast<RenderPrimaryShaderResource*>(
-        bytes - kPrimaryShaderLinkOffset);
-}
-
-void clear_compiled_objects(RenderManagedObjectArray& objects) {
-    for (auto** object = objects.begin; object != objects.end; ++object) {
-        if (*object != nullptr) {
-            (*object)->dispatch->release_dynamic(*object);
-        }
-    }
-    objects.end = objects.begin;
 }
 
 void release_sized_array_owner(void*& storage) {
@@ -234,85 +125,6 @@ void destruct_name_array(RenderResourceNameArray& names) {
             reinterpret_cast<std::uint8_t*>(names.begin));
         engine_deallocate_sized(names.begin, byte_count);
     }
-}
-
-void construct_parameter_registry(
-    RenderResourceNameArray& registry,
-    bool enabled) {
-    registry = {};
-    registry.enabled = enabled;
-}
-
-// Reconstructed from eboot.elf at 0x638270.
-void prepare_primary_shader(RenderPrimaryShaderResource& shader) {
-    if (shader.compile_state != nullptr) {
-        return;
-    }
-
-    const auto variant = shader.dispatch->variant(&shader);
-
-    auto* names = static_cast<RenderShaderNameRecordArray*>(
-        render_allocate(sizeof(RenderShaderNameRecordArray)));
-    *names = {};
-    shader.names = names;
-
-    auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
-        render_allocate(sizeof(RenderShaderParameterRegistrySet)));
-    for (std::size_t index = 0; index < 6; ++index) {
-        construct_parameter_registry(parameters->arrays[index], index == 0);
-    }
-    shader.parameters = parameters;
-
-    auto* compile_state = static_cast<RenderShaderCompileState*>(
-        render_allocate(sizeof(RenderShaderCompileState)));
-    *compile_state = {};
-    compile_state->source_identifier =
-        shader.dispatch->source_identifier(&shader);
-    compile_state->resource_type = 8;
-    compile_state->shader_variant = variant;
-    shader.compile_state = compile_state;
-
-    auto* backend_state = static_cast<RenderShaderBackendState*>(
-        render_allocate(sizeof(RenderShaderBackendState)));
-    *backend_state = {};
-    shader.backend_state = backend_state;
-
-    const Symbol render_target_slices("HX_NUM_RT_SLICES");
-    render_shader_parameter_registry_add(
-        &shader.render_target_slice_binding,
-        parameters,
-        render_target_slices.value(),
-        0,
-        7);
-
-    shader.dispatch->initialize_support_objects(
-        &shader,
-        names,
-        parameters,
-        compile_state,
-        backend_state);
-}
-
-// Reconstructed from eboot.elf at 0x6383D0.
-void finalize_primary_shader(RenderPrimaryShaderResource& shader) {
-    prepare_primary_shader(shader);
-
-    const auto mode = shader.dispatch->mode(&shader);
-    const auto& options =
-        render_system_core_state(*render_system_instance()).init_options;
-    if (mode == 1) {
-        if (!options.option2) {
-            return;
-        }
-    } else if (mode == 0) {
-        if (!options.initialize_rendering) {
-            return;
-        }
-    } else {
-        return;
-    }
-
-    render_primary_shader_initialize_backend(&shader);
 }
 
 // Reconstructed from eboot.elf at 0x645F20.
@@ -404,7 +216,8 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
     for (auto* node = manager.primary_list->next;
          node != manager.primary_list;
          node = node->next) {
-        finalize_primary_shader(primary_shader_from_link(*node));
+        render_primary_shader_finalize(
+            render_primary_shader_from_link(*node));
     }
 
     constexpr std::uint32_t kFunctionCount = 4;
@@ -502,7 +315,7 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
     }
 
     if (manager.runtime.specialized_state != nullptr) {
-        auto* state = static_cast<RenderShaderParameterRegistrySet*>(
+        auto* state = static_cast<RenderResourceSpecializedState*>(
             manager.runtime.specialized_state);
         for (std::size_t index = 6; index != 0; --index) {
             destruct_name_array(state->arrays[index - 1]);
@@ -523,11 +336,8 @@ void render_resource_manager_reload_shaders(RenderResourceManager& manager) {
     for (auto* node = manager.primary_list->next;
          node != manager.primary_list;
          node = node->next) {
-        auto& shader = primary_shader_from_link(*node);
-        for (auto& objects : shader.compiled_objects) {
-            clear_compiled_objects(objects);
-        }
-        shader.compiled = false;
+        render_primary_shader_clear_compiled_objects(
+            render_primary_shader_from_link(*node));
     }
 
     const auto& settings = *render_system_settings(*render_system_instance());

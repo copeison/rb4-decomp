@@ -37,6 +37,11 @@ then registers the three-bit `HX_NUM_RT_SLICES` field and passes all four
 support objects to virtual slot `0x20`. Parameter-record insertion and the
 backend-initialize operation remain focused boundaries.
 
+The primary-shader layout and ownership implementation are kept in the
+dedicated `src/render/resources/shaders` domain. The manager only converts its
+intrusive links back to typed shader resources and invokes their finalize or
+compiled-object-clear operations.
+
 Shader reload at `0x641F30` walks both intrusive lists directly. Primary
 resources place their manager link at offset `0x110`; each owns six 32-byte
 arrays beginning at offset `0x10`. Reload dynamically releases every compiled

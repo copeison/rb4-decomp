@@ -349,6 +349,9 @@
   startup-option gating.
 - [x] Reconstruct lazy primary-shader support allocation, parameter-registry
   defaults, and `HX_NUM_RT_SLICES` binding setup.
+- [x] Separate primary-shader resources into their own domain and reconstruct
+  common construction, support-object teardown, list unlinking, and compiled
+  array destruction.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
