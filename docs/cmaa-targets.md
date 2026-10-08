@@ -13,5 +13,7 @@ and `0x238`. Every created target is registered with the owner. The matching
 section of `render_target_resources_release` at `0x6AFFE0` invokes their
 virtual deleting destructors and clears all four slots.
 
-The platform capability test and exact target descriptors remain behind
-narrow adapters.
+The capability test is direct: feature bit `0x10` in fixed platform slot seven
+enables the pass. The color, edge, and compressed-edge descriptors are also
+constructed directly; only the shared data-format resolver and texture factory
+remain common renderer boundaries.

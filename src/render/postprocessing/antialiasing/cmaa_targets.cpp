@@ -1,15 +1,27 @@
 #include "render/postprocessing/antialiasing/cmaa_targets.h"
 
+#include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/postprocessing/antialiasing/cmaa_target_adapters.h"
 
 namespace rb4 {
 
 namespace {
+
+constexpr std::size_t kCurrentPlatformConfig = 7;
+
+bool render_system_supports_cmaa() {
+    auto* system = render_system_instance();
+    if (system == nullptr) {
+        return false;
+    }
+    const auto& config = render_system_platform_config_at(
+        *system, kCurrentPlatformConfig);
+    return (config.feature_flags & 0x10U) != 0;
+}
 
 RenderTexture*& target_slot(
     RenderTargetResources& resources,
