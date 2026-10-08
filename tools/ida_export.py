@@ -264,6 +264,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-texture-2d-construct": 0x8D62C0,
     "orbis-create-texture-cube": 0x8D8A10,
     "orbis-texture-cube-construct": 0x8E6BA0,
+    "orbis-create-texture-3d": 0x8D8A40,
+    "orbis-texture-3d-construct": 0x8E5870,
     "orbis-create-texture-array-2d": 0x8D8AA0,
     "orbis-texture-array-2d-construct": 0x8E6640,
     "orbis-create-texture-array-1d": 0x8D8A70,

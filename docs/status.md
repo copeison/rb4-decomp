@@ -51,6 +51,7 @@
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 2D texture factory and platform constructor.
+- [x] Recover the Orbis 3D texture factory and platform constructor.
 - [x] Recover the Orbis cube texture factory and platform constructor.
 - [x] Recover the Orbis 2D texture-array factory and platform constructor.
 - [x] Recover the Orbis 1D texture-array factory and platform constructor.

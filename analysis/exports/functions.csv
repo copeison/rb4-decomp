@@ -20585,7 +20585,7 @@ address,end,size,name,library,thunk
 0x6969D0,0x696A51,129,sub_6969D0,False,False
 0x696A70,0x696A78,8,sub_696A70,False,False
 0x696BA0,0x696BF6,86,sub_696BA0,False,False
-0x696C00,0x696F02,770,sub_696C00,False,False
+0x696C00,0x696F02,770,texture_3d_construct,False,False
 0x696F10,0x69701C,268,sub_696F10,False,False
 0x697020,0x697098,120,sub_697020,False,False
 0x697120,0x69712C,12,sub_697120,False,False
@@ -27942,7 +27942,7 @@ address,end,size,name,library,thunk
 0x8D89B0,0x8D89E0,48,orbis_create_texture_2d,False,False
 0x8D89E0,0x8D8A10,48,sub_8D89E0,False,False
 0x8D8A10,0x8D8A40,48,orbis_create_texture_cube,False,False
-0x8D8A40,0x8D8A70,48,sub_8D8A40,False,False
+0x8D8A40,0x8D8A70,48,orbis_create_texture_3d,False,False
 0x8D8A70,0x8D8AA0,48,orbis_create_texture_array_1d,False,False
 0x8D8AA0,0x8D8AD0,48,orbis_create_texture_array_2d,False,False
 0x8D8AD0,0x8D8B30,96,orbis_create_constant_buffer,False,False
@@ -28019,7 +28019,7 @@ address,end,size,name,library,thunk
 0x8E5760,0x8E5761,1,nullsub_3160,False,False
 0x8E5840,0x8E5848,8,sub_8E5840,False,False
 0x8E5850,0x8E586F,31,sub_8E5850,False,False
-0x8E5870,0x8E589F,47,sub_8E5870,False,False
+0x8E5870,0x8E589F,47,orbis_texture_3d_construct,False,False
 0x8E5C30,0x8E5C31,1,nullsub_3161,False,False
 0x8E5C40,0x8E5C41,1,nullsub_3162,False,False
 0x8E5D20,0x8E5D3F,31,sub_8E5D20,False,False
