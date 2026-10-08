@@ -372,6 +372,8 @@
   mode, sphere-map, linear-depth, scene-mask, and test-pattern shaders.
 - [x] Reconstruct compact compute-shader construction for blur classification,
   depth range, DOF disc blur, SSAO, CMAA, and signed-distance passes.
+- [x] Reconstruct all built-in graphics-shader constructors, including their
+  shared permutation bindings and verified trailing handle state.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
