@@ -279,6 +279,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-fence-delete": 0x8E1680,
     "orbis-fence-construct": 0x8E1570,
     "orbis-create-constant-buffer": 0x8D8AD0,
+    "orbis-create-compute-buffer": 0x8D8BC0,
+    "orbis-compute-buffer-construct": 0x8E3250,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,

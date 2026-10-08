@@ -57,6 +57,7 @@
 - [x] Recover the Orbis 1D texture-array factory and platform constructor.
 - [x] Recover the Orbis 2D texture-array factory and platform constructor.
 - [x] Recover the Orbis cube texture-array factory and platform constructor.
+- [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
