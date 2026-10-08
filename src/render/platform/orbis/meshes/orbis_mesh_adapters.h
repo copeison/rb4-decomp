@@ -13,6 +13,8 @@ void* render_allocate_named(
     std::size_t size,
     const char* name,
     std::uint32_t alignment);
+const RenderMeshFormatDescriptor* render_mesh_format_descriptor(
+    RenderMeshFormat format);
 void orbis_mesh_set_format_backend_defaults(
     OrbisMesh& mesh,
     RenderMeshFormat format);
@@ -70,7 +72,6 @@ void gnm_buffer_set_resource_memory_type(
 enum class OrbisCachePolicy : std::uint32_t {
     kBypass = 2,
 };
-const OrbisBufferDescriptor* orbis_default_vertex_descriptors();
 void orbis_bind_vertex_buffers(
     OrbisRenderCommandContext& context,
     std::uint32_t first_slot,

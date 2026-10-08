@@ -12,6 +12,7 @@
 #include "render/core/settings/render_settings.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "render/platform/orbis/meshes/orbis_builtin_buffers.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target.h"
@@ -39,9 +40,6 @@ namespace {
 
 constexpr const char* kEventQueueName = "EOP QUEUE";
 constexpr const char* kSubmitThreadName = "SubmitDoneThread";
-constexpr const char* kDefaultVertexBufferName = "DefaultVBuffer";
-constexpr const char* kIdentityInstanceBufferName =
-    "IdentityInstanceVBuffer";
 constexpr std::uint32_t kGnmEventId = 64;
 constexpr std::uint32_t kSubmitThreadPriority = 699;
 constexpr float kSubmitDoneTimeoutMilliseconds = 1000.0F;
@@ -299,22 +297,6 @@ void orbis_render_system_shutdown(OrbisRenderSystem& system) {
     orbis_unregister_gnm_event(system, kGnmEventId);
     orbis_delete_event_queue(system);
     orbis_video_output_close(system);
-}
-
-// Reconstructed from eboot.elf at 0x8D7DB0.
-void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
-    auto& buffer = orbis_allocate_default_vertex_buffer(
-        system, kDefaultVertexBufferName);
-    orbis_upload_default_vertex_data(system, buffer);
-    orbis_bind_default_vertex_buffer(system, buffer);
-}
-
-// Reconstructed from eboot.elf at 0x8D7EB0.
-void orbis_create_identity_instance_buffer(OrbisRenderSystem& system) {
-    auto& buffer = orbis_allocate_identity_instance_buffer(
-        system, kIdentityInstanceBufferName, 120);
-    orbis_upload_identity_instance_data(system, buffer);
-    orbis_bind_identity_instance_buffer(system, buffer);
 }
 
 void orbis_create_back_buffer(OrbisRenderSystem& system) {

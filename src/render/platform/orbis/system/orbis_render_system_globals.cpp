@@ -4,6 +4,7 @@
 
 #include "core/threading/engine_thread.h"
 #include "render/core/system/render_epoch.h"
+#include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
 namespace rb4 {
@@ -32,7 +33,13 @@ struct OrbisRenderSystemRuntimePrefix {
     ScePthreadCond submit_condition;
     std::uint64_t submit_token;
     bool submit_thread_running;
-    std::uint8_t reserved_3849[303];
+    std::uint8_t reserved_3849[3];
+    OrbisBufferDescriptor default_vertex_descriptors[8];
+    std::uint8_t reserved_3980[4];
+    void* default_vertex_buffer;
+    OrbisBufferDescriptor identity_instance_descriptors[9];
+    void* identity_instance_buffer;
+    std::uint8_t submit_thread_wrapper_prefix[8];
     EngineThreadRuntime submit_thread;
     std::uint8_t submit_thread_wrapper_state[32];
     std::int32_t submission_lock_depth;
@@ -60,6 +67,18 @@ static_assert(
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
+static_assert(
+    offsetof(
+        OrbisRenderSystemRuntimePrefix,
+        default_vertex_descriptors) == 3852);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, default_vertex_buffer) == 3984);
+static_assert(
+    offsetof(
+        OrbisRenderSystemRuntimePrefix,
+        identity_instance_descriptors) == 3992);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, identity_instance_buffer) == 4136);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) == 4152);
 static_assert(
@@ -267,6 +286,39 @@ void orbis_set_cached_flip_rate(
 EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return runtime->submit_thread;
+}
+
+OrbisBufferDescriptor* orbis_default_vertex_descriptors(
+    OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->default_vertex_descriptors;
+}
+
+const OrbisBufferDescriptor* orbis_default_vertex_descriptors() {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(
+            g_orbis_render_system);
+    return runtime->default_vertex_descriptors;
+}
+
+void orbis_set_default_vertex_buffer(
+    OrbisRenderSystem& system,
+    void* buffer) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->default_vertex_buffer = buffer;
+}
+
+OrbisBufferDescriptor* orbis_identity_instance_descriptors(
+    OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->identity_instance_descriptors;
+}
+
+void orbis_set_identity_instance_buffer(
+    OrbisRenderSystem& system,
+    void* buffer) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->identity_instance_buffer = buffer;
 }
 
 std::size_t orbis_active_render_frame_index() {

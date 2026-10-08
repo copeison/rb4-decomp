@@ -30,3 +30,15 @@ and 104. The first three and final two are float4, the middle three are
 float3, and offset 84 is a 32-bit unsigned value. Transform-related names in
 the reconstruction describe the observed layout; the remaining parameter
 semantics have not yet been proven.
+
+The platform startup uses both helpers to create its built-in fallback streams.
+`orbis_create_default_vertex_buffer` at `0x8D7DB0` allocates one 100-byte
+skinned vertex. Its position and texture coordinates are zero, its normal,
+tangent, and bitangent point along +Z, +X, and +Y, its color is white, and its
+first bone weight is one. The resulting eight descriptors occupy
+`OrbisRenderSystem + 0xF0C`, followed by the allocation pointer at `+0xF90`.
+
+`orbis_create_identity_instance_buffer` at `0x8D7EB0` allocates one instance
+record with identity transform and normal-transform rows. Its packed state and
+two parameter vectors are zero. Its nine descriptors begin at
+`OrbisRenderSystem + 0xF98`, and its allocation pointer is at `+0x1028`.

@@ -80,6 +80,8 @@
 - [x] Reconstruct the 52-byte compressed unskinned mesh and GPU update path.
 - [x] Reconstruct the 64-byte compressed skinned mesh and GPU update path.
 - [x] Reconstruct shared mesh and instance Gnm vertex-descriptor generation.
+- [x] Reconstruct the Orbis default skinned vertex and identity-instance
+  buffers and type their render-system storage.
 - [x] Reconstruct the common Orbis mesh draw and instancing path.
 - [x] Reconstruct Orbis back-buffer allocation and video-output registration.
 - [x] Reconstruct the common render-target lifecycle, 32-byte base layout, and

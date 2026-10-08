@@ -8,6 +8,8 @@ following platform state:
 - video-output and flip state;
 - worker state with the initial label `Unknown Thread!`;
 - two recursive submission mutexes;
+- eight fallback mesh-stream descriptors, nine identity-instance descriptors,
+  and their two GPU allocation pointers;
 - an intrusive deferred-command list;
 - the Orbis renderer singleton at `g_orbis_render_system`.
 

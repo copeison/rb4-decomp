@@ -11,6 +11,7 @@ struct OrbisRenderSystem;
 struct OrbisRenderContext;
 struct OrbisBackBuffer;
 struct EngineThreadRuntime;
+struct OrbisBufferDescriptor;
 struct RenderSystem;
 
 extern OrbisRenderSystem* g_orbis_render_system;
@@ -60,6 +61,17 @@ void orbis_set_cached_flip_rate(
     OrbisRenderSystem& system,
     std::int32_t rate);
 EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system);
+OrbisBufferDescriptor* orbis_default_vertex_descriptors(
+    OrbisRenderSystem& system);
+const OrbisBufferDescriptor* orbis_default_vertex_descriptors();
+void orbis_set_default_vertex_buffer(
+    OrbisRenderSystem& system,
+    void* buffer);
+OrbisBufferDescriptor* orbis_identity_instance_descriptors(
+    OrbisRenderSystem& system);
+void orbis_set_identity_instance_buffer(
+    OrbisRenderSystem& system,
+    void* buffer);
 std::size_t orbis_active_render_frame_index();
 void orbis_render_system_publish_instance(OrbisRenderSystem& system);
 void orbis_render_system_clear_instance();

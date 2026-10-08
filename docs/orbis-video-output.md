@@ -11,7 +11,8 @@ Startup performs the following work:
 1. Open the default video-output port and set its initial flip rate to zero.
 2. Apply the 1,080-line window-mode margin configuration.
 3. Create the `EOP QUEUE`, register GNM event 64, and add the video flip event.
-4. Create `DefaultVBuffer` and the 120-byte `IdentityInstanceVBuffer`.
+4. Create the typed fallback mesh and identity-instance buffers documented in
+   `orbis-vertex-descriptors.md`.
 5. Register the Orbis render factories, create the double-buffered display
    target, and allocate the platform render context.
 6. Initialize the submit condition variable.
