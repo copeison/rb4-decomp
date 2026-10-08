@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -23,40 +24,40 @@ struct RenderResourceListNode {
 
 struct RenderShaderConstantState {
     std::uint8_t initialization_phases[8];
-    void* scene_block;
-    void* time;
-    void* smoothness_decay;
-    void* sgraph_trans_infos;
-    void* scene_global_floats;
-    void* scene_global_colors;
-    void* tiled_lighting_params;
-    void* fog_params;
-    void* volumetric_params_0;
-    void* volumetric_params_1;
-    void* render_target_block;
-    void* target_dimensions;
-    void* camera_block;
-    void* camera_near_far_params;
-    void* camera_misc_params;
-    void* camera_view_extents;
-    void* reserved_216;
-    void* reserved_224;
-    void* camera_rt_sliced_data;
-    void* clip_planes_block;
-    void* clip_planes;
-    void* skeleton_block;
-    void* skeleton_bone_transforms;
-    void* misc_draw_state_block;
-    void* environment_index;
-    void* solid_color;
-    void* occlusion_query_block;
-    void* occlusion_query_coverage;
-    void* debug_block;
-    void* debug_modes;
-    void* debug_color;
-    void* batch_info;
-    void* preview_node_index;
-    void* transient_blocks[3];
+    RenderShaderConstantBlock* scene_block;
+    std::uint64_t time;
+    std::uint64_t smoothness_decay;
+    std::uint64_t sgraph_trans_infos;
+    std::uint64_t scene_global_floats;
+    std::uint64_t scene_global_colors;
+    std::uint64_t tiled_lighting_params;
+    std::uint64_t fog_params;
+    std::uint64_t volumetric_params_0;
+    std::uint64_t volumetric_params_1;
+    RenderShaderConstantBlock* render_target_block;
+    std::uint64_t target_dimensions;
+    RenderShaderConstantBlock* camera_block;
+    std::uint64_t camera_near_far_params;
+    std::uint64_t camera_misc_params;
+    std::uint64_t camera_view_extents;
+    std::uint64_t reserved_216;
+    std::uint64_t reserved_224;
+    std::uint64_t camera_rt_sliced_data;
+    RenderShaderConstantBlock* clip_planes_block;
+    std::uint64_t clip_planes;
+    RenderShaderConstantBlock* skeleton_block;
+    std::uint64_t skeleton_bone_transforms;
+    RenderShaderConstantBlock* misc_draw_state_block;
+    std::uint64_t environment_index;
+    std::uint64_t solid_color;
+    RenderShaderConstantBlock* occlusion_query_block;
+    std::uint64_t occlusion_query_coverage;
+    RenderShaderConstantBlock* debug_block;
+    std::uint64_t debug_modes;
+    std::uint64_t debug_color;
+    std::uint64_t batch_info;
+    std::uint64_t preview_node_index;
+    RenderShaderConstantBlock* transient_blocks[3];
     void* constant_registry;
 };
 
@@ -124,6 +125,8 @@ static_assert(sizeof(RenderResourceManager) == 712);
 RenderResourceManager& render_system_resource_manager(RenderSystem& system);
 void render_resource_manager_construct(RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_parameters(
+    RenderResourceManager& manager);
+void render_resource_manager_initialize_shader_constants(
     RenderResourceManager& manager);
 void render_resource_manager_destruct(RenderResourceManager& manager);
 void render_resource_manager_finalize(RenderResourceManager& manager);

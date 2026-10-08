@@ -17,8 +17,23 @@ two 16-byte intrusive-list sentinels; each list node is self-linked when empty.
 
 The destructor at `0x63F350` unlinks and releases the two sentinel nodes, frees
 the pointer array's backing storage by its capacity, and releases the array
-owner. Runtime initialization remains a typed adapter boundary while its
-constant table, uniform blocks, and backend-resource sequence are reconstructed.
+owner. The top-level runtime initializer remains an adapter boundary while its
+constant registry and backend-resource sequence are reconstructed.
+
+Shader-constant setup at `0x640D60` is source-owned through source-generation
+finalization. It creates the `Scene`, `RenderTarget`, `Camera`, `ClipPlanes`,
+`Skeleton`, `MiscDrawState`, `OcclusionQuery`, and `Debug` constant blocks plus
+three `Transient` variants containing 16, 32, and 64 vectors. The manager now
+exposes typed offsets for every registered constant, including the six-target
+`gCameraRTSlicedData` array and the 256-element `gSkeletonBoneXfms` array.
+
+The shared 72-byte constant-block implementation is kept under
+`src/render/resources/shaders`. Its member records preserve the HLSL type,
+array count, render-target slicing flag, generated register offset, and name.
+Scalar, array, and sliced-array insertion at `0x63A1B0`, `0x63A370`, and
+`0x63A700` are source-owned, including the original doubling growth policy and
+type-width table. Generated shader-source emission and the resulting hash are
+still a focused adapter boundary.
 
 Shader-parameter setup at `0x640BF0` is source-owned. It allocates six 40-byte
 registries, enables the first, and registers four manager bindings:

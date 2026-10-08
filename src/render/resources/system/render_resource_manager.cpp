@@ -16,6 +16,7 @@
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
+#include "render/resources/shaders/shader_constant_block_adapters.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
@@ -32,14 +33,6 @@ struct RenderManagedObjectDispatch {
 
 struct RenderManagedObject {
     RenderManagedObjectDispatch* dispatch;
-};
-
-struct RenderSizedArrayOwner {
-    std::uint8_t reserved_0[40];
-    void* begin;
-    void* end;
-    void* capacity;
-    void* allocator;
 };
 
 struct RenderResourceNameArrayOwner {
@@ -66,21 +59,6 @@ void release_list_sentinel(RenderResourceListNode*& node) {
     node->previous->next = node->next;
     render_release(node);
     node = nullptr;
-}
-
-void release_sized_array_owner(void*& storage) {
-    auto* owner = static_cast<RenderSizedArrayOwner*>(storage);
-    if (owner == nullptr) {
-        return;
-    }
-    if (owner->begin != nullptr) {
-        const auto byte_count = static_cast<std::size_t>(
-            static_cast<std::uint8_t*>(owner->capacity) -
-            static_cast<std::uint8_t*>(owner->begin));
-        engine_deallocate_sized(owner->begin, byte_count);
-    }
-    render_release(owner);
-    storage = nullptr;
 }
 
 void release_dynamic_resource(void*& storage) {
@@ -203,6 +181,117 @@ void render_resource_manager_initialize_shader_parameters(
     }
 }
 
+// Reconstructed from eboot.elf at 0x640D60. Shader-source generation and its
+// resulting hash remain behind a focused adapter boundary.
+void render_resource_manager_initialize_shader_constants(
+    RenderResourceManager& manager) {
+    auto& constants = manager.shader_constants;
+    using Type = RenderShaderConstantType;
+
+    constants.scene_block = render_shader_constant_block_create(
+        "Scene", 0, 9, 5);
+    auto& scene = *constants.scene_block;
+    constants.time = render_shader_constant_block_add(
+        scene, Type::vector4, "gTime");
+    constants.smoothness_decay = render_shader_constant_block_add(
+        scene, Type::scalar, "gSmoothnessDecay");
+    constants.sgraph_trans_infos = render_shader_constant_block_add_array(
+        scene, Type::matrix3x4, 4, "gSGraphTransInfos");
+    constants.scene_global_floats = render_shader_constant_block_add_array(
+        scene, Type::vector4, 1, "gSceneGlobalFloats");
+    constants.scene_global_colors = render_shader_constant_block_add_array(
+        scene, Type::vector4, 4, "gSceneGlobalColors");
+    constants.tiled_lighting_params = render_shader_constant_block_add(
+        scene, Type::vector3, "gTiledLightingParams");
+    constants.fog_params = render_shader_constant_block_add(
+        scene, Type::vector3, "gFogParams");
+    constants.volumetric_params_0 = render_shader_constant_block_add(
+        scene, Type::vector3, "gVolumetricParams0");
+    constants.volumetric_params_1 = render_shader_constant_block_add(
+        scene, Type::vector2, "gVolumetricParams1");
+
+    constants.render_target_block = render_shader_constant_block_create(
+        "RenderTarget", 1, 28, 80);
+    constants.target_dimensions = render_shader_constant_block_add(
+        *constants.render_target_block,
+        Type::vector2,
+        "gTargetDimensions");
+
+    constants.camera_block = render_shader_constant_block_create(
+        "Camera", 2, 29, 40);
+    auto& camera = *constants.camera_block;
+    constants.camera_near_far_params = render_shader_constant_block_add(
+        camera, Type::vector4, "gCameraNearFarParams");
+    constants.camera_misc_params = render_shader_constant_block_add(
+        camera, Type::vector4, "gCameraMiscParams");
+    constants.camera_view_extents = render_shader_constant_block_add_array(
+        camera, Type::vector4, 4, "gCameraViewExtents");
+    constants.camera_rt_sliced_data =
+        render_shader_constant_block_add_sliced_array(
+            camera, Type::vector4, 10, "gCameraRTSlicedData");
+
+    constants.clip_planes_block = render_shader_constant_block_create(
+        "ClipPlanes", 3, 1, 10);
+    constants.clip_planes = render_shader_constant_block_add_array(
+        *constants.clip_planes_block,
+        Type::vector4,
+        4,
+        "gClipPlanes");
+
+    constants.skeleton_block = render_shader_constant_block_create(
+        "Skeleton", 4, 1, 1);
+    constants.skeleton_bone_transforms =
+        render_shader_constant_block_add_array(
+            *constants.skeleton_block,
+            Type::matrix3x4,
+            256,
+            "gSkeletonBoneXfms");
+
+    constants.misc_draw_state_block = render_shader_constant_block_create(
+        "MiscDrawState", 5, 8, 10);
+    constants.environment_index = render_shader_constant_block_add(
+        *constants.misc_draw_state_block,
+        Type::scalar,
+        "gEnvironIndex");
+    constants.solid_color = render_shader_constant_block_add(
+        *constants.misc_draw_state_block,
+        Type::vector4,
+        "gSolidColor");
+
+    constants.occlusion_query_block = render_shader_constant_block_create(
+        "OcclusionQuery", 6, 9, 10);
+    constants.occlusion_query_coverage = render_shader_constant_block_add(
+        *constants.occlusion_query_block,
+        Type::vector2,
+        "gOcclusionQueryCoverageParams");
+
+    constants.debug_block = render_shader_constant_block_create(
+        "Debug", 7, 24, 10);
+    auto& debug = *constants.debug_block;
+    constants.debug_modes = render_shader_constant_block_add(
+        debug, Type::vector2, "gDebugModes");
+    constants.debug_color = render_shader_constant_block_add(
+        debug, Type::vector4, "gDebugColor");
+    constants.batch_info = render_shader_constant_block_add(
+        debug, Type::vector2, "gBatchInfo");
+    constants.preview_node_index = render_shader_constant_block_add(
+        debug, Type::scalar, "gPreviewNodeIndex");
+
+    constexpr std::uint64_t kTransientCounts[] = {16, 32, 64};
+    for (std::size_t index = 0; index < 3; ++index) {
+        auto*& transient = constants.transient_blocks[index];
+        transient = render_shader_constant_block_create(
+            "Transient", 8, 29, 10);
+        render_shader_constant_block_add_array(
+            *transient,
+            Type::vector4,
+            kTransientCounts[index],
+            "gTransientData");
+    }
+
+    render_shader_constant_source_finalize(constants);
+}
+
 // Reconstructed from eboot.elf at 0x63F350.
 void render_resource_manager_destruct(RenderResourceManager& manager) {
     release_list_sentinel(manager.primary_list);
@@ -299,7 +388,7 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
 
 // Reconstructed from eboot.elf at 0x641740.
 void render_resource_manager_shutdown(RenderResourceManager& manager) {
-    void** constant_blocks[] = {
+    RenderShaderConstantBlock** constant_blocks[] = {
         &manager.shader_constants.scene_block,
         &manager.shader_constants.render_target_block,
         &manager.shader_constants.camera_block,
@@ -310,10 +399,10 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
         &manager.shader_constants.debug_block,
     };
     for (auto** block : constant_blocks) {
-        release_sized_array_owner(*block);
+        render_shader_constant_block_release(*block);
     }
     for (auto*& storage : manager.shader_constants.transient_blocks) {
-        release_sized_array_owner(storage);
+        render_shader_constant_block_release(storage);
     }
 
     auto*& names_storage = manager.shader_constants.constant_registry;
