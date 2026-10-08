@@ -5,6 +5,7 @@
 #include <_pthread.h>
 
 #include "game/startup/system_init_options.h"
+#include "render/core/frame/render_frame_owner_list.h"
 
 namespace rb4 {
 
@@ -56,8 +57,7 @@ struct RenderSystemCoreState {
     bool frame_in_progress;
     bool shutting_down;
     std::uint8_t reserved_178[6];
-    RenderFrameOwner** submitted_frame_owners;
-    std::size_t submitted_frame_owner_count;
+    RenderFrameOwnerList submitted_frame_owners;
     std::uint8_t reserved_200[56];
     std::uint64_t previous_frame_counter;
     std::uint64_t initial_frame_tick_span;
@@ -90,8 +90,6 @@ static_assert(offsetof(RenderSystemCoreState, auxiliary_frame_epoch) == 168);
 static_assert(offsetof(RenderSystemCoreState, frame_in_progress) == 176);
 static_assert(offsetof(RenderSystemCoreState, shutting_down) == 177);
 static_assert(offsetof(RenderSystemCoreState, submitted_frame_owners) == 184);
-static_assert(
-    offsetof(RenderSystemCoreState, submitted_frame_owner_count) == 192);
 static_assert(
     offsetof(RenderSystemCoreState, previous_frame_counter) == 256);
 static_assert(

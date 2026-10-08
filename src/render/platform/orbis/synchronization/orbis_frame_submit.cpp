@@ -11,7 +11,7 @@ namespace rb4 {
 // Reconstructed from eboot.elf at 0x8D8300.
 void orbis_render_system_submit_frame(
     OrbisRenderSystem& system,
-    const std::vector<OrbisBackBuffer*>& back_buffers) {
+    const RenderFrameOwnerList& back_buffers) {
     orbis_lock_submission(system);
     orbis_submit_scope_begin(system);
 
@@ -27,7 +27,9 @@ void orbis_render_system_submit_frame(
     }
 
     orbis_render_context_submit_frame(orbis_render_system_context(system));
-    for (auto* back_buffer : back_buffers) {
+    for (std::size_t index = 0; index < back_buffers.count; ++index) {
+        auto* back_buffer = reinterpret_cast<OrbisBackBuffer*>(
+            back_buffers.items[index]);
         orbis_back_buffer_advance(*back_buffer);
     }
 

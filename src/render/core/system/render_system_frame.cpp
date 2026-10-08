@@ -98,8 +98,8 @@ bool render_system_attach_frame_owner(
         return false;
     }
 
-    runtime.submitted_frame_owners[
-        runtime.submitted_frame_owner_count++] = &owner;
+    runtime.submitted_frame_owners.items[
+        runtime.submitted_frame_owners.count++] = &owner;
 
     const auto targets = render_frame_owner_target_states(owner);
     resize_target_states(runtime.active_target_states, targets.count);

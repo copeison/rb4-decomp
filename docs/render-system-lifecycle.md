@@ -50,6 +50,11 @@ poll, and begin dispatch slots directly. Output extents and frame attachment
 therefore share the same typed target-state handle instead of separate opaque
 adapter contracts.
 
+Frame submission receives a 16-byte owner list at `0xB8`, consisting of an
+item pointer and element count. The Orbis backend iterates that count after
+submitting the render context and advances each collected back buffer. This is
+the observed binary contract; it is not a standard-library vector.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.

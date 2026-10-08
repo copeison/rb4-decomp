@@ -1,14 +1,13 @@
 #pragma once
 
-#include <vector>
+#include "render/core/frame/render_frame_owner_list.h"
 
 namespace rb4 {
 
-struct OrbisBackBuffer;
 struct OrbisRenderSystem;
 
 void orbis_render_system_submit_frame(
     OrbisRenderSystem& system,
-    const std::vector<OrbisBackBuffer*>& back_buffers);
+    const RenderFrameOwnerList& back_buffers);
 
 }  // namespace rb4
