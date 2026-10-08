@@ -55,6 +55,14 @@ item pointer and element count. The Orbis backend iterates that count after
 submitting the render context and advances each collected back buffer. This is
 the observed binary contract; it is not a standard-library vector.
 
+Frame preparation at `0x3DE170` now owns its common control flow. It acquires
+the owner-tracked frame lock, marks the frame active, invokes platform slot
+`0x30`, updates the performance-counter snapshot for primary frames, computes
+instantaneous frames per second, and applies the original 59-to-1 rolling
+average. It then marks the primary context active, consumes pending activation,
+and begins GPU frame tracking. Only the phase-metric side effect and GPU
+tracking internals remain behind narrow adapters.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.

@@ -4,10 +4,13 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
+#include "core/time/performance_counter.h"
+#include "render/core/context/render_context.h"
 #include "render/core/context/render_context_adapters.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/synchronization/render_system_lock.h"
 #include "render/core/system/render_epoch.h"
+#include "render/core/system/render_system.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -113,6 +116,51 @@ bool render_system_attach_frame_owner(
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x3DE170.
+void render_system_prepare_frame(
+    RenderSystem& system,
+    bool auxiliary_frame) {
+    render_system_acquire_frame_lock(system);
+
+    auto& runtime = render_system_core_state(system);
+    runtime.frame_in_progress = true;
+    render_system_platform_prepare_frame(system, auxiliary_frame);
+
+    if (!auxiliary_frame) {
+        if (render_system_frame_phase(system) == 0) {
+            render_system_update_frame_phase_metrics(system);
+        }
+
+        const auto current_counter = performance_counter_read();
+        const auto elapsed_ticks = runtime.frame_timing_initialized != 0
+            ? current_counter - runtime.previous_frame_counter
+            : runtime.initial_frame_tick_span;
+        runtime.previous_frame_counter = current_counter;
+        runtime.initial_frame_tick_span = 0;
+        runtime.frame_timing_initialized = 1;
+
+        const auto elapsed_milliseconds =
+            performance_counter_ticks_to_milliseconds(elapsed_ticks);
+        runtime.instantaneous_frame_rate = static_cast<float>(
+            1000.0 / elapsed_milliseconds);
+        if (runtime.smoothed_frame_rate == 0.0F) {
+            runtime.smoothed_frame_rate =
+                runtime.instantaneous_frame_rate;
+        }
+        runtime.smoothed_frame_rate =
+            (runtime.smoothed_frame_rate * 59.0F +
+             runtime.instantaneous_frame_rate) /
+            60.0F;
+    }
+
+    runtime.render_context->frame_active = true;
+    if (runtime.frame_activation_pending) {
+        render_system_activate_pending_frame(system);
+    }
+    runtime.gpu_frame_stat = render_system_begin_gpu_frame_tracking(
+        system, *runtime.render_context);
+}
 
 // Reconstructed from eboot.elf at 0x3DE0E0.
 void render_system_poll() {
