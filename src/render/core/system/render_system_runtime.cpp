@@ -16,6 +16,7 @@
 #include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/audio/audio_analysis_textures.h"
+#include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
@@ -30,7 +31,6 @@ constexpr std::size_t kLightingResourcesOffset = 3256;
 constexpr std::size_t kBackendResourceOffset = 3560;
 constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
-constexpr std::size_t kPrimitiveMeshSetSize = 40;
 
 struct RenderBuiltinBufferDescriptors {
     const RenderConstantBufferDescriptor* zero_pair;
@@ -107,8 +107,9 @@ void initialize_runtime_resources(RenderSystem& system) {
 
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
-    primitive_meshes = render_allocate(kPrimitiveMeshSetSize);
-    render_primitive_mesh_set_construct(primitive_meshes);
+    primitive_meshes = render_allocate(sizeof(RenderPrimitiveMeshSet));
+    render_primitive_mesh_set_construct(
+        *static_cast<RenderPrimitiveMeshSet*>(primitive_meshes));
 
     auto*& audio_textures =
         runtime_pointer_at(system, kAudioAnalysisTextureSetOffset);
@@ -131,7 +132,8 @@ void shutdown_runtime_resources(RenderSystem& system) {
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
     if (primitive_meshes != nullptr) {
-        render_primitive_mesh_set_destruct(primitive_meshes);
+        render_primitive_mesh_set_destruct(
+            *static_cast<RenderPrimitiveMeshSet*>(primitive_meshes));
         render_release(primitive_meshes);
         primitive_meshes = nullptr;
     }

@@ -108,7 +108,9 @@ The resource manager begins at `0x9F0`, the 304-byte lighting-resource block at
 `0xCB8`, an owned backend resource pointer at `0xDE8`, the 40-byte primitive
 mesh set pointer at `0xDF0`, the 72-byte audio-analysis set pointer at `0xDF8`,
 and the inline GPU-stat block at `0xE00`. Startup allocates the primitive and
-audio sets explicitly before initializing GPU statistics. Shutdown releases
+audio sets explicitly before initializing GPU statistics. The primitive set is
+an exact 40-byte, two-slot inline owner containing the default box and cylinder
+meshes; its teardown dispatches dynamic release for both slots. Shutdown releases
 the backend, lighting, and resource-manager state first, then destroys and
 frees the primitive and audio sets, clearing both owning pointers before the
 built-in constant buffers are released.
