@@ -445,6 +445,8 @@
   source-data release, validation, and deleting lifecycle.
 - [x] Reconstruct the common cube-array texture dispatch, cube/face source
   queries, source-data release, validation, and deleting lifecycle.
+- [x] Reconstruct common render-mesh dispatch, update-link registration,
+  triangle storage, position-vertex access, and deleting lifecycle.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

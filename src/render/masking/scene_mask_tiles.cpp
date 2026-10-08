@@ -3,7 +3,6 @@
 #include <cstddef>
 
 #include "render/core/meshes/render_mesh.h"
-#include "render/core/meshes/render_mesh_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"

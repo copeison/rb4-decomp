@@ -83,5 +83,14 @@ void render_mesh_apply_updates(
     std::uint32_t flags);
 void render_mesh_process_pending_updates(RenderMesh& mesh);
 void render_mesh_process_pending_updates_secondary(RenderMeshUpdateLink& link);
+void render_mesh_resize_triangles(
+    RenderMesh& mesh,
+    std::size_t triangle_count);
+void render_mesh_resize_position_vertices(
+    RenderMesh& mesh,
+    std::size_t vertex_count);
+PositionMeshVertex& render_mesh_position_vertex_at(
+    RenderMesh& mesh,
+    std::size_t index);
 
 }  // namespace rb4
