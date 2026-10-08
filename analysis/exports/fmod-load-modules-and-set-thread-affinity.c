@@ -38,10 +38,10 @@ __int64 fmod_load_modules_and_set_thread_affinity()
   v3 = sub_2484E0(&v13);
   sub_247510(&v13);
   sceKernelLoadStartModule(v3, 0, 0, 0, 0, &v10);
-  sub_258C60("audio_render", &v10);
-  sub_258C60("mic_reader", &v9);
-  _EBX = sub_2590B0(*(_QWORD *)(v10 + 24), *(_QWORD *)(v10 + 40));
-  v5 = sub_2590B0(*(_QWORD *)(v9 + 24), *(_QWORD *)(v9 + 40));
+  thread_affinity_find_group("audio_render", &v10);
+  thread_affinity_find_group("mic_reader", &v9);
+  _EBX = thread_affinity_build_cpu_mask(*(_QWORD *)(v10 + 24), *(_QWORD *)(v10 + 40));
+  v5 = thread_affinity_build_cpu_mask(*(_QWORD *)(v9 + 24), *(_QWORD *)(v9 + 40));
   __asm { vmovd   xmm0, ebx }
   __asm
   {

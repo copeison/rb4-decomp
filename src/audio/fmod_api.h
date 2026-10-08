@@ -61,6 +61,15 @@ static_assert(sizeof(FMOD_3D_ATTRIBUTES) == 48);
 static_assert(offsetof(FMOD_3D_ATTRIBUTES, forward) == 24);
 static_assert(offsetof(FMOD_3D_ATTRIBUTES, up) == 36);
 
+struct FMOD_ORBIS_THREAD_AFFINITY {
+    std::uint32_t masks[11];
+};
+
+static_assert(sizeof(FMOD_ORBIS_THREAD_AFFINITY) == 44);
+
+extern "C" FMOD_RESULT FMOD_Orbis_SetThreadAffinity(
+    const FMOD_ORBIS_THREAD_AFFINITY* affinity);
+
 using FMOD_INITFLAGS = std::uint32_t;
 using FMOD_MODE = std::uint32_t;
 using FMOD_TIMEUNIT = std::uint32_t;

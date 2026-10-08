@@ -13,10 +13,17 @@ Before creating an FMOD system, the function at `0x261F60` loads
 worker threads, assigns the microphone-reader mask to the recording thread,
 and submits the table through `FMOD_Orbis_SetThreadAffinity`.
 
-The field names in FMOD's private Orbis affinity structure are not available,
-so the cleaned source does not yet declare that table. The module names,
-configuration keys, masks, and call order are visible directly in the
-executable.
+The private FMOD structure is exactly 44 bytes: eleven consecutive 32-bit CPU
+masks. The function fills all eleven entries with the `audio_render` mask and
+then replaces entry 6 with the `mic_reader` mask. The cleaned reconstruction in
+`src/audio/fmod_orbis_platform.cpp` preserves that layout and assignment order
+without inventing names for the other ten private FMOD thread slots.
+
+The engine affinity record selected at `0x258C60` stores a primary processor at
+offset 24 and an additional processor mask at offset 40. The helper at
+`0x2590B0` combines them and falls back to all active processors when both are
+unset. These helpers are named in IDA and represented by the narrow record view
+in `fmod_orbis_platform.h`.
 
 ## Primary system creation
 

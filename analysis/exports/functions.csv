@@ -6682,11 +6682,11 @@ address,end,size,name,library,thunk
 0x258B70,0x258B75,5,sub_258B70,False,True
 0x258B80,0x258C18,152,sub_258B80,False,False
 0x258C20,0x258C5B,59,sub_258C20,False,False
-0x258C60,0x258D57,247,sub_258C60,False,False
+0x258C60,0x258D57,247,thread_affinity_find_group,False,False
 0x258DE0,0x258E50,112,sub_258DE0,False,False
 0x258E50,0x259091,577,sub_258E50,False,False
 0x2590A0,0x2590A1,1,nullsub_878,False,False
-0x2590B0,0x259206,342,sub_2590B0,False,False
+0x2590B0,0x259206,342,thread_affinity_build_cpu_mask,False,False
 0x259210,0x25939F,399,sub_259210,False,False
 0x2593A0,0x2593C6,38,sub_2593A0,False,False
 0x2593D0,0x2593FB,43,sub_2593D0,False,False

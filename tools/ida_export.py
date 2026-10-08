@@ -21,6 +21,8 @@ SOURCE_PATH_RE = re.compile(
 )
 
 FOCUSED_DECOMPILATIONS = {
+    "thread-affinity-find-group": 0x258C60,
+    "thread-affinity-build-cpu-mask": 0x2590B0,
     "game-initialize": 0xA0,
     "game-run-frame": 0x190,
     "game-main": 0x3C0,

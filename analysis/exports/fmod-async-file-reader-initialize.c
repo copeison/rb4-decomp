@@ -6,7 +6,7 @@ __int64 fmod_async_file_reader_initialize()
   qword_19F3008 = (__int64)&unk_19F3020;
   scePthreadCondattrInit(v1);
   scePthreadCondInit(&unk_19F3010, v1, "Condition");
-  sub_258C60("stream_reader", v1);
+  thread_affinity_find_group("stream_reader", v1);
   sub_259210(
     (unsigned int)&unk_19F2F78,
     (unsigned int)fmod_async_file_reader_thread,

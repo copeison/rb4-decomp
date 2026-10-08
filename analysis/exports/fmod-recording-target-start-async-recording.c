@@ -4,7 +4,7 @@ __int64 __fastcall fmod_recording_target_start_async_recording(__int64 a1)
   _QWORD v3[4]; // [rsp+0h] [rbp-20h] BYREF
 
   v3[1] = 0x6365786562696C2FLL;
-  sub_258C60("async_audio_record", v3);
+  thread_affinity_find_group("async_audio_record", v3);
   sub_259210(
     a1 + 1312,
     (unsigned int)fmod_recording_target_thread_entry,
