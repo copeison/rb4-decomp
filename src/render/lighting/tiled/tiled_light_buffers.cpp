@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "render/core/buffers/render_compute_buffer.h"
+#include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/lighting/tiled/tiled_light_buffer_adapters.h"

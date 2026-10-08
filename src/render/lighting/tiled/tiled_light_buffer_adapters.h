@@ -10,7 +10,6 @@ struct RenderLightingSystem;
 RenderComputeBuffer*& render_lighting_tiled_light_buffer(
     RenderLightingSystem& system,
     TiledLightBufferKind kind);
-void render_compute_buffer_release_dynamic(RenderComputeBuffer& buffer);
 void render_lighting_initialize_remaining(RenderLightingSystem& system);
 
 }  // namespace rb4

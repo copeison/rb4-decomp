@@ -13,5 +13,6 @@ void render_target_state_construct(
     RenderTargetState* source_state);
 void render_target_state_delete(RenderTargetState* state);
 void render_delete_target_storage(RenderTarget& target);
+void render_target_release_dynamic(RenderTarget& target);
 
 }  // namespace rb4
