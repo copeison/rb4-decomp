@@ -1,6 +1,7 @@
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
 
 #include <cstddef>
+#include <_pthread.h>
 
 #include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync_adapters.h"
@@ -22,15 +23,13 @@ void orbis_render_system_wait_idle(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D8140.
 void orbis_wait_for_gpu_idle(OrbisRenderSystem& system) {
-    orbis_gpu_wait_begin(system);
     while (!orbis_render_context_submissions_complete(
         orbis_render_system_context(system))) {
-        orbis_thread_yield();
+        scePthreadYield();
         if (orbis_frame_is_active(system)) {
             orbis_flush_active_frame(system);
         }
     }
-    orbis_gpu_wait_end(system);
 }
 
 // Reconstructed from eboot.elf at 0x8D8200.
