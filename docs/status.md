@@ -87,6 +87,8 @@
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.
 - [x] Reconstruct the fallback light-probe accumulation target.
+- [x] Inline the fallback light-probe accumulation descriptor, correct its
+  tiled-lighting feature gate, and register the resulting texture directly.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.

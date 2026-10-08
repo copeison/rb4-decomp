@@ -134,3 +134,10 @@ verified `{32, 4, 1, 1, -1}` data-format descriptor and common creation-state
 defaults; only creation-state value nine changes from `1` for the full target
 to `2` for reduced targets. This removes the sky-specific creation adapter
 while preserving the original first-owner and prior-owner reuse rules.
+
+The fallback light-probe accumulation texture is allocated only when tiled
+lighting is disabled. Its direct descriptor uses creation-state values six,
+eight, and nine set to `1`, value ten set to `10`, and the verified
+`{64, 4, 2, 1, -1}` format descriptor. The resulting full-resolution texture
+is registered with the owner and can reuse the matching texture from the
+previous owner.
