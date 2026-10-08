@@ -88,6 +88,7 @@
 - [x] Recover the Orbis 1D texture-array factory and platform constructor.
 - [x] Reconstruct Orbis 1D texture-array storage, uploads, and destruction.
 - [x] Recover the Orbis 2D texture-array factory and platform constructor.
+- [x] Reconstruct Orbis 2D texture-array storage, views, and destruction.
 - [x] Recover the Orbis cube texture-array factory and platform constructor.
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Recover the Orbis particle-buffer factory and quad-index layout.

@@ -29,4 +29,26 @@ void orbis_texture_array_2d_construct(
     orbis_texture_array_2d_clear_backend_state(texture);
 }
 
+// Reconstructed from eboot.elf at 0x8E5D80.
+void orbis_texture_array_2d_destruct(OrbisTextureArray2D& texture) {
+    orbis_texture_array_2d_release_backend_state(texture);
+    texture_array_2d_destruct(texture);
+}
+
+// Reconstructed from eboot.elf at 0x8E5E50.
+void orbis_texture_array_2d_delete(OrbisTextureArray2D& texture) {
+    orbis_texture_array_2d_destruct(texture);
+    render_delete_texture_array_2d(texture);
+}
+
+// Reconstructed from eboot.elf at 0x8E5E70.
+void orbis_texture_array_2d_initialize_backend(
+    OrbisTextureArray2D& texture) {
+    if (orbis_texture_array_2d_is_depth(texture)) {
+        orbis_texture_array_2d_initialize_depth_storage(texture);
+    } else {
+        orbis_texture_array_2d_initialize_color_storage(texture);
+    }
+}
+
 }  // namespace rb4
