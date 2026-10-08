@@ -48,6 +48,7 @@
 - [x] Recover renderer platform and graphics-API identity mappings.
 - [x] Reconstruct platform capability and resolution-list initialization.
 - [x] Recover the Orbis GPU fence factory and backing allocation.
+- [x] Recover the seven-format Orbis mesh factory and format-name map.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 1D texture factory and platform constructor.

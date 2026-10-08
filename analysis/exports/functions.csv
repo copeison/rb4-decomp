@@ -12026,7 +12026,7 @@ address,end,size,name,library,thunk
 0x4425A0,0x44263D,157,sub_4425A0,False,False
 0x442860,0x44290A,170,sub_442860,False,False
 0x442910,0x44292E,30,sub_442910,False,False
-0x442930,0x442A11,225,sub_442930,False,False
+0x442930,0x442A11,225,render_mesh_format_from_name,False,False
 0x442A20,0x442A2A,10,sub_442A20,False,False
 0x442A30,0x442A4C,28,sub_442A30,False,False
 0x442A50,0x442A5A,10,sub_442A50,False,False
@@ -12037,7 +12037,7 @@ address,end,size,name,library,thunk
 0x442CB0,0x442E51,417,sub_442CB0,False,False
 0x442E60,0x4430B2,594,sub_442E60,False,False
 0x4430C0,0x4435DE,1310,sub_4430C0,False,False
-0x4435E0,0x4435F2,18,sub_4435E0,False,False
+0x4435E0,0x4435F2,18,render_mesh_format_descriptor,False,False
 0x443600,0x4436B3,179,sub_443600,False,False
 0x443720,0x443880,352,sub_443720,False,False
 0x443880,0x443980,256,sub_443880,False,False
@@ -17768,8 +17768,8 @@ address,end,size,name,library,thunk
 0x5C25D0,0x5C25D5,5,sub_5C25D0,False,True
 0x5C25E0,0x5C25E5,5,sub_5C25E0,False,False
 0x5C25F0,0x5C25F1,1,nullsub_1842,False,False
-0x5C26D0,0x5C26F4,36,sub_5C26D0,False,False
-0x5C2700,0x5C27B0,176,sub_5C2700,False,False
+0x5C26D0,0x5C26F4,36,render_create_mesh,False,False
+0x5C2700,0x5C27B0,176,mesh_construct,False,False
 0x5C27B0,0x5C2805,85,sub_5C27B0,False,False
 0x5C2930,0x5C2935,5,sub_5C2930,False,False
 0x5C2940,0x5C2944,4,sub_5C2940,False,False
@@ -27937,7 +27937,7 @@ address,end,size,name,library,thunk
 0x8D8590,0x8D8593,3,sub_8D8590,False,False
 0x8D85A0,0x8D85BF,31,sub_8D85A0,False,False
 0x8D85C0,0x8D85F0,48,orbis_create_fence,False,False
-0x8D85F0,0x8D8980,912,sub_8D85F0,False,False
+0x8D85F0,0x8D8980,912,orbis_create_mesh,False,False
 0x8D8980,0x8D89B0,48,orbis_create_texture_1d,False,False
 0x8D89B0,0x8D89E0,48,orbis_create_texture_2d,False,False
 0x8D89E0,0x8D8A10,48,orbis_create_texture_3d,False,False
