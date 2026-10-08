@@ -42,6 +42,8 @@
 - [x] Reconstruct tiled scene-mask targets and grid mesh.
 - [x] Reconstruct per-scene linear and tiled depth targets.
 - [x] Reconstruct the per-scene ambient-occlusion target.
+- [x] Inline the ambient-occlusion texture descriptor and primary-block
+  registration path.
 - [x] Reconstruct per-scene GBuffer targets.
 - [x] Reconstruct the per-scene depth/stencil target and attachment reuse.
 - [x] Reconstruct the partial-frame light-accumulation target.
