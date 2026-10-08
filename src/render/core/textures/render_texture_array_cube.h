@@ -13,7 +13,7 @@ struct RenderTextureCubeDescriptorRange {
 };
 
 struct RenderTextureArrayCubeDescriptor {
-    std::uint8_t texture_state[144];
+    RenderTextureDescriptorState texture_state;
     RenderTextureCubeDescriptorRange cubes;
 };
 

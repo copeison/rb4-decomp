@@ -10,6 +10,37 @@ enum class RenderTextureUsage : std::int32_t {
     kDepth = 2,
 };
 
+struct RenderTextureDescriptorState {
+    std::int32_t descriptor_type;
+    std::uint32_t creation_values[11];
+    RenderTextureUsage usage_type;
+    std::uint8_t resolved_state[28];
+    std::uint32_t address_mode;
+    std::uint32_t filter_mode;
+    std::uint32_t flags;
+    std::int32_t data_format;
+    std::uint32_t width;
+    std::uint32_t height;
+    std::uint32_t depth;
+    std::uint32_t reserved_6C;
+    void* source_data;
+    union {
+        std::uint32_t source_size;
+        std::uint32_t target_flags;
+    };
+    bool backend_initialized;
+    std::uint8_t reserved_7D[3];
+    union {
+        std::int32_t bindless_index;
+        std::int32_t attachment_index;
+    };
+    union {
+        std::uint32_t resource_flags;
+        std::int32_t attachment_count;
+    };
+    const char* name;
+};
+
 struct RenderTexture {
     void* implementation;
     std::int64_t frame_stamp;
@@ -80,6 +111,14 @@ struct RenderTextureMipChainArray {
 };
 
 static_assert(sizeof(RenderTexture) == 168);
+static_assert(sizeof(RenderTextureDescriptorState) == 144);
+static_assert(offsetof(RenderTextureDescriptorState, creation_values) == 4);
+static_assert(offsetof(RenderTextureDescriptorState, usage_type) == 48);
+static_assert(offsetof(RenderTextureDescriptorState, flags) == 88);
+static_assert(offsetof(RenderTextureDescriptorState, data_format) == 92);
+static_assert(offsetof(RenderTextureDescriptorState, source_data) == 112);
+static_assert(offsetof(RenderTextureDescriptorState, attachment_index) == 128);
+static_assert(offsetof(RenderTextureDescriptorState, name) == 136);
 static_assert(sizeof(RenderTextureMipChainFields) == 80);
 static_assert(offsetof(RenderTextureMipChainFields, width) == 8);
 static_assert(offsetof(RenderTextureMipChainFields, data_format) == 20);

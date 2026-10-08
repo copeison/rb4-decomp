@@ -15,7 +15,7 @@ struct RenderTextureCubeState {
 };
 
 struct RenderTextureCubeDescriptor {
-    std::uint8_t texture_state[144];
+    RenderTextureDescriptorState texture_state;
     RenderTextureCubeDescriptorState cube;
 };
 

@@ -26,8 +26,8 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 
 bool descriptor_has_source_data(
     const RenderTexture3DDescriptor& descriptor) {
-    return descriptor.texture_state[124] != 0 ||
-           (descriptor.texture_state[88] & 5U) != 0;
+    return descriptor.texture_state.backend_initialized ||
+           (descriptor.texture_state.flags & 5U) != 0;
 }
 
 }  // namespace
@@ -41,7 +41,7 @@ void render_texture_3d_construct(
 
     std::memcpy(
         texture.descriptor_state,
-        descriptor.texture_state,
+        &descriptor.texture_state,
         sizeof(texture.descriptor_state));
     render_texture_mip_chain_construct(
         texture.mip_chain,
@@ -71,9 +71,9 @@ RenderTexture3D* render_create_texture_3d(
     RenderTexture3DDescriptor& descriptor,
     RenderTexture3D* reusable_texture) {
     render_texture_resolve_descriptor_fields(
-        descriptor.texture_state + 48,
+        &descriptor.texture_state.usage_type,
         2,
-        descriptor.texture_state + 4,
+        descriptor.texture_state.creation_values,
         -1);
     auto& factory = *render_system_factory(*render_system_instance());
     auto* texture = render_factory_create_texture_3d(factory, descriptor);

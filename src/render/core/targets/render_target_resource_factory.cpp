@@ -15,36 +15,23 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kDescriptorTypeOffset = 0;
-constexpr std::size_t kCreationStateOffset = 4;
-constexpr std::size_t kResolvedStateOffset = 48;
-constexpr std::size_t kDataFormatOffset = 92;
-constexpr std::size_t kTargetFlagsOffset = 120;
-constexpr std::size_t kAttachmentIndexOffset = 128;
-constexpr std::size_t kNameOffset = 136;
-
-template <typename T>
-void write_value(std::uint8_t* destination, std::size_t offset, T value) {
-    std::memcpy(destination + offset, &value, sizeof(value));
-}
-
 void initialize_texture_descriptor(
-    std::uint8_t (&state)[144],
+    RenderTextureDescriptorState& state,
     std::int32_t descriptor_type,
     const RenderTextureCreationState& creation_state,
     const char* name,
     std::int32_t attachment_index,
     std::uint32_t target_flags) {
-    std::memset(state, 0, sizeof(state));
-    write_value(state, kDescriptorTypeOffset, descriptor_type);
+    state = {};
+    state.descriptor_type = descriptor_type;
     std::memcpy(
-        state + kCreationStateOffset,
+        state.creation_values,
         creation_state.values,
         sizeof(creation_state.values));
-    write_value<std::int32_t>(state, kDataFormatOffset, -1);
-    write_value(state, kTargetFlagsOffset, target_flags);
-    write_value(state, kAttachmentIndexOffset, attachment_index);
-    write_value(state, kNameOffset, name);
+    state.data_format = -1;
+    state.target_flags = target_flags;
+    state.attachment_index = attachment_index;
+    state.name = name;
 }
 
 void initialize_mip_descriptor(
@@ -59,12 +46,12 @@ void initialize_mip_descriptor(
 }
 
 void resolve_descriptor(
-    std::uint8_t (&state)[144],
+    RenderTextureDescriptorState& state,
     std::int32_t descriptor_type) {
     render_texture_resolve_descriptor_fields(
-        state + kResolvedStateOffset,
+        &state.usage_type,
         descriptor_type,
-        state + kCreationStateOffset,
+        state.creation_values,
         -1);
 }
 

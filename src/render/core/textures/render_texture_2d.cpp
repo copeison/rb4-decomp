@@ -23,8 +23,8 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 
 bool descriptor_has_source_data(
     const RenderTexture2DDescriptor& descriptor) {
-    return descriptor.texture_state[124] != 0 ||
-           (descriptor.texture_state[88] & 5U) != 0;
+    return descriptor.texture_state.backend_initialized ||
+           (descriptor.texture_state.flags & 5U) != 0;
 }
 
 }  // namespace
@@ -38,7 +38,7 @@ void render_texture_2d_construct(
 
     std::memcpy(
         texture.descriptor_state,
-        descriptor.texture_state,
+        &descriptor.texture_state,
         sizeof(texture.descriptor_state));
     render_texture_mip_chain_construct(
         texture.mip_chain,

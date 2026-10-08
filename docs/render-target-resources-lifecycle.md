@@ -132,6 +132,13 @@ earlier 168-byte prefix view. The mip descriptor's implementation pointer,
 width, height, depth, and data-format offsets are typed; the remaining 56-byte
 ownership state stays opaque until its resource variants are reconstructed.
 
+The preceding 144-byte common texture descriptor is now typed as well. It
+contains the descriptor type, eleven creation values, resolved texture state,
+format and dimensions, source-data fields, target flags, attachment fields,
+and name at their verified offsets. Target and volumetric factories now assign
+those fields directly, while all seven reconstructed texture families share
+the same layout declaration.
+
 The virtuals return render textures directly: normal targets are 2D textures,
 and the shadow-contribution array is a 2D-array texture. Owner and per-scene
 slots therefore use the common `RenderTexture` base, including release and

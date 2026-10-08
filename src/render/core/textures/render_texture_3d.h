@@ -7,7 +7,7 @@
 namespace rb4 {
 
 struct RenderTexture3DDescriptor {
-    std::uint8_t texture_state[144];
+    RenderTextureDescriptorState texture_state;
     RenderTextureMipChainDescriptor mip_chain;
 };
 

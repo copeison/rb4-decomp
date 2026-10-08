@@ -23,8 +23,8 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 
 bool descriptor_has_source_data(
     const RenderTextureArrayCubeDescriptor& descriptor) {
-    return descriptor.texture_state[124] != 0 ||
-           (descriptor.texture_state[88] & 5U) != 0;
+    return descriptor.texture_state.backend_initialized ||
+           (descriptor.texture_state.flags & 5U) != 0;
 }
 
 }  // namespace

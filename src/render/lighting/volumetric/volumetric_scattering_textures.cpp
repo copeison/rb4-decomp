@@ -1,7 +1,6 @@
 #include "render/lighting/volumetric/volumetric_scattering_textures.h"
 
 #include <array>
-#include <cstring>
 
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
@@ -31,14 +30,6 @@ constexpr std::uint64_t kEvenAccumulatedScatteringVoxel =
     0x3C003C003C000000ULL;
 constexpr std::uint64_t kOddAccumulatedScatteringVoxel =
     0x3C00000038003C00ULL;
-
-template <typename T>
-void write_descriptor_value(
-    std::uint8_t* destination,
-    std::size_t offset,
-    T value) {
-    std::memcpy(destination + offset, &value, sizeof(value));
-}
 
 std::uint32_t divide_round_up(
     std::uint32_t value,
@@ -142,26 +133,16 @@ RenderTexture3D* create_volumetric_texture(
     std::uint64_t (*initializer)(
         std::uint32_t, std::uint32_t, std::uint32_t)) {
     RenderTexture3DDescriptor descriptor{};
-    write_descriptor_value<std::int32_t>(
-        descriptor.texture_state, 0, 2);
-    write_descriptor_value<std::uint32_t>(
-        descriptor.texture_state,
-        4 + 8 * sizeof(std::uint32_t),
-        static_cast<std::uint32_t>(render_texture_default_address_mode(5)));
-    write_descriptor_value<std::uint32_t>(
-        descriptor.texture_state,
-        4 + 9 * sizeof(std::uint32_t),
-        static_cast<std::uint32_t>(render_texture_default_filter_mode(5)));
-    write_descriptor_value<std::uint32_t>(
-        descriptor.texture_state,
-        4 + 10 * sizeof(std::uint32_t),
-        2);
-    write_descriptor_value<std::int32_t>(
-        descriptor.texture_state, 92, -1);
-    write_descriptor_value<std::int32_t>(
-        descriptor.texture_state, 128, -1);
-    write_descriptor_value(
-        descriptor.texture_state, 136, texture_name(kind));
+    auto& texture_state = descriptor.texture_state;
+    texture_state.descriptor_type = 2;
+    texture_state.creation_values[8] = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(5));
+    texture_state.creation_values[9] = static_cast<std::uint32_t>(
+        render_texture_default_filter_mode(5));
+    texture_state.creation_values[10] = 2;
+    texture_state.data_format = -1;
+    texture_state.attachment_index = -1;
+    texture_state.name = texture_name(kind);
 
     const RenderDataFormatDescriptor format_descriptor{
         64, 4, 2, 1, -1,
