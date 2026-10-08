@@ -13,6 +13,7 @@
 #include "render/core/system/render_system.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
 
 namespace rb4 {
@@ -160,6 +161,70 @@ void render_system_prepare_frame(
     }
     runtime.gpu_frame_stat = render_system_begin_gpu_frame_tracking(
         system, *runtime.render_context);
+}
+
+// Reconstructed from eboot.elf at 0x3DE4A0.
+void render_system_finish_frame(
+    RenderSystem& system,
+    bool auxiliary_frame) {
+    auto& runtime = render_system_core_state(system);
+    if (runtime.frame_activation_pending) {
+        render_system_activate_pending_frame(system);
+    }
+
+    render_system_end_gpu_frame_tracking(
+        system,
+        *runtime.render_context,
+        runtime.gpu_frame_stat);
+
+    if (auxiliary_frame) {
+        render_system_platform_submit_frame(
+            system, runtime.submitted_frame_owners, true);
+        ++runtime.auxiliary_frame_epoch;
+    } else {
+        render_system_finalize_primary_context(
+            system, *runtime.render_context);
+        render_system_platform_submit_frame(
+            system, runtime.submitted_frame_owners, false);
+        if (render_system_frame_phase(system) == 1) {
+            render_system_update_frame_phase_metrics(system);
+        }
+        runtime.submitted_frame_owners.count = 0;
+        ++runtime.frame_epoch;
+        render_system_flush_deferred_releases(system);
+    }
+
+    runtime.frame_in_progress = false;
+    runtime.render_context->frame_active = false;
+    render_system_release_frame_lock(system);
+
+    if (!auxiliary_frame) {
+        render_system_poll_default_resources(system);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x3DE8F0.
+void render_system_begin_auxiliary_frame(
+    RenderSystem& system,
+    RenderTargetState* target_state) {
+    render_system_prepare_frame(system, true);
+
+    auto& runtime = render_system_core_state(system);
+    const auto target_count = target_state == nullptr
+        ? std::size_t{0}
+        : std::size_t{1};
+    resize_target_states(runtime.active_target_states, target_count);
+    if (target_state != nullptr) {
+        runtime.active_target_states.begin[0] = target_state;
+    }
+    render_context_begin_frame(*runtime.render_context, 0);
+}
+
+// Reconstructed from eboot.elf at 0x3DE9E0.
+void render_system_finish_auxiliary_frame(RenderSystem& system) {
+    auto& runtime = render_system_core_state(system);
+    runtime.active_target_states.end = runtime.active_target_states.begin;
+    render_system_finish_frame(system, true);
 }
 
 // Reconstructed from eboot.elf at 0x3DE0E0.

@@ -63,6 +63,15 @@ average. It then marks the primary context active, consumes pending activation,
 and begins GPU frame tracking. Only the phase-metric side effect and GPU
 tracking internals remain behind narrow adapters.
 
+Frame finish at `0x3DE4A0` now mirrors that ownership: it resolves pending
+activation, ends GPU tracking, dispatches primary or auxiliary submission,
+advances the matching epoch, clears the submitted-owner count for primary
+frames, drains deferred releases, resets context/frame-active state, releases
+the owner-tracked lock, and polls default resources. The auxiliary entry and
+exit functions at `0x3DE8F0`/`0x3DE9E0` also own their exact optional
+single-target-state behavior. Construction of primary GPU submission records
+remains isolated behind one adapter.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.

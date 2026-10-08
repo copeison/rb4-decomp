@@ -287,6 +287,8 @@
   descriptor model.
 - [x] Recover the typed 312-byte render-system core prefix, including lock,
   active-frame, epoch, timing, settings, and factory state.
+- [x] Reconstruct common primary and auxiliary frame preparation, attachment,
+  submission control flow, timing, and epoch advancement.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.
