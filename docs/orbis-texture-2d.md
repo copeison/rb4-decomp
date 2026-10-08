@@ -44,3 +44,10 @@ invoking the common texture destructor. The deleting destructor follows at
 `analysis/exports/orbis-texture-2d-backend.asm` preserves the complete backend
 initializer because Hex-Rays does not currently produce pseudocode for that
 function.
+
+Virtual methods at `0x8D6E40` through `0x8D713F` bind the texture to all six
+engine shader stages. Flag bit 2 selects the secondary depth/stencil view.
+Color textures otherwise select the active storage bank; render-target-backed
+textures use the active frame index and fall back to bank zero when that frame
+has no target. Each wrapper forwards the selected view, address mode, filter,
+flags, and border color to the shared Orbis texture-binding layer.

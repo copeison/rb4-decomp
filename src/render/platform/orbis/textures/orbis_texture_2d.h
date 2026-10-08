@@ -1,8 +1,13 @@
 #pragma once
 
+#include <cstdint>
+
+#include "render/platform/orbis/shaders/orbis_texture_binding.h"
+
 namespace rb4 {
 
 struct OrbisTexture2D;
+struct OrbisRenderContext;
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
 struct RenderTexture2DDescriptor;
@@ -22,5 +27,41 @@ const OrbisGpuRenderTarget* orbis_texture_2d_render_target(
     const OrbisTexture2D& texture);
 const OrbisGpuDepthRenderTarget* orbis_texture_2d_depth_target(
     const OrbisTexture2D& texture);
+void orbis_texture_2d_bind_vertex(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+void orbis_texture_2d_bind_hull(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+void orbis_texture_2d_bind_domain(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+void orbis_texture_2d_bind_geometry(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+void orbis_texture_2d_bind_pixel(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+void orbis_texture_2d_bind_compute(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
 
 }  // namespace rb4

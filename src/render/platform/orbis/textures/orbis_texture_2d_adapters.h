@@ -25,5 +25,12 @@ OrbisGpuDepthRenderTarget* orbis_texture_2d_mutable_depth_target(
     const OrbisTexture2D& texture);
 void texture_2d_destruct(OrbisTexture2D& texture);
 void render_delete_texture_2d(OrbisTexture2D& texture);
+const void* orbis_texture_2d_binding_view(
+    const OrbisTexture2D& texture,
+    std::uint32_t flags);
+OrbisSamplerAddressMode orbis_texture_2d_address_mode(
+    const OrbisTexture2D& texture);
+std::uint32_t orbis_texture_2d_filter_mode(
+    const OrbisTexture2D& texture);
 
 }  // namespace rb4

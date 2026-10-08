@@ -70,4 +70,82 @@ const OrbisGpuDepthRenderTarget* orbis_texture_2d_depth_target(
     return orbis_texture_2d_mutable_depth_target(texture);
 }
 
+// Reconstructed from eboot.elf at 0x8D6E40.
+void orbis_texture_2d_bind_vertex(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_vertex_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8D6F10.
+void orbis_texture_2d_bind_hull(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_hull_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), flags, border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8D6F80.
+void orbis_texture_2d_bind_domain(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_domain_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), flags, border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8D6FF0.
+void orbis_texture_2d_bind_geometry(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_geometry_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), flags, border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8D7060.
+void orbis_texture_2d_bind_pixel(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_pixel_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), flags, border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8D70D0.
+void orbis_texture_2d_bind_compute(
+    const OrbisTexture2D& texture,
+    OrbisRenderContext& context,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_compute_texture(
+        context, slot, orbis_texture_2d_binding_view(texture, flags),
+        orbis_texture_2d_address_mode(texture),
+        orbis_texture_2d_filter_mode(texture), flags, border_color);
+}
+
 }  // namespace rb4
