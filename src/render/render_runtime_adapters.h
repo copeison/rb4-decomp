@@ -10,6 +10,7 @@ struct RndLightDirectionalCom;
 struct RndLightProbeCom;
 struct RndLightSpotCom;
 struct RndMaterial;
+struct RndCameraCom;
 struct RndObject;
 struct RndScene;
 struct RndSceneResource;
@@ -53,6 +54,7 @@ RndLightDirectionalCom* rnd_object_directional_light(RndObject& object);
 RndLightSpotCom* rnd_object_spot_light(RndObject& object);
 RndLightProbeCom* rnd_object_light_probe(RndObject& object);
 RndMaterial* rnd_object_add_material(RndObject& object);
+RndCameraCom* rnd_object_add_camera(RndObject& object);
 
 void rnd_light_set_enabled(RndLightCom& light, bool enabled);
 void rnd_light_probe_set_enabled(RndLightProbeCom& probe, bool enabled);
