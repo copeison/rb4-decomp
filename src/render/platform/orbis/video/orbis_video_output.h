@@ -16,8 +16,6 @@ struct OrbisSubmitEvent {
     OrbisSubmitEventType type;
 };
 
-using OrbisSubmitThreadEntry = void (*)(OrbisRenderSystem& system);
-
 void orbis_video_output_open(OrbisRenderSystem& system);
 void orbis_video_output_set_flip_rate(
     OrbisRenderSystem& system,
@@ -51,7 +49,7 @@ void orbis_render_system_delete(OrbisRenderSystem& system);
 void orbis_create_back_buffer(OrbisRenderSystem& system);
 void orbis_create_render_context(OrbisRenderSystem& system);
 void orbis_wait_for_submit_thread(OrbisRenderSystem& system);
-void orbis_submit_done_thread_entry(OrbisRenderSystem& system);
+std::int32_t orbis_submit_done_thread_entry(void* context);
 void orbis_submit_done_thread_run(OrbisRenderSystem& system);
 
 }  // namespace rb4

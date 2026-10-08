@@ -1,7 +1,11 @@
 #include "core/threading/engine_thread.h"
 
+#include <algorithm>
+#include <cstdio>
 #include <cstdint>
 #include <sys/sched.h>
+
+#include "core/threading/engine_thread_adapters.h"
 
 namespace rb4 {
 
@@ -15,7 +19,71 @@ void* engine_thread_trampoline(void* argument) {
         static_cast<std::intptr_t>(invocation.result));
 }
 
+std::int32_t engine_thread_wrapper_entry(void* argument) {
+    auto& invocation =
+        *static_cast<EngineThreadWrapperInvocation*>(argument);
+    engine_thread_register_current(invocation.owner->runtime.name);
+    invocation.result = invocation.callback(invocation.context);
+    return invocation.result;
+}
+
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x25C3E0.
+void engine_thread_configure_runtime(
+    EngineThreadRuntime& runtime,
+    EngineThreadCallback callback,
+    void* context,
+    const char* name,
+    std::int64_t processor,
+    std::int32_t priority,
+    std::uint32_t stack_size,
+    SceKernelCpumask affinity_mask) {
+    runtime.invocation.callback = callback;
+    runtime.invocation.context = context;
+    runtime.invocation.result = 0;
+    runtime.trailing_state = 0;
+    runtime.processor = processor;
+    runtime.priority = priority;
+    runtime.stack_size =
+        std::max(stack_size, kMinimumEngineThreadStackSize);
+    runtime.affinity_mask = affinity_mask;
+    std::snprintf(runtime.name, sizeof(runtime.name), "%s", name);
+}
+
+// Reconstructed from eboot.elf at 0x259210 and 0x2593A0.
+void engine_thread_configure(
+    EngineThread& thread,
+    EngineThreadCallback callback,
+    void* context,
+    const char* name,
+    std::int64_t processor,
+    std::int32_t priority,
+    std::uint32_t stack_size,
+    SceKernelCpumask affinity_mask) {
+    thread.invocation.callback = callback;
+    thread.invocation.context = context;
+    thread.invocation.result = 0;
+    thread.invocation.owner = &thread;
+
+    if (processor != -1) {
+        affinity_mask |= SceKernelCpumask{1} << processor;
+    }
+    if (affinity_mask == 0) {
+        affinity_mask =
+            (SceKernelCpumask{1} << kEngineProcessorCount) - 1;
+    }
+
+    engine_thread_configure_runtime(
+        thread.runtime,
+        engine_thread_wrapper_entry,
+        &thread.invocation,
+        name,
+        processor,
+        priority,
+        stack_size,
+        affinity_mask);
+}
 
 // Reconstructed from eboot.elf at 0x25C430.
 void engine_thread_start(EngineThreadRuntime& runtime) {

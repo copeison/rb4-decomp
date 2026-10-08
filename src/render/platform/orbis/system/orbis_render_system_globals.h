@@ -10,6 +10,7 @@ namespace rb4 {
 struct OrbisRenderSystem;
 struct OrbisRenderContext;
 struct OrbisBackBuffer;
+struct EngineThread;
 struct EngineThreadRuntime;
 struct OrbisBufferDescriptor;
 struct RenderSystem;
@@ -61,6 +62,7 @@ void orbis_set_cached_flip_rate(
     OrbisRenderSystem& system,
     std::int32_t rate);
 EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system);
+EngineThread& orbis_submit_thread_wrapper(OrbisRenderSystem& system);
 OrbisBufferDescriptor* orbis_default_vertex_descriptors(
     OrbisRenderSystem& system);
 const OrbisBufferDescriptor* orbis_default_vertex_descriptors();

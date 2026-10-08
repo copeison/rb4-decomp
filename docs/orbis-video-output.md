@@ -17,9 +17,18 @@ Startup performs the following work:
    double-buffered display target, and allocate the platform render context.
 6. Initialize the submit condition variable.
 7. Configure and start the joinable `SubmitDoneThread` at round-robin priority
-   699 through the shared engine thread runtime.
+   699 through the shared 136-byte engine thread wrapper. Its embedded runtime
+   receives the engine's six-processor default affinity mask and 128-KiB
+   minimum stack.
 8. Wait until the worker publishes readiness, then hide the system splash
-   screen.
+screen.
+
+The wrapper at `0x259210` stores the submit entry point and render-system
+context separately from the embedded pthread callback. The callback at
+`0x2593A0` registers the running thread as `SubmitDoneThread`, invokes the
+entry point, and records its zero result. This replaces the former broad
+submit-thread configuration adapter with the same shared path used by other
+engine workers.
 
 The worker at `0x8D7340` waits for up to four events at a time. Flip-complete
 events read `SceVideoOutFlipStatus::flipArg`, accept buffer indices zero and

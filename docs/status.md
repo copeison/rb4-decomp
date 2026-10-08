@@ -48,6 +48,9 @@
   renderer shutdown.
 - [x] Reconstruct the shared engine thread launch, trampoline, result capture,
   and join runtime used by the Orbis submit worker.
+- [x] Recover the complete 136-byte shared engine thread wrapper, including
+  worker registration, callback forwarding, six-processor default affinity,
+  and the 128-KiB minimum stack policy.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and

@@ -39,9 +39,7 @@ struct OrbisRenderSystemRuntimePrefix {
     void* default_vertex_buffer;
     OrbisBufferDescriptor identity_instance_descriptors[9];
     void* identity_instance_buffer;
-    std::uint8_t submit_thread_wrapper_prefix[8];
-    EngineThreadRuntime submit_thread;
-    std::uint8_t submit_thread_wrapper_state[32];
+    EngineThread submit_thread;
     std::int32_t submission_lock_depth;
     std::uint8_t reserved_4284[4];
     ScePthreadMutex submission_mutex;
@@ -80,7 +78,10 @@ static_assert(
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, identity_instance_buffer) == 4136);
 static_assert(
-    offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) == 4152);
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) == 4144);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) +
+        offsetof(EngineThread, runtime) == 4152);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submission_lock_depth) == 4280);
 static_assert(
@@ -284,6 +285,11 @@ void orbis_set_cached_flip_rate(
 }
 
 EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->submit_thread.runtime;
+}
+
+EngineThread& orbis_submit_thread_wrapper(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return runtime->submit_thread;
 }

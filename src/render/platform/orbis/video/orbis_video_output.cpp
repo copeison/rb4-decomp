@@ -276,11 +276,15 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_create_render_context(system);
 
     orbis_initialize_submit_condition(system);
-    orbis_configure_submit_thread(
-        system,
+    engine_thread_configure(
+        orbis_submit_thread_wrapper(system),
         orbis_submit_done_thread_entry,
+        &system,
         kSubmitThreadName,
-        kSubmitThreadPriority);
+        -1,
+        kSubmitThreadPriority,
+        0,
+        0);
     orbis_set_submit_thread_running(system, true);
     orbis_consume_submit_token(system);
     engine_thread_start(orbis_submit_thread(system));
@@ -320,8 +324,10 @@ void orbis_wait_for_submit_thread(OrbisRenderSystem& system) {
 }
 
 // Reconstructed from eboot.elf at 0x8D77E0.
-void orbis_submit_done_thread_entry(OrbisRenderSystem& system) {
+std::int32_t orbis_submit_done_thread_entry(void* context) {
+    auto& system = *static_cast<OrbisRenderSystem*>(context);
     orbis_submit_done_thread_run(system);
+    return 0;
 }
 
 // Reconstructed from eboot.elf at 0x8D7340.
