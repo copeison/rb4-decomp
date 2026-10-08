@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/resources/names/render_resource_name.h"
+
 namespace rb4 {
 
 enum class RenderShaderConstantType : std::uint32_t {
@@ -49,16 +51,11 @@ struct RenderShaderConstantBlock {
     void* allocator;
 };
 
-struct RenderShaderConstantResourceName {
-    void* dispatch;
-    const char* text;
-};
-
 struct RenderShaderConstantDefinition {
     const char* name;
     std::int32_t value;
     std::uint32_t reserved_12;
-    RenderShaderConstantResourceName comment;
+    RenderResourceName comment;
 };
 
 struct RenderShaderConstantRegistry {
@@ -74,7 +71,6 @@ static_assert(sizeof(RenderShaderConstantBlock) == 72);
 static_assert(offsetof(RenderShaderConstantBlock, next_offset) == 24);
 static_assert(offsetof(RenderShaderConstantBlock, finalized) == 32);
 static_assert(offsetof(RenderShaderConstantBlock, members_begin) == 40);
-static_assert(sizeof(RenderShaderConstantResourceName) == 16);
 static_assert(sizeof(RenderShaderConstantDefinition) == 32);
 static_assert(offsetof(RenderShaderConstantDefinition, comment) == 16);
 static_assert(sizeof(RenderShaderConstantRegistry) == 32);
@@ -112,5 +108,16 @@ void render_shader_constant_block_accumulate_source_hash(
 void render_shader_constant_registry_accumulate_source_hash(
     const RenderShaderConstantRegistry& registry,
     std::uint32_t& hash);
+void render_shader_constant_registry_construct(
+    RenderShaderConstantRegistry& registry);
+void render_shader_constant_registry_add_comment(
+    RenderShaderConstantRegistry& registry,
+    const char* comment);
+void render_shader_constant_registry_add_definition(
+    RenderShaderConstantRegistry& registry,
+    const char* name,
+    std::int32_t value);
+void render_shader_constant_registry_release(
+    RenderShaderConstantRegistry*& registry);
 
 }  // namespace rb4

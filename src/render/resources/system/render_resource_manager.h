@@ -126,6 +126,8 @@ RenderResourceManager& render_system_resource_manager(RenderSystem& system);
 void render_resource_manager_construct(RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_parameters(
     RenderResourceManager& manager);
+void render_resource_manager_initialize_shader_constant_registry(
+    RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_constants(
     RenderResourceManager& manager);
 void render_resource_manager_destruct(RenderResourceManager& manager);

@@ -14,6 +14,7 @@
 #include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
+#include "render/resources/names/render_resource_name_adapters.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
@@ -110,6 +111,23 @@ float sample_function_table(
     return std::max(0.0F, std::min(1.0F, output));
 }
 
+struct ShaderConstantDefinition {
+    const char* name;
+    std::int32_t value;
+};
+
+template <std::size_t Count>
+void add_shader_constant_group(
+    RenderShaderConstantRegistry& registry,
+    const char* comment,
+    const ShaderConstantDefinition (&definitions)[Count]) {
+    render_shader_constant_registry_add_comment(registry, comment);
+    for (const auto& definition : definitions) {
+        render_shader_constant_registry_add_definition(
+            registry, definition.name, definition.value);
+    }
+}
+
 }  // namespace
 
 RenderResourceManager& render_system_resource_manager(RenderSystem& system) {
@@ -171,6 +189,175 @@ void render_resource_manager_initialize_shader_parameters(
             definition.first_value,
             definition.last_value);
     }
+}
+
+// Reconstructed from eboot.elf at 0x63F920.
+void render_resource_manager_initialize_shader_constant_registry(
+    RenderResourceManager& manager) {
+    auto* registry = static_cast<RenderShaderConstantRegistry*>(
+        render_allocate(sizeof(RenderShaderConstantRegistry)));
+    render_shader_constant_registry_construct(*registry);
+    manager.shader_constants.constant_registry = registry;
+
+    constexpr ShaderConstantDefinition kMiscConstants[] = {
+        {"HX_MAX_BONES", 256},
+        {"HX_MAX_CLIP_PLANES", 4},
+        {"HX_MAX_TEXARRAY_SIZE", 2048},
+        {"HX_VIEWPROJ_OFFSET", 0},
+        {"HX_CAMXFM_OFFSET", 4},
+        {"HX_CAMXFMINV_OFFSET", 7},
+        {"HX_CAM_SIZE_PER_RT_SLICE", 10},
+    };
+    constexpr ShaderConstantDefinition kProgramTypes[] = {
+        {"HX_PROGRAM_TYPE_VERTEX", 0},
+        {"HX_PROGRAM_TYPE_HULL", 1},
+        {"HX_PROGRAM_TYPE_DOMAIN", 2},
+        {"HX_PROGRAM_TYPE_GEOMETRY", 3},
+        {"HX_PROGRAM_TYPE_PIXEL", 4},
+        {"HX_PROGRAM_TYPE_COMPUTE", 5},
+    };
+    constexpr ShaderConstantDefinition kGeometryTypes[] = {
+        {"HX_GEO_UNSKINNED_MESH", 0},
+        {"HX_GEO_SKINNED_MESH", 1},
+    };
+    constexpr ShaderConstantDefinition kStereoEyes[] = {
+        {"HX_STEREO_EYE_LEFT", 0},
+        {"HX_STEREO_EYE_RIGHT", 1},
+    };
+    constexpr ShaderConstantDefinition kBillboardTypes[] = {
+        {"HX_BILLBOARD_NONE", 0},
+        {"HX_BILLBOARD_CAMERA_XYZ", 1},
+        {"HX_BILLBOARD_CAMERA_XY", 2},
+        {"HX_BILLBOARD_CAMERA_KEEPZ", 3},
+    };
+    constexpr ShaderConstantDefinition kShadingModes[] = {
+        {"HX_SHADING_MODE_STANDARD", 0},
+        {"HX_SHADING_MODE_STANDARD_FOG", 1},
+        {"HX_SHADING_MODE_STANDARD_VSCAT", 2},
+        {"HX_SHADING_MODE_DEPTH_ONLY", 3},
+        {"HX_SHADING_MODE_SOLID_COLOR", 4},
+        {"HX_SHADING_MODE_DEFERRED_NORMALS_AND_ZFILL", 5},
+        {"HX_SHADING_MODE_DEFERRED_UNLIT", 6},
+        {"HX_SHADING_MODE_DEFERRED_UNLIT_AND_ZFILL", 7},
+        {"HX_SHADING_MODE_DEFERRED_LIT", 8},
+        {"HX_SHADING_MODE_DEFERRED_LIT_AND_ZFILL", 9},
+        {"HX_SHADING_MODE_DEFERRED_LIT_EMISSIVE", 10},
+        {"HX_SHADING_MODE_DEFERRED_LIT_EMISSIVE_AND_ZFILL", 11},
+        {"HX_SHADING_MODE_DEFERRED_DECAL_TRANSPARENT", 12},
+        {"HX_SHADING_MODE_FWD_LIT_OPAQUE", 13},
+        {"HX_SHADING_MODE_SCENE_MASK", 14},
+        {"HX_SHADING_MODE_IMPOSTOR_MAPS", 15},
+        {"HX_SHADING_MODE_FAST_CHEAP", 16},
+        {"HX_SHADING_MODE_WIREFRAME", 17},
+        {"HX_SHADING_MODE_DEBUG_MISC", 18},
+        {"HX_SHADING_MODE_FIRST_DEBUG", 16},
+    };
+    constexpr ShaderConstantDefinition kShaderDebugModes[] = {
+        {"HX_SHADER_DEBUG_MODE_UNLIT", 2},
+        {"HX_SHADER_DEBUG_MODE_OVERDRAW", 3},
+        {"HX_SHADER_DEBUG_MODE_BATCHES", 4},
+        {"HX_SHADER_DEBUG_MODE_BATCH_SIZE", 5},
+        {"HX_SHADER_DEBUG_MODE_LIGHTING_ONLY", 6},
+        {"HX_SHADER_DEBUG_MODE_LIT_DIFFUSE", 7},
+        {"HX_SHADER_DEBUG_MODE_LIT_SPECULAR", 8},
+        {"HX_SHADER_DEBUG_MODE_LIT_DIRECT", 9},
+        {"HX_SHADER_DEBUG_MODE_LIT_DIRECT_DIFFUSE", 10},
+        {"HX_SHADER_DEBUG_MODE_LIT_DIRECT_SPECULAR", 11},
+        {"HX_SHADER_DEBUG_MODE_LIT_INDIRECT", 12},
+        {"HX_SHADER_DEBUG_MODE_LIT_INDIRECT_DIFFUSE", 13},
+        {"HX_SHADER_DEBUG_MODE_LIT_INDIRECT_SPECULAR", 14},
+        {"HX_SHADER_DEBUG_MODE_NO_NEGLIGHTS", 15},
+        {"HX_SHADER_DEBUG_MODE_LIGHTING_OVERDRAW", 16},
+        {"HX_SHADER_DEBUG_MODE_LIGHT_PROBE_OVERDRAW", 17},
+        {"HX_SHADER_DEBUG_MODE_VERTEX_COLOR", 18},
+        {"HX_SHADER_DEBUG_MODE_VERTEX_ALPHA", 19},
+        {"HX_SHADER_DEBUG_MODE_VERTEX_NORMAL", 20},
+        {"HX_SHADER_DEBUG_MODE_VERTEX_TANGENT", 21},
+        {"HX_SHADER_DEBUG_MODE_VERTEX_BITANGENT", 22},
+        {"HX_SHADER_DEBUG_MODE_PIXEL_NORMAL", 23},
+        {"HX_SHADER_DEBUG_MODE_UV0", 24},
+        {"HX_SHADER_DEBUG_MODE_UV1", 25},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_LIGHTING_PATH", 26},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_COLOR", 27},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_ALPHA", 28},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_SMOOTHNESS", 29},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_METALLICITY", 30},
+        {"HX_SHADER_DEBUG_MODE_MATERIAL_EMISSIVE", 31},
+    };
+    constexpr ShaderConstantDefinition kCubeFaces[] = {
+        {"HX_CUBE_FACE_RIGHT", 0},
+        {"HX_CUBE_FACE_LEFT", 1},
+        {"HX_CUBE_FACE_TOP", 2},
+        {"HX_CUBE_FACE_BOTTOM", 3},
+        {"HX_CUBE_FACE_FRONT", 4},
+        {"HX_CUBE_FACE_BACK", 5},
+    };
+    constexpr ShaderConstantDefinition kFrustumPlanes[] = {
+        {"HX_FRUSTUM_PLANE_FRONT", 0},
+        {"HX_FRUSTUM_PLANE_BACK", 1},
+        {"HX_FRUSTUM_PLANE_LEFT", 2},
+        {"HX_FRUSTUM_PLANE_RIGHT", 3},
+        {"HX_FRUSTUM_PLANE_TOP", 4},
+        {"HX_FRUSTUM_PLANE_BOTTOM", 5},
+    };
+    constexpr ShaderConstantDefinition kFrustumCorners[] = {
+        {"HX_FRUSTUM_CORNER_FRONT_LEFT_TOP", 0},
+        {"HX_FRUSTUM_CORNER_FRONT_RIGHT_TOP", 1},
+        {"HX_FRUSTUM_CORNER_FRONT_LEFT_BOTTOM", 2},
+        {"HX_FRUSTUM_CORNER_FRONT_RIGHT_BOTTOM", 3},
+        {"HX_FRUSTUM_CORNER_BACK_LEFT_TOP", 4},
+        {"HX_FRUSTUM_CORNER_BACK_RIGHT_TOP", 5},
+        {"HX_FRUSTUM_CORNER_BACK_LEFT_BOTTOM", 6},
+        {"HX_FRUSTUM_CORNER_BACK_RIGHT_BOTTOM", 7},
+    };
+    constexpr ShaderConstantDefinition kLightTypes[] = {
+        {"HX_LIGHT_TYPE_POINT", 0},
+        {"HX_LIGHT_TYPE_SPOT", 1},
+        {"HX_LIGHT_TYPE_DIRECTIONAL", 2},
+        {"HX_NUM_LIGHT_TYPES", 3},
+        {"HX_NUM_BOUNDED_LIGHT_TYPES", 2},
+        {"HX_ILLUM_POSITIVE", 0},
+        {"HX_ILLUM_POSITIVE_DIFFUSE", 1},
+        {"HX_ILLUM_POSITIVE_SPECULAR", 2},
+        {"HX_ILLUM_NEGATIVE", 3},
+        {"HX_LIGHT_COOKIE_STATIC", 0},
+        {"HX_LIGHT_COOKIE_RENDERED", 1},
+    };
+    constexpr ShaderConstantDefinition kLightingPaths[] = {
+        {"HX_LIGHTING_PATH_UNLIT", 0},
+        {"HX_LIGHTING_PATH_DEFERRED_LIT", 1},
+        {"HX_LIGHTING_PATH_DEFERRED_EMISSIVE", 2},
+        {"HX_LIGHTING_PATH_FWD_LIT_STANDARD", 3},
+        {"HX_LIGHTING_PATH_FWD_LIT_SUBSURFACE", 4},
+        {"HX_LIGHTING_PATH_FWD_LIT_SKIN", 5},
+        {"HX_LIGHTING_PATH_FWD_LIT_HAIR", 6},
+    };
+    constexpr ShaderConstantDefinition kCommonStructSizes[] = {
+        {"HX_SIZEOF_PLANE", 16},
+        {"HX_SIZEOF_SPHERE", 16},
+        {"HX_SIZEOF_CSLIGHTIDRANGE", 32},
+        {"HX_SIZEOF_CSLIGHTPOINT", 208},
+        {"HX_SIZEOF_CSLIGHTSPOT", 352},
+        {"HX_SIZEOF_CSLIGHTDIRECTIONAL", 112},
+        {"HX_SIZEOF_CSLIGHTPROBE", 96},
+    };
+
+    add_shader_constant_group(*registry, "misc constants", kMiscConstants);
+    add_shader_constant_group(*registry, "program types", kProgramTypes);
+    add_shader_constant_group(*registry, "geometry types", kGeometryTypes);
+    add_shader_constant_group(*registry, "stereo eyes", kStereoEyes);
+    add_shader_constant_group(
+        *registry, "billboarding types", kBillboardTypes);
+    add_shader_constant_group(*registry, "shading modes", kShadingModes);
+    add_shader_constant_group(
+        *registry, "shader debug modes", kShaderDebugModes);
+    add_shader_constant_group(*registry, "cube faces", kCubeFaces);
+    add_shader_constant_group(*registry, "frustum planes", kFrustumPlanes);
+    add_shader_constant_group(*registry, "frustum corners", kFrustumCorners);
+    add_shader_constant_group(*registry, "light types", kLightTypes);
+    add_shader_constant_group(*registry, "lighting paths", kLightingPaths);
+    add_shader_constant_group(
+        *registry, "common struct sizes", kCommonStructSizes);
 }
 
 // Reconstructed from eboot.elf at 0x640D60.
@@ -417,20 +604,8 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
         render_shader_constant_block_release(storage);
     }
 
-    auto*& names = manager.shader_constants.constant_registry;
-    if (names != nullptr) {
-        for (auto* item = names->begin; item != names->end; ++item) {
-            render_resource_name_destruct(&item->comment);
-        }
-        if (names->begin != nullptr) {
-            const auto byte_count = static_cast<std::size_t>(
-                reinterpret_cast<std::uint8_t*>(names->capacity) -
-                reinterpret_cast<std::uint8_t*>(names->begin));
-            engine_deallocate_sized(names->begin, byte_count);
-        }
-        render_release(names);
-        names = nullptr;
-    }
+    render_shader_constant_registry_release(
+        manager.shader_constants.constant_registry);
 
     if (manager.runtime.shader_parameters != nullptr) {
         auto* parameters = manager.runtime.shader_parameters;

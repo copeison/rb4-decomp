@@ -12,7 +12,7 @@
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/resources/system/render_resource_manager_adapters.h"
+#include "render/resources/names/render_resource_name_adapters.h"
 
 namespace rb4 {
 

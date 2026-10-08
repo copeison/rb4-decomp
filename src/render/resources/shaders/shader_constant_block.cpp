@@ -3,6 +3,8 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
+#include "core/types/symbol.h"
+#include "render/resources/names/render_resource_name_adapters.h"
 
 namespace rb4 {
 
@@ -162,6 +164,37 @@ RenderShaderConstantMember& append_member(RenderShaderConstantBlock& block) {
     auto& member = *block.members_end;
     ++block.members_end;
     return member;
+}
+
+RenderShaderConstantDefinition& append_definition(
+    RenderShaderConstantRegistry& registry) {
+    if (registry.end == registry.capacity) {
+        const auto old_count = registry.begin == nullptr
+            ? std::size_t{0}
+            : static_cast<std::size_t>(registry.end - registry.begin);
+        const auto new_count = old_count == 0 ? 1 : old_count * 2;
+        auto* new_definitions = static_cast<RenderShaderConstantDefinition*>(
+            engine_allocate_sized(
+                new_count * sizeof(RenderShaderConstantDefinition)));
+        if (old_count != 0) {
+            std::memcpy(
+                new_definitions,
+                registry.begin,
+                old_count * sizeof(RenderShaderConstantDefinition));
+            engine_deallocate_sized(
+                registry.begin,
+                static_cast<std::size_t>(
+                    reinterpret_cast<std::uint8_t*>(registry.capacity) -
+                    reinterpret_cast<std::uint8_t*>(registry.begin)));
+        }
+        registry.begin = new_definitions;
+        registry.end = new_definitions + old_count;
+        registry.capacity = new_definitions + new_count;
+    }
+
+    auto& definition = *registry.end;
+    ++registry.end;
+    return definition;
 }
 
 std::uint64_t add_member(
@@ -350,6 +383,56 @@ void render_shader_constant_registry_accumulate_source_hash(
             append_hash(hash, "\n");
         }
     }
+}
+
+void render_shader_constant_registry_construct(
+    RenderShaderConstantRegistry& registry) {
+    registry = {};
+}
+
+// Reconstructed from eboot.elf at 0x63D5D0.
+void render_shader_constant_registry_add_comment(
+    RenderShaderConstantRegistry& registry,
+    const char* comment) {
+    auto& definition = append_definition(registry);
+    const Symbol empty_name("");
+    definition.name = static_cast<const char*>(empty_name.value());
+    definition.value = 0;
+    definition.reserved_12 = 0;
+    render_resource_name_construct(definition.comment, comment);
+}
+
+// Reconstructed from eboot.elf at 0x63D520.
+void render_shader_constant_registry_add_definition(
+    RenderShaderConstantRegistry& registry,
+    const char* name,
+    std::int32_t value) {
+    auto& definition = append_definition(registry);
+    const Symbol symbol(name);
+    definition.name = static_cast<const char*>(symbol.value());
+    definition.value = value;
+    definition.reserved_12 = 0;
+    render_resource_name_construct(definition.comment, "");
+}
+
+void render_shader_constant_registry_release(
+    RenderShaderConstantRegistry*& registry) {
+    if (registry == nullptr) {
+        return;
+    }
+    for (auto* definition = registry->begin;
+         definition != registry->end;
+         ++definition) {
+        render_resource_name_destruct(&definition->comment);
+    }
+    if (registry->begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(registry->capacity) -
+            reinterpret_cast<std::uint8_t*>(registry->begin));
+        engine_deallocate_sized(registry->begin, byte_count);
+    }
+    render_release(registry);
+    registry = nullptr;
 }
 
 }  // namespace rb4

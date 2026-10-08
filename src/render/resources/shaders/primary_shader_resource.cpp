@@ -7,10 +7,10 @@
 #include "core/types/symbol.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
+#include "render/resources/names/render_resource_name_adapters.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
-#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 

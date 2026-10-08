@@ -360,6 +360,8 @@
   scalar/array/sliced registration, and the manager's built-in block layout.
 - [x] Reconstruct Metal/HLSL constant-block source emission, registry source
   emission, and the resource manager's FNV-1a shader-source hash.
+- [x] Reconstruct the 129-record shader constant registry, including all 13
+  source comment groups and 116 named integer definitions.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder

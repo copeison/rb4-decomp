@@ -66,6 +66,15 @@ then registers the three-bit `HX_NUM_RT_SLICES` field and passes all four
 support objects to virtual slot `0x20`. Parameter-record insertion and the
 backend-initialize operation remain focused boundaries.
 
+The shader constant registry at `0x63F920` is source-owned. It preserves all
+13 comment groups and 116 definitions used by generated shader source,
+including program and shading modes, debug modes, cube and frustum indices,
+lighting paths, and shared structure sizes. Comment records own the engine's
+16-byte resource-name type; that common layout now lives under
+`src/render/resources/names` and is reused by shader and GPU-stat resources.
+Registry growth doubles capacity from one record, matching the original
+32-byte record array.
+
 The primary-shader layout and ownership implementation are kept in the
 dedicated `src/render/resources/shaders` domain. The manager only converts its
 intrusive links back to typed shader resources and invokes their finalize or
