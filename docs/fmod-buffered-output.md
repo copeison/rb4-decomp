@@ -3,7 +3,7 @@
 The executable contains a statically registered FMOD output plug-in named
 `HMX.BufferedOutput`. Its descriptor begins at `0x19B4948`, and its six
 implemented callbacks are between `0x2763F0` and `0x276520`. The cleaned
-reconstruction is in `src/audio/fmod_buffered_output.cpp`.
+reconstruction is in `src/audio/fmod/io/fmod_buffered_output.cpp`.
 
 The descriptor uses output plug-in API version 3, plug-in version 1, and the
 direct-mix method. Its start, stop, mixer, 3D-object, and other optional

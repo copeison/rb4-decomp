@@ -28,7 +28,7 @@ The original timing accumulators use the processor timestamp counter and a
 spin lock for their statistics. `performance_counter_ticks_to_milliseconds`
 at `0x25C0E0` converts ticks with `1000.0` divided by the frequency returned by
 `sceKernelGetTscFrequency`. The clean reconstruction keeps these mechanics in
-`src/audio/fmod_mix_callback.cpp`.
+`src/audio/fmod/mixing/fmod_mix_callback.cpp`.
 
 The intrusive source-timer and observer list layouts are known, but their
 concrete callback classes are outside this milestone. Named adapter functions

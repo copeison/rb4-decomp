@@ -1,8 +1,8 @@
 # FMOD audio initialization
 
 The primary audio startup routine at `0x2773C0` uses the FMOD Studio 1.10.04
-API. Its cleaned reconstruction is in `src/audio/fmod_audio_system.cpp`, with
-the required ABI subset declared in `src/audio/fmod_api.h`.
+API. Its cleaned reconstruction is in `src/audio/fmod/system/fmod_audio_system.cpp`, with
+the required ABI subset declared in `src/audio/fmod/api/fmod_api.h`.
 
 ## Platform setup
 
@@ -16,7 +16,7 @@ and submits the table through `FMOD_Orbis_SetThreadAffinity`.
 The private FMOD structure is exactly 44 bytes: eleven consecutive 32-bit CPU
 masks. The function fills all eleven entries with the `audio_render` mask and
 then replaces entry 6 with the `mic_reader` mask. The cleaned reconstruction in
-`src/audio/fmod_orbis_platform.cpp` preserves that layout and assignment order
+`src/audio/fmod/platform/orbis/fmod_orbis_platform.cpp` preserves that layout and assignment order
 without inventing names for the other ten private FMOD thread slots.
 
 The engine affinity record selected at `0x258C60` stores a primary processor at

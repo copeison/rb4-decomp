@@ -2,7 +2,7 @@
 
 `render_system_construct` at `0x3DD410` builds the shared base renderer. The
 clean control-flow reconstruction is in
-`src/render/render_system_lifecycle.cpp`; backend object layouts remain behind
+`src/render/core/render_system_lifecycle.cpp`; backend object layouts remain behind
 adapters until their individual types are identified.
 
 Construction proceeds in this order:

@@ -2,7 +2,7 @@
 
 The game supplies FMOD with its own file callbacks rather than letting FMOD
 open package files directly. The cleaned implementation is in
-`src/audio/fmod_file_io.cpp`; their entry points run from `0x27A1C0` through
+`src/audio/fmod/io/fmod_file_io.cpp`; their entry points run from `0x27A1C0` through
 `0x27A850`.
 
 ## Synchronous callbacks

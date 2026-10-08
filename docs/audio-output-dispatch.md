@@ -16,7 +16,7 @@ counters bracket traversal and list promotion respectively. The original code
 assumes that the DSP buffer length is a nonzero multiple of 128; its subtract
 loop has no partial-block path.
 
-The cleaned reconstruction in `src/audio/audio_output_dispatcher.cpp` uses
+The cleaned reconstruction in `src/audio/core/audio_output_dispatcher.cpp` uses
 standard containers and mutexes to express the recovered behavior. The binary
 uses EASTL intrusive lists and PS4 pthread mutexes, whose exact declarations
 belong to the later SDK-backed ABI layer.

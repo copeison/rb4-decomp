@@ -1,10 +1,10 @@
 #include "systems.h"
 
 #include "systems_adapters.h"
-#include "../render/default_render_resources.h"
-#include "../render/orbis_render_system.h"
-#include "../render/render_platform.h"
-#include "../render/render_system_runtime.h"
+#include "render/resources/default_render_resources.h"
+#include "render/platform/orbis/system/orbis_render_system.h"
+#include "render/core/render_platform.h"
+#include "render/core/render_system_runtime.h"
 
 namespace rb4 {
 

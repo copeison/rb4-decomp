@@ -1,7 +1,7 @@
 #include "startup.h"
 
-#include "render/render_system_frame.h"
-#include "render/screenshot_capture.h"
+#include "render/core/render_system_frame.h"
+#include "render/core/screenshot_capture.h"
 
 namespace rb4 {
 

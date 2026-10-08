@@ -25,33 +25,33 @@ call-site names include `Arrow Mesh`, `Text`, `Scene Mask Mesh`, and
 `vocal_tube_mesh`.
 
 The position-only specialization is reconstructed in
-`src/render/orbis_position_mesh.cpp`. Its CPU vertex-vector accessors, double-buffered
+`src/render/platform/orbis/meshes/orbis_position_mesh.cpp`. Its CPU vertex-vector accessors, double-buffered
 GPU update path, index-width selection, and missing IDA method boundaries are
 documented in `docs/orbis-position-mesh.md`.
 
 The 28-byte position-plus-float4-color specialization is reconstructed in
-`src/render/orbis_color_mesh.cpp` and documented in
+`src/render/platform/orbis/meshes/orbis_color_mesh.cpp` and documented in
 `docs/orbis-color-mesh.md`.
 
 The 36-byte `ColorTex` specialization adds a float2 texture coordinate. It is
-reconstructed in `src/render/orbis_color_texture_mesh.cpp` and documented in
+reconstructed in `src/render/platform/orbis/meshes/orbis_color_texture_mesh.cpp` and documented in
 `docs/orbis-color-texture-mesh.md`.
 
 The 80-byte unskinned specialization carries four float3 basis vectors, a
 float4 color, and two float2 texture coordinates. It is reconstructed in
-`src/render/orbis_unskinned_mesh.cpp` and documented in
+`src/render/platform/orbis/meshes/orbis_unskinned_mesh.cpp` and documented in
 `docs/orbis-unskinned-mesh.md`.
 
 The 100-byte skinned specialization appends float4 bone weights and four
-packed bone indices. It is reconstructed in `src/render/orbis_skinned_mesh.cpp`
+packed bone indices. It is reconstructed in `src/render/platform/orbis/meshes/orbis_skinned_mesh.cpp`
 and documented in `docs/orbis-skinned-mesh.md`.
 
 The 52-byte compressed unskinned specialization retains float positions and
 packs the remaining six attributes into 16-bit components. It is reconstructed
-in `src/render/orbis_unskinned_compressed_mesh.cpp` and documented in
+in `src/render/platform/orbis/meshes/orbis_unskinned_compressed_mesh.cpp` and documented in
 `docs/orbis-unskinned-compressed-mesh.md`.
 
 The 64-byte compressed skinned specialization adds packed bone weights and
 four packed bone indices. It is reconstructed in
-`src/render/orbis_skinned_compressed_mesh.cpp` and documented in
+`src/render/platform/orbis/meshes/orbis_skinned_compressed_mesh.cpp` and documented in
 `docs/orbis-skinned-compressed-mesh.md`.

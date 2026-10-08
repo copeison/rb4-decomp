@@ -14,4 +14,4 @@ custom-output initialization calls.
 Values outside zero through three leave the current speaker mode and channel
 count unchanged. The mapping is stored as two four-entry tables at
 `0x125D1F0` and `0x125D200` in the executable. The clean reconstruction uses
-an explicit switch in `src/audio/fmod_audio_system.cpp`.
+an explicit switch in `src/audio/fmod/system/fmod_audio_system.cpp`.

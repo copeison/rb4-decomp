@@ -2,7 +2,7 @@
 
 The helper at `0x27ACB0` converts a 48-byte engine transform into FMOD's
 48-byte `FMOD_3D_ATTRIBUTES` structure. The cleaned implementation is in
-`src/audio/fmod_listener.cpp`.
+`src/audio/fmod/system/fmod_listener.cpp`.
 
 The engine transform stores four consecutive three-float vectors: right,
 forward, up, and position. FMOD receives position, velocity, forward, and up.

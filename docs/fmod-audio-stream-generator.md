@@ -37,4 +37,4 @@ The adjacent block beginning at `0x26AB60` is the larger
 `FmodBufferedStreamGenerator`, rather than this 288-byte pool. Its initialized
 object uses fields through offset `0x234`, creates decoder buffers, and acquires
 a nested `FmodAudioBusGenerator`. It is reconstructed separately in
-`src/audio/fmod_buffered_stream_generator.cpp`.
+`src/audio/fmod/playback/fmod_buffered_stream_generator.cpp`.

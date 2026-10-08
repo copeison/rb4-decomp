@@ -28,4 +28,4 @@ The clean reconstruction uses `audio_clear_deferred_fmod_releases` as an
 adapter because the queues contain an unreconstructed pair of FMOD channel and
 DSP ownership records. Their exact EASTL layout is preserved in the IDA
 export, while the public lifecycle behavior is explicit in
-`src/audio/fmod_audio_system.cpp`.
+`src/audio/fmod/system/fmod_audio_system.cpp`.

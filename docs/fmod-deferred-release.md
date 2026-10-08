@@ -19,5 +19,5 @@ system pointers are about to become unavailable.
 
 The executable stores each queue as an EASTL vector with a 16-byte pair and
 preallocates room for 64 entries. The clean reconstruction in
-`src/audio/fmod_deferred_release.cpp` uses two standard vectors and preserves
+`src/audio/fmod/system/fmod_deferred_release.cpp` uses two standard vectors and preserves
 the locking, buffer swap, and FMOD call order.
