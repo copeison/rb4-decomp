@@ -11,6 +11,7 @@ The principal defaults recovered from its constant stores are:
 | Content and output resolution | 1,920 × 1,080 |
 | Initial PC window resolution | 1,280 × 720 |
 | Fullscreen | false |
+| Vsync enabled | true |
 | LOD | true |
 | GBuffer vertex normals | true |
 | 64-bit light accumulation | false |
@@ -29,6 +30,10 @@ debugger, barrier validation, and shader-compilation diagnostics. If the
 platform supports async compute and that option is enabled, multithreaded
 rendering is disabled. Platforms without async-compute support force both
 async compute and tiled lighting off.
+
+The numeric `vsync_mode` loaded from configuration is separate from the
+runtime `vsync_enabled` flag. `toggle_vsync` at `0x6BA880` flips the latter;
+its default is true.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the

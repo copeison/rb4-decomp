@@ -32,6 +32,7 @@ struct RenderSettings {
     RenderExtent output_resolution{1920, 1080};
     bool resolution_overridden = false;
     RenderQualityLevel quality_level = RenderQualityLevel::kMedium;
+    bool vsync_enabled = true;
 
     bool scene_mask_enabled = true;
     bool shadows_enabled = true;
