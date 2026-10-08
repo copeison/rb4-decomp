@@ -2,6 +2,20 @@
 
 namespace rb4 {
 
+void render_system_platform_initialize(
+    RenderSystem& system,
+    const GameSystemInitOptions& options) {
+    system.virtual_table->initialize(&system, &options);
+}
+
+void render_system_platform_finish_initialization(RenderSystem& system) {
+    system.virtual_table->finish_initialization(&system);
+}
+
+void render_system_platform_shutdown(RenderSystem& system) {
+    system.virtual_table->shutdown(&system);
+}
+
 void render_system_platform_prepare_frame(
     RenderSystem& system,
     bool auxiliary_frame) {

@@ -86,3 +86,10 @@ object-specific destruction routine remains an adapter.
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.
+
+Runtime initialization now writes the initialized flag and copies the exact
+16-byte `GameSystemInitOptions` block directly before invoking platform vtable
+slot `0x18`. Slot `0x20` completes initialization. The runtime epoch increments
+the timing-state counter and captures the first performance counter when that
+counter transitions from zero. Shutdown marks the shared state at `0xB1`
+before resource release and invokes platform slot `0x28` last.

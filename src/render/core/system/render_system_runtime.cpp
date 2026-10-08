@@ -4,8 +4,11 @@
 
 #include "render/core/context/render_context.h"
 #include "render/core/synchronization/render_deferred_release.h"
+#include "render/core/system/render_epoch.h"
+#include "render/core/system/render_system.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
+#include "render/core/system/render_system_state.h"
 #include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
@@ -14,7 +17,9 @@ namespace rb4 {
 void render_system_initialize(
     RenderSystem& system,
     const GameSystemInitOptions& options) {
-    render_system_begin_initialization(system, options);
+    auto& runtime = render_system_core_state(system);
+    runtime.initialized = true;
+    runtime.init_options = options;
     render_system_resource_manager_initialize(system);
     render_system_platform_initialize(system, options);
     render_system_resource_manager_finalize(system);
@@ -43,7 +48,7 @@ void render_system_initialize_builtin_buffers(RenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x3DDE60.
 void render_system_shutdown(RenderSystem& system) {
-    render_system_begin_shutdown(system);
+    render_system_core_state(system).shutting_down = true;
     render_system_flush_deferred_releases(system);
     render_release_default_resources(
         render_system_default_resources(system));
