@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "render/core/render_target.h"
+#include "render/core/targets/render_target.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
 
 namespace rb4 {

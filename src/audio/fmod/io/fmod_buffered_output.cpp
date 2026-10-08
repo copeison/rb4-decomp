@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdio>
 
-#include "audio/core/audio_mix_format.h"
+#include "audio/core/format/audio_mix_format.h"
 #include "audio/fmod/system/fmod_audio_system.h"
 
 namespace rb4 {

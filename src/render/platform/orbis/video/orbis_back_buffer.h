@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/render_target.h"
+#include "render/core/targets/render_target.h"
 
 namespace rb4 {
 

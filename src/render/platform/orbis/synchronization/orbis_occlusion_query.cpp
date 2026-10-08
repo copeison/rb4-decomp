@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/core/render_occlusion_query_adapters.h"
+#include "render/core/synchronization/render_occlusion_query_adapters.h"
 #include "render/platform/orbis/synchronization/orbis_occlusion_query_adapters.h"
 
 namespace rb4 {

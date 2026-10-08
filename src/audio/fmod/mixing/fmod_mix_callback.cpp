@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "audio/core/audio_output_dispatcher.h"
-#include "audio/core/audio_runtime_adapters.h"
+#include "audio/core/output/audio_output_dispatcher.h"
+#include "audio/core/runtime/audio_runtime_adapters.h"
 #include "audio/fmod/system/fmod_audio_system.h"
 
 namespace rb4 {

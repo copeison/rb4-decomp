@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/core/render_occlusion_query.h"
+#include "render/core/synchronization/render_occlusion_query.h"
 
 namespace rb4 {
 

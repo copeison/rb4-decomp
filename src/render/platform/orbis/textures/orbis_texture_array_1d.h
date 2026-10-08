@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/render_texture_array_1d.h"
+#include "render/core/textures/render_texture_array_1d.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {

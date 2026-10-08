@@ -41,5 +41,5 @@ frame, submits the active UI layout, and ends the frame.
 
 The function requests another iteration only while the exit flag is clear and
 the render system still exists. The cleaned control flow is in
-`src/game/frame.cpp`; the direct decompilation remains in
+`src/game/frame/frame.cpp`; the direct decompilation remains in
 `analysis/exports/game-run-frame.c`.

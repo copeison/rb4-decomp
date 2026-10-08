@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/render_particle_buffer.h"
+#include "render/core/buffers/render_particle_buffer.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 
 namespace rb4 {

@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "render/core/render_compute_buffer.h"
-#include "render/core/render_shader.h"
+#include "render/core/buffers/render_compute_buffer.h"
+#include "render/core/shaders/render_shader.h"
 
 namespace rb4 {
 

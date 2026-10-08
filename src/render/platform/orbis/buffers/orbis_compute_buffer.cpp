@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
-#include "render/core/render_compute_buffer_adapters.h"
+#include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_adapters.h"
 
 namespace rb4 {

@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "audio/core/audio_runtime_adapters.h"
+#include "audio/core/runtime/audio_runtime_adapters.h"
 #include "audio/fmod/mixing/fmod_mix_callback.h"
 
 namespace rb4 {

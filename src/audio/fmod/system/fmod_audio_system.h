@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "audio/core/audio_output_dispatcher.h"
+#include "audio/core/output/audio_output_dispatcher.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "audio/fmod/system/fmod_deferred_release.h"
 #include "audio/fmod/mixing/fmod_mix_callback.h"

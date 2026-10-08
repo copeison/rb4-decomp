@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/render_constant_buffer.h"
+#include "render/core/buffers/render_constant_buffer.h"
 
 namespace rb4 {
 

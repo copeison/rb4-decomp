@@ -27,7 +27,7 @@ then frees the object. The query result belongs to the per-frame command arena
 and therefore needs no object-owned release.
 
 The shared lifecycle is reconstructed in
-`src/render/core/render_occlusion_query.cpp`. The Orbis type derives from that
+`src/render/core/synchronization/render_occlusion_query.cpp`. The Orbis type derives from that
 base and adds only the eight-byte result address, preserving the original
 72-byte platform object.
 

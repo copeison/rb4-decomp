@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/render_particle_buffer_adapters.h"
+#include "render/core/buffers/render_particle_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_particle_buffer_adapters.h"
 
 namespace rb4 {

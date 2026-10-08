@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include "render/platform/orbis/context/orbis_render_context_state_adapters.h"
-#include "render/core/render_runtime_adapters.h"
+#include "render/core/system/render_runtime_adapters.h"
 
 namespace rb4 {
 
