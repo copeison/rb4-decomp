@@ -148,7 +148,7 @@ void render_volumetric_scattering_textures_create(
             tile_extent);
     }
 
-    if (render_target_resources_use_stereo_volumetric_scattering(resources)) {
+    if (render_target_resources_use_stereo_targets(resources)) {
         for (const auto depth : kAscendingDepths) {
             create_texture(
                 resources,

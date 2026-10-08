@@ -13,8 +13,6 @@ using VolumetricVoxelInitializer = std::uint64_t (*)(
     std::uint32_t y,
     std::uint32_t z);
 
-bool render_target_resources_use_stereo_volumetric_scattering(
-    const RenderTargetResources& resources);
 RenderTexture3D*& render_target_resource_block_volumetric_scattering_texture(
     RenderTargetResourceBlock& block,
     VolumetricScatteringTextureKind kind,
