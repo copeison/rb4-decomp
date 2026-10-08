@@ -8,6 +8,8 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/names/render_resource_name.h"
+#include "render/resources/shaders/shader_backend_state.h"
+#include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
 
@@ -45,38 +47,9 @@ struct RenderShaderNameRecordArray {
     void* allocator;
 };
 
-struct RenderShaderCompileState {
-    const void* source_identifier;
-    std::int32_t resource_type;
-    std::int32_t shader_variant;
-    void* owner;
-    void* reserved_24;
-    bool initialized;
-    std::uint8_t reserved_33[7];
-    void* entries_begin;
-    void* entries_end;
-    void* entries_capacity;
-    void* entries_allocator;
-};
-
-struct RenderByteArray {
-    void* begin;
-    void* end;
-    void* capacity;
-    void* allocator;
-};
-
-struct RenderShaderBackendState {
-    RenderByteArray arrays[24];
-    std::uint8_t reserved_768[96];
-};
-
 static_assert(sizeof(RenderManagedObjectArray) == 32);
 static_assert(sizeof(RenderShaderNameRecord) == 32);
 static_assert(sizeof(RenderShaderNameRecordArray) == 32);
-static_assert(sizeof(RenderShaderCompileState) == 72);
-static_assert(sizeof(RenderByteArray) == 32);
-static_assert(sizeof(RenderShaderBackendState) == 864);
 
 template <typename Element>
 void release_array_storage(
@@ -122,18 +95,6 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& registry) {
         registry.capacity);
 }
 
-void destruct_backend_state(RenderShaderBackendState& state) {
-    for (std::size_t index = 24; index != 0; --index) {
-        auto& array = state.arrays[index - 1];
-        if (array.begin != nullptr) {
-            const auto byte_count = static_cast<std::size_t>(
-                static_cast<std::uint8_t*>(array.capacity) -
-                static_cast<std::uint8_t*>(array.begin));
-            engine_deallocate_sized(array.begin, byte_count);
-        }
-    }
-}
-
 }  // namespace
 
 struct RenderPrimaryShaderResource {
@@ -146,7 +107,7 @@ struct RenderPrimaryShaderResource {
             RenderPrimaryShaderResource* shader,
             RenderShaderNameRecordArray* names,
             RenderShaderParameterRegistrySet* parameters,
-            RenderShaderCompileState* compile_state,
+            RenderShaderConstantBlock* constant_block,
             RenderShaderBackendState* backend_state);
         std::int32_t (*mode)(RenderPrimaryShaderResource* shader);
         std::int32_t (*variant)(RenderPrimaryShaderResource* shader);
@@ -160,7 +121,7 @@ struct RenderPrimaryShaderResource {
     void* backend_name;
     RenderShaderNameRecordArray* names;
     RenderShaderParameterRegistrySet* parameters;
-    RenderShaderCompileState* compile_state;
+    RenderShaderConstantBlock* constant_block;
     RenderShaderBackendState* backend_state;
     RenderShaderParameterBinding render_target_slice_binding;
     std::uint8_t reserved_268[4];
@@ -174,7 +135,7 @@ static_assert(offsetof(RenderPrimaryShaderResource, compiled_objects) == 16);
 static_assert(offsetof(RenderPrimaryShaderResource, backend_name) == 208);
 static_assert(offsetof(RenderPrimaryShaderResource, names) == 216);
 static_assert(offsetof(RenderPrimaryShaderResource, parameters) == 224);
-static_assert(offsetof(RenderPrimaryShaderResource, compile_state) == 232);
+static_assert(offsetof(RenderPrimaryShaderResource, constant_block) == 232);
 static_assert(offsetof(RenderPrimaryShaderResource, backend_state) == 240);
 static_assert(
     offsetof(RenderPrimaryShaderResource, render_target_slice_binding) == 248);
@@ -248,7 +209,7 @@ void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
     shader.backend_name = nullptr;
     shader.names = nullptr;
     shader.parameters = nullptr;
-    shader.compile_state = nullptr;
+    shader.constant_block = nullptr;
     shader.backend_state = nullptr;
     shader.render_target_slice_binding = {};
     shader.manager_link.next = &shader.manager_link;
@@ -272,19 +233,11 @@ void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
         render_release(shader.parameters);
         shader.parameters = nullptr;
     }
-    if (shader.compile_state != nullptr) {
-        auto& state = *shader.compile_state;
-        if (state.entries_begin != nullptr) {
-            const auto byte_count = static_cast<std::size_t>(
-                static_cast<std::uint8_t*>(state.entries_capacity) -
-                static_cast<std::uint8_t*>(state.entries_begin));
-            engine_deallocate_sized(state.entries_begin, byte_count);
-        }
-        render_release(shader.compile_state);
-        shader.compile_state = nullptr;
+    if (shader.constant_block != nullptr) {
+        render_shader_constant_block_release(shader.constant_block);
     }
     if (shader.backend_state != nullptr) {
-        destruct_backend_state(*shader.backend_state);
+        render_shader_backend_state_destruct(*shader.backend_state);
         render_release(shader.backend_state);
         shader.backend_state = nullptr;
     }
@@ -303,7 +256,7 @@ void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
 
 // Reconstructed from eboot.elf at 0x638270.
 void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
-    if (shader.compile_state != nullptr) {
+    if (shader.constant_block != nullptr) {
         return;
     }
 
@@ -319,18 +272,20 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
     render_shader_parameter_registry_set_construct(*parameters);
     shader.parameters = parameters;
 
-    auto* compile_state = static_cast<RenderShaderCompileState*>(
-        render_allocate(sizeof(RenderShaderCompileState)));
-    *compile_state = {};
-    compile_state->source_identifier =
-        shader.dispatch->source_identifier(&shader);
-    compile_state->resource_type = 8;
-    compile_state->shader_variant = shader.variant;
-    shader.compile_state = compile_state;
+    auto* constant_block = static_cast<RenderShaderConstantBlock*>(
+        render_allocate(sizeof(RenderShaderConstantBlock)));
+    render_shader_constant_block_construct(
+        *constant_block,
+        static_cast<const char*>(
+            shader.dispatch->source_identifier(&shader)),
+        8,
+        static_cast<std::uint32_t>(shader.variant),
+        0);
+    shader.constant_block = constant_block;
 
     auto* backend_state = static_cast<RenderShaderBackendState*>(
         render_allocate(sizeof(RenderShaderBackendState)));
-    *backend_state = {};
+    render_shader_backend_state_construct(*backend_state);
     shader.backend_state = backend_state;
 
     const Symbol render_target_slices("HX_NUM_RT_SLICES");
@@ -345,7 +300,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
         &shader,
         names,
         parameters,
-        compile_state,
+        constant_block,
         backend_state);
 }
 

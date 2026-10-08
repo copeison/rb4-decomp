@@ -96,4 +96,18 @@ void render_shader_parameter_registry_add(
     }
 }
 
+// Reconstructed from eboot.elf at 0x63C550.
+RenderShaderParameterBinding* render_shader_parameter_registry_add_ternary(
+    RenderShaderParameterBinding* binding,
+    RenderShaderParameterRegistry* registry,
+    const void* parameter_name) {
+    render_shader_parameter_registry_add(
+        binding,
+        registry,
+        parameter_name,
+        0,
+        2);
+    return binding;
+}
+
 }  // namespace rb4

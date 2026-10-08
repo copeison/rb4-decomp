@@ -12,8 +12,8 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/lighting/render_lighting_resources.h"
+#include "render/resources/shaders/fog_deferred_shader.h"
 #include "render/resources/system/default_render_resources.h"
-#include "render/resources/system/render_backend_resource.h"
 #include "render/resources/system/render_resource_manager.h"
 
 namespace rb4 {
@@ -118,7 +118,7 @@ void construct_backend_state(RenderSystem& system) {
         render_system_resource_manager(system));
     render_lighting_resources_construct(
         render_system_lighting_resources(system));
-    render_system_backend_resource(system) = nullptr;
+    render_system_fog_deferred_shader(system) = nullptr;
     pointer_at(system, kPrimitiveMeshSetOffset) = nullptr;
     pointer_at(system, kAudioAnalysisTextureSetOffset) = nullptr;
     render_gpu_stat_block_construct(render_system_gpu_stat_block(system));

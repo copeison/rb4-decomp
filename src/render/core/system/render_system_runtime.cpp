@@ -19,8 +19,8 @@
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/resources/system/default_render_resources.h"
-#include "render/resources/system/render_backend_resource.h"
 #include "render/resources/system/render_resource_manager.h"
+#include "render/resources/shaders/fog_deferred_shader.h"
 
 namespace rb4 {
 
@@ -102,8 +102,8 @@ void finish_builtin_buffer_upload(RenderConstantBuffer& buffer) {
 void initialize_runtime_resources(RenderSystem& system) {
     render_lighting_resources_initialize(
         render_system_lighting_resources(system));
-    render_backend_resource_create(
-        render_system_backend_resource(system));
+    fog_deferred_shader_create(
+        render_system_fog_deferred_shader(system));
 
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
@@ -122,8 +122,8 @@ void initialize_runtime_resources(RenderSystem& system) {
 }
 
 void shutdown_runtime_resources(RenderSystem& system) {
-    render_backend_resource_release(
-        render_system_backend_resource(system));
+    fog_deferred_shader_release(
+        render_system_fog_deferred_shader(system));
     render_lighting_resources_shutdown(
         render_system_lighting_resources(system));
     render_resource_manager_shutdown(

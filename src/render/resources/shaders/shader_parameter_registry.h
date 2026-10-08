@@ -59,5 +59,9 @@ void render_shader_parameter_registry_add(
     const void* parameter_name,
     std::uint32_t first_value,
     std::uint32_t last_value_exclusive);
+RenderShaderParameterBinding* render_shader_parameter_registry_add_ternary(
+    RenderShaderParameterBinding* binding,
+    RenderShaderParameterRegistry* registry,
+    const void* parameter_name);
 
 }  // namespace rb4
