@@ -16,7 +16,6 @@
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
-#include "render/resources/shaders/shader_constant_block_adapters.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
@@ -33,13 +32,6 @@ struct RenderManagedObjectDispatch {
 
 struct RenderManagedObject {
     RenderManagedObjectDispatch* dispatch;
-};
-
-struct RenderResourceNameArrayOwner {
-    std::uint8_t* begin;
-    std::uint8_t* end;
-    std::uint8_t* capacity;
-    void* allocator;
 };
 
 RenderResourceListNode* create_list_sentinel() {
@@ -181,8 +173,7 @@ void render_resource_manager_initialize_shader_parameters(
     }
 }
 
-// Reconstructed from eboot.elf at 0x640D60. Shader-source generation and its
-// resulting hash remain behind a focused adapter boundary.
+// Reconstructed from eboot.elf at 0x640D60.
 void render_resource_manager_initialize_shader_constants(
     RenderResourceManager& manager) {
     auto& constants = manager.shader_constants;
@@ -289,7 +280,28 @@ void render_resource_manager_initialize_shader_constants(
             "gTransientData");
     }
 
-    render_shader_constant_source_finalize(constants);
+    constexpr std::uint32_t kFnv1aOffsetBasis = 0x811C9DC5U;
+    std::uint32_t source_hash = kFnv1aOffsetBasis;
+    render_shader_constant_block_accumulate_source_hash(
+        *constants.scene_block, source_hash);
+    render_shader_constant_registry_accumulate_source_hash(
+        *constants.constant_registry, source_hash);
+
+    RenderShaderConstantBlock* remaining_blocks[] = {
+        constants.render_target_block,
+        constants.camera_block,
+        constants.clip_planes_block,
+        constants.skeleton_block,
+        constants.misc_draw_state_block,
+        constants.debug_block,
+    };
+    for (const auto* block : remaining_blocks) {
+        render_shader_constant_block_accumulate_source_hash(
+            *block, source_hash);
+    }
+    manager.runtime.reserved_680 =
+        (manager.runtime.reserved_680 & 0xFFFFFFFF00000000ULL) |
+        source_hash;
 }
 
 // Reconstructed from eboot.elf at 0x63F350.
@@ -405,19 +417,19 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
         render_shader_constant_block_release(storage);
     }
 
-    auto*& names_storage = manager.shader_constants.constant_registry;
-    auto* names = static_cast<RenderResourceNameArrayOwner*>(names_storage);
+    auto*& names = manager.shader_constants.constant_registry;
     if (names != nullptr) {
-        for (auto* item = names->begin; item != names->end; item += 32) {
-            render_resource_name_destruct(item + 16);
+        for (auto* item = names->begin; item != names->end; ++item) {
+            render_resource_name_destruct(&item->comment);
         }
         if (names->begin != nullptr) {
             const auto byte_count = static_cast<std::size_t>(
-                names->capacity - names->begin);
+                reinterpret_cast<std::uint8_t*>(names->capacity) -
+                reinterpret_cast<std::uint8_t*>(names->begin));
             engine_deallocate_sized(names->begin, byte_count);
         }
         render_release(names);
-        names_storage = nullptr;
+        names = nullptr;
     }
 
     if (manager.runtime.shader_parameters != nullptr) {

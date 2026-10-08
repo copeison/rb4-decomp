@@ -13,6 +13,118 @@ constexpr std::uint64_t kTypeRegisterCounts[] = {
     1, 1, 1, 1, 3, 3, 4, 4,
 };
 
+constexpr const char* kTypeNames[] = {
+    "bool", "int", "int2", "int3", "int4",
+    "uint", "uint2", "uint3", "uint4",
+    "float", "float2", "float3", "float4",
+    "float3x3", "float3x4", "float4x3", "float4x4",
+};
+
+void append_hash(std::uint32_t& hash, const char* text) {
+    while (*text != '\0') {
+        hash = (hash ^ static_cast<std::uint8_t>(*text)) * 0x01000193U;
+        ++text;
+    }
+}
+
+void append_unsigned_hash(std::uint32_t& hash, std::uint64_t value) {
+    char digits[20];
+    auto* end = digits + sizeof(digits);
+    auto* cursor = end;
+    do {
+        *--cursor = static_cast<char>('0' + value % 10);
+        value /= 10;
+    } while (value != 0);
+    while (cursor != end) {
+        const char character[2] = {*cursor++, '\0'};
+        append_hash(hash, character);
+    }
+}
+
+void append_signed_hash(std::uint32_t& hash, std::int32_t value) {
+    if (value < 0) {
+        append_hash(hash, "-");
+        append_unsigned_hash(
+            hash,
+            static_cast<std::uint64_t>(-
+                static_cast<std::int64_t>(value)));
+        return;
+    }
+    append_unsigned_hash(hash, static_cast<std::uint32_t>(value));
+}
+
+const char* type_name(RenderShaderConstantType type) {
+    const auto index = static_cast<std::uint32_t>(type);
+    if (index >= sizeof(kTypeNames) / sizeof(*kTypeNames)) {
+        return "";
+    }
+    return kTypeNames[index];
+}
+
+void append_array_suffix(
+    std::uint32_t& hash,
+    const RenderShaderConstantMember& member) {
+    if (member.element_count < 0 && !member.render_target_sliced) {
+        return;
+    }
+    const auto count = member.element_count < 0
+        ? std::uint64_t{1}
+        : static_cast<std::uint64_t>(member.element_count);
+    append_hash(hash, "[");
+    append_unsigned_hash(
+        hash, count * (member.render_target_sliced ? 6U : 1U));
+    append_hash(hash, "]");
+}
+
+void append_metal_members(
+    std::uint32_t& hash,
+    const RenderShaderConstantBlock& block) {
+    for (auto* member = block.members_begin;
+         member != block.members_end;
+         ++member) {
+        const auto* local_name = member->name + 1;
+        append_hash(hash, "   ");
+        append_hash(hash, type_name(member->type));
+        append_hash(hash, " ");
+        append_hash(hash, local_name);
+        append_array_suffix(hash, *member);
+        append_hash(hash, ";\n");
+
+        if (member->element_count >= 0 || member->render_target_sliced) {
+            continue;
+        }
+        const auto type = static_cast<std::uint32_t>(member->type);
+        const auto padding_count =
+            type == 0 || type == 1 || type == 5 || type == 9
+            ? 3U
+            : type == 2 || type == 6 || type == 10 ? 2U : 0U;
+        for (std::uint32_t index = 0; index < padding_count; ++index) {
+            append_hash(hash, "   float _pad");
+            append_unsigned_hash(hash, index);
+            append_hash(hash, "_");
+            append_hash(hash, local_name);
+            append_hash(hash, ";\n");
+        }
+    }
+}
+
+void append_hlsl_members(
+    std::uint32_t& hash,
+    const RenderShaderConstantBlock& block) {
+    for (auto* member = block.members_begin;
+         member != block.members_end;
+         ++member) {
+        append_hash(hash, "   ");
+        append_hash(hash, type_name(member->type));
+        append_hash(hash, " ");
+        append_hash(hash, member->name);
+        append_array_suffix(hash, *member);
+        append_hash(hash, " : packoffset(c");
+        append_unsigned_hash(hash, member->offset);
+        append_hash(hash, ");\n");
+    }
+}
+
 std::uint64_t register_count(RenderShaderConstantType type) {
     const auto index = static_cast<std::uint32_t>(type);
     if (index >= sizeof(kTypeRegisterCounts) / sizeof(*kTypeRegisterCounts)) {
@@ -168,6 +280,76 @@ std::uint64_t render_shader_constant_block_add_sliced_array(
         static_cast<std::int64_t>(element_count),
         true,
         name);
+}
+
+// Reconstructed from eboot.elf at 0x63A8C0, with declaration emitters at
+// 0x63AB40 and 0x63AE10.
+void render_shader_constant_block_accumulate_source_hash(
+    const RenderShaderConstantBlock& block,
+    std::uint32_t& hash) {
+    append_hash(hash, "// ");
+    append_hash(hash, block.name);
+    append_hash(hash, " constants\n");
+    append_hash(hash, "#if (HX_METAL == 1)\n");
+    append_hash(hash, "HxCBuffer ");
+    append_hash(hash, block.name);
+    append_hash(hash, "\n{\n");
+    append_metal_members(hash, block);
+    append_hash(hash, "};\n");
+    append_hash(hash, "# define HX_USE_CBUFFER_");
+    append_hash(hash, block.name);
+    append_hash(hash, " , constant ");
+    append_hash(hash, block.name);
+    append_hash(hash, "& _g");
+    append_hash(hash, block.name);
+    append_hash(hash, " [[buffer(");
+    append_unsigned_hash(hash, block.buffer_index + 3U);
+    append_hash(hash, ")]]\n");
+    for (auto* member = block.members_begin;
+         member != block.members_end;
+         ++member) {
+        append_hash(hash, "# define ");
+        append_hash(hash, member->name);
+        append_hash(hash, " _g");
+        append_hash(hash, block.name);
+        append_hash(hash, ".");
+        append_hash(hash, member->name + 1);
+        append_hash(hash, "\n");
+    }
+    append_hash(hash, "#else\n");
+    append_hash(hash, "HxCBuffer ");
+    append_hash(hash, block.name);
+    append_hash(hash, " : register(b");
+    append_unsigned_hash(hash, block.buffer_index);
+    append_hash(hash, ")\n{\n");
+    append_hlsl_members(hash, block);
+    append_hash(hash, "};\n");
+    append_hash(hash, "# define HX_USE_CBUFFER_");
+    append_hash(hash, block.name);
+    append_hash(hash, "\n");
+    append_hash(hash, "#endif // ...if/else HX_METAL\n");
+}
+
+// Reconstructed from eboot.elf at 0x63D6E0.
+void render_shader_constant_registry_accumulate_source_hash(
+    const RenderShaderConstantRegistry& registry,
+    std::uint32_t& hash) {
+    for (auto* definition = registry.begin;
+         definition != registry.end;
+         ++definition) {
+        if (definition->comment.text[0] != '\0') {
+            append_hash(hash, "\n// ");
+            append_hash(hash, definition->comment.text);
+            append_hash(hash, "\n");
+        }
+        if (definition->name[0] != '\0') {
+            append_hash(hash, "#define ");
+            append_hash(hash, definition->name);
+            append_hash(hash, " ");
+            append_signed_hash(hash, definition->value);
+            append_hash(hash, "\n");
+        }
+    }
 }
 
 }  // namespace rb4

@@ -58,7 +58,7 @@ struct RenderShaderConstantState {
     std::uint64_t batch_info;
     std::uint64_t preview_node_index;
     RenderShaderConstantBlock* transient_blocks[3];
-    void* constant_registry;
+    RenderShaderConstantRegistry* constant_registry;
 };
 
 struct RenderResourceManagerRuntime {

@@ -49,12 +49,35 @@ struct RenderShaderConstantBlock {
     void* allocator;
 };
 
+struct RenderShaderConstantResourceName {
+    void* dispatch;
+    const char* text;
+};
+
+struct RenderShaderConstantDefinition {
+    const char* name;
+    std::int32_t value;
+    std::uint32_t reserved_12;
+    RenderShaderConstantResourceName comment;
+};
+
+struct RenderShaderConstantRegistry {
+    RenderShaderConstantDefinition* begin;
+    RenderShaderConstantDefinition* end;
+    RenderShaderConstantDefinition* capacity;
+    void* allocator;
+};
+
 static_assert(sizeof(RenderShaderConstantMember) == 40);
 static_assert(offsetof(RenderShaderConstantMember, name) == 32);
 static_assert(sizeof(RenderShaderConstantBlock) == 72);
 static_assert(offsetof(RenderShaderConstantBlock, next_offset) == 24);
 static_assert(offsetof(RenderShaderConstantBlock, finalized) == 32);
 static_assert(offsetof(RenderShaderConstantBlock, members_begin) == 40);
+static_assert(sizeof(RenderShaderConstantResourceName) == 16);
+static_assert(sizeof(RenderShaderConstantDefinition) == 32);
+static_assert(offsetof(RenderShaderConstantDefinition, comment) == 16);
+static_assert(sizeof(RenderShaderConstantRegistry) == 32);
 
 void render_shader_constant_block_construct(
     RenderShaderConstantBlock& block,
@@ -83,5 +106,11 @@ std::uint64_t render_shader_constant_block_add_sliced_array(
     RenderShaderConstantType type,
     std::uint64_t element_count,
     const char* name);
+void render_shader_constant_block_accumulate_source_hash(
+    const RenderShaderConstantBlock& block,
+    std::uint32_t& hash);
+void render_shader_constant_registry_accumulate_source_hash(
+    const RenderShaderConstantRegistry& registry,
+    std::uint32_t& hash);
 
 }  // namespace rb4

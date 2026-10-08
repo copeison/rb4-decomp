@@ -20,8 +20,8 @@ the pointer array's backing storage by its capacity, and releases the array
 owner. The top-level runtime initializer remains an adapter boundary while its
 constant registry and backend-resource sequence are reconstructed.
 
-Shader-constant setup at `0x640D60` is source-owned through source-generation
-finalization. It creates the `Scene`, `RenderTarget`, `Camera`, `ClipPlanes`,
+Shader-constant setup at `0x640D60` is source-owned. It creates the `Scene`,
+`RenderTarget`, `Camera`, `ClipPlanes`,
 `Skeleton`, `MiscDrawState`, `OcclusionQuery`, and `Debug` constant blocks plus
 three `Transient` variants containing 16, 32, and 64 vectors. The manager now
 exposes typed offsets for every registered constant, including the six-target
@@ -32,8 +32,11 @@ The shared 72-byte constant-block implementation is kept under
 array count, render-target slicing flag, generated register offset, and name.
 Scalar, array, and sliced-array insertion at `0x63A1B0`, `0x63A370`, and
 `0x63A700` are source-owned, including the original doubling growth policy and
-type-width table. Generated shader-source emission and the resulting hash are
-still a focused adapter boundary.
+type-width table. Source emission at `0x63A8C0` reproduces both the Metal and
+HLSL constant-buffer declarations, including Metal padding fields and HLSL
+`packoffset` clauses. The manager hashes the emitted blocks and constant
+registry in the original order with 32-bit FNV-1a and stores the result at
+manager offset `0x2A8`.
 
 Shader-parameter setup at `0x640BF0` is source-owned. It allocates six 40-byte
 registries, enables the first, and registers four manager bindings:
