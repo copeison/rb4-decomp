@@ -11,6 +11,13 @@ OrbisRenderSystem* g_orbis_render_system = nullptr;
 
 namespace {
 
+struct RetiredAllocationNode {
+    RetiredAllocationNode* next;
+    RetiredAllocationNode* previous;
+    void* allocation;
+    std::uint64_t frame;
+};
+
 struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_0[56];
     OrbisRenderContext* render_context;
@@ -32,6 +39,9 @@ struct OrbisRenderSystemRuntimePrefix {
     std::int32_t retired_allocation_lock_depth;
     std::uint8_t reserved_4300[4];
     ScePthreadMutex retired_allocation_mutex;
+    RetiredAllocationNode* retired_allocations_head;
+    RetiredAllocationNode* retired_allocations_tail;
+    std::size_t retired_allocation_count;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
@@ -57,6 +67,12 @@ static_assert(
         retired_allocation_lock_depth) == 4296);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, retired_allocation_mutex) == 4304);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, retired_allocations_head) == 4312);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, retired_allocations_tail) == 4320);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, retired_allocation_count) == 4328);
 
 }  // namespace
 
@@ -154,6 +170,25 @@ void orbis_unlock_retired_allocations(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     --runtime->retired_allocation_lock_depth;
     scePthreadMutexUnlock(&runtime->retired_allocation_mutex);
+}
+
+std::size_t orbis_retired_allocation_count(
+    const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->retired_allocation_count;
+}
+
+std::uint64_t orbis_retired_allocation_frame(
+    const OrbisRenderSystem& system,
+    std::size_t index) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* node = runtime->retired_allocations_head;
+    while (index-- != 0) {
+        node = node->next;
+    }
+    return node->frame;
 }
 
 void render_system_set_render_context(

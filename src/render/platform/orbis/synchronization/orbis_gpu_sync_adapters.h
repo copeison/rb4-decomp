@@ -10,11 +10,6 @@ struct OrbisRenderSystem;
 
 void orbis_flush_active_frame(OrbisRenderSystem& system);
 
-std::size_t orbis_retired_allocation_count(
-    const OrbisRenderSystem& system);
-std::uint64_t orbis_retired_allocation_frame(
-    const OrbisRenderSystem& system,
-    std::size_t index);
 void orbis_release_retired_allocation(
     OrbisRenderSystem& system,
     std::size_t index);

@@ -34,6 +34,11 @@ void orbis_submit_scope_begin(OrbisRenderSystem& system);
 void orbis_submit_scope_end(OrbisRenderSystem& system);
 void orbis_lock_retired_allocations(OrbisRenderSystem& system);
 void orbis_unlock_retired_allocations(OrbisRenderSystem& system);
+std::size_t orbis_retired_allocation_count(
+    const OrbisRenderSystem& system);
+std::uint64_t orbis_retired_allocation_frame(
+    const OrbisRenderSystem& system,
+    std::size_t index);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);
