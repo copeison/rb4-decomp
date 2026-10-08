@@ -15,10 +15,10 @@ struct RenderSettings;
 struct RenderSystem;
 struct RenderTargetState;
 
-struct RenderFrameOwnerArray {
-    RenderFrameOwner** begin;
-    RenderFrameOwner** end;
-    RenderFrameOwner** capacity;
+struct RenderContextArray {
+    RenderContext** begin;
+    RenderContext** end;
+    RenderContext** capacity;
     void* allocator;
     void* allocator_state;
 };
@@ -39,15 +39,11 @@ struct RenderSystemCoreState {
     bool initialized;
     std::uint8_t reserved_33[7];
     GameSystemInitOptions init_options;
-    union {
-        RenderContext* render_context;
-        RenderFrameOwner* primary_frame_owner;
-        void* render_context_storage;
-    };
+    RenderContext* render_context;
     bool frame_activation_pending;
     std::uint8_t reserved_65[3];
     std::uint32_t frame_activation_flags;
-    RenderFrameOwnerArray frame_owners;
+    RenderContextArray render_contexts;
     union {
         RenderFrameOwner* frame_owner;
         RenderFrameOwner* back_buffer_owner;
@@ -74,18 +70,18 @@ struct RenderSystemCoreState {
     RenderFactory* factory;
 };
 
-static_assert(sizeof(RenderFrameOwnerArray) == 40);
+static_assert(sizeof(RenderContextArray) == 40);
 static_assert(sizeof(RenderTargetStateArray) == 32);
 static_assert(offsetof(RenderSystemCoreState, lock_depth) == 8);
 static_assert(offsetof(RenderSystemCoreState, frame_mutex) == 16);
 static_assert(offsetof(RenderSystemCoreState, lock_owner) == 24);
 static_assert(offsetof(RenderSystemCoreState, initialized) == 32);
 static_assert(offsetof(RenderSystemCoreState, init_options) == 40);
-static_assert(offsetof(RenderSystemCoreState, primary_frame_owner) == 56);
+static_assert(offsetof(RenderSystemCoreState, render_context) == 56);
 static_assert(
     offsetof(RenderSystemCoreState, frame_activation_pending) == 64);
 static_assert(offsetof(RenderSystemCoreState, frame_activation_flags) == 68);
-static_assert(offsetof(RenderSystemCoreState, frame_owners) == 72);
+static_assert(offsetof(RenderSystemCoreState, render_contexts) == 72);
 static_assert(offsetof(RenderSystemCoreState, frame_owner) == 112);
 static_assert(offsetof(RenderSystemCoreState, active_frame_owner) == 120);
 static_assert(offsetof(RenderSystemCoreState, active_target_states) == 128);

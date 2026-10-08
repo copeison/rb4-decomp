@@ -19,11 +19,11 @@ void render_system_initialize(
     render_system_backend_resources_initialize(system);
     render_system_initialize_builtin_buffers(system);
 
-    render_frame_owner_initialize(render_system_primary_frame_owner(system));
-    const auto owner_count = render_system_frame_owner_count(system);
-    for (std::size_t index = 0; index < owner_count; ++index) {
-        render_frame_owner_initialize(
-            render_system_frame_owner_at(system, index));
+    render_context_initialize(render_system_primary_render_context(system));
+    const auto context_count = render_system_render_context_count(system);
+    for (std::size_t index = 0; index < context_count; ++index) {
+        render_context_initialize(
+            render_system_render_context_at(system, index));
     }
 
     render_system_platform_finish_initialization(system);
@@ -46,11 +46,11 @@ void render_system_shutdown(RenderSystem& system) {
     render_system_backend_resources_shutdown(system);
     render_system_release_builtin_buffers(system);
 
-    render_frame_owner_shutdown(render_system_primary_frame_owner(system));
-    const auto owner_count = render_system_frame_owner_count(system);
-    for (std::size_t index = 0; index < owner_count; ++index) {
-        render_frame_owner_shutdown(
-            render_system_frame_owner_at(system, index));
+    render_context_shutdown(render_system_primary_render_context(system));
+    const auto context_count = render_system_render_context_count(system);
+    for (std::size_t index = 0; index < context_count; ++index) {
+        render_context_shutdown(
+            render_system_render_context_at(system, index));
     }
 
     render_system_platform_shutdown(system);

@@ -149,8 +149,8 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
 
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    return *static_cast<OrbisRenderContext*>(
-        runtime->core.render_context_storage);
+    return *reinterpret_cast<OrbisRenderContext*>(
+        runtime->core.render_context);
 }
 
 std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system) {
@@ -335,7 +335,8 @@ void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    runtime->core.render_context_storage = &context;
+    runtime->core.render_context =
+        reinterpret_cast<RenderContext*>(&context);
 }
 
 void render_system_set_back_buffer(

@@ -5,6 +5,7 @@
 namespace rb4 {
 
 struct RenderFrameOwner;
+struct RenderContext;
 struct RenderFactory;
 struct RenderSettings;
 struct RenderSystem;
@@ -13,9 +14,9 @@ extern RenderSystem* g_render_system;
 
 RenderSystem* render_system_instance();
 RenderFrameOwner* render_system_frame_owner(RenderSystem& system);
-RenderFrameOwner& render_system_primary_frame_owner(RenderSystem& system);
-std::size_t render_system_frame_owner_count(const RenderSystem& system);
-RenderFrameOwner& render_system_frame_owner_at(
+RenderContext& render_system_primary_render_context(RenderSystem& system);
+std::size_t render_system_render_context_count(const RenderSystem& system);
+RenderContext& render_system_render_context_at(
     RenderSystem& system,
     std::size_t index);
 bool render_system_has_pending_frame(const RenderSystem& system);

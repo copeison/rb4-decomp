@@ -16,20 +16,20 @@ RenderFrameOwner* render_system_frame_owner(RenderSystem& system) {
     return render_system_core_state(system).frame_owner;
 }
 
-RenderFrameOwner& render_system_primary_frame_owner(RenderSystem& system) {
-    return *render_system_core_state(system).primary_frame_owner;
+RenderContext& render_system_primary_render_context(RenderSystem& system) {
+    return *render_system_core_state(system).render_context;
 }
 
-std::size_t render_system_frame_owner_count(const RenderSystem& system) {
+std::size_t render_system_render_context_count(const RenderSystem& system) {
     const auto& runtime = render_system_core_state(system);
     return static_cast<std::size_t>(
-        runtime.frame_owners.end - runtime.frame_owners.begin);
+        runtime.render_contexts.end - runtime.render_contexts.begin);
 }
 
-RenderFrameOwner& render_system_frame_owner_at(
+RenderContext& render_system_render_context_at(
     RenderSystem& system,
     std::size_t index) {
-    return *render_system_core_state(system).frame_owners.begin[index];
+    return *render_system_core_state(system).render_contexts.begin[index];
 }
 
 bool render_system_has_pending_frame(const RenderSystem& system) {
@@ -78,16 +78,16 @@ void render_system_release_back_buffer(RenderSystem& system) {
 // Reconstructed from eboot.elf at 0x3DEEA0.
 void render_system_release_render_contexts(RenderSystem& system) {
     auto& runtime = render_system_core_state(system);
-    if (runtime.primary_frame_owner != nullptr) {
-        render_frame_owner_delete(*runtime.primary_frame_owner);
-        runtime.primary_frame_owner = nullptr;
+    if (runtime.render_context != nullptr) {
+        render_context_delete(*runtime.render_context);
+        runtime.render_context = nullptr;
     }
 
-    while (runtime.frame_owners.end != runtime.frame_owners.begin) {
-        --runtime.frame_owners.end;
-        auto* context = *runtime.frame_owners.end;
+    while (runtime.render_contexts.end != runtime.render_contexts.begin) {
+        --runtime.render_contexts.end;
+        auto* context = *runtime.render_contexts.end;
         if (context != nullptr) {
-            render_frame_owner_delete(*context);
+            render_context_delete(*context);
         }
     }
 }

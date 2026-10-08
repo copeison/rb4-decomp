@@ -22,11 +22,11 @@ Construction proceeds in this order:
 state, backend objects, default resources, platform configurations, core
 vectors, and mutexes in reverse ownership order.
 
-The frame prefix contains a typed 40-byte owner array at offset `0x48`, with
+The frame prefix contains a typed 40-byte render-context array at offset
+`0x48`, with
 begin, end, capacity, and the allocator's two-word state. Shutdown walks this
-array backward, deletes each remaining frame owner, and leaves the primary
-owner and active back-buffer owner as separate pointers at offsets `0x38` and
-`0x70`.
+array backward and deletes each remaining context. The primary render context
+at `0x38` is separate from the active back-buffer frame owner at `0x70`.
 
 `src/render/core/system/render_system_state.h` centralizes the verified
 312-byte prefix shared by frame activation and lifetime code. The prefix now
@@ -41,7 +41,7 @@ mutex and depth-counter sequence found in its own function.
 
 Ending a frame clears the active target-state array and owner directly. The
 array is a 32-byte begin/end/capacity/allocator record, distinct from the
-40-byte frame-owner array whose allocator carries two words of state.
+40-byte render-context array whose allocator carries two words of state.
 
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
