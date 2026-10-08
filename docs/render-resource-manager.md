@@ -28,8 +28,9 @@ offset.
 
 Shutdown at `0x641740` is source-owned. It releases eight sized-array owners in
 the handle region and three in the runtime region, destroys every name record
-before freeing its array owner, tears down the specialized state, and invokes
+before freeing its array owner, tears down the specialized state containing
+six 40-byte arrays in reverse order, and invokes
 the dynamic release slot for the function-table texture and all 35 resource
 slots. Every owning slot is cleared immediately after release. Only the
-record-specific name and specialized-state destructors remain focused adapter
-boundaries.
+record-specific name destructor remains a focused adapter boundary because it
+installs an unidentified dispatch table and releases its string allocation.

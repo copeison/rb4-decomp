@@ -48,6 +48,26 @@ struct RenderResourceNameArrayOwner {
     void* allocator;
 };
 
+struct RenderResourceNameRecord {
+    std::uint8_t storage[40];
+};
+
+struct RenderResourceNameArray {
+    RenderResourceNameRecord* begin;
+    RenderResourceNameRecord* end;
+    RenderResourceNameRecord* capacity;
+    void* allocator;
+    void* allocator_state;
+};
+
+struct RenderResourceSpecializedState {
+    RenderResourceNameArray arrays[6];
+};
+
+static_assert(sizeof(RenderResourceNameRecord) == 40);
+static_assert(sizeof(RenderResourceNameArray) == 40);
+static_assert(sizeof(RenderResourceSpecializedState) == 240);
+
 struct RenderPrimaryShaderResource {
     std::uint8_t reserved_0[12];
     bool compiled;
@@ -123,6 +143,18 @@ void release_dynamic_resource(void*& storage) {
     if (resource != nullptr) {
         resource->dispatch->release_dynamic(resource);
         storage = nullptr;
+    }
+}
+
+void destruct_name_array(RenderResourceNameArray& names) {
+    for (auto* name = names.begin; name != names.end; ++name) {
+        render_resource_name_destruct(name);
+    }
+    if (names.begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(names.capacity) -
+            reinterpret_cast<std::uint8_t*>(names.begin));
+        engine_deallocate_sized(names.begin, byte_count);
     }
 }
 
@@ -203,9 +235,12 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
     }
 
     if (manager.runtime.specialized_state != nullptr) {
-        render_resource_specialized_state_destruct(
+        auto* state = static_cast<RenderResourceSpecializedState*>(
             manager.runtime.specialized_state);
-        render_release(manager.runtime.specialized_state);
+        for (std::size_t index = 6; index != 0; --index) {
+            destruct_name_array(state->arrays[index - 1]);
+        }
+        render_release(state);
         manager.runtime.specialized_state = nullptr;
     }
 
