@@ -67,6 +67,7 @@
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.
 - [x] Recover masked Orbis shader-resource clearing.
+- [x] Reconstruct accelerated and raster Orbis depth-stencil clears.
 - [x] Reconstruct format-specific Orbis transient vertex drawing.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover Orbis GPU fence sequencing, signaling, and command-buffer waits.
