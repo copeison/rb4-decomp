@@ -36,6 +36,10 @@ void render_texture_cube_array_construct(
     bool has_source_data);
 bool render_texture_cube_array_validate(
     const RenderTextureCubeArray& cubes);
+std::size_t render_texture_cube_array_source_size(
+    const RenderTextureCubeArray& cubes);
+void render_texture_cube_array_release_source_data(
+    RenderTextureCubeArray& cubes);
 void render_texture_cube_array_destruct(RenderTextureCubeArray& cubes);
 
 static_assert(sizeof(RenderTextureCubeDescriptorRange) == 24);

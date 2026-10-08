@@ -11,7 +11,5 @@ void orbis_texture_array_cube_install_vtable(
 void orbis_texture_array_cube_initialize_storage(
     OrbisTextureArrayCube& texture);
 void orbis_defer_texture_allocation(void* allocation);
-void render_delete_texture_array_cube_storage(
-    OrbisTextureArrayCube& texture);
 
 }  // namespace rb4
