@@ -2,15 +2,20 @@
 
 #include <cstdint>
 
+#include "render/core/textures/render_texture_2d.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {
 
-struct OrbisTexture2D;
 struct OrbisRenderContext;
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
-struct RenderTexture2DDescriptor;
+
+struct OrbisTexture2D : RenderTexture2D {
+    std::uint8_t backend_state[112];
+};
+
+static_assert(sizeof(OrbisTexture2D) == 520);
 
 OrbisTexture2D* orbis_create_texture_2d(
     const RenderTexture2DDescriptor& descriptor);

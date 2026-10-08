@@ -7,9 +7,7 @@
 namespace rb4 {
 
 void* render_allocate(std::size_t size);
-void texture_2d_construct(
-    OrbisTexture2D& texture,
-    const RenderTexture2DDescriptor& descriptor);
+void orbis_texture_2d_install_vtable(OrbisTexture2D& texture);
 void orbis_texture_2d_clear_backend_state(OrbisTexture2D& texture);
 void orbis_texture_2d_release_backend_state(OrbisTexture2D& texture);
 bool orbis_texture_2d_is_depth(const OrbisTexture2D& texture);
@@ -23,8 +21,7 @@ OrbisGpuRenderTarget* orbis_texture_2d_mutable_render_target(
     const OrbisTexture2D& texture);
 OrbisGpuDepthRenderTarget* orbis_texture_2d_mutable_depth_target(
     const OrbisTexture2D& texture);
-void texture_2d_destruct(OrbisTexture2D& texture);
-void render_delete_texture_2d(OrbisTexture2D& texture);
+void render_delete_texture_2d_storage(RenderTexture2D& texture);
 const void* orbis_texture_2d_binding_view(
     const OrbisTexture2D& texture,
     std::uint32_t flags);

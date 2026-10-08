@@ -11,6 +11,13 @@ near that constructor identifies the class as `RndTexture2DResource` and
 describes its `texture_path` property, providing direct class evidence for the
 factory name.
 
+The common object is exactly 408 bytes. It contains the 168-byte texture base,
+a normalized 144-byte descriptor snapshot, one 80-byte mip-chain state, and an
+optional linked-resource pointer with a signed index. Construction initializes
+the link to `nullptr` and `-1`, publishes the mip properties through the base
+texture state, and selects resource index zero. The Orbis subclass adds 112
+bytes of backend descriptor and allocation state.
+
 Backend initialization at `0x8D6460` selects a depth path when the common
 texture usage field is 2. That path creates a 52-byte Gnm depth-target
 descriptor, calculates aligned depth, stencil, and HTILE regions within one
@@ -44,6 +51,10 @@ invoking the common texture destructor. The deleting destructor follows at
 `analysis/exports/orbis-texture-2d-backend.asm` preserves the complete backend
 initializer because Hex-Rays does not currently produce pseudocode for that
 function.
+
+Common lifecycle and link-setter evidence is preserved in
+`analysis/exports/render-texture-2d.asm` and
+`analysis/exports/render-texture-2d.c`.
 
 Virtual methods at `0x8D6E40` through `0x8D713F` bind the texture to all six
 engine shader stages. Flag bit 2 selects the secondary depth/stencil view.

@@ -6,16 +6,10 @@
 
 namespace rb4 {
 
-namespace {
-
-constexpr std::size_t kOrbisTexture2DSize = 520;
-
-}  // namespace
-
 // Reconstructed from eboot.elf at 0x8D89B0.
 OrbisTexture2D* orbis_create_texture_2d(
     const RenderTexture2DDescriptor& descriptor) {
-    auto* storage = render_allocate(kOrbisTexture2DSize);
+    auto* storage = render_allocate(sizeof(OrbisTexture2D));
     auto* texture = reinterpret_cast<OrbisTexture2D*>(storage);
     orbis_texture_2d_construct(*texture, descriptor);
     return texture;
@@ -25,20 +19,21 @@ OrbisTexture2D* orbis_create_texture_2d(
 void orbis_texture_2d_construct(
     OrbisTexture2D& texture,
     const RenderTexture2DDescriptor& descriptor) {
-    texture_2d_construct(texture, descriptor);
+    render_texture_2d_construct(texture, descriptor);
+    orbis_texture_2d_install_vtable(texture);
     orbis_texture_2d_clear_backend_state(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8D6310.
 void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
     orbis_texture_2d_release_backend_state(texture);
-    texture_2d_destruct(texture);
+    render_texture_2d_destruct(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8D6440.
 void orbis_texture_2d_delete(OrbisTexture2D& texture) {
     orbis_texture_2d_destruct(texture);
-    render_delete_texture_2d(texture);
+    render_delete_texture_2d_storage(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8D6460.

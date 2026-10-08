@@ -87,6 +87,7 @@
 - [x] Recover the Orbis 2D texture factory and platform constructor.
 - [x] Reconstruct Orbis 2D texture storage, views, updates, and destruction.
 - [x] Reconstruct Orbis 2D texture shader-stage binding.
+- [x] Recover the common 2D texture and exact Orbis subclass layouts.
 - [x] Recover the Orbis 3D texture factory and platform constructor.
 - [x] Reconstruct Orbis 3D texture storage, uploads, and destruction.
 - [x] Reconstruct Orbis 3D texture shader-stage binding.
