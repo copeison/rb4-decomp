@@ -23,3 +23,12 @@ Mip source allocation uses the recovered total bit width to calculate
 platform's supported-format bitsets, retries the original channel-layout
 fallback sequence, applies the resource-class-eight numeric conversion, and
 searches the packed 24/32/40-bit family in its original preference order.
+
+Float-image conversion at `0x684960` is also source-owned. Fixed formats use
+the original channel-order matrix for R, RG/GR, RGB/BGR, RGBA/RGBX,
+BGRA/BGRX, ARGB, and XRGB storage. Normalized 8- and 16-bit components clamp
+and truncate exactly as the conversion kernels do; floating formats preserve
+32-bit values or use the recovered truncating IEEE-754 half conversion.
+Layout-two formats encode the RGB channels with the standard linear-to-sRGB
+transfer curve while leaving alpha unchanged. Compact platform-variant
+formats remain rejected by this CPU conversion path, matching the executable.

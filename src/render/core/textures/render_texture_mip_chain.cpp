@@ -1,7 +1,9 @@
 #include "render/core/textures/render_texture_mip_chain.h"
 
+#include <cmath>
 #include <cstddef>
 #include <cstring>
+#include <limits>
 #include <new>
 
 #include "core/memory/engine_memory.h"
@@ -15,6 +17,166 @@ struct MipChainDispatch {
     void* reserved_destruct;
     void (*release_dynamic)(RenderTextureMipChainState* mip_chain);
 };
+
+struct ChannelOrder {
+    std::uint32_t count;
+    std::int32_t indices[4];
+};
+
+constexpr std::int32_t kConstantOne = -1;
+constexpr ChannelOrder kChannelOrders[]{
+    {2, {0, 1, 0, 0}},
+    {2, {1, 0, 0, 0}},
+    {3, {0, 1, 2, 0}},
+    {3, {2, 1, 0, 0}},
+    {4, {0, 1, 2, 3}},
+    {4, {0, 1, 2, kConstantOne}},
+    {4, {2, 1, 0, 3}},
+    {4, {2, 1, 0, kConstantOne}},
+    {4, {3, 0, 1, 2}},
+    {4, {kConstantOne, 0, 1, 2}},
+    {1, {0, 0, 0, 0}},
+};
+
+bool channel_order(std::uint32_t layout, ChannelOrder& order) {
+    if (layout >= sizeof(kChannelOrders) / sizeof(kChannelOrders[0])) {
+        return false;
+    }
+    order = kChannelOrders[layout];
+    return true;
+}
+
+float linear_to_srgb(float value) {
+    if (value > 0.0031308F) {
+        return std::pow(value, 1.0F / 2.4F) * 1.055F - 0.055F;
+    }
+    return value * 12.92F;
+}
+
+RenderFloatPixel convert_to_srgb(const RenderFloatPixel& pixel) {
+    return {
+        linear_to_srgb(pixel.red),
+        linear_to_srgb(pixel.green),
+        linear_to_srgb(pixel.blue),
+        pixel.alpha,
+    };
+}
+
+std::uint16_t float_to_half_truncated(float value) {
+    std::uint32_t bits;
+    std::memcpy(&bits, &value, sizeof(bits));
+
+    const auto sign = static_cast<std::uint16_t>((bits >> 16) & 0x8000U);
+    const auto exponent = (bits >> 23) & 0xFFU;
+    const auto mantissa = bits & 0x7FFFFFU;
+    if (exponent == 0xFFU) {
+        if (mantissa == 0) {
+            return static_cast<std::uint16_t>(sign | 0x7C00U);
+        }
+        auto payload = static_cast<std::uint16_t>(mantissa >> 13);
+        if (payload == 0) {
+            payload = 1;
+        }
+        return static_cast<std::uint16_t>(sign | 0x7C00U | payload);
+    }
+
+    const auto half_exponent = static_cast<std::int32_t>(exponent) - 112;
+    if (half_exponent >= 31) {
+        return static_cast<std::uint16_t>(sign | 0x7C00U);
+    }
+    if (half_exponent <= 0) {
+        if (half_exponent <= -11) {
+            return sign;
+        }
+        const auto significand = mantissa | 0x800000U;
+        return static_cast<std::uint16_t>(
+            sign | (significand >> (14 - half_exponent)));
+    }
+    return static_cast<std::uint16_t>(
+        sign | (static_cast<std::uint32_t>(half_exponent) << 10) |
+        (mantissa >> 13));
+}
+
+template <typename Value>
+void write_value(std::uint8_t*& destination, Value value) {
+    std::memcpy(destination, &value, sizeof(value));
+    destination += sizeof(value);
+}
+
+std::uint32_t pack_unorm(float value, std::uint32_t maximum) {
+    if (!(value <= 1.0F)) {
+        return maximum;
+    }
+    if (value <= 0.0F) {
+        return 0;
+    }
+    return static_cast<std::uint32_t>(
+        value * static_cast<float>(maximum));
+}
+
+bool write_unorm_pixel(
+    std::uint8_t*& destination,
+    const RenderFloatPixel& pixel,
+    const RenderDataFormatDescriptor& format) {
+    ChannelOrder order{};
+    if (!channel_order(format.channel_layout, order) ||
+        format.bit_width % order.count != 0) {
+        return false;
+    }
+
+    const auto component_width = format.bit_width / order.count;
+    if (component_width != 8 && component_width != 16) {
+        return false;
+    }
+
+    const float channels[]{pixel.red, pixel.green, pixel.blue, pixel.alpha};
+    const auto maximum = component_width == 8
+        ? static_cast<std::uint32_t>(
+              std::numeric_limits<std::uint8_t>::max())
+        : static_cast<std::uint32_t>(
+              std::numeric_limits<std::uint16_t>::max());
+    for (std::uint32_t index = 0; index < order.count; ++index) {
+        const auto channel = order.indices[index] == kConstantOne
+            ? 1.0F
+            : channels[order.indices[index]];
+        const auto packed = pack_unorm(channel, maximum);
+        if (component_width == 8) {
+            write_value(destination, static_cast<std::uint8_t>(packed));
+        } else {
+            write_value(destination, static_cast<std::uint16_t>(packed));
+        }
+    }
+    return true;
+}
+
+bool write_float_pixel(
+    std::uint8_t*& destination,
+    const RenderFloatPixel& pixel,
+    const RenderDataFormatDescriptor& format) {
+    ChannelOrder order{};
+    if (!channel_order(format.channel_layout, order) ||
+        format.bit_width % order.count != 0) {
+        return false;
+    }
+
+    const auto component_width = format.bit_width / order.count;
+    if (component_width != 16 && component_width != 32) {
+        return false;
+    }
+
+    const float channels[]{pixel.red, pixel.green, pixel.blue, pixel.alpha};
+    for (std::uint32_t index = 0; index < order.count; ++index) {
+        const auto channel = order.indices[index] == kConstantOne
+            ? 1.0F
+            : channels[order.indices[index]];
+        if (component_width == 16) {
+            write_value(destination, float_to_half_truncated(channel));
+        } else {
+            write_value(destination, channel);
+        }
+    }
+    return true;
+}
 
 std::size_t mip_chain_count(const RenderTextureMipChainArray& mip_chains) {
     if (mip_chains.begin == nullptr) {
@@ -164,6 +326,47 @@ void render_texture_mip_chain_descriptor_allocate_source(
     if (source_data != nullptr && source_size != 0) {
         std::memcpy(fields.source_data, source_data, source_size);
     }
+}
+
+// Reconstructed from eboot.elf at 0x684960, with conversion kernels from
+// 0x6897D0 through 0x68CB1B.
+bool render_texture_mip_chain_descriptor_copy_float_image(
+    RenderTextureMipChainDescriptor& descriptor,
+    const RenderFloatImageView& source) {
+    const RenderTextureExtent3D extent{
+        source.width,
+        source.height,
+        source.depth,
+    };
+    render_texture_mip_chain_descriptor_allocate_source(
+        descriptor, extent, descriptor.fields.data_format, nullptr);
+
+    const auto format = render_data_format_describe(
+        descriptor.fields.data_format);
+    if (format.variant != 0) {
+        return false;
+    }
+
+    const auto pixel_count = static_cast<std::size_t>(source.width) *
+        source.height * source.depth;
+    if (pixel_count != 0 && source.pixels == nullptr) {
+        return false;
+    }
+
+    auto* destination = static_cast<std::uint8_t*>(
+        descriptor.fields.source_data);
+    for (std::size_t index = 0; index < pixel_count; ++index) {
+        const auto pixel = format.layout == 2
+            ? convert_to_srgb(source.pixels[index])
+            : source.pixels[index];
+        const auto converted = format.numeric_type == 0
+            ? write_unorm_pixel(destination, pixel, format)
+            : write_float_pixel(destination, pixel, format);
+        if (!converted) {
+            return true;
+        }
+    }
+    return true;
 }
 
 // Reconstructed from eboot.elf at 0x682960 and 0x6829A0.

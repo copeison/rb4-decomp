@@ -409,6 +409,9 @@
   compact platform-variant layout families.
 - [x] Reconstruct platform-aware data-format resolution, supported-format mask
   checks, channel fallbacks, and resource-class-eight conversion behavior.
+- [x] Reconstruct fixed-format float-image conversion, including all channel
+  orders, normalized and floating component widths, half conversion, and sRGB
+  encoding.
 - [x] Recover the shared deleting-dispatch slot for textures, compute buffers,
   meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.

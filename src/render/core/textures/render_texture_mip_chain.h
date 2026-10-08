@@ -43,6 +43,9 @@ void render_texture_mip_chain_descriptor_allocate_source(
     const RenderTextureExtent3D& extent,
     std::int32_t data_format,
     const void* source_data);
+bool render_texture_mip_chain_descriptor_copy_float_image(
+    RenderTextureMipChainDescriptor& descriptor,
+    const RenderFloatImageView& source);
 void render_texture_mip_chain_construct(
     RenderTextureMipChainState& mip_chain,
     const RenderTextureMipChainDescriptor& descriptor,
