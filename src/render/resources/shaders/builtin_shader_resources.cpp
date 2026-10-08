@@ -95,15 +95,6 @@ void render_blur_shader_construct(void* shader) {
     shader_field(shader, 472) = -1;
 }
 
-// Reconstructed from eboot.elf at 0x6364F0.
-void render_fxaa_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_fxaa_shader_install_dispatch);
-    fields[0] = -1;
-    fields[1] = 0;
-    fields[2] = -1;
-}
-
 // Reconstructed from eboot.elf at 0x6F3330.
 void render_dof_sprite_shader_construct(void* shader) {
     auto* fields = construct_shader(

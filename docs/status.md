@@ -400,6 +400,8 @@
   compute shaders, including permutations, typed light buffers, and constants.
 - [x] Reconstruct the render-test compute shader and retire the remaining
   generic compute-dispatch adapter from the built-in shader constructors.
+- [x] Reconstruct the FXAA graphics-shader dispatch, sampled source texture,
+  reciprocal-dimensions constant, and constant-block extent.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
