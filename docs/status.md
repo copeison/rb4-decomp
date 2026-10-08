@@ -313,6 +313,8 @@
   pointer-array release, and recursive mutex lifetime.
 - [x] Reconstruct GPU-stat root and hardware-counter initialization, pointer
   array growth, counter metadata publication, and final sorting.
+- [x] Replace the GPU root-statistic sorting adapter with the verified key at
+  statistic offset `0x28`.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its

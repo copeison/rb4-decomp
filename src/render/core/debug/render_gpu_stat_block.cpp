@@ -1,5 +1,6 @@
 #include "render/core/debug/render_gpu_stat_block.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -35,6 +36,11 @@ float& root_counter_scale(RenderGpuRootStatistic& statistic) {
 
 std::uint32_t& root_counter_index(RenderGpuRootStatistic& statistic) {
     return *reinterpret_cast<std::uint32_t*>(&statistic.storage[80]);
+}
+
+std::uint64_t root_sort_key(const void* statistic) {
+    const auto* bytes = static_cast<const std::uint8_t*>(statistic);
+    return *reinterpret_cast<const std::uint64_t*>(bytes + 40);
 }
 
 void release_gpu_statistic(void* statistic) {
@@ -171,9 +177,12 @@ void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
         append_root_statistic(block, counter);
     }
 
-    render_gpu_root_statistics_sort(
+    std::sort(
         block.root_statistics_begin,
-        block.root_statistics_end);
+        block.root_statistics_end,
+        [](const void* left, const void* right) {
+            return root_sort_key(left) < root_sort_key(right);
+        });
 }
 
 // Reconstructed from eboot.elf at 0x62ABA0.
