@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 #include "core/memory/engine_memory.h"
 #include "render/core/context/render_context.h"
@@ -17,6 +18,24 @@ struct RenderGpuStatisticDispatch {
     void* reserved_0;
     void (*release_dynamic)(void* statistic);
 };
+
+struct RenderGpuRootStatistic {
+    std::uint8_t storage[384];
+};
+
+static_assert(sizeof(RenderGpuRootStatistic) == 384);
+
+bool& root_has_hardware_counters(RenderGpuRootStatistic& statistic) {
+    return *reinterpret_cast<bool*>(&statistic.storage[73]);
+}
+
+float& root_counter_scale(RenderGpuRootStatistic& statistic) {
+    return *reinterpret_cast<float*>(&statistic.storage[76]);
+}
+
+std::uint32_t& root_counter_index(RenderGpuRootStatistic& statistic) {
+    return *reinterpret_cast<std::uint32_t*>(&statistic.storage[80]);
+}
 
 void release_gpu_statistic(void* statistic) {
     if (statistic == nullptr) {
@@ -62,6 +81,43 @@ void release_pointer_array(
     capacity = nullptr;
 }
 
+void append_root_statistic(
+    RenderGpuStatBlock& block,
+    RenderGpuRootStatistic* statistic) {
+    if (block.root_statistics_end != block.root_statistics_capacity) {
+        *block.root_statistics_end++ = statistic;
+        return;
+    }
+
+    const auto size = block.root_statistics_begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(
+              block.root_statistics_end - block.root_statistics_begin);
+    const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
+    auto** new_begin = static_cast<void**>(
+        engine_allocate_sized(new_capacity * sizeof(void*)));
+    if (size != 0) {
+        std::memmove(
+            new_begin,
+            block.root_statistics_begin,
+            size * sizeof(void*));
+    }
+    new_begin[size] = statistic;
+
+    if (block.root_statistics_begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(
+                block.root_statistics_capacity) -
+            reinterpret_cast<std::uint8_t*>(
+                block.root_statistics_begin));
+        engine_deallocate_sized(block.root_statistics_begin, byte_count);
+    }
+
+    block.root_statistics_begin = new_begin;
+    block.root_statistics_end = new_begin + size + 1;
+    block.root_statistics_capacity = new_begin + new_capacity;
+}
+
 }  // namespace
 
 RenderGpuStatBlock& render_system_gpu_stat_block(RenderSystem& system) {
@@ -90,6 +146,34 @@ void render_gpu_stat_block_construct(RenderGpuStatBlock& block) {
     block.lock_depth = 0;
     block.reserved_116 = 0;
     initialize_recursive_mutex(block.mutex);
+}
+
+// Reconstructed from eboot.elf at 0x62ACB0.
+void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
+    auto* total = static_cast<RenderGpuRootStatistic*>(
+        render_allocate(sizeof(RenderGpuRootStatistic)));
+    render_gpu_root_statistic_construct(total, "GPU Total", nullptr);
+    block.total_statistic = total;
+    append_root_statistic(block, total);
+
+    const auto counter_count = render_gpu_counter_count();
+    for (std::size_t index = 0; index < counter_count; ++index) {
+        auto* counter = static_cast<RenderGpuRootStatistic*>(
+            render_allocate(sizeof(RenderGpuRootStatistic)));
+        render_gpu_root_statistic_construct(
+            counter,
+            render_gpu_counter_name(static_cast<std::uint32_t>(index)),
+            total);
+        root_has_hardware_counters(*total) = true;
+        root_counter_scale(*counter) =
+            render_gpu_counter_scale(static_cast<std::uint32_t>(index));
+        root_counter_index(*counter) = static_cast<std::uint32_t>(index);
+        append_root_statistic(block, counter);
+    }
+
+    render_gpu_root_statistics_sort(
+        block.root_statistics_begin,
+        block.root_statistics_end);
 }
 
 // Reconstructed from eboot.elf at 0x62ABA0.

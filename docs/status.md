@@ -311,6 +311,8 @@
   query-end dispatch, context scope pop, and history-ring transition.
 - [x] Reconstruct GPU-stat block construction, statistic ownership teardown,
   pointer-array release, and recursive mutex lifetime.
+- [x] Reconstruct GPU-stat root and hardware-counter initialization, pointer
+  array growth, counter metadata publication, and final sorting.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its

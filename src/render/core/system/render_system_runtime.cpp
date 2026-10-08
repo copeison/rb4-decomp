@@ -13,7 +13,6 @@
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/audio/audio_analysis_textures.h"
 #include "render/resources/lighting/render_lighting_resources.h"
