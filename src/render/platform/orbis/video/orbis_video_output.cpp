@@ -11,6 +11,18 @@
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
 
+extern "C" {
+
+std::int32_t sceGnmAddEqEvent(
+    SceKernelEqueue queue,
+    std::uint32_t event_id,
+    void* user_data);
+std::int32_t sceGnmDeleteEqEvent(
+    SceKernelEqueue queue,
+    std::uint32_t event_id);
+
+}
+
 namespace rb4 {
 
 namespace {
@@ -56,11 +68,23 @@ void orbis_create_event_queue(
     orbis_set_event_queue(system, queue);
 }
 
+void orbis_register_gnm_event(
+    OrbisRenderSystem& system,
+    std::uint32_t event_id) {
+    sceGnmAddEqEvent(orbis_event_queue(system), event_id, nullptr);
+}
+
 void orbis_register_video_flip_event(OrbisRenderSystem& system) {
     sceVideoOutAddFlipEvent(
         orbis_event_queue(system),
         orbis_video_output_handle(system),
         nullptr);
+}
+
+void orbis_unregister_gnm_event(
+    OrbisRenderSystem& system,
+    std::uint32_t event_id) {
+    sceGnmDeleteEqEvent(orbis_event_queue(system), event_id);
 }
 
 void orbis_delete_event_queue(OrbisRenderSystem& system) {

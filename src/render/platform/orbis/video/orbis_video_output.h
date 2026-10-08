@@ -17,7 +17,13 @@ void orbis_video_output_set_window_margins(
 void orbis_create_event_queue(
     OrbisRenderSystem& system,
     const char* name);
+void orbis_register_gnm_event(
+    OrbisRenderSystem& system,
+    std::uint32_t event_id);
 void orbis_register_video_flip_event(OrbisRenderSystem& system);
+void orbis_unregister_gnm_event(
+    OrbisRenderSystem& system,
+    std::uint32_t event_id);
 void orbis_delete_event_queue(OrbisRenderSystem& system);
 void orbis_video_output_close(OrbisRenderSystem& system);
 void orbis_render_system_initialize(OrbisRenderSystem& system);
