@@ -45,6 +45,7 @@
 - [x] Complete the Orbis deferred GPU-allocation queue lifecycle.
 - [x] Reconstruct the guarded game-system shutdown callback.
 - [x] Reconstruct the matching game-system renderer startup sequence.
+- [x] Recover renderer platform and graphics-API identity mappings.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

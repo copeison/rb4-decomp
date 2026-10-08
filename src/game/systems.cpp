@@ -3,6 +3,7 @@
 #include "systems_adapters.h"
 #include "../render/default_render_resources.h"
 #include "../render/orbis_render_system.h"
+#include "../render/render_platform.h"
 #include "../render/render_system_runtime.h"
 
 namespace rb4 {
@@ -12,8 +13,8 @@ void game_systems_initialize(const GameSystemInitOptions& options) {
     auto* orbis_system = orbis_render_system_create();
     auto& render_system = game_render_system_base(*orbis_system);
 
-    game_prepare_render_platform();
-    game_warm_render_platform_config(7);
+    (void)orbis_render_api();
+    (void)render_api_for_platform(RenderPlatform::kPlayStation4);
     render_system_initialize(render_system, options);
     render_initialize_default_resources(
         game_default_render_resources(render_system),

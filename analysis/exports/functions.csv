@@ -4422,7 +4422,7 @@ address,end,size,name,library,thunk
 0x1ADEF0,0x1ADF66,118,sub_1ADEF0,False,False
 0x1ADF70,0x1ADF7A,10,sub_1ADF70,False,False
 0x1ADF80,0x1AE4C8,1352,sub_1ADF80,False,False
-0x1AE4D0,0x1AE5A6,214,sub_1AE4D0,False,False
+0x1AE4D0,0x1AE5A6,214,render_api_name,False,False
 0x1AE5B0,0x1AE757,423,sub_1AE5B0,False,False
 0x1AE770,0x1AE90E,414,sub_1AE770,False,False
 0x1AEB10,0x1AEB13,3,sub_1AEB10,False,False
@@ -9628,7 +9628,7 @@ address,end,size,name,library,thunk
 0x362E00,0x362E10,16,sub_362E00,False,False
 0x362E10,0x362F2B,283,sub_362E10,False,False
 0x362F30,0x36302E,254,sub_362F30,False,False
-0x363030,0x363174,324,sub_363030,False,False
+0x363030,0x363174,324,render_platform_name,False,False
 0x3632D0,0x3632D3,3,sub_3632D0,False,False
 0x363460,0x36346B,11,sub_363460,False,False
 0x363470,0x363635,453,sub_363470,False,False
@@ -12007,7 +12007,7 @@ address,end,size,name,library,thunk
 0x4412B0,0x4412B5,5,sub_4412B0,False,False
 0x4412C0,0x4412C1,1,nullsub_1253,False,False
 0x4412D0,0x4413CD,253,sub_4412D0,False,False
-0x4414A0,0x4415AF,271,sub_4414A0,False,False
+0x4414A0,0x4415AF,271,render_api_for_platform,False,False
 0x4415B0,0x4415E2,50,sub_4415B0,False,False
 0x4415F0,0x441622,50,sub_4415F0,False,False
 0x441630,0x441736,262,sub_441630,False,False
@@ -27903,7 +27903,7 @@ address,end,size,name,library,thunk
 0x8D5A80,0x8D5A83,3,sub_8D5A80,False,False
 0x8D5A90,0x8D5AE0,80,sub_8D5A90,False,False
 0x8D5AE0,0x8D5C74,404,sub_8D5AE0,False,False
-0x8D5DE0,0x8D5DE6,6,sub_8D5DE0,False,False
+0x8D5DE0,0x8D5DE6,6,orbis_render_api,False,False
 0x8D5DF0,0x8D5E07,23,orbis_render_system_create,False,False
 0x8D5E10,0x8D5E2F,31,sub_8D5E10,False,False
 0x8D5E30,0x8D60CF,671,sub_8D5E30,False,False
