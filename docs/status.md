@@ -307,6 +307,8 @@
   ownership lifecycle.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
+- [x] Reconstruct deferred-release queue construction, capacity teardown,
+  recursive mutex lifetime, and adjacent frame-phase initialization.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU
   values, backend uploads, ownership, and shutdown release.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.

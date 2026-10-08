@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
+#include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_system_lifecycle_adapters.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -108,7 +109,7 @@ void render_system_construct(RenderSystem& system) {
 
     render_system_construct_default_resources(system);
     render_system_construct_backend_state(system);
-    render_system_construct_callback_state(system);
+    render_system_construct_deferred_release_state(system);
     render_system_publish_instance(system);
 
     for (const auto platform_id : render_supported_platform_ids()) {
@@ -134,7 +135,7 @@ void render_system_destruct(RenderSystem& system) {
     render_settings_release(render_system_settings(system));
     render_system_set_settings(system, nullptr);
 
-    render_system_destroy_callback_state(system);
+    render_system_destroy_deferred_release_state(system);
     render_system_destroy_backend_state(system);
     render_system_destroy_default_resources(system);
 

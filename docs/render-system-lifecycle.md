@@ -10,7 +10,8 @@ Construction proceeds in this order:
 1. Initialize the core frame state and its recursive mutex.
 2. Construct 13 fixed, 128-byte platform-configuration slots.
 3. Construct the default resources and the remaining backend state.
-4. Initialize the callback queue and its recursive mutex.
+4. Initialize the deferred-release queue, its recursive mutex, and the adjacent
+   frame-phase state.
 5. Publish `g_render_system`.
 6. Read `platform_mgr.supported_platforms` and initialize the corresponding
    slots, including each platform's sorted resolution list.
@@ -22,7 +23,8 @@ The common 312-byte prefix construction is now source-owned. It installs the
 base vtable, creates the recursive frame mutex, applies the three true startup
 option defaults, initializes both dynamic pointer arrays, points the submitted
 owner list at its six inline slots, sets the GPU query sentinel to `-1`, and
-clears the timing, settings, and factory fields. Destruction frees the active
+clears the timing, settings, and factory fields. The 64-byte deferred-release
+and frame-phase tail at `0xEA0` is also source-owned. Destruction frees the active
 target-state and render-context arrays by their recorded capacities, drains
 the recursive lock depth, and destroys the frame mutex.
 
@@ -86,11 +88,14 @@ The default-resource block is the exact 568-byte range at render-system offset
 and shutdown releases it directly, removing the previous system-level wrapper
 for both operations.
 
-The deferred-release queue at `0xEA0` is a typed 48-byte recursive-lock state:
-lock depth, mutex, begin/end/capacity pointers, and allocator state. Normal
+The deferred-release state at `0xEA0` contains a typed 48-byte recursive-lock
+queue followed by a reserved pointer and the frame-phase value at `0xED8`.
+Construction now initializes that complete 64-byte tail directly. Normal
 enqueue doubles capacity, frame finish and shutdown drain the queue under the
-lock, and enqueue during shutdown releases the object immediately. Only the
-object-specific destruction routine remains an adapter.
+lock, and enqueue during shutdown releases the object immediately. Teardown
+frees the queue storage by capacity, unwinds the recorded recursive lock depth,
+and destroys the mutex. Only the object-specific destruction routine remains
+an adapter.
 
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
