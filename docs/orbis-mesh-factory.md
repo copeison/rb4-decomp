@@ -17,6 +17,10 @@ vertex or triangle storage must be retained, and process the atomic pending
 update mask. Pending triangle updates recalculate the triangle count before
 dispatching the platform backend update and clearing the mask.
 
+Finalization at `0x5C29A0` records the current triangle count, dispatches the
+format-specific backend finalizer, and releases CPU vertex and triangle
+storage when the residency and usage flags permit it.
+
 The typed base lives in `src/render/core/meshes/render_mesh.cpp`. The Orbis
 layout now embeds it directly before the platform vertex arrays and GPU
 descriptors instead of representing the first 128 bytes as padding. Combined

@@ -71,6 +71,27 @@ bool render_mesh_requires_triangle_storage(const RenderMesh& mesh) {
            (mesh.triangle_usage_flags & 5U) != 0;
 }
 
+// Reconstructed from eboot.elf at 0x5C29A0.
+void render_mesh_finalize(RenderMesh& mesh) {
+    mesh.triangle_count = static_cast<std::size_t>(
+        mesh.triangles.end - mesh.triangles.begin);
+    render_mesh_finalize_backend(mesh);
+
+    if (mesh.vertices_resident || mesh.triangles_resident) {
+        return;
+    }
+    if ((mesh.vertex_usage_flags & 5U) == 0) {
+        render_mesh_release_vertex_storage(mesh);
+        if (mesh.vertices_resident) {
+            return;
+        }
+    }
+    if (!mesh.triangles_resident &&
+        (mesh.triangle_usage_flags & 5U) == 0) {
+        render_mesh_triangle_array_clear(mesh.triangles);
+    }
+}
+
 // Reconstructed from eboot.elf at 0x5C2E40.
 void render_mesh_process_pending_updates(RenderMesh& mesh) {
     const auto flags =

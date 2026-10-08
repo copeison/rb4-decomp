@@ -190,6 +190,70 @@
 005C2992  setnz   al
 005C2995  retn
 
+; render_mesh_finalize @ 0x5C29A0
+005C29A0  push    rbp; Finalizes backend mesh state and conditionally releases CPU vertex and triangle storage.
+005C29A1  mov     rbp, rsp
+005C29A4  push    r15
+005C29A6  push    r14
+005C29A8  push    rbx
+005C29A9  sub     rsp, 28h
+005C29AD  mov     r15, cs:qword_19A9B88
+005C29B4  mov     rbx, rdi
+005C29B7  mov     rcx, 0AAAAAAAAAAAAAAABh
+005C29C1  mov     rax, [r15]
+005C29C4  mov     [rbp+var_20], rax
+005C29C8  mov     rax, [rbx+20h]
+005C29CC  sub     rax, [rbx+18h]
+005C29D0  sar     rax, 2
+005C29D4  imul    rcx, rax
+005C29D8  mov     [rbx+40h], rcx
+005C29DC  mov     rax, [rbx]
+005C29DF  call    qword ptr [rax+48h]
+005C29E2  cmp     byte ptr [rbx+50h], 0
+005C29E6  jnz     short loc_5C2A5D
+005C29E8  cmp     byte ptr [rbx+51h], 0
+005C29EC  jnz     short loc_5C2A5D
+005C29EE  test    byte ptr [rbx+54h], 5
+005C29F2  jz      short loc_5C2A4E
+005C29F4  cmp     byte ptr [rbx+51h], 0
+005C29F8  jnz     short loc_5C2A5D
+005C29FA  test    byte ptr [rbx+58h], 5
+005C29FE  jnz     short loc_5C2A5D
+005C2A00  lea     r14, [rbp+var_28]
+005C2A04  vxorps  xmm0, xmm0, xmm0
+005C2A08  lea     rsi, aEastlVector_208; "EASTL vector"
+005C2A0F  add     rbx, 18h
+005C2A13  mov     rdi, r14
+005C2A16  vmovups [rbp+var_40], xmm0
+005C2A1B  mov     [rbp+var_30], 0
+005C2A23  call    nullsub_18
+005C2A28  lea     rsi, [rbp+var_40]
+005C2A2C  mov     rdi, rbx
+005C2A2F  call    sub_5C2A80
+005C2A34  mov     rsi, qword ptr [rbp+var_40]
+005C2A38  test    rsi, rsi
+005C2A3B  jz      short loc_5C2A5D
+005C2A3D  mov     rdx, [rbp+var_30]
+005C2A41  mov     rdi, r14
+005C2A44  sub     rdx, rsi
+005C2A47  call    sub_252D30
+005C2A4C  jmp     short loc_5C2A5D
+005C2A4E  mov     rax, [rbx]
+005C2A51  mov     rdi, rbx
+005C2A54  call    qword ptr [rax+30h]
+005C2A57  cmp     byte ptr [rbx+50h], 0
+005C2A5B  jz      short loc_5C29F4
+005C2A5D  mov     rax, [r15]
+005C2A60  cmp     rax, [rbp+var_20]
+005C2A64  jnz     short loc_5C2A71
+005C2A66  add     rsp, 28h
+005C2A6A  pop     rbx
+005C2A6B  pop     r14
+005C2A6D  pop     r15
+005C2A6F  pop     rbp
+005C2A70  retn
+005C2A71  call    __stack_chk_fail; PS4 SDK 5.008 import resolved from NID Ou3iL1abvng; stub: target/lib/libkernel_stub_weak.a
+
 ; render_mesh_process_pending_updates @ 0x5C2E40
 005C2E40  push    rbp; Processes the atomic dirty mask, refreshes triangle count, dispatches the backend update, and clears the mask.
 005C2E41  mov     rbp, rsp

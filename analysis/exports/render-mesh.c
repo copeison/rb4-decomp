@@ -179,6 +179,37 @@ bool __fastcall render_mesh_requires_triangle_storage(_BYTE *a1)
 }
 
 
+// render_mesh_finalize @ 0x5C29A0
+__int64 __fastcall render_mesh_finalize(_BYTE *a1)
+{
+  __int128 v5; // [rsp+0h] [rbp-40h] BYREF
+  __int64 v6; // [rsp+10h] [rbp-30h]
+  _BYTE v7[8]; // [rsp+18h] [rbp-28h] BYREF
+  __int64 v8; // [rsp+20h] [rbp-20h]
+
+  v8 = 0x6365786562696C2FLL;
+  *((_QWORD *)a1 + 8) = 0xAAAAAAAAAAAAAAABLL * ((__int64)(*((_QWORD *)a1 + 4) - *((_QWORD *)a1 + 3)) >> 2);
+  (*(void (__fastcall **)(_BYTE *))(*(_QWORD *)a1 + 72LL))(a1);
+  if ( *((_WORD *)a1 + 40) == 0 )
+  {
+    if ( (a1[84] & 5) != 0 || ((*(void (__fastcall **)(_BYTE *))(*(_QWORD *)a1 + 48LL))(a1), a1[80] == 0) )
+    {
+      if ( a1[81] == 0 && (a1[88] & 5) == 0 )
+      {
+        __asm { vxorps  xmm0, xmm0, xmm0 }
+        __asm { vmovups [rbp+var_40], xmm0 }
+        v6 = 0;
+        nullsub_18(v7, "EASTL vector");
+        sub_5C2A80((__int64 *)a1 + 3, (__int64 *)&v5);
+        if ( (_QWORD)v5 != 0 )
+          sub_252D30(v7, v5, v6 - v5);
+      }
+    }
+  }
+  return 0x6365786562696C2FLL;
+}
+
+
 // render_mesh_process_pending_updates @ 0x5C2E40
 // Processes mesh dirty flags, updates counts, invokes virtual backend update, then clears the flags.
 __int64 __fastcall render_mesh_process_pending_updates(__int64 a1)
