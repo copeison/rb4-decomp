@@ -83,6 +83,8 @@
   creation virtuals and shared backend initialization dispatch.
 - [x] Recover the concrete 1,552-byte render-target state constructor and
   deleting destructor, including its verified resource-owner prefix mapping.
+- [x] Reconstruct the base and concrete render-target resource dispatch tables,
+  including the virtual 2D source-type check and deleting destructor.
 - [x] Inline verified render-target source binding, unidentified-slot teardown,
   release-state reset, and stereo-mode selection.
 - [x] Recover inline scene-block resize semantics, registered-resource mode

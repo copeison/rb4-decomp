@@ -7,7 +7,9 @@ namespace rb4 {
 namespace {
 
 struct RenderTextureDispatch {
-    std::uint8_t reserved_0[13 * sizeof(void*)];
+    std::uint8_t reserved_0[2 * sizeof(void*)];
+    std::int32_t (*descriptor_type)(const RenderTexture& texture);
+    std::uint8_t reserved_24[10 * sizeof(void*)];
     void (*update_gpu_data)(RenderTexture& texture);
     void* reserved_112;
     void (*initialize_backend)(
@@ -21,6 +23,7 @@ const RenderTextureDispatch& dispatch(const RenderTexture& texture) {
 }
 
 static_assert(offsetof(RenderTextureDispatch, update_gpu_data) == 104);
+static_assert(offsetof(RenderTextureDispatch, descriptor_type) == 16);
 static_assert(offsetof(RenderTextureDispatch, initialize_backend) == 120);
 
 }  // namespace
@@ -76,6 +79,11 @@ void render_texture_initialize_backend(
     if (texture.source_data == nullptr && (texture.flags & 5U) == 0) {
         methods.update_gpu_data(texture);
     }
+}
+
+std::int32_t render_texture_runtime_descriptor_type(
+    const RenderTexture& texture) {
+    return dispatch(texture).descriptor_type(texture);
 }
 
 // Reconstructed from eboot.elf at 0x50CE00.

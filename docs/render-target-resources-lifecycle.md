@@ -17,6 +17,12 @@ destructor at `0x6B40E0` runs common teardown before freeing the 1,552-byte
 allocation. The common `RenderTarget` lifecycle now calls these recovered
 paths directly.
 
+The base and concrete five-entry dispatch tables are now represented directly.
+Both provide normal and deleting destructors. The concrete table additionally
+accepts only textures whose virtual descriptor type is `1`, then exposes the
+reconstructed 2D and 2D-array creation methods. Construction and destruction
+install the appropriate table without external dispatch adapters.
+
 Code that consumes the verified layout now reads stable owner fields directly:
 flags, extent, attachment cursor, source texture, block storage and count,
 resource mode, active block, scene context, and every identified target or

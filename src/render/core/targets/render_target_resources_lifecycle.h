@@ -33,6 +33,8 @@ void render_target_resources_construct(
     RenderTargetResources& resources,
     std::uint32_t flags,
     std::int32_t resource_mode);
+void render_target_resources_set_concrete_dispatch(
+    RenderTargetResources& resources);
 void render_target_resources_destruct(RenderTargetResources& resources);
 void render_target_resources_initialize(
     RenderTargetResources& resources,

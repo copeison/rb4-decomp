@@ -96,6 +96,8 @@ void render_texture_delete(RenderTexture& texture);
 void render_texture_initialize_backend(
     RenderTexture& texture,
     const RenderTexture* reusable_texture);
+std::int32_t render_texture_runtime_descriptor_type(
+    const RenderTexture& texture);
 std::int32_t render_texture_default_address_mode(
     std::uint32_t resource_kind);
 std::int32_t render_texture_default_filter_mode(

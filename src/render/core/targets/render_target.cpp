@@ -6,7 +6,6 @@
 #include "render/core/targets/render_target_adapters.h"
 #include "render/core/targets/render_target_resources.h"
 #include "render/core/targets/render_target_resources_lifecycle.h"
-#include "render/core/targets/render_target_resources_lifecycle_adapters.h"
 
 namespace rb4 {
 
