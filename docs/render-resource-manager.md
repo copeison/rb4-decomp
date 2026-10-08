@@ -29,7 +29,8 @@ creates the DOF sprite shader and 17 compute resources for blur, depth range,
 buffer clearing/copying, DOF, volumetric scattering, SSAO, CMAA, depth
 linearization, signed distance, and compute render testing. Slot 16 remains
 unused as observed. Each resource retains its exact allocation size from the
-executable.
+executable. Compact built-in shader constructors are tracked separately in
+`docs/render-builtin-shaders.md`.
 
 Shader-constant setup at `0x640D60` is source-owned. It creates the `Scene`,
 `RenderTarget`, `Camera`, `ClipPlanes`,

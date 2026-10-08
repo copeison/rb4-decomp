@@ -368,6 +368,8 @@
   slots, and recover the async-compute-gated allocation sequence.
 - [x] Reconstruct primary-shader registration and late-registration finalize
   behavior.
+- [x] Reconstruct post-base defaults for the FXAA, DOF sprite, display shading
+  mode, sphere-map, linear-depth, scene-mask, and test-pattern shaders.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
