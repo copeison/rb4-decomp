@@ -1,12 +1,15 @@
 #include "render/core/shaders/render_shader.h"
 
 #include "render/core/shaders/render_shader_adapters.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x642250.
 RenderShader* render_create_shader(RenderShaderStage stage) {
-    return render_system_create_shader(stage);
+    auto& factory = *render_system_factory(*render_system_instance());
+    return render_factory_create_shader(factory, stage);
 }
 
 // Reconstructed from eboot.elf at 0x642270.

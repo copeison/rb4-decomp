@@ -53,22 +53,22 @@ struct OrbisRenderFactoryVtable {
         OrbisRenderFactory& factory,
         const RenderTextureArrayCubeDescriptor& descriptor);
     OrbisConstantBuffer* (*create_constant_buffer)(
-        OrbisRenderFactory& factory,
+        RenderFactory& factory,
         const RenderConstantBufferDescriptor& descriptor,
         std::uint32_t flags,
         std::size_t element_count);
     OrbisShader* (*create_shader)(
-        OrbisRenderFactory& factory,
+        RenderFactory& factory,
         RenderShaderStage stage);
     OrbisComputeBuffer* (*create_compute_buffer)(
-        OrbisRenderFactory& factory,
+        RenderFactory& factory,
         const RenderComputeBufferDescriptor& descriptor);
     OrbisParticleBuffer* (*create_particle_buffer)(
-        OrbisRenderFactory& factory,
+        RenderFactory& factory,
         std::uint32_t particle_count,
         void* context);
     OrbisOcclusionQuery* (*create_occlusion_query)(
-        OrbisRenderFactory& factory,
+        RenderFactory& factory,
         void* owner);
 };
 
@@ -134,7 +134,7 @@ OrbisTextureArrayCube* factory_create_texture_array_cube(
 }
 
 OrbisConstantBuffer* factory_create_constant_buffer(
-    OrbisRenderFactory&,
+    RenderFactory&,
     const RenderConstantBufferDescriptor& descriptor,
     std::uint32_t flags,
     std::size_t element_count) {
@@ -142,26 +142,26 @@ OrbisConstantBuffer* factory_create_constant_buffer(
 }
 
 OrbisShader* factory_create_shader(
-    OrbisRenderFactory&,
+    RenderFactory&,
     RenderShaderStage stage) {
     return orbis_create_shader(stage);
 }
 
 OrbisComputeBuffer* factory_create_compute_buffer(
-    OrbisRenderFactory&,
+    RenderFactory&,
     const RenderComputeBufferDescriptor& descriptor) {
     return orbis_create_compute_buffer(descriptor);
 }
 
 OrbisParticleBuffer* factory_create_particle_buffer(
-    OrbisRenderFactory&,
+    RenderFactory&,
     std::uint32_t particle_count,
     void* context) {
     return orbis_create_particle_buffer(particle_count, context);
 }
 
 OrbisOcclusionQuery* factory_create_occlusion_query(
-    OrbisRenderFactory&,
+    RenderFactory&,
     void* owner) {
     return orbis_create_occlusion_query(owner);
 }

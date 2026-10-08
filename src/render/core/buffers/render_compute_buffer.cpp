@@ -1,13 +1,16 @@
 #include "render/core/buffers/render_compute_buffer.h"
 
 #include "render/core/buffers/render_compute_buffer_adapters.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x636C70.
 RenderComputeBuffer* render_create_compute_buffer(
     const RenderComputeBufferDescriptor& descriptor) {
-    auto* buffer = render_system_create_compute_buffer(descriptor);
+    auto& factory = *render_system_factory(*render_system_instance());
+    auto* buffer = render_factory_create_compute_buffer(factory, descriptor);
     const auto staging_size =
         buffer->element_count * buffer->element_stride;
     buffer->staging_data =

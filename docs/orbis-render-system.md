@@ -30,3 +30,8 @@ buffers, shaders, particle buffers, and occlusion queries. Startup allocates
 the exact eight-byte factory object, installs that 16-entry table, and
 publishes it through the typed common renderer field. Each entry forwards to
 the reconstructed concrete factory for that resource type.
+
+The common constant-buffer, shader, compute-buffer, particle-buffer, and
+occlusion-query factories now dispatch directly through entries 11 through 15
+of this table. Their original call sites use offsets `0x58`, `0x60`, `0x68`,
+`0x70`, and `0x78` from the vtable respectively.

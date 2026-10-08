@@ -1,6 +1,8 @@
 #include "render/core/buffers/render_constant_buffer.h"
 
 #include "render/core/buffers/render_constant_buffer_adapters.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 
@@ -19,8 +21,9 @@ RenderConstantBuffer* render_create_constant_buffer(
         element_count = descriptor.element_count;
     }
 
-    auto* buffer = render_system_create_constant_buffer(
-        descriptor, flags, element_count);
+    auto& factory = *render_system_factory(*render_system_instance());
+    auto* buffer = render_factory_create_constant_buffer(
+        factory, descriptor, flags, element_count);
     if ((flags & kDeferInitialUpload) == 0 && buffer->upload_pending) {
         render_constant_buffer_initialize_backend(*buffer);
         buffer->upload_pending = false;

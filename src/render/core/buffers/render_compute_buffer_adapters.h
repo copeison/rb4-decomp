@@ -6,8 +6,6 @@
 
 namespace rb4 {
 
-RenderComputeBuffer* render_system_create_compute_buffer(
-    const RenderComputeBufferDescriptor& descriptor);
 void render_compute_buffer_set_base_dispatch(RenderComputeBuffer& buffer);
 void* render_allocate_compute_buffer_staging(std::size_t size);
 void render_free_compute_buffer_staging(void* allocation);

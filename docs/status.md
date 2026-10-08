@@ -69,6 +69,9 @@
 - [x] Recover the seven-format Orbis mesh factory and format-name map.
 - [x] Type and reconstruct the eight-byte Orbis resource factory, its
   registration, destructors, and complete 16-entry creation-method vtable.
+- [x] Replace the common constant-buffer, shader, compute-buffer,
+  particle-buffer, and occlusion-query factory adapters with typed vtable
+  dispatch.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
 - [x] Unify the render-system epoch used by common mesh updates, Orbis mesh
   draws, and resource synchronization.

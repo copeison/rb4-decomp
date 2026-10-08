@@ -1,12 +1,15 @@
 #include "render/core/synchronization/render_occlusion_query.h"
 
 #include "render/core/synchronization/render_occlusion_query_adapters.h"
+#include "render/core/system/render_factory.h"
+#include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x5F7D30.
 RenderOcclusionQuery* render_create_occlusion_query(void* owner) {
-    return render_system_create_occlusion_query(owner);
+    auto& factory = *render_system_factory(*render_system_instance());
+    return render_factory_create_occlusion_query(factory, owner);
 }
 
 // Reconstructed from eboot.elf at 0x5F7D50.
