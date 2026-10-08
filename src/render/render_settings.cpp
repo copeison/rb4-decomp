@@ -1,10 +1,23 @@
 #include "render_settings.h"
 
+#include <cctype>
+
 #include "render_settings_adapters.h"
 
 namespace rb4 {
 
 namespace {
+
+bool equals_ignore_ascii_case(const char* left, const char* right) {
+    while (*left != '\0' && *right != '\0') {
+        const auto left_char = static_cast<unsigned char>(*left++);
+        const auto right_char = static_cast<unsigned char>(*right++);
+        if (std::tolower(left_char) != std::tolower(right_char)) {
+            return false;
+        }
+    }
+    return *left == *right;
+}
 
 void read_validation_settings(
     RenderSettings& settings,
@@ -110,6 +123,37 @@ void apply_platform_limits(RenderSettings& settings) {
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x442520.
+const char* render_quality_level_name(RenderQualityLevel level) {
+    switch (level) {
+    case RenderQualityLevel::kLow:
+        return "Low";
+    case RenderQualityLevel::kMedium:
+        return "Medium";
+    case RenderQualityLevel::kHigh:
+        return "High";
+    case RenderQualityLevel::kInvalid:
+        return nullptr;
+    }
+    return nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x442540.
+RenderQualityLevel render_quality_level_from_name(const char* name) {
+    if (name != nullptr) {
+        if (equals_ignore_ascii_case(name, "Low")) {
+            return RenderQualityLevel::kLow;
+        }
+        if (equals_ignore_ascii_case(name, "Medium")) {
+            return RenderQualityLevel::kMedium;
+        }
+        if (equals_ignore_ascii_case(name, "High")) {
+            return RenderQualityLevel::kHigh;
+        }
+    }
+    return RenderQualityLevel::kInvalid;
+}
 
 // Reconstructed from eboot.elf at 0x6BB470.
 void render_settings_initialize(RenderSettings& settings) {

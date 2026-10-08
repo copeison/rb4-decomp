@@ -12021,8 +12021,8 @@ address,end,size,name,library,thunk
 0x441E50,0x44239B,1355,sub_441E50,False,False
 0x4423A0,0x4423B7,23,sub_4423A0,False,False
 0x4423C0,0x442511,337,sub_4423C0,False,False
-0x442520,0x44253F,31,sub_442520,False,False
-0x442540,0x44259E,94,sub_442540,False,False
+0x442520,0x44253F,31,render_quality_level_name,False,False
+0x442540,0x44259E,94,render_quality_level_from_name,False,False
 0x4425A0,0x44263D,157,sub_4425A0,False,False
 0x442860,0x44290A,170,sub_442860,False,False
 0x442910,0x44292E,30,sub_442910,False,False

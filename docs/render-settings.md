@@ -16,7 +16,7 @@ The principal defaults recovered from its constant stores are:
 | 64-bit light accumulation | false |
 | 40-bit depth/stencil | true |
 | Tiled lighting | false |
-| Quality level | 1 |
+| Quality level | `Medium` (`1`) |
 | Scene mask, shadows, post-processing, tone mapping, volumetric scattering | true |
 | Multithreaded rendering, async compute, async copy | true |
 | Stereo optimizations | true |
@@ -33,3 +33,6 @@ async compute and tiled lighting off.
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the
 initial window resolution and sets the explicit-override flag.
+
+Quality levels are the case-insensitive names `Low`, `Medium`, and `High`, with
+numeric values zero through two. Unknown names produce the invalid value `-1`.

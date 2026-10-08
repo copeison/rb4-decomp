@@ -7,6 +7,13 @@
 
 namespace rb4 {
 
+enum class RenderQualityLevel : std::uint32_t {
+    kLow = 0,
+    kMedium = 1,
+    kHigh = 2,
+    kInvalid = 0xFFFFFFFFu,
+};
+
 struct RenderSettings {
     RenderExtent content_resolution{1920, 1080};
     RenderExtent pc_window_resolution{1280, 720};
@@ -24,7 +31,7 @@ struct RenderSettings {
 
     RenderExtent output_resolution{1920, 1080};
     bool resolution_overridden = false;
-    std::uint32_t quality_level = 1;
+    RenderQualityLevel quality_level = RenderQualityLevel::kMedium;
 
     bool scene_mask_enabled = true;
     bool shadows_enabled = true;
@@ -58,5 +65,7 @@ struct RenderSettings {
 };
 
 void render_settings_initialize(RenderSettings& settings);
+const char* render_quality_level_name(RenderQualityLevel level);
+RenderQualityLevel render_quality_level_from_name(const char* name);
 
 }  // namespace rb4

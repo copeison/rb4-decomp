@@ -28,7 +28,6 @@ const char* config_read_string(
     const DataConfig& config,
     const char* key);
 
-std::uint32_t render_quality_level_from_name(const char* name);
 bool render_platform_supports_async_compute();
 RenderExtent render_platform_default_resolution();
 bool command_line_resolution_override(RenderExtent& resolution);
