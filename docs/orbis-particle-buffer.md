@@ -12,6 +12,13 @@ quad with triangles `(0, 1, 2)` and `(0, 2, 3)`, offset by four vertices for
 each subsequent particle. All three allocations use the embedded name
 `ParticleBuffer`.
 
+The common particle-buffer object is 64 bytes. It records capacity, active
+particle count, particle-data and context pointers, two signed mode fields,
+and three generation flags. Construction at `0x6EB000` clears the active data,
+sets both modes to `-1`, enables world-space generation, and leaves velocity
+alignment and authored rotation data disabled. The generic factory at
+`0x6EAFD0` dispatches through the active render system.
+
 The wrapper at `0x6EAFD0` dispatches through slot 33. Its caller clamps the
 particle capacity to at least one before creating the buffer.
 

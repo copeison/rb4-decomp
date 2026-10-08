@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/core/render_particle_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_particle_buffer_adapters.h"
 
 namespace rb4 {
@@ -32,8 +33,19 @@ void orbis_particle_buffer_construct(
     OrbisParticleBuffer& buffer,
     std::uint32_t particle_count,
     void* context) {
-    particle_buffer_construct(buffer, particle_count, context);
-    orbis_particle_buffer_reset_backend(buffer);
+    render_particle_buffer_construct(buffer, particle_count, context);
+    orbis_particle_buffer_install_vtable(buffer);
+    for (auto& bank : buffer.vertex_descriptors) {
+        for (auto& descriptor : bank) {
+            descriptor = {};
+        }
+    }
+    buffer.vertex_allocations[0] = nullptr;
+    buffer.vertex_allocations[1] = nullptr;
+    buffer.active_bank = 0;
+    buffer.descriptor_mask = 0;
+    buffer.backend_reserved = 0;
+    buffer.indices = nullptr;
 
     const auto vertex_bytes = kVertexBytesPerParticle * particle_count;
     orbis_particle_buffer_allocate_vertex_stream(
@@ -57,24 +69,27 @@ void orbis_particle_buffer_construct(
 
 // Reconstructed from eboot.elf at 0x8E2D30.
 void orbis_particle_buffer_destruct(OrbisParticleBuffer& buffer) {
-    orbis_particle_buffer_release_allocations(buffer);
+    orbis_defer_particle_buffer_release(buffer.vertex_allocations[0]);
+    orbis_defer_particle_buffer_release(buffer.vertex_allocations[1]);
+    orbis_defer_particle_buffer_release(buffer.indices);
+    render_particle_buffer_destruct(buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E2D80.
 void orbis_particle_buffer_delete(OrbisParticleBuffer& buffer) {
     orbis_particle_buffer_destruct(buffer);
-    render_delete_particle_buffer(buffer);
+    render_delete_particle_buffer_storage(buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E2DE0 and inlined at 0x8E2E43.
 void orbis_particle_buffer_upload_vertices(
     OrbisParticleBuffer& buffer,
     OrbisRenderContext& context) {
-    orbis_particle_buffer_flip_vertex_stream(buffer);
+    buffer.active_bank = (buffer.active_bank & 1U) == 0 ? 1 : 0;
     particle_buffer_generate_vertices(
         buffer,
         context,
-        orbis_particle_buffer_active_vertex_stream(buffer));
+        buffer.vertex_allocations[buffer.active_bank]);
 }
 
 // Reconstructed from eboot.elf at 0x8E2E10.
@@ -84,7 +99,7 @@ void orbis_particle_buffer_draw(
     const ParticleDrawState& draw_state) {
     orbis_particle_buffer_upload_vertices(buffer, context);
 
-    const auto particle_count = particle_buffer_active_count(buffer);
+    const auto particle_count = buffer.active_count;
     if (particle_count == 0) {
         return;
     }
@@ -96,7 +111,7 @@ void orbis_particle_buffer_draw(
     orbis_particle_buffer_draw_indices(
         context,
         index_count,
-        orbis_particle_buffer_indices(buffer));
+        buffer.indices);
 }
 
 }  // namespace rb4
