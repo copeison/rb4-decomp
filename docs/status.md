@@ -59,6 +59,8 @@
   including the Orbis submit worker's initial priority and name.
 - [x] Reconstruct Orbis submit-state defaults, recursive mutex lifetime, and
   the self-linked retired-allocation list construction and destruction.
+- [x] Reconstruct the complete 17-entry Orbis render-system vtable and remove
+  its final constructor adapter.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and
