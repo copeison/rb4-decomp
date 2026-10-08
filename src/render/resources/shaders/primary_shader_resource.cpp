@@ -8,7 +8,6 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/names/render_resource_name.h"
-#include "render/resources/shaders/primary_shader_resource_adapters.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
 
@@ -139,7 +138,8 @@ void destruct_backend_state(RenderShaderBackendState& state) {
 
 struct RenderPrimaryShaderResource {
     struct Dispatch {
-        void* reserved_0[2];
+        void (*destruct)(RenderPrimaryShaderResource* shader);
+        void (*delete_resource)(RenderPrimaryShaderResource* shader);
         const void* (*source_identifier)(RenderPrimaryShaderResource* shader);
         void* (*backend_name)(RenderPrimaryShaderResource* shader);
         void (*initialize_support_objects)(
@@ -182,6 +182,39 @@ static_assert(
     offsetof(RenderPrimaryShaderResource, manager_link) == kManagerLinkOffset);
 static_assert(sizeof(RenderPrimaryShaderResource) == 288);
 
+namespace {
+
+void delete_primary_shader(RenderPrimaryShaderResource* shader) {
+    render_primary_shader_destruct(*shader);
+    render_release(shader);
+}
+
+std::int32_t primary_shader_mode(RenderPrimaryShaderResource*) {
+    return 0;
+}
+
+std::int32_t primary_shader_variant(RenderPrimaryShaderResource*) {
+    return 13;
+}
+
+RenderPrimaryShaderResource::Dispatch kBasePrimaryShaderDispatch{
+    [](RenderPrimaryShaderResource* shader) {
+        render_primary_shader_destruct(*shader);
+    },
+    delete_primary_shader,
+    nullptr,
+    nullptr,
+    nullptr,
+    primary_shader_mode,
+    primary_shader_variant,
+};
+
+void set_base_dispatch(RenderPrimaryShaderResource& shader) {
+    shader.dispatch = &kBasePrimaryShaderDispatch;
+}
+
+}  // namespace
+
 RenderPrimaryShaderResource& render_primary_shader_from_link(
     RenderResourceListNode& link) {
     auto* bytes = reinterpret_cast<std::uint8_t*>(&link);
@@ -206,7 +239,7 @@ void render_primary_shader_register(RenderPrimaryShaderResource& shader) {
 
 // Reconstructed from eboot.elf at 0x6380B0.
 void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
-    render_primary_shader_set_base_dispatch(shader);
+    set_base_dispatch(shader);
     shader.variant = 0;
     shader.compiled = false;
     for (auto& objects : shader.compiled_objects) {
@@ -224,7 +257,7 @@ void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
 
 // Reconstructed from eboot.elf at 0x638110.
 void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
-    render_primary_shader_set_base_dispatch(shader);
+    set_base_dispatch(shader);
 
     if (shader.names != nullptr) {
         destruct_name_records(*shader.names);

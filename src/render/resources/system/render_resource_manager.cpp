@@ -17,7 +17,6 @@
 #include "render/resources/names/render_resource_name.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_resource.h"
-#include "render/resources/shaders/primary_shader_resource_adapters.h"
 
 namespace rb4 {
 

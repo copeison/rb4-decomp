@@ -352,8 +352,8 @@
 - [x] Reconstruct lazy primary-shader support allocation, parameter-registry
   defaults, and `HX_NUM_RT_SLICES` binding setup.
 - [x] Separate primary-shader resources into their own domain and reconstruct
-  common construction, support-object teardown, list unlinking, and compiled
-  array destruction.
+  common construction, source-owned abstract dispatch, support-object teardown,
+  list unlinking, and compiled-array destruction.
 - [x] Type the shared shader-parameter binding and registry layouts and
   reconstruct the resource manager's four built-in permutation bindings.
 - [x] Reconstruct shader-parameter range packing, bit-mask generation,
