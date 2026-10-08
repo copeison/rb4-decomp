@@ -168,6 +168,8 @@
   scattering resources.
 - [x] Type the remaining common 1D, cube, 1D-array, and cube-array texture
   factory dispatch slots.
+- [x] Reconstruct common 1D, 1D-array, and cube-array descriptor resolution,
+  factory creation, and reusable backend initialization.
 - [x] Reconstruct common 3D descriptor resolution, factory creation, and
   reusable backend initialization.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.

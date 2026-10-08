@@ -37,6 +37,9 @@ static_assert(sizeof(RenderTextureArrayCube) == 344);
 void render_texture_array_cube_construct(
     RenderTextureArrayCube& texture,
     const RenderTextureArrayCubeDescriptor& descriptor);
+RenderTextureArrayCube* render_create_texture_array_cube(
+    RenderTextureArrayCubeDescriptor& descriptor,
+    RenderTextureArrayCube* reusable_texture);
 void render_texture_array_cube_destruct(RenderTextureArrayCube& texture);
 void render_texture_array_cube_delete(RenderTextureArrayCube& texture);
 
