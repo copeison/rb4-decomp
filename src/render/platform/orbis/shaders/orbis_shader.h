@@ -42,5 +42,25 @@ void orbis_pixel_shader_bind(
     OrbisRenderContext& context);
 void orbis_pixel_shader_release_backend(OrbisShader& shader);
 RenderShaderStage orbis_pixel_shader_stage();
+void orbis_geometry_shader_destruct(OrbisShader& shader);
+void orbis_geometry_shader_delete(OrbisShader& shader);
+bool orbis_geometry_shader_initialize(
+    OrbisShader& shader,
+    const OrbisShaderBinary& binary);
+void orbis_geometry_shader_bind(
+    const OrbisShader& shader,
+    OrbisRenderContext& context);
+void orbis_geometry_shader_release_backend(OrbisShader& shader);
+RenderShaderStage orbis_geometry_shader_stage();
+void orbis_vertex_shader_destruct(OrbisShader& shader);
+void orbis_vertex_shader_delete(OrbisShader& shader);
+bool orbis_vertex_shader_initialize(
+    OrbisShader& shader,
+    const OrbisShaderBinary& binary);
+void orbis_vertex_shader_bind(
+    const OrbisShader& shader,
+    OrbisRenderContext& context);
+void orbis_vertex_shader_release_backend(OrbisShader& shader);
+RenderShaderStage orbis_vertex_shader_stage();
 
 }  // namespace rb4

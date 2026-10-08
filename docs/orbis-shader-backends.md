@@ -33,3 +33,29 @@ Binding at `0x8E4600` refreshes the pixel input-resource table when the header
 changes, binds the shader to the active graphics context, and enters pixel
 shader mode. Release at `0x8E4670` defers the header and code allocations and
 clears the active header pointer.
+
+## Geometry shader
+
+Initialization at `0x8E4140` parses paired geometry/export code streams. It
+allocates one copied `GShader` header and two 256-byte-aligned code regions,
+then patches both GPU addresses into the copied header. Object offsets 40 and
+48 hold the active and owned header, while offsets 56 and 64 hold the two code
+allocations. Binding at `0x8E4330` installs the active geometry shader on the
+graphics context. Release at `0x8E4350` defers all three allocations and
+clears the active header.
+
+## Vertex shader
+
+Initialization at `0x8E4790` creates primary and alternate `VShader` header
+copies plus one aligned code allocation. It patches the code address into both
+headers, derives the shader's input-semantic table, and fills absent semantic
+slots with the default value 1. Gnmx then generates a fetch shader for each
+header variant. The two active headers occupy offsets 40 and 48; their owned
+copies are at 56 and 64, code is at 72, fetch metadata is at 80, and the two
+fetch-shader allocations are at 88 and 96.
+
+Binding at `0x8E4D80` selects the normal or alternate vertex header from the
+render-context flag at offset 18784. It refreshes the matching input-resource
+table when the header changes and binds the appropriate header, modifier, and
+fetch shader. Release at `0x8E4ED0` defers both fetch shaders, both copied
+headers, and code, then clears the active header pair.
