@@ -28,7 +28,14 @@ descending sigmoid curves. Primary-shader finalization is source-owned as
 well: it performs the common prepare step, reads shader mode
 from virtual slot `0x28`, gates modes zero and one with render-system startup
 options, and initializes the backend only when that mode is enabled. The
-prepare and backend-initialize leaf operations remain focused boundaries.
+common prepare path at `0x638270` is source-owned. It lazily allocates the
+shader's 32-byte name owner, six 40-byte parameter registries, 72-byte compile
+state, and 864-byte backend state. The first parameter registry is enabled,
+the others begin disabled, and the compile state records resource kind eight,
+the virtual shader variant, and the virtual source identifier. Preparation
+then registers the three-bit `HX_NUM_RT_SLICES` field and passes all four
+support objects to virtual slot `0x20`. Parameter-record insertion and the
+backend-initialize operation remain focused boundaries.
 
 Shader reload at `0x641F30` walks both intrusive lists directly. Primary
 resources place their manager link at offset `0x110`; each owns six 32-byte
@@ -41,8 +48,8 @@ offset.
 
 Shutdown at `0x641740` is source-owned. It releases eight sized-array owners in
 the handle region and three in the runtime region, destroys every name record
-before freeing its array owner, tears down the specialized state containing
-six 40-byte arrays in reverse order, and invokes
+before freeing its array owner, tears down the parameter-registry set
+containing six 40-byte arrays in reverse order, and invokes
 the dynamic release slot for the function-table texture and all 35 resource
 slots. Every owning slot is cleared immediately after release. Only the
 record-specific name destructor remains a focused adapter boundary because it

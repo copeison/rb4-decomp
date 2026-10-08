@@ -345,6 +345,8 @@
   function-table texture.
 - [x] Reconstruct primary-shader finalization, virtual mode selection, and
   startup-option gating.
+- [x] Reconstruct lazy primary-shader support allocation, parameter-registry
+  defaults, and `HX_NUM_RT_SLICES` binding setup.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
