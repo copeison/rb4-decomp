@@ -2,13 +2,19 @@
 
 #include <cstdint>
 
+#include "render/core/render_texture_array_cube.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {
 
-struct OrbisTextureArrayCube;
 struct OrbisRenderContext;
-struct RenderTextureArrayCubeDescriptor;
+
+struct OrbisTextureArrayCube : RenderTextureArrayCube {
+    void* gpu_texture;
+    void* allocation;
+};
+
+static_assert(sizeof(OrbisTextureArrayCube) == 360);
 
 OrbisTextureArrayCube* orbis_create_texture_array_cube(
     const RenderTextureArrayCubeDescriptor& descriptor);

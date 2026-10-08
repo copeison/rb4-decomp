@@ -11,6 +11,13 @@ six-face, 480-byte cube descriptor and stores the cube count. The wrapper at
 `0x69AA60` assigns descriptor type 7 and dispatches through the matching
 factory slot.
 
+The common cube-array object is exactly 344 bytes. It contains the 168-byte
+texture base, a normalized 144-byte descriptor snapshot, and a 32-byte vector
+of 480-byte cube states. Each cube is represented as six typed 80-byte
+mip-chain faces. Construction validates the normalized cube records, publishes
+the first face's shared mip properties, and records the cube count. The Orbis
+subclass adds only its texture-view and allocation pointers.
+
 Backend initialization at `0x8E6730` creates a 32-byte Gnm texture descriptor
 with texture type 11. Its array-slice count is six times the number of
 480-byte cube records, while width, height, format, mip count, tile mode, and
@@ -30,3 +37,7 @@ common cube-array destructor. The deleting destructor follows at `0x8E66D0`.
 The six virtual methods at `0x8E6AB0` through `0x8E6B6F` forward the flattened
 cube-array texture view and common sampler state to the shared stage-binding
 layer.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-array-cube.asm` and
+`analysis/exports/render-texture-array-cube.c`.

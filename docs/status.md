@@ -105,6 +105,7 @@
 - [x] Recover the Orbis cube texture-array factory and platform constructor.
 - [x] Reconstruct Orbis cube texture-array storage, uploads, and destruction.
 - [x] Reconstruct Orbis cube texture-array shader-stage binding.
+- [x] Recover the common cube texture-array and exact Orbis subclass layouts.
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Reconstruct Orbis compute-buffer storage, updates, binding, and destruction.
 - [x] Reconstruct the common render compute-buffer factory and 80-byte base layout.
