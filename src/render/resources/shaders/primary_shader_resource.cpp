@@ -7,7 +7,6 @@
 #include "core/types/symbol.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
-#include "render/resources/names/render_resource_name.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
@@ -35,21 +34,7 @@ struct RenderManagedObjectArray {
     void* allocator;
 };
 
-struct RenderShaderNameRecord {
-    std::uint8_t reserved_0[16];
-    RenderResourceName resource_name;
-};
-
-struct RenderShaderNameRecordArray {
-    RenderShaderNameRecord* begin;
-    RenderShaderNameRecord* end;
-    RenderShaderNameRecord* capacity;
-    void* allocator;
-};
-
 static_assert(sizeof(RenderManagedObjectArray) == 32);
-static_assert(sizeof(RenderShaderNameRecord) == 32);
-static_assert(sizeof(RenderShaderNameRecordArray) == 32);
 
 template <typename Element>
 void release_array_storage(
@@ -76,13 +61,6 @@ void clear_compiled_objects(RenderManagedObjectArray& objects) {
     objects.end = objects.begin;
 }
 
-void destruct_name_records(RenderShaderNameRecordArray& names) {
-    for (auto* name = names.begin; name != names.end; ++name) {
-        render_resource_name_destruct(name->resource_name);
-    }
-    release_array_storage(names.begin, names.end, names.capacity);
-}
-
 void destruct_parameter_registry(RenderShaderParameterRegistry& registry) {
     for (auto* parameter = registry.begin;
          parameter != registry.end;
@@ -105,7 +83,7 @@ struct RenderPrimaryShaderResource {
         void* (*backend_name)(RenderPrimaryShaderResource* shader);
         void (*initialize_support_objects)(
             RenderPrimaryShaderResource* shader,
-            RenderShaderNameRecordArray* names,
+            RenderShaderConstantRegistry* constants,
             RenderShaderParameterRegistrySet* parameters,
             RenderShaderConstantBlock* constant_block,
             RenderShaderBackendState* backend_state);
@@ -119,7 +97,7 @@ struct RenderPrimaryShaderResource {
     std::uint8_t reserved_13[3];
     RenderManagedObjectArray compiled_objects[6];
     void* backend_name;
-    RenderShaderNameRecordArray* names;
+    RenderShaderConstantRegistry* constants;
     RenderShaderParameterRegistrySet* parameters;
     RenderShaderConstantBlock* constant_block;
     RenderShaderBackendState* backend_state;
@@ -133,7 +111,7 @@ static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, variant) == 48);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled) == 12);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled_objects) == 16);
 static_assert(offsetof(RenderPrimaryShaderResource, backend_name) == 208);
-static_assert(offsetof(RenderPrimaryShaderResource, names) == 216);
+static_assert(offsetof(RenderPrimaryShaderResource, constants) == 216);
 static_assert(offsetof(RenderPrimaryShaderResource, parameters) == 224);
 static_assert(offsetof(RenderPrimaryShaderResource, constant_block) == 232);
 static_assert(offsetof(RenderPrimaryShaderResource, backend_state) == 240);
@@ -207,7 +185,7 @@ void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
         objects = {};
     }
     shader.backend_name = nullptr;
-    shader.names = nullptr;
+    shader.constants = nullptr;
     shader.parameters = nullptr;
     shader.constant_block = nullptr;
     shader.backend_state = nullptr;
@@ -220,11 +198,7 @@ void render_primary_shader_construct(RenderPrimaryShaderResource& shader) {
 void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
     set_base_dispatch(shader);
 
-    if (shader.names != nullptr) {
-        destruct_name_records(*shader.names);
-        render_release(shader.names);
-        shader.names = nullptr;
-    }
+    render_shader_constant_registry_release(shader.constants);
     if (shader.parameters != nullptr) {
         for (std::size_t index = 6; index != 0; --index) {
             destruct_parameter_registry(
@@ -262,10 +236,10 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
 
     shader.variant = shader.dispatch->variant(&shader);
 
-    auto* names = static_cast<RenderShaderNameRecordArray*>(
-        render_allocate(sizeof(RenderShaderNameRecordArray)));
-    *names = {};
-    shader.names = names;
+    auto* constants = static_cast<RenderShaderConstantRegistry*>(
+        render_allocate(sizeof(RenderShaderConstantRegistry)));
+    render_shader_constant_registry_construct(*constants);
+    shader.constants = constants;
 
     auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
         render_allocate(sizeof(RenderShaderParameterRegistrySet)));
@@ -298,7 +272,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
 
     shader.dispatch->initialize_support_objects(
         &shader,
-        names,
+        constants,
         parameters,
         constant_block,
         backend_state);

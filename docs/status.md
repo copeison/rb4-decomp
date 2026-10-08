@@ -78,6 +78,8 @@
   owner registration.
 - [x] Reconstruct all four CMAA compute-shader dispatches, exact constants,
   sampled inputs, and unordered-output bindings.
+- [x] Reconstruct the SSAO compute-shader dispatch, texture/output bindings,
+  constant layout, and tile-size shader definition.
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
 - [x] Replace the shared light-accumulation creation adapter with direct
@@ -355,6 +357,8 @@
   defaults, and `HX_NUM_RT_SLICES` binding setup.
 - [x] Correct the primary-shader support objects to the typed constant block
   and 864-byte backend binding state, including owned-array teardown.
+- [x] Correct the primary-shader's 32-byte support array to the shader constant
+  registry and route construction and teardown through its typed lifecycle.
 - [x] Reconstruct FogDeferred's color-space permutation, falloff constant, and
   sky, linear-depth, and function-table texture bindings.
 - [x] Separate primary-shader resources into their own domain and reconstruct
