@@ -13,6 +13,7 @@ struct RenderFactory;
 struct RenderFrameOwner;
 struct RenderSettings;
 struct RenderSystem;
+struct RenderTargetState;
 
 struct RenderFrameOwnerArray {
     RenderFrameOwner** begin;
@@ -22,10 +23,10 @@ struct RenderFrameOwnerArray {
     void* allocator_state;
 };
 
-struct RenderObjectArray {
-    void** begin;
-    void** end;
-    void** capacity;
+struct RenderTargetStateArray {
+    RenderTargetState** begin;
+    RenderTargetState** end;
+    RenderTargetState** capacity;
     void* allocator;
 };
 
@@ -53,7 +54,7 @@ struct RenderSystemCoreState {
         void* frame_owner_storage;
     };
     RenderFrameOwner* active_frame_owner;
-    RenderObjectArray active_render_objects;
+    RenderTargetStateArray active_target_states;
     std::uint64_t frame_epoch;
     std::uint64_t auxiliary_frame_epoch;
     bool frame_in_progress;
@@ -74,7 +75,7 @@ struct RenderSystemCoreState {
 };
 
 static_assert(sizeof(RenderFrameOwnerArray) == 40);
-static_assert(sizeof(RenderObjectArray) == 32);
+static_assert(sizeof(RenderTargetStateArray) == 32);
 static_assert(offsetof(RenderSystemCoreState, lock_depth) == 8);
 static_assert(offsetof(RenderSystemCoreState, frame_mutex) == 16);
 static_assert(offsetof(RenderSystemCoreState, lock_owner) == 24);
@@ -87,7 +88,7 @@ static_assert(offsetof(RenderSystemCoreState, frame_activation_flags) == 68);
 static_assert(offsetof(RenderSystemCoreState, frame_owners) == 72);
 static_assert(offsetof(RenderSystemCoreState, frame_owner) == 112);
 static_assert(offsetof(RenderSystemCoreState, active_frame_owner) == 120);
-static_assert(offsetof(RenderSystemCoreState, active_render_objects) == 128);
+static_assert(offsetof(RenderSystemCoreState, active_target_states) == 128);
 static_assert(offsetof(RenderSystemCoreState, frame_epoch) == 160);
 static_assert(offsetof(RenderSystemCoreState, auxiliary_frame_epoch) == 168);
 static_assert(offsetof(RenderSystemCoreState, frame_in_progress) == 176);

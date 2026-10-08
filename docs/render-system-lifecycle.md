@@ -31,13 +31,13 @@ owner and active back-buffer owner as separate pointers at offsets `0x38` and
 `src/render/core/system/render_system_state.h` centralizes the verified
 312-byte prefix shared by frame activation and lifetime code. The prefix now
 includes the recursive mutex and lock bookkeeping at `0x08`-`0x1F`, the copied
-16-byte startup options at `0x28`, active frame owner and render-object array at
+16-byte startup options at `0x28`, active frame owner and target-state array at
 `0x78`/`0x80`, primary and auxiliary frame epochs at `0xA0`/`0xA8`, frame
 timing state at `0x100`-`0x127`, settings at `0x128`, and the render factory at
 `0x130`. Shared lock helpers live in `src/render/core/synchronization` and
 operate directly on this prefix.
 
-Ending a frame clears the active render-object array and owner directly. The
+Ending a frame clears the active target-state array and owner directly. The
 array is a 32-byte begin/end/capacity/allocator record, distinct from the
 40-byte frame-owner array whose allocator carries two words of state.
 
