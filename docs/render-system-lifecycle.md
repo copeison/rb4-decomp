@@ -9,7 +9,8 @@ Construction proceeds in this order:
 
 1. Initialize the core frame state and its recursive mutex.
 2. Construct 13 fixed, 128-byte platform-configuration slots.
-3. Construct the default resources and the remaining backend state.
+3. Construct the default resources, resource manager, lighting state, owned
+   backend slots, GPU-stat block, and built-in buffer slots.
 4. Initialize the deferred-release queue, its recursive mutex, and the adjacent
    frame-phase state.
 5. Publish `g_render_system`.
@@ -127,3 +128,13 @@ meshes; its teardown dispatches dynamic release for both slots. Shutdown release
 the backend, lighting, and resource-manager state first, then destroys and
 frees the primitive and audio sets, clearing both owning pointers before the
 built-in constant buffers are released.
+
+The lifecycle constructor now owns the complete contiguous backend-state setup
+from the resource manager at `0x9F0` through the four null built-in buffer
+slots at `0xE80`. The resource-manager and lighting internals retain narrow
+constructor adapters, while their placement and ordering are direct. The
+128-byte GPU-stat block at `0xE00` initializes both pointer arrays, the total
+statistic pointer, query counters, four-frame history slot, backend pointer,
+recursive lock depth, and mutex. Its destructor dynamically releases every
+ordinary statistic, destroys and frees each root statistic, unwinds the mutex,
+and frees both pointer arrays by their recorded capacities.

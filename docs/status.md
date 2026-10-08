@@ -293,6 +293,8 @@
   submission control flow, timing, and epoch advancement.
 - [x] Recover the 128-byte common GPU-stat block, typed frame query ID, and
   direct begin, end, resolve, and history-ring transition points.
+- [x] Reconstruct GPU-stat block construction, statistic ownership teardown,
+  pointer-array release, and recursive mutex lifetime.
 - [x] Reconstruct primary-context submission-resource collection and direct
   render-context vtable dispatch.
 - [x] Recover the two-slot audio-analysis texture owner and reconstruct its

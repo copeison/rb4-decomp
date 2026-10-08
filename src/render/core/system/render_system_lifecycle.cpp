@@ -4,6 +4,7 @@
 #include <_pthread.h>
 
 #include "core/memory/engine_memory.h"
+#include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_system_lifecycle_adapters.h"
@@ -16,6 +17,20 @@ namespace {
 
 constexpr std::size_t kPlatformConfigCount = 13;
 constexpr std::size_t kCurrentPlatformConfig = 7;
+constexpr std::size_t kResourceManagerOffset = 2544;
+constexpr std::size_t kLightingResourcesOffset = 3256;
+constexpr std::size_t kBackendResourceOffset = 3560;
+constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
+constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
+constexpr std::size_t kBuiltinBufferStorageOffset = 3712;
+
+void* state_at(RenderSystem& system, std::size_t offset) {
+    return reinterpret_cast<std::uint8_t*>(&system) + offset;
+}
+
+void*& pointer_at(RenderSystem& system, std::size_t offset) {
+    return *reinterpret_cast<void**>(state_at(system, offset));
+}
 
 template <typename T>
 void release_array(T*& begin, T*& end, T*& capacity) {
@@ -96,6 +111,31 @@ void destroy_core_state(RenderSystem& system) {
     destroy_recursive_mutex(state.frame_mutex, state.lock_depth);
 }
 
+void construct_backend_state(RenderSystem& system) {
+    render_resource_manager_construct(
+        state_at(system, kResourceManagerOffset));
+    render_lighting_resources_construct(
+        state_at(system, kLightingResourcesOffset));
+    pointer_at(system, kBackendResourceOffset) = nullptr;
+    pointer_at(system, kPrimitiveMeshSetOffset) = nullptr;
+    pointer_at(system, kAudioAnalysisTextureSetOffset) = nullptr;
+    render_gpu_stat_block_construct(render_system_gpu_stat_block(system));
+
+    auto** builtin_buffers = reinterpret_cast<void**>(
+        state_at(system, kBuiltinBufferStorageOffset));
+    for (std::size_t index = 0; index < 4; ++index) {
+        builtin_buffers[index] = nullptr;
+    }
+}
+
+void destroy_backend_state(RenderSystem& system) {
+    render_gpu_stat_block_destruct(render_system_gpu_stat_block(system));
+    render_lighting_resources_destroy(
+        state_at(system, kLightingResourcesOffset));
+    render_resource_manager_destroy(
+        state_at(system, kResourceManagerOffset));
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x3DD410.
@@ -108,7 +148,7 @@ void render_system_construct(RenderSystem& system) {
     }
 
     render_system_construct_default_resources(system);
-    render_system_construct_backend_state(system);
+    construct_backend_state(system);
     render_system_construct_deferred_release_state(system);
     render_system_publish_instance(system);
 
@@ -136,7 +176,7 @@ void render_system_destruct(RenderSystem& system) {
     render_system_set_settings(system, nullptr);
 
     render_system_destroy_deferred_release_state(system);
-    render_system_destroy_backend_state(system);
+    destroy_backend_state(system);
     render_system_destroy_default_resources(system);
 
     for (std::size_t index = kPlatformConfigCount; index != 0; --index) {

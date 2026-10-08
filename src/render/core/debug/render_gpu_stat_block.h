@@ -38,6 +38,8 @@ static_assert(sizeof(RenderGpuStatBlock) == 128);
 
 RenderGpuStatBlock& render_system_gpu_stat_block(RenderSystem& system);
 
+void render_gpu_stat_block_construct(RenderGpuStatBlock& block);
+void render_gpu_stat_block_destruct(RenderGpuStatBlock& block);
 std::int64_t render_gpu_stat_block_begin(
     RenderGpuStatBlock& block,
     RenderContext& context,
