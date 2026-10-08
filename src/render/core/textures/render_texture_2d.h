@@ -24,6 +24,8 @@ static_assert(sizeof(RenderTexture2D) == 408);
 void render_texture_2d_construct(
     RenderTexture2D& texture,
     const RenderTexture2DDescriptor& descriptor);
+RenderTexture2D* render_create_texture_2d(
+    RenderTexture2DDescriptor& descriptor);
 void render_texture_2d_destruct(RenderTexture2D& texture);
 void render_texture_2d_delete(RenderTexture2D& texture);
 void render_texture_2d_set_linked_resource(

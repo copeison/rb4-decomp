@@ -22,6 +22,8 @@ static_assert(sizeof(RenderTextureArray2D) == 344);
 void render_texture_array_2d_construct(
     RenderTextureArray2D& texture,
     const RenderTextureArray2DDescriptor& descriptor);
+RenderTextureArray2D* render_create_texture_array_2d(
+    RenderTextureArray2DDescriptor& descriptor);
 void render_texture_array_2d_destruct(RenderTextureArray2D& texture);
 void render_texture_array_2d_delete(RenderTextureArray2D& texture);
 
