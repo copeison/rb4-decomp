@@ -299,6 +299,8 @@
   pending-video conversion loop.
 - [x] Reconstruct render phase callback dispatch and partial-framerate epoch
   phase publication.
+- [x] Recover the render runtime's resource-manager, lighting, backend,
+  primitive-mesh, audio-analysis, and GPU-stat initialization/teardown order.
 - [x] Reconstruct the render-system deferred-release queue, growth, drain, and
   shutdown behavior.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU

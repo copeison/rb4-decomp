@@ -5,14 +5,17 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/buffers/render_constant_buffer.h"
 #include "render/core/context/render_context.h"
+#include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
+#include "render/resources/audio/audio_analysis_textures.h"
 #include "render/resources/system/default_render_resources.h"
 
 namespace rb4 {
@@ -22,6 +25,12 @@ namespace {
 constexpr std::size_t kBuiltinBufferDescriptorOffset = 2712;
 constexpr std::size_t kBuiltinBufferStorageOffset = 3712;
 constexpr std::size_t kFloatsPerConstantBufferElement = 4;
+constexpr std::size_t kResourceManagerOffset = 2544;
+constexpr std::size_t kLightingResourcesOffset = 3256;
+constexpr std::size_t kBackendResourceOffset = 3560;
+constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
+constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
+constexpr std::size_t kPrimitiveMeshSetSize = 40;
 
 struct RenderBuiltinBufferDescriptors {
     const RenderConstantBufferDescriptor* zero_pair;
@@ -63,6 +72,14 @@ RenderBuiltinBuffers& builtin_buffers(RenderSystem& system) {
         bytes + kBuiltinBufferStorageOffset);
 }
 
+void* runtime_state_at(RenderSystem& system, std::size_t offset) {
+    return reinterpret_cast<std::uint8_t*>(&system) + offset;
+}
+
+void*& runtime_pointer_at(RenderSystem& system, std::size_t offset) {
+    return *reinterpret_cast<void**>(runtime_state_at(system, offset));
+}
+
 float* constant_buffer_element(
     RenderConstantBuffer& buffer,
     std::size_t index) {
@@ -82,6 +99,53 @@ void finish_builtin_buffer_upload(RenderConstantBuffer& buffer) {
     }
 }
 
+void initialize_runtime_resources(RenderSystem& system) {
+    render_lighting_resources_initialize(
+        runtime_state_at(system, kLightingResourcesOffset));
+    render_backend_resource_create(
+        runtime_pointer_at(system, kBackendResourceOffset));
+
+    auto*& primitive_meshes =
+        runtime_pointer_at(system, kPrimitiveMeshSetOffset);
+    primitive_meshes = render_allocate(kPrimitiveMeshSetSize);
+    render_primitive_mesh_set_construct(primitive_meshes);
+
+    auto*& audio_textures =
+        runtime_pointer_at(system, kAudioAnalysisTextureSetOffset);
+    audio_textures = render_allocate(sizeof(AudioAnalysisTextureSet));
+    audio_analysis_texture_set_construct(
+        *static_cast<AudioAnalysisTextureSet*>(audio_textures));
+
+    render_gpu_stat_block_initialize(
+        render_system_gpu_stat_block(system));
+}
+
+void shutdown_runtime_resources(RenderSystem& system) {
+    render_backend_resource_release(
+        runtime_pointer_at(system, kBackendResourceOffset));
+    render_lighting_resources_shutdown(
+        runtime_state_at(system, kLightingResourcesOffset));
+    render_resource_manager_shutdown(
+        runtime_state_at(system, kResourceManagerOffset));
+
+    auto*& primitive_meshes =
+        runtime_pointer_at(system, kPrimitiveMeshSetOffset);
+    if (primitive_meshes != nullptr) {
+        render_primitive_mesh_set_destruct(primitive_meshes);
+        render_release(primitive_meshes);
+        primitive_meshes = nullptr;
+    }
+
+    auto*& audio_textures =
+        runtime_pointer_at(system, kAudioAnalysisTextureSetOffset);
+    if (audio_textures != nullptr) {
+        audio_analysis_texture_set_destruct(
+            *static_cast<AudioAnalysisTextureSet*>(audio_textures));
+        render_release(audio_textures);
+        audio_textures = nullptr;
+    }
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x3DDAE0.
@@ -91,11 +155,13 @@ void render_system_initialize(
     auto& runtime = render_system_core_state(system);
     runtime.initialized = true;
     runtime.init_options = options;
-    render_system_resource_manager_initialize(system);
+    auto* resource_manager =
+        runtime_state_at(system, kResourceManagerOffset);
+    render_resource_manager_initialize(resource_manager);
     render_system_platform_initialize(system, options);
-    render_system_resource_manager_finalize(system);
+    render_resource_manager_finalize(resource_manager);
 
-    render_system_backend_resources_initialize(system);
+    initialize_runtime_resources(system);
     render_system_initialize_builtin_buffers(system);
 
     render_context_initialize(render_system_primary_render_context(system));
@@ -160,7 +226,7 @@ void render_system_shutdown(RenderSystem& system) {
     render_system_flush_deferred_releases(system);
     render_release_default_resources(
         render_system_default_resources(system));
-    render_system_backend_resources_shutdown(system);
+    shutdown_runtime_resources(system);
     render_system_release_builtin_buffers(system);
 
     render_context_shutdown(render_system_primary_render_context(system));

@@ -102,3 +102,13 @@ range beginning at system offset `0xA98`; their owned buffer pointers occupy
 upload, writes the two-zero, four-zero-vector, negative/zero sentinel, and
 `{0.0, 1.0}` defaults, then invokes the backend upload dispatch at vtable slot
 `0x10`. Shutdown destroys, releases, and clears all four owned pointers.
+
+Runtime resource startup and shutdown now expose the original ownership order.
+The resource manager begins at `0x9F0`, the 304-byte lighting-resource block at
+`0xCB8`, an owned backend resource pointer at `0xDE8`, the 40-byte primitive
+mesh set pointer at `0xDF0`, the 72-byte audio-analysis set pointer at `0xDF8`,
+and the inline GPU-stat block at `0xE00`. Startup allocates the primitive and
+audio sets explicitly before initializing GPU statistics. Shutdown releases
+the backend, lighting, and resource-manager state first, then destroys and
+frees the primitive and audio sets, clearing both owning pointers before the
+built-in constant buffers are released.
