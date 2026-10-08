@@ -36,3 +36,8 @@ The 28-byte position-plus-float4-color specialization is reconstructed in
 The 36-byte `ColorTex` specialization adds a float2 texture coordinate. It is
 reconstructed in `src/render/orbis_color_texture_mesh.cpp` and documented in
 `docs/orbis-color-texture-mesh.md`.
+
+The 80-byte unskinned specialization carries four float3 basis vectors, a
+float4 color, and two float2 texture coordinates. It is reconstructed in
+`src/render/orbis_unskinned_mesh.cpp` and documented in
+`docs/orbis-unskinned-mesh.md`.
