@@ -21085,7 +21085,7 @@ address,end,size,name,library,thunk
 0x6BDB30,0x6BDC1A,234,sub_6BDB30,False,False
 0x6BDC20,0x6BDC94,116,sub_6BDC20,False,False
 0x6BDCA0,0x6BDE57,439,render_initialize_default_resources,False,False
-0x6BDE60,0x6BEAE1,3201,sub_6BDE60,False,False
+0x6BDE60,0x6BEAE1,3201,render_create_default_textures,False,False
 0x6BEAF0,0x6BEBB2,194,sub_6BEAF0,False,False
 0x6BEBC0,0x6BEC40,128,render_create_default_camera,False,False
 0x6BEC50,0x6BEF33,739,render_create_default_materials,False,False

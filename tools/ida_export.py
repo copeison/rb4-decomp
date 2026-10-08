@@ -234,6 +234,7 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-buffered-output-get-handle": 0x276520,
     "fmod-load-modules-and-set-thread-affinity": 0x261F60,
     "render-initialize-default-resources": 0x6BDCA0,
+    "render-create-default-textures": 0x6BDE60,
     "render-create-default-materials": 0x6BEC50,
     "render-create-default-camera": 0x6BEBC0,
     "render-load-default-lighting": 0x6BEF40,

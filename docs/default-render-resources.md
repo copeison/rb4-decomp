@@ -4,7 +4,7 @@
 fallback scene objects. Its initialization order is:
 
 1. Allocate and retain a 784-byte `RndSceneResource`.
-2. Build seven families of render buffers for seven buffer classes.
+2. Build seven named fallback-texture families across seven texture shapes.
 3. Create two buffers named `Default Compute Buffer`, distinguished by indices
    `0` and `1` in their descriptors.
 4. Create `default_cam` and attach an `RndCameraCom`.
@@ -19,6 +19,6 @@ an object in collection zero, names it `default_cam`, attaches an
 `src/render/default_camera.cpp` expresses this as a reusable helper because the
 same sequence is inlined in the main initializer.
 
-The seven buffer families built at `0x6BDE60` remain under analysis. Their
-descriptor constants and ownership slots are retained in the IDA export; the
-source does not assign speculative graphics API names to them.
+The texture-family loop at `0x6BDE60` is reconstructed separately in
+`src/render/default_textures.cpp`. Low-level graphics allocation remains behind
+dimension-specific runtime adapters.
