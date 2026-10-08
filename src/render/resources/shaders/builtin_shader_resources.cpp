@@ -325,46 +325,6 @@ void render_ssao_compute_shader_construct(void* shader) {
     fields[7] = -1;
 }
 
-// Reconstructed from eboot.elf at 0x450490.
-void render_cmaa_edge_detect_compute_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_cmaa_edge_detect_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 4; ++index) {
-        fields[index] = -1;
-    }
-    fields[4] = 0;
-}
-
-// Reconstructed from eboot.elf at 0x4508B0.
-void render_cmaa_edge_prune_compute_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_cmaa_edge_prune_compute_shader_install_dispatch);
-    fields[0] = -1;
-    fields[1] = -1;
-    fields[2] = -1;
-    fields[3] = 0;
-}
-
-// Reconstructed from eboot.elf at 0x451030.
-void render_cmaa_shape_fit_compute_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_cmaa_shape_fit_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 4; ++index) {
-        fields[index] = -1;
-    }
-    fields[4] = 0;
-}
-
-// Reconstructed from eboot.elf at 0x450BF0.
-void render_cmaa_final_process_compute_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_cmaa_final_process_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 4; ++index) {
-        fields[index] = -1;
-    }
-    fields[4] = 0;
-}
-
 // Reconstructed from eboot.elf at 0x62E660.
 void render_signed_distance_compute_shader_construct(void* shader) {
     auto* fields = construct_compute_shader(

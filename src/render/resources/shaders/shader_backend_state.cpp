@@ -21,6 +21,40 @@ void release_binding_array(RenderShaderBackendBindingArray& array) {
     array = {};
 }
 
+RenderShaderBackendBinding& append_binding(
+    RenderShaderBackendBindingArray& array) {
+    const auto size = array.begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(array.end - array.begin);
+    const auto capacity = array.begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(array.capacity - array.begin);
+    if (size == capacity) {
+        const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
+        auto* replacement = static_cast<RenderShaderBackendBinding*>(
+            engine_allocate_sized(
+                new_capacity * sizeof(RenderShaderBackendBinding)));
+        if (size != 0) {
+            std::memmove(
+                replacement,
+                array.begin,
+                size * sizeof(RenderShaderBackendBinding));
+        }
+        if (array.begin != nullptr) {
+            engine_deallocate_sized(
+                array.begin,
+                capacity * sizeof(RenderShaderBackendBinding));
+        }
+        array.begin = replacement;
+        array.end = replacement + size;
+        array.capacity = replacement + new_capacity;
+    }
+
+    auto& binding = *array.end++;
+    binding = {};
+    return binding;
+}
+
 }  // namespace
 
 void render_shader_backend_state_construct(RenderShaderBackendState& state) {
@@ -65,40 +99,45 @@ std::uint64_t render_shader_backend_add_texture_binding(
         ? 6U
         : 0U;
     auto& array = state.binding_arrays[stage + array_offset];
-    const auto size = array.begin == nullptr
-        ? std::size_t{0}
-        : static_cast<std::size_t>(array.end - array.begin);
-    const auto capacity = array.begin == nullptr
-        ? std::size_t{0}
-        : static_cast<std::size_t>(array.capacity - array.begin);
-    if (size == capacity) {
-        const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
-        auto* replacement = static_cast<RenderShaderBackendBinding*>(
-            engine_allocate_sized(
-                new_capacity * sizeof(RenderShaderBackendBinding)));
-        if (size != 0) {
-            std::memmove(
-                replacement,
-                array.begin,
-                size * sizeof(RenderShaderBackendBinding));
-        }
-        if (array.begin != nullptr) {
-            engine_deallocate_sized(
-                array.begin,
-                capacity * sizeof(RenderShaderBackendBinding));
-        }
-        array.begin = replacement;
-        array.end = replacement + size;
-        array.capacity = replacement + new_capacity;
-    }
-
-    auto& binding = *array.end++;
-    binding = {};
+    auto& binding = append_binding(array);
     binding.resource_dimension = resource_dimension;
     binding.stage_mask = stage_mask;
     binding.binding_index = -1;
     binding.resource_name = resource_symbol.value();
     binding.sampler_name = sampler_symbol.value();
+    binding.default_sampler_name = empty_symbol.value();
+    binding.resource_index = resource_index;
+    binding.stage_resource_count = state.stage_resource_counts[stage]++;
+    return resource_index;
+}
+
+// Reconstructed from eboot.elf at 0x643670.
+std::uint64_t render_shader_backend_add_output_binding(
+    RenderShaderBackendState& state,
+    const char* resource_name,
+    std::uint32_t resource_dimension,
+    std::uint32_t stage,
+    std::uint32_t stage_mask) {
+    constexpr std::size_t kStageCount = 6;
+    constexpr std::size_t kOutputArrayOffset = 18;
+    if (stage >= kStageCount) {
+        return 0;
+    }
+
+    auto& array = state.binding_arrays[kOutputArrayOffset + stage];
+    const auto size = array.begin == nullptr
+        ? std::uint64_t{0}
+        : static_cast<std::uint64_t>(array.end - array.begin);
+    const auto resource_index = stage == 4 ? 7 - size : size;
+
+    const Symbol resource_symbol(resource_name);
+    static const Symbol empty_symbol("");
+    auto& binding = append_binding(array);
+    binding.resource_dimension = resource_dimension;
+    binding.stage_mask = stage_mask;
+    binding.binding_index = -1;
+    binding.resource_name = resource_symbol.value();
+    binding.sampler_name = empty_symbol.value();
     binding.default_sampler_name = empty_symbol.value();
     binding.resource_index = resource_index;
     binding.stage_resource_count = state.stage_resource_counts[stage]++;

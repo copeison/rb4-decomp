@@ -29,10 +29,6 @@ void render_vscat_density_compute_shader_install_dispatch(void* shader);
 void render_vscat_accumulation_compute_shader_install_dispatch(void* shader);
 void render_vscat_deferred_compute_shader_install_dispatch(void* shader);
 void render_ssao_compute_shader_install_dispatch(void* shader);
-void render_cmaa_edge_detect_compute_shader_install_dispatch(void* shader);
-void render_cmaa_edge_prune_compute_shader_install_dispatch(void* shader);
-void render_cmaa_shape_fit_compute_shader_install_dispatch(void* shader);
-void render_cmaa_final_process_compute_shader_install_dispatch(void* shader);
 void render_signed_distance_compute_shader_install_dispatch(void* shader);
 void render_signed_distance_classify_compute_shader_install_dispatch(
     void* shader);

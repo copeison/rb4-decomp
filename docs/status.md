@@ -76,6 +76,8 @@
   bit test.
 - [x] Inline CMAA color, edge, and compressed-edge texture descriptors and
   owner registration.
+- [x] Reconstruct all four CMAA compute-shader dispatches, exact constants,
+  sampled inputs, and unordered-output bindings.
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
 - [x] Replace the shared light-accumulation creation adapter with direct
