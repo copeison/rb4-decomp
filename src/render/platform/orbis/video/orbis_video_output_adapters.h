@@ -19,13 +19,9 @@ struct OrbisSubmitEvent {
 
 using OrbisSubmitThreadEntry = void (*)(OrbisRenderSystem& system);
 
-void orbis_create_event_queue(
-    OrbisRenderSystem& system,
-    const char* name);
 void orbis_register_gnm_event(
     OrbisRenderSystem& system,
     std::uint32_t event_id);
-void orbis_register_video_flip_event(OrbisRenderSystem& system);
 void orbis_register_render_factories(OrbisRenderSystem& system);
 
 void orbis_initialize_submit_condition(OrbisRenderSystem& system);
@@ -44,7 +40,6 @@ void orbis_release_frame_runtime(OrbisRenderSystem& system);
 void orbis_unregister_gnm_event(
     OrbisRenderSystem& system,
     std::uint32_t event_id);
-void orbis_delete_event_queue(OrbisRenderSystem& system);
 OrbisVertexBuffer& orbis_allocate_default_vertex_buffer(
     OrbisRenderSystem& system,
     const char* name);

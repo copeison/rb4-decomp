@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <kernel/equeue.h>
 #include <video_out.h>
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
@@ -45,6 +46,25 @@ void orbis_video_output_set_window_margins(
         orbis_video_output_handle(system),
         static_cast<int>(top),
         static_cast<int>(bottom));
+}
+
+void orbis_create_event_queue(
+    OrbisRenderSystem& system,
+    const char* name) {
+    SceKernelEqueue queue = nullptr;
+    sceKernelCreateEqueue(&queue, name);
+    orbis_set_event_queue(system, queue);
+}
+
+void orbis_register_video_flip_event(OrbisRenderSystem& system) {
+    sceVideoOutAddFlipEvent(
+        orbis_event_queue(system),
+        orbis_video_output_handle(system),
+        nullptr);
+}
+
+void orbis_delete_event_queue(OrbisRenderSystem& system) {
+    sceKernelDeleteEqueue(orbis_event_queue(system));
 }
 
 void orbis_video_output_close(OrbisRenderSystem& system) {

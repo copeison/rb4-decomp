@@ -19,7 +19,7 @@ struct OrbisRenderSystemRuntimePrefix {
     OrbisBackBuffer* back_buffer;
     std::uint8_t reserved_120[3684];
     std::int32_t video_output_handle;
-    std::uint64_t event_queue;
+    SceKernelEqueue event_queue;
     std::uint8_t reserved_3816[24];
     std::uint64_t submit_token;
     bool submit_thread_running;
@@ -56,11 +56,24 @@ std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system) {
     return runtime->video_output_handle;
 }
 
+SceKernelEqueue orbis_event_queue(const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->event_queue;
+}
+
 void orbis_set_video_output_handle(
     OrbisRenderSystem& system,
     std::int32_t handle) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->video_output_handle = handle;
+}
+
+void orbis_set_event_queue(
+    OrbisRenderSystem& system,
+    SceKernelEqueue queue) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->event_queue = queue;
 }
 
 void render_system_set_render_context(
