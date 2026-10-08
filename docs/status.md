@@ -95,6 +95,7 @@
 - [x] Reconstruct Orbis 1D texture-array shader-stage binding.
 - [x] Recover the Orbis 2D texture-array factory and platform constructor.
 - [x] Reconstruct Orbis 2D texture-array storage, views, and destruction.
+- [x] Reconstruct Orbis 2D texture-array shader-stage binding.
 - [x] Recover the Orbis cube texture-array factory and platform constructor.
 - [x] Reconstruct Orbis cube texture-array storage, uploads, and destruction.
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.

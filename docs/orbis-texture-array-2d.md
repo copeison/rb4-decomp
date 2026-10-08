@@ -33,3 +33,7 @@ deleting destructor follows at `0x8E5E50`.
 `analysis/exports/orbis-texture-array-2d-backend.asm` is the authoritative
 initializer evidence because Hex-Rays does not currently produce pseudocode
 for that function.
+
+The six virtual methods at `0x8E64C0` through `0x8E657F` forward the color or
+depth shader texture view and common sampler state to the shared stage-binding
+layer.

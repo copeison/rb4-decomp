@@ -22,5 +22,11 @@ void orbis_texture_array_2d_initialize_color_storage(
     OrbisTextureArray2D& texture);
 void texture_array_2d_destruct(OrbisTextureArray2D& texture);
 void render_delete_texture_array_2d(OrbisTextureArray2D& texture);
+const void* orbis_texture_array_2d_gpu_texture(
+    const OrbisTextureArray2D& texture);
+OrbisSamplerAddressMode orbis_texture_array_2d_address_mode(
+    const OrbisTextureArray2D& texture);
+std::uint32_t orbis_texture_array_2d_filter_mode(
+    const OrbisTextureArray2D& texture);
 
 }  // namespace rb4
