@@ -2,8 +2,10 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/gbuffer/gbuffer_target_adapters.h"
 
 namespace rb4 {
 
@@ -45,6 +47,18 @@ RenderTexture* reusable_target(
         : target_slot(*block, kind);
 }
 
+const char* target_name(GBufferTargetKind kind) {
+    switch (kind) {
+    case GBufferTargetKind::kColor:
+        return "GBuffer Color";
+    case GBufferTargetKind::kPixelNormals:
+        return "GBuffer Pixel Normals";
+    case GBufferTargetKind::kVertexNormals:
+        return "GBuffer Vertex Normals";
+    }
+    return "GBuffer";
+}
+
 void create_target(
     RenderTargetResources& resources,
     RenderTargetResourceBlock& block,
@@ -52,13 +66,35 @@ void create_target(
     GBufferTargetKind kind,
     RenderExtent extent,
     bool register_with_owner) {
-    target_slot(block, kind) =
-        render_target_resources_create_gbuffer_target(
-            resources,
-            kind,
-            extent,
-            reusable_target(reusable_block, kind),
-            register_with_owner);
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(31));
+    creation_state.values[9] = static_cast<std::uint32_t>(
+        render_texture_default_filter_mode(31));
+    creation_state.values[10] = 10;
+    const auto is_color = kind == GBufferTargetKind::kColor;
+    const RenderDataFormatDescriptor format_descriptor{
+        32,
+        4,
+        is_color ? 0U : 1U,
+        is_color ? 2U : 1U,
+        -1,
+    };
+    auto* target = render_target_resources_create_texture_2d(
+        resources,
+        target_name(kind),
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        extent,
+        -1,
+        0,
+        reusable_target(reusable_block, kind));
+    target_slot(block, kind) = target;
+    if (register_with_owner) {
+        resources.registered_resources_begin[
+            resources.registered_resource_count++] = target;
+    }
 }
 
 void release_target(

@@ -45,6 +45,8 @@
 - [x] Inline the ambient-occlusion texture descriptor and primary-block
   registration path.
 - [x] Reconstruct per-scene GBuffer targets.
+- [x] Inline GBuffer color and normal texture descriptors and owner
+  registration.
 - [x] Reconstruct the per-scene depth/stencil target and attachment reuse.
 - [x] Reconstruct the partial-frame light-accumulation target.
 - [x] Reconstruct CMAA render targets and reuse behavior.
