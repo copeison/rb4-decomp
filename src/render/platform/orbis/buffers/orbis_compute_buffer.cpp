@@ -72,6 +72,15 @@ void orbis_compute_buffer_update_gpu_data(OrbisComputeBuffer& buffer) {
         buffer.staging_size);
 }
 
+const OrbisGnmBufferDescriptor& orbis_compute_buffer_active_descriptor(
+    const OrbisComputeBuffer& buffer) {
+    return buffer.descriptors[buffer.active_bank];
+}
+
+void* orbis_compute_buffer_active_storage(OrbisComputeBuffer& buffer) {
+    return buffer.allocations[buffer.active_bank];
+}
+
 // Reconstructed from eboot.elf at 0x8E3580.
 void orbis_compute_buffer_bind_vertex(
     const OrbisComputeBuffer& buffer,

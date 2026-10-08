@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/platform/orbis/buffers/orbis_compute_buffer.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_commands_adapters.h"
 
 namespace rb4 {

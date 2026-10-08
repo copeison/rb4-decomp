@@ -31,6 +31,9 @@ void orbis_compute_buffer_delete(OrbisComputeBuffer& buffer);
 bool orbis_compute_buffer_initialize_backend(OrbisComputeBuffer& buffer);
 void orbis_compute_buffer_release_backend(OrbisComputeBuffer& buffer);
 void orbis_compute_buffer_update_gpu_data(OrbisComputeBuffer& buffer);
+const OrbisGnmBufferDescriptor& orbis_compute_buffer_active_descriptor(
+    const OrbisComputeBuffer& buffer);
+void* orbis_compute_buffer_active_storage(OrbisComputeBuffer& buffer);
 void orbis_compute_buffer_bind_vertex(
     const OrbisComputeBuffer& buffer,
     OrbisRenderContext& context,

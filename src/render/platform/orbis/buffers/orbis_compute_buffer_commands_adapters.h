@@ -5,13 +5,9 @@
 
 namespace rb4 {
 
-struct OrbisComputeBuffer;
 struct OrbisGnmBufferDescriptor;
 struct OrbisRenderContext;
 
-const OrbisGnmBufferDescriptor& orbis_compute_buffer_active_descriptor(
-    const OrbisComputeBuffer& buffer);
-void* orbis_compute_buffer_active_storage(OrbisComputeBuffer& buffer);
 void orbis_render_context_bind_compute_rw_buffer(
     OrbisRenderContext& context,
     std::uint32_t slot,
