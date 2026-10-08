@@ -73,6 +73,12 @@ void render_texture_mip_chain_array_append(
     bool has_source_data);
 void render_texture_mip_chain_array_validate(
     const RenderTextureMipChainArray& mip_chains);
+std::size_t render_texture_mip_chain_array_count(
+    const RenderTextureMipChainArray& mip_chains);
+std::size_t render_texture_mip_chain_array_source_size(
+    const RenderTextureMipChainArray& mip_chains);
+void render_texture_mip_chain_array_release_source_data(
+    RenderTextureMipChainArray& mip_chains);
 void render_texture_mip_chain_array_destruct(
     RenderTextureMipChainArray& mip_chains);
 

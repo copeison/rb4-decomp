@@ -496,6 +496,29 @@ void render_texture_mip_chain_release_source_data(
     }
 }
 
+std::size_t render_texture_mip_chain_array_count(
+    const RenderTextureMipChainArray& mip_chains) {
+    return mip_chain_count(mip_chains);
+}
+
+std::size_t render_texture_mip_chain_array_source_size(
+    const RenderTextureMipChainArray& mip_chains) {
+    if (mip_chains.begin == mip_chains.end) {
+        return 0;
+    }
+    return mip_chain_count(mip_chains) *
+        render_texture_mip_chain_source_size(*mip_chains.begin);
+}
+
+void render_texture_mip_chain_array_release_source_data(
+    RenderTextureMipChainArray& mip_chains) {
+    for (auto* mip_chain = mip_chains.begin;
+         mip_chain != mip_chains.end;
+         ++mip_chain) {
+        render_texture_mip_chain_release_source_data(*mip_chain);
+    }
+}
+
 void render_texture_mip_chain_array_destruct(
     RenderTextureMipChainArray& mip_chains) {
     destroy_elements(mip_chains.begin, mip_chains.end);
