@@ -2,6 +2,8 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/postprocessing/antialiasing/cmaa_target_adapters.h"
 
@@ -55,13 +57,43 @@ void create_target(
     CmaaTargetKind kind,
     RenderExtent extent,
     bool use_64_bit_color) {
-    target_slot(resources, kind) =
-        render_target_resources_create_cmaa_target(
-            resources,
-            kind,
-            extent,
-            use_64_bit_color,
-            reusable_target(reusable_resources, kind));
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = 1;
+    creation_state.values[9] =
+        kind == CmaaTargetKind::kColor ? 2U : 1U;
+    creation_state.values[10] = 10;
+
+    RenderDataFormatDescriptor format_descriptor{};
+    const char* name = "CMAA Edge Buffer";
+    if (kind == CmaaTargetKind::kColor) {
+        format_descriptor = {
+            use_64_bit_color ? 64U : 32U,
+            use_64_bit_color ? 4U : 2U,
+            2,
+            1,
+            -1,
+        };
+        name = "CMAA Color Buffer";
+    } else if (kind == CmaaTargetKind::kCompressedEdge) {
+        format_descriptor = {32, 4, 3, 1, -1};
+        name = "CMAA Compressed Edge Buffer";
+    } else {
+        format_descriptor = {8, 10, 0, 1, -1};
+    }
+
+    auto* target = render_target_resources_create_texture_2d(
+        resources,
+        name,
+        creation_state,
+        render_data_format_resolve(format_descriptor, 7),
+        extent,
+        -1,
+        0,
+        reusable_target(reusable_resources, kind));
+    target_slot(resources, kind) = target;
+    resources.registered_resources_begin[
+        resources.registered_resource_count++] = target;
 }
 
 void release_target(
@@ -91,13 +123,12 @@ void render_cmaa_targets_create(
     auto* reusable_color = reusable_target(
         reusable_resources, CmaaTargetKind::kColor);
     if (reusable_color != nullptr) {
-        resources.cmaa_color =
-            render_target_resources_create_cmaa_target(
-                resources,
-                CmaaTargetKind::kColor,
-                extent,
-                settings.use_64_bit_light_accum,
-                reusable_color);
+        create_target(
+            resources,
+            reusable_resources,
+            CmaaTargetKind::kColor,
+            extent,
+            settings.use_64_bit_light_accum);
     } else {
         resources.cmaa_color = nullptr;
     }

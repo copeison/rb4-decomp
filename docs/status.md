@@ -56,6 +56,8 @@
 - [x] Inline depth/stencil creation-state and 32/40-bit format descriptors.
 - [x] Reconstruct the partial-frame light-accumulation target.
 - [x] Reconstruct CMAA render targets and reuse behavior.
+- [x] Inline CMAA color, edge, and compressed-edge texture descriptors and
+  retain only the renderer-capability adapter.
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
 - [x] Replace the shared light-accumulation creation adapter with direct

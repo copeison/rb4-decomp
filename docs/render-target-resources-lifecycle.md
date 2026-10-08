@@ -154,3 +154,11 @@ The separate pair used by the scene-mask grid shares the same
 address and filter values of `1`; the primary carries target flag `4`, while
 the secondary carries zero. Both textures are owner-registered after direct
 common 2D creation.
+
+CMAA creates its optional color texture only when the previous owner supplies
+a reusable one. That color uses the same 32/64-bit format selection as light
+accumulation and creation-state filter value `2`. Its two edge textures use
+`{8, 10, 0, 1, -1}`, while the half-resolution compressed edge texture uses
+`{32, 4, 3, 1, -1}`; those three use filter value `1`. Every created texture
+is registered directly, leaving only the renderer capability query behind an
+adapter.
