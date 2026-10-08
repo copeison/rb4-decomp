@@ -30,6 +30,7 @@
 - [x] Reconstruct the render-system poll, begin, end, and skipped-frame control flow.
 - [x] Reconstruct pre-frame screenshot capture and its resolution table.
 - [x] Recover renderer draw-mode and buffer debug-view tables and setters.
+- [x] Recover and name the 24-command renderer debug console registry.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
