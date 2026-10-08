@@ -8,14 +8,25 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisTextureCubeSize = 832;
+void bind_texture_stage(
+    const OrbisTextureCube& texture,
+    OrbisRenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_texture(
+        context, stage, slot, texture.gpu_texture,
+        static_cast<OrbisSamplerAddressMode>(texture.address_mode),
+        texture.filter_mode, flags, border_color);
+}
 
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x8D8A10.
 OrbisTextureCube* orbis_create_texture_cube(
     const RenderTextureCubeDescriptor& descriptor) {
-    auto* storage = render_allocate(kOrbisTextureCubeSize);
+    auto* storage = render_allocate(sizeof(OrbisTextureCube));
     auto* texture = reinterpret_cast<OrbisTextureCube*>(storage);
     orbis_texture_cube_construct(*texture, descriptor);
     return texture;
@@ -25,44 +36,46 @@ OrbisTextureCube* orbis_create_texture_cube(
 void orbis_texture_cube_construct(
     OrbisTextureCube& texture,
     const RenderTextureCubeDescriptor& descriptor) {
-    texture_cube_construct(texture, descriptor);
-    orbis_texture_cube_clear_backend_state(texture);
+    render_texture_cube_construct(texture, descriptor);
+    orbis_texture_cube_install_vtable(texture);
+    texture.gpu_texture = nullptr;
+    texture.primary_allocation = nullptr;
+    texture.secondary_allocation = nullptr;
+    texture.render_target = nullptr;
+    texture.depth_target = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8E6BE0.
 void orbis_texture_cube_destruct(OrbisTextureCube& texture) {
-    if (auto* target =
-            orbis_texture_cube_mutable_render_target(texture)) {
+    orbis_texture_cube_install_vtable(texture);
+    if (auto* target = texture.render_target) {
         orbis_defer_texture_allocation(
             orbis_render_target_metadata_allocation(*target));
         orbis_defer_texture_allocation(
             orbis_render_target_surface_allocation(*target));
         render_release(target);
-        orbis_texture_cube_set_render_target(texture, nullptr);
+        texture.render_target = nullptr;
     }
 
-    orbis_defer_texture_allocation(
-        orbis_texture_cube_primary_allocation(texture));
-    orbis_defer_texture_allocation(
-        orbis_texture_cube_secondary_allocation(texture));
+    orbis_defer_texture_allocation(texture.primary_allocation);
+    orbis_defer_texture_allocation(texture.secondary_allocation);
 
-    if (auto* descriptor = orbis_texture_cube_gpu_texture(texture)) {
+    if (auto* descriptor = texture.gpu_texture) {
         render_release(descriptor);
     }
-    orbis_texture_cube_set_gpu_texture(texture, nullptr);
+    texture.gpu_texture = nullptr;
 
-    if (auto* target =
-            orbis_texture_cube_mutable_depth_target(texture)) {
+    if (auto* target = texture.depth_target) {
         render_release(target);
     }
-    orbis_texture_cube_set_depth_target(texture, nullptr);
-    texture_cube_destruct(texture);
+    texture.depth_target = nullptr;
+    render_texture_cube_destruct(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E6CC0.
 void orbis_texture_cube_delete(OrbisTextureCube& texture) {
     orbis_texture_cube_destruct(texture);
-    render_delete_texture_cube(texture);
+    render_delete_texture_cube_storage(texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E6CE0.
@@ -77,51 +90,48 @@ void orbis_texture_cube_initialize_backend(OrbisTextureCube& texture) {
 // Reconstructed from eboot.elf at 0x8E7270.
 const OrbisGpuRenderTarget* orbis_texture_cube_render_target(
     const OrbisTextureCube& texture) {
-    return orbis_texture_cube_mutable_render_target(texture);
+    return texture.render_target;
 }
 
 // Reconstructed from eboot.elf at 0x8E7280.
 const OrbisGpuDepthRenderTarget* orbis_texture_cube_depth_target(
     const OrbisTextureCube& texture) {
-    return orbis_texture_cube_mutable_depth_target(texture);
+    return texture.depth_target;
 }
 
 // Reconstructed from eboot.elf at 0x8E71A0.
 void orbis_texture_cube_bind_vertex(
     const OrbisTextureCube& texture, OrbisRenderContext& context,
-    std::uint32_t slot, std::uint32_t,
+    std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
-    orbis_bind_vertex_texture(
-        context, slot, orbis_texture_cube_gpu_texture(texture),
-        orbis_texture_cube_address_mode(texture),
-        orbis_texture_cube_filter_mode(texture), border_color);
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kVertex, slot, flags,
+        border_color);
 }
 
-#define RB4_DEFINE_CUBE_BINDING(method, shared_method)                     \
-    void method(                                                           \
-        const OrbisTextureCube& texture, OrbisRenderContext& context,       \
-        std::uint32_t slot, std::uint32_t flags,                            \
-        const OrbisSamplerBorderColor& border_color) {                      \
-        shared_method(                                                      \
-            context, slot, orbis_texture_cube_gpu_texture(texture),         \
-            orbis_texture_cube_address_mode(texture),                       \
-            orbis_texture_cube_filter_mode(texture), flags, border_color);  \
+#define RB4_DEFINE_CUBE_BINDING(method, stage_value)                   \
+    void method(                                                       \
+        const OrbisTextureCube& texture, OrbisRenderContext& context,   \
+        std::uint32_t slot, std::uint32_t flags,                        \
+        const OrbisSamplerBorderColor& border_color) {                  \
+        bind_texture_stage(                                             \
+            texture, context, stage_value, slot, flags, border_color);  \
     }
 
 // Reconstructed from eboot.elf at 0x8E71C0.
-RB4_DEFINE_CUBE_BINDING(orbis_texture_cube_bind_hull, orbis_bind_hull_texture)
+RB4_DEFINE_CUBE_BINDING(orbis_texture_cube_bind_hull, RenderShaderStage::kHull)
 // Reconstructed from eboot.elf at 0x8E71E0.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_domain, orbis_bind_domain_texture)
+    orbis_texture_cube_bind_domain, RenderShaderStage::kDomain)
 // Reconstructed from eboot.elf at 0x8E7200.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_geometry, orbis_bind_geometry_texture)
+    orbis_texture_cube_bind_geometry, RenderShaderStage::kGeometry)
 // Reconstructed from eboot.elf at 0x8E7220.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_pixel, orbis_bind_pixel_texture)
+    orbis_texture_cube_bind_pixel, RenderShaderStage::kPixel)
 // Reconstructed from eboot.elf at 0x8E7240.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_compute, orbis_bind_compute_texture)
+    orbis_texture_cube_bind_compute, RenderShaderStage::kCompute)
 
 #undef RB4_DEFINE_CUBE_BINDING
 

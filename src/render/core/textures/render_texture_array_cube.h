@@ -2,17 +2,9 @@
 
 #include <cstdint>
 
-#include "render/core/textures/render_texture.h"
+#include "render/core/textures/render_texture_cube.h"
 
 namespace rb4 {
-
-struct RenderTextureCubeDescriptorState {
-    RenderTextureMipChainDescriptor faces[6];
-};
-
-struct RenderTextureCubeState {
-    RenderTextureMipChainState faces[6];
-};
 
 struct RenderTextureCubeDescriptorRange {
     const RenderTextureCubeDescriptorState* begin;
@@ -37,8 +29,6 @@ struct RenderTextureArrayCube : RenderTexture {
     RenderTextureCubeArray cubes;
 };
 
-static_assert(sizeof(RenderTextureCubeDescriptorState) == 480);
-static_assert(sizeof(RenderTextureCubeState) == 480);
 static_assert(sizeof(RenderTextureCubeDescriptorRange) == 24);
 static_assert(sizeof(RenderTextureArrayCubeDescriptor) == 168);
 static_assert(sizeof(RenderTextureCubeArray) == 32);

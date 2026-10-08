@@ -11,6 +11,12 @@ registration identifies the common class as `RndTextureCubeResource`, with
 cube capture and flattened-output properties that corroborate the factory's
 type.
 
+The common cube object is exactly 792 bytes. It contains the 168-byte texture
+base, a normalized 144-byte descriptor snapshot, and six typed 80-byte
+mip-chain faces. Construction publishes the first face's shared mip properties
+and selects resource index two. The Orbis subclass adds five pointers for the
+texture view, two allocations, color target, and depth target.
+
 Backend initialization at `0x8E6CE0` has separate color and depth paths. Color
 cubes create a 32-byte Gnm texture descriptor, allocate tiled storage, upload
 every available mip for all six faces, and optionally create a 64-byte render
@@ -29,3 +35,7 @@ The six virtual methods at `0x8E71A0` through `0x8E725F` forward the single
 texture view at offset 792 to the shared vertex, hull, domain, geometry,
 pixel, and compute binding functions. They also forward the common address
 mode, filter mode, binding flags, and sampler border color.
+
+Common lifecycle evidence is preserved in
+`analysis/exports/render-texture-cube.asm` and
+`analysis/exports/render-texture-cube.c`.

@@ -2,15 +2,24 @@
 
 #include <cstdint>
 
+#include "render/core/textures/render_texture_cube.h"
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
 
 namespace rb4 {
 
-struct OrbisTextureCube;
 struct OrbisRenderContext;
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
-struct RenderTextureCubeDescriptor;
+
+struct OrbisTextureCube : RenderTextureCube {
+    void* gpu_texture;
+    void* primary_allocation;
+    void* secondary_allocation;
+    OrbisGpuRenderTarget* render_target;
+    OrbisGpuDepthRenderTarget* depth_target;
+};
+
+static_assert(sizeof(OrbisTextureCube) == 832);
 
 OrbisTextureCube* orbis_create_texture_cube(
     const RenderTextureCubeDescriptor& descriptor);
