@@ -472,6 +472,30 @@ std::size_t render_texture_mip_chain_level_count(
     return mip_chain_level_count(mip_chain);
 }
 
+// Reconstructed from eboot.elf at 0x686340.
+std::size_t render_texture_mip_chain_source_size(
+    const RenderTextureMipChainState& mip_chain) {
+    std::size_t size = 0;
+    auto* level = &mip_chain;
+    while (level != nullptr) {
+        size += level->fields.source_size;
+        level = level->fields.next_mip;
+    }
+    return size;
+}
+
+// Reconstructed from eboot.elf at 0x683260.
+void render_texture_mip_chain_release_source_data(
+    RenderTextureMipChainState& mip_chain) {
+    auto* level = &mip_chain;
+    while (level != nullptr) {
+        delete[] static_cast<std::uint8_t*>(level->fields.source_data);
+        level->fields.source_data = nullptr;
+        level->fields.source_size = 0;
+        level = level->fields.next_mip;
+    }
+}
+
 void render_texture_mip_chain_array_destruct(
     RenderTextureMipChainArray& mip_chains) {
     destroy_elements(mip_chains.begin, mip_chains.end);

@@ -58,6 +58,10 @@ void render_texture_mip_chain_destruct(
     RenderTextureMipChainState& mip_chain);
 std::size_t render_texture_mip_chain_level_count(
     const RenderTextureMipChainState& mip_chain);
+std::size_t render_texture_mip_chain_source_size(
+    const RenderTextureMipChainState& mip_chain);
+void render_texture_mip_chain_release_source_data(
+    RenderTextureMipChainState& mip_chain);
 void render_texture_mip_chain_array_construct(
     RenderTextureMipChainArray& mip_chains);
 void render_texture_mip_chain_array_reserve(
