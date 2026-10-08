@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "render/core/targets/render_target.h"
 #include "render/core/system/render_system_frame_adapters.h"
 
 namespace rb4 {
