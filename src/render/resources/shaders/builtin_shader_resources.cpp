@@ -134,22 +134,6 @@ void render_output_conversion_shader_construct(void* shader) {
     shader_field(shader, 376) = -1;
 }
 
-// Reconstructed from eboot.elf at 0x642360.
-void render_refine_scene_mask_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_refine_scene_mask_shader_install_dispatch);
-    fields[0] = -1;
-}
-
-// Reconstructed from eboot.elf at 0x644FC0.
-void render_stencil_scene_mask_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_stencil_scene_mask_shader_install_dispatch);
-    fields[0] = -1;
-    fields[1] = -1;
-    fields[2] = 0;
-}
-
 // Reconstructed from eboot.elf at 0x6452E0.
 void render_test_pattern_shader_construct(void* shader) {
     auto* fields = construct_shader(

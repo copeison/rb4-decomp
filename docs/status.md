@@ -408,6 +408,8 @@
   texel-offset constant, and pixel-stage texture binding metadata.
 - [x] Reconstruct the graphics linear-depth shader dispatch and sampled depth
   texture binding beside its compute-path counterpart.
+- [x] Reconstruct the refine and stencil scene-mask graphics shaders, including
+  stage-specific mask inputs, tile counts, and the vertex-only variant.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
