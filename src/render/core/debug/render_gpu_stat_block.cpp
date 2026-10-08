@@ -26,6 +26,21 @@ struct RenderGpuRootStatistic {
 
 static_assert(sizeof(RenderGpuRootStatistic) == 384);
 
+void* root_statistic_base(RenderGpuRootStatistic& statistic) {
+    return statistic.storage + 32;
+}
+
+void initialize_root_statistic(
+    RenderGpuRootStatistic& statistic,
+    const char* name,
+    RenderGpuRootStatistic* parent) {
+    std::memset(statistic.storage, 0, 32);
+    render_gpu_statistic_construct(
+        root_statistic_base(statistic),
+        name,
+        parent == nullptr ? nullptr : root_statistic_base(*parent));
+}
+
 bool& root_has_hardware_counters(RenderGpuRootStatistic& statistic) {
     return *reinterpret_cast<bool*>(&statistic.storage[73]);
 }
@@ -158,7 +173,7 @@ void render_gpu_stat_block_construct(RenderGpuStatBlock& block) {
 void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
     auto* total = static_cast<RenderGpuRootStatistic*>(
         render_allocate(sizeof(RenderGpuRootStatistic)));
-    render_gpu_root_statistic_construct(total, "GPU Total", nullptr);
+    initialize_root_statistic(*total, "GPU Total", nullptr);
     block.total_statistic = total;
     append_root_statistic(block, total);
 
@@ -166,8 +181,8 @@ void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
     for (std::size_t index = 0; index < counter_count; ++index) {
         auto* counter = static_cast<RenderGpuRootStatistic*>(
             render_allocate(sizeof(RenderGpuRootStatistic)));
-        render_gpu_root_statistic_construct(
-            counter,
+        initialize_root_statistic(
+            *counter,
             render_gpu_counter_name(static_cast<std::uint32_t>(index)),
             total);
         root_has_hardware_counters(*total) = true;

@@ -9,7 +9,9 @@ then enumerates the platform GPU counters. Each counter receives its reported
 name, scale, and numeric index and is parented to the total statistic. The root
 records that hardware counters exist, the root-statistic pointer array grows by
 doubling, and the completed array is sorted directly by the 64-bit statistic
-key at offset `0x28`.
+key at offset `0x28`. Each root has a cleared 32-byte outer array prefix and a
+352-byte statistic base constructed at offset `0x20`; child parent pointers
+refer to that base rather than the outer allocation.
 
 Frame begin remains behind the statistic lookup and creation boundary. Frame
 end at `0x62B5B0` pops the typed context scope and closes the query through
