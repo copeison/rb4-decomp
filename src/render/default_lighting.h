@@ -28,5 +28,8 @@ void render_apply_default_lighting_mode(DefaultLightingState& state);
 void render_configure_default_shadowed_spot(
     DefaultLightingState& state,
     RndObject& object);
+void render_create_fallback_default_lighting(
+    DefaultLightingState& state,
+    RndScene& scene);
 
 }  // namespace rb4

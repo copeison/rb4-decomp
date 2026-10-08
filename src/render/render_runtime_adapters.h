@@ -11,6 +11,7 @@ struct RndLightProbeCom;
 struct RndLightSpotCom;
 struct RndMaterial;
 struct RndCameraCom;
+struct RndComputeBuffer;
 struct RndObject;
 struct RndScene;
 struct RndSceneResource;
@@ -39,8 +40,15 @@ RndSceneResource* resource_manager_load_scene(
     const char* path,
     bool block_until_loaded);
 void rnd_scene_resource_release(RndSceneResource* resource);
+RndSceneResource* rnd_scene_resource_create();
 RndScene* rnd_scene_resource_scene(RndSceneResource& resource);
 RndSceneSettingsCom* rnd_scene_settings(RndScene& scene);
+void rnd_scene_resource_finalize_contents(RndSceneResource& resource);
+void rnd_scene_resource_finalize(RndSceneResource& resource);
+bool render_force_default_resources();
+RndComputeBuffer* render_create_default_compute_buffer(
+    std::uint32_t index,
+    const char* name);
 
 std::size_t rnd_scene_object_count(const RndScene& scene);
 RndObject* rnd_scene_object_at(RndScene& scene, std::size_t index);

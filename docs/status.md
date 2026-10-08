@@ -22,6 +22,7 @@
 - [x] Reconstruct the six default render materials and shader-graph bindings.
 - [x] Reconstruct the default render-camera object and component attachment.
 - [x] Reconstruct the 49 default fallback textures and family ordering.
+- [x] Reconstruct top-level default render-resource initialization ordering.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

@@ -19,6 +19,12 @@ an object in collection zero, names it `default_cam`, attaches an
 `src/render/default_camera.cpp` expresses this as a reusable helper because the
 same sequence is inlined in the main initializer.
 
+`src/render/default_render_resources.cpp` now reconstructs this full ordering.
+It accepts the effective rendering flag directly and also checks the binary's
+global force-enable hook. Resource construction, compute-buffer allocation,
+and the two finalization calls remain narrow runtime adapters while their
+ordering and recovered arguments are explicit.
+
 The texture-family loop at `0x6BDE60` is reconstructed separately in
 `src/render/default_textures.cpp`. Low-level graphics allocation remains behind
 dimension-specific runtime adapters.

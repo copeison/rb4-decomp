@@ -27,21 +27,21 @@ __int64 __fastcall render_initialize_default_resources(__int64 *a1, __int64 a2)
   if ( (*(_BYTE *)(a2 + 1) | unk_19E4559) != 0 )
   {
     v3 = (_QWORD *)sub_37BF40(784);
-    sub_4384A0(v3);
+    rnd_scene_resource_construct(v3);
     sub_1ADEB0(v3);
     if ( *a1 != 0 )
       sub_1ADEF0(*a1);
     *a1 = (__int64)v3;
     v4 = (*(__int64 (__fastcall **)(_QWORD *))(*v3 + 104LL))(v3);
-    sub_6BDE60((__int64)a1);
+    render_create_default_textures((__int64)a1);
     v26 = 0;
-    sub_636DA0(&v22);
+    render_compute_buffer_descriptor_init(&v22);
     __asm { vmovups xmm0, cs:xmmword_12B6B30 }
     v25 = "Default Compute Buffer";
     __asm { vmovups [rbp+var_70], xmm0 }
     v23 = &v26;
     v24 = 0;
-    a1[50] = ((__int64 (__fastcall *)(__int128 *, __int64, __int64, __int64, __int64, __int64))sub_636C70)(
+    a1[50] = ((__int64 (__fastcall *)(__int128 *, __int64, __int64, __int64, __int64, __int64))render_create_compute_buffer)(
                &v22,
                v8,
                v6,
@@ -49,13 +49,13 @@ __int64 __fastcall render_initialize_default_resources(__int64 *a1, __int64 a2)
                v9,
                v10);
     v26 = 1;
-    sub_636DA0(&v22);
+    render_compute_buffer_descriptor_init(&v22);
     __asm { vmovups xmm0, cs:xmmword_12B6B30 }
     v25 = "Default Compute Buffer";
     __asm { vmovups [rbp+var_70], xmm0 }
     v23 = &v26;
     v24 = 0;
-    a1[51] = ((__int64 (__fastcall *)(__int128 *, __int64, __int64, __int64, __int64, __int64))sub_636C70)(
+    a1[51] = ((__int64 (__fastcall *)(__int128 *, __int64, __int64, __int64, __int64, __int64))render_create_compute_buffer)(
                &v22,
                v14,
                v12,

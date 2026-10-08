@@ -11903,7 +11903,7 @@ address,end,size,name,library,thunk
 0x4380E0,0x4380E1,1,nullsub_1241,False,False
 0x4381C0,0x4383C9,521,sub_4381C0,False,False
 0x4383D0,0x43849B,203,sub_4383D0,False,False
-0x4384A0,0x4384C3,35,sub_4384A0,False,False
+0x4384A0,0x4384C3,35,rnd_scene_resource_construct,False,False
 0x4384D0,0x4384D5,5,sub_4384D0,False,True
 0x438670,0x4389D7,871,sub_438670,False,False
 0x4389E0,0x438AF2,274,sub_4389E0,False,False
@@ -19125,10 +19125,10 @@ address,end,size,name,library,thunk
 0x636810,0x636815,5,sub_636810,False,True
 0x636840,0x636A42,514,sub_636840,False,False
 0x636C50,0x636C6F,31,sub_636C50,False,False
-0x636C70,0x636CBB,75,sub_636C70,False,False
+0x636C70,0x636CBB,75,render_create_compute_buffer,False,False
 0x636CC0,0x636D02,66,sub_636CC0,False,False
 0x636D10,0x636D43,51,sub_636D10,False,False
-0x636DA0,0x636DAE,14,sub_636DA0,False,False
+0x636DA0,0x636DAE,14,render_compute_buffer_descriptor_init,False,False
 0x636DB0,0x636DB6,6,sub_636DB0,False,False
 0x636DC0,0x636DDF,31,sub_636DC0,False,False
 0x636DE0,0x636E25,69,sub_636DE0,False,False
