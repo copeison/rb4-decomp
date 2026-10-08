@@ -27,6 +27,7 @@ struct RenderSystemFramePrefix {
     RenderFrameOwner* frame_owner;
     std::uint8_t reserved_120[176];
     RenderSettings* settings;
+    RenderFactory* factory;
 };
 
 static_assert(
@@ -40,6 +41,7 @@ static_assert(
 static_assert(offsetof(RenderSystemFramePrefix, frame_owners_end) == 80);
 static_assert(offsetof(RenderSystemFramePrefix, frame_owner) == 112);
 static_assert(offsetof(RenderSystemFramePrefix, settings) == 296);
+static_assert(offsetof(RenderSystemFramePrefix, factory) == 304);
 
 }  // namespace
 
@@ -96,6 +98,19 @@ void render_system_set_settings(
     RenderSettings* settings) {
     auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
     runtime->settings = settings;
+}
+
+RenderFactory* render_system_factory(RenderSystem& system) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    return runtime->factory;
+}
+
+// Reconstructed from eboot.elf at 0x3DEDB0.
+void render_system_set_factory(
+    RenderSystem& system,
+    RenderFactory* factory) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    runtime->factory = factory;
 }
 
 // Reconstructed from eboot.elf at 0x3DED80.

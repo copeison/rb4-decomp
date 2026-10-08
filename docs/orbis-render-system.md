@@ -10,6 +10,8 @@ following platform state:
 - two recursive submission mutexes;
 - eight fallback mesh-stream descriptors, nine identity-instance descriptors,
   and their two GPU allocation pointers;
+- an eight-byte Orbis resource factory stored in the common render-system
+  factory slot at offset `0x130`;
 - an intrusive deferred-command list;
 - the Orbis renderer singleton at `g_orbis_render_system`.
 
@@ -21,3 +23,9 @@ render-system destructor.
 Runtime shutdown remains a separate phase. `render_system_shutdown` closes the
 active backend and owned GPU resources before the virtual deleting destructor
 reaches this object destructor.
+
+The Orbis factory vtable contains destructors followed by creation methods for
+fences, meshes, all seven texture shapes, constant and compute buffers,
+shaders, particle buffers, and occlusion queries. Startup allocates the exact
+eight-byte factory object, installs that vtable, and publishes it through the
+typed common renderer field.

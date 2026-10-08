@@ -67,6 +67,8 @@
 - [x] Reconstruct platform capability and resolution-list initialization.
 - [x] Recover the Orbis GPU fence factory and backing allocation.
 - [x] Recover the seven-format Orbis mesh factory and format-name map.
+- [x] Type and reconstruct registration of the eight-byte Orbis resource
+  factory and identify its complete creation-method vtable.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
 - [x] Unify the render-system epoch used by common mesh updates, Orbis mesh
   draws, and resource synchronization.

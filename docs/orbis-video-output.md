@@ -13,8 +13,8 @@ Startup performs the following work:
 3. Create the `EOP QUEUE`, register GNM event 64, and add the video flip event.
 4. Create the typed fallback mesh and identity-instance buffers documented in
    `orbis-vertex-descriptors.md`.
-5. Register the Orbis render factories, create the double-buffered display
-   target, and allocate the platform render context.
+5. Allocate and publish the eight-byte Orbis resource factory, create the
+   double-buffered display target, and allocate the platform render context.
 6. Initialize the submit condition variable.
 7. Configure and start the joinable `SubmitDoneThread` at round-robin priority
    699 through the shared engine thread runtime.

@@ -17,6 +17,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
+#include "render/platform/orbis/system/orbis_render_factory.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/textures/orbis_texture_2d.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
@@ -269,7 +270,8 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 
     orbis_create_default_vertex_buffer(system);
     orbis_create_identity_instance_buffer(system);
-    orbis_register_render_factories(system);
+    auto& base = orbis_render_system_base(system);
+    render_system_set_factory(base, orbis_render_factory_create());
     orbis_create_back_buffer(system);
     orbis_create_render_context(system);
 

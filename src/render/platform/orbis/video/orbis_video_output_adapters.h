@@ -7,8 +7,6 @@
 namespace rb4 {
 
 struct OrbisRenderSystem;
-void orbis_register_render_factories(OrbisRenderSystem& system);
-
 void orbis_configure_submit_thread(
     OrbisRenderSystem& system,
     OrbisSubmitThreadEntry entry,
