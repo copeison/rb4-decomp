@@ -3,6 +3,21 @@
 namespace rb4 {
 
 struct RenderSystem;
+struct DefaultRenderResources;
+struct GameSystemInitOptions;
+struct OrbisRenderSystem;
+
+using GameCleanupCallback = void (*)(void* context);
+
+RenderSystem& game_render_system_base(OrbisRenderSystem& system);
+void game_prepare_render_platform();
+void game_warm_render_platform_config(unsigned int platform_id);
+DefaultRenderResources& game_default_render_resources(RenderSystem& system);
+void game_render_backend_post_initialize(
+    RenderSystem& system,
+    const GameSystemInitOptions& options);
+void game_render_dependents_initialize(const GameSystemInitOptions& options);
+void game_register_cleanup_callback(GameCleanupCallback callback);
 
 RenderSystem* game_render_system_instance();
 bool game_systems_shutdown_in_progress();
