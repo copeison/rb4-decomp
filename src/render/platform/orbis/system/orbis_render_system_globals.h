@@ -32,6 +32,8 @@ void orbis_lock_submission(OrbisRenderSystem& system);
 void orbis_unlock_submission(OrbisRenderSystem& system);
 void orbis_submit_scope_begin(OrbisRenderSystem& system);
 void orbis_submit_scope_end(OrbisRenderSystem& system);
+void orbis_lock_retired_allocations(OrbisRenderSystem& system);
+void orbis_unlock_retired_allocations(OrbisRenderSystem& system);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);

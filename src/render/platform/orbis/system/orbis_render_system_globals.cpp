@@ -29,6 +29,9 @@ struct OrbisRenderSystemRuntimePrefix {
     std::int32_t submission_lock_depth;
     std::uint8_t reserved_4284[4];
     ScePthreadMutex submission_mutex;
+    std::int32_t retired_allocation_lock_depth;
+    std::uint8_t reserved_4300[4];
+    ScePthreadMutex retired_allocation_mutex;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
@@ -48,6 +51,12 @@ static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submission_lock_depth) == 4280);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submission_mutex) == 4288);
+static_assert(
+    offsetof(
+        OrbisRenderSystemRuntimePrefix,
+        retired_allocation_lock_depth) == 4296);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, retired_allocation_mutex) == 4304);
 
 }  // namespace
 
@@ -133,6 +142,18 @@ void orbis_submit_scope_begin(OrbisRenderSystem& system) {
 void orbis_submit_scope_end(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     --runtime->submission_lock_depth;
+}
+
+void orbis_lock_retired_allocations(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    scePthreadMutexLock(&runtime->retired_allocation_mutex);
+    ++runtime->retired_allocation_lock_depth;
+}
+
+void orbis_unlock_retired_allocations(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    --runtime->retired_allocation_lock_depth;
+    scePthreadMutexUnlock(&runtime->retired_allocation_mutex);
 }
 
 void render_system_set_render_context(
