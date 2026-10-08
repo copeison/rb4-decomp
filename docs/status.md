@@ -49,6 +49,7 @@
 - [x] Reconstruct primary and blurred light-accumulation targets.
 - [x] Reconstruct the shared light-accumulation target factory.
 - [x] Reconstruct per-scene render-target resource-block initialization.
+- [x] Reconstruct top-level render-target resource-owner initialization.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
