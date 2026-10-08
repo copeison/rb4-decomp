@@ -42,9 +42,7 @@ RenderTarget* tiled_light_reuse_target(
     const RenderTargetResourceBlock* reusable_block,
     RenderExtent extent) {
     if (reusable_block != nullptr) {
-        auto* target =
-            render_target_resource_block_tiled_light_resources(*reusable_block)
-                .interpolation_target;
+        auto* target = reusable_block->tiled_light_interpolation;
         if (target != nullptr) {
             return target;
         }
@@ -61,7 +59,7 @@ void render_target_resource_block_initialize(
     RenderTargetResourceBlock& block,
     bool partial_frame,
     const RenderTargetResourceBlock* reusable_block) {
-    const auto flags = render_target_resources_flags(resources);
+    const auto flags = resources.flags;
     if (partial_frame) {
         render_target_resource_block_create_partial_frame_state(block);
         if (has_flag(flags, ResourceFlag::kLightAccumulation)) {
@@ -88,7 +86,7 @@ void render_target_resource_block_initialize(
     }
 
     if (has_flag(flags, ResourceFlag::kTiledLighting)) {
-        const auto extent = render_target_resources_extent(resources);
+        const auto extent = resources.extent;
         auto* interpolation_reuse = partial_frame
             ? nullptr
             : tiled_light_reuse_target(resources, reusable_block, extent);

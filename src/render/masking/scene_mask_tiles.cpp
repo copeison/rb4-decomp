@@ -119,7 +119,7 @@ void build_tile_mesh(
 void render_scene_mask_tiles_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     const auto& settings =
         *render_system_settings(*render_system_instance());
     const auto tile_size =

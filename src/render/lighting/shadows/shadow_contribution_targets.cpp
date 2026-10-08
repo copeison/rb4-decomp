@@ -62,7 +62,7 @@ void render_shadow_contribution_targets_create(
         return;
     }
 
-    const auto full_extent = render_target_resources_extent(resources);
+    const auto full_extent = resources.extent;
     const bool uses_reduced_extent =
         full_extent.width > 1920 || full_extent.height > 1080;
     const RenderExtent contribution_extent = uses_reduced_extent

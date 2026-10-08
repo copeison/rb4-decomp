@@ -11,8 +11,6 @@ struct RenderTarget;
 
 bool render_target_resources_force_64_bit_light_accumulation(
     const RenderTargetResources& resources);
-std::uint32_t& render_target_resources_attachment_cursor(
-    RenderTargetResources& resources);
 RenderTarget* render_target_resources_create_light_accumulation_target_raw(
     RenderTargetResources& resources,
     const char* name,

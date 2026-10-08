@@ -123,7 +123,7 @@ void render_volumetric_scattering_textures_create(
         return;
     }
 
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     const auto tile_size = static_cast<std::uint32_t>(
         settings.volumetric_scattering_tile_size);
     const RenderExtent tile_extent{

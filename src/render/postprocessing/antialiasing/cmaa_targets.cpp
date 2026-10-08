@@ -53,7 +53,7 @@ void render_cmaa_targets_create(
         return;
     }
 
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     const auto& settings =
         *render_system_settings(*render_system_instance());
 

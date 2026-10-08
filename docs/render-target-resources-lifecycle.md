@@ -8,6 +8,12 @@ and initializes the active scene context to `-1`.
 `render_target_resources_destruct` at `0x6AFFC0` restores the base dispatch
 table before running the common release path.
 
+Code that consumes the verified layout now reads stable owner fields directly:
+flags, extent, attachment cursor, source texture, block storage and count,
+resource mode, active block, and scene context. Adapters remain only where an
+operation still performs container growth, registration, allocation, or
+virtual dispatch.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.

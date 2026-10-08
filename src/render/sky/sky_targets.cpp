@@ -36,7 +36,7 @@ void release_target(
 void render_sky_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     RenderTarget* new_full_target = nullptr;
 
     for (std::uint32_t shift = 0; shift < 4; ++shift) {

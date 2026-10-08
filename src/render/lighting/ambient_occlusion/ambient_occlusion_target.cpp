@@ -19,7 +19,7 @@ void render_ambient_occlusion_target_create(
     render_target_resource_block_ambient_occlusion_target(block) =
         render_target_resources_create_ambient_occlusion_target(
             resources,
-            render_target_resources_extent(resources),
+            resources.extent,
             reusable_target,
             !partial_frame);
 }

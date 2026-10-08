@@ -59,7 +59,7 @@ void render_linear_depth_targets_create(
     RenderTargetResourceBlock& block,
     bool partial_frame,
     const RenderTargetResourceBlock* reusable_block) {
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     create_target(
         resources,
         block,

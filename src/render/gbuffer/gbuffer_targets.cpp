@@ -52,7 +52,7 @@ void render_gbuffer_targets_create(
     RenderTargetResourceBlock& block,
     bool partial_frame,
     const RenderTargetResourceBlock* reusable_block) {
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
     const auto register_with_owner = !partial_frame;
 
     create_target(

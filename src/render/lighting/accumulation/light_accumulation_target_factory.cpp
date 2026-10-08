@@ -33,14 +33,14 @@ RenderTarget* render_light_accumulation_target_create(
     const bool use_64_bit_format = settings.use_64_bit_light_accum ||
         render_target_resources_force_64_bit_light_accumulation(resources);
 
-    const auto full_extent = render_target_resources_extent(resources);
+    const auto full_extent = resources.extent;
     const RenderExtent extent{
         scaled_dimension(full_extent.width, scale_shift),
         scaled_dimension(full_extent.height, scale_shift),
     };
     const auto attachment_index = allocate_attachment
         ? static_cast<std::int32_t>(
-              render_target_resources_attachment_cursor(resources))
+              resources.attachment_cursor)
         : -1;
 
     auto* target =
@@ -53,7 +53,7 @@ RenderTarget* render_light_accumulation_target_create(
             reusable_target);
     const auto allocation_index = render_target_allocation_index(*target);
     if (allocation_index != -1) {
-        render_target_resources_attachment_cursor(resources) =
+        resources.attachment_cursor =
             static_cast<std::uint32_t>(
                 allocation_index + render_target_allocation_count(*target));
     }

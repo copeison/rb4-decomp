@@ -62,7 +62,7 @@ void release_target(
 void render_scaled_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
-    const auto full_extent = render_target_resources_extent(resources);
+    const auto full_extent = resources.extent;
 
     for (const auto level : kLevels) {
         const auto extent = scaled_extent(full_extent, level);

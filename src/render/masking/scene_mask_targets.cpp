@@ -55,7 +55,7 @@ void release_target(
 void render_scene_mask_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
-    const auto extent = render_target_resources_extent(resources);
+    const auto extent = resources.extent;
 
     create_target(
         resources,
