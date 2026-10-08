@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/threading/engine_thread.h"
 #include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
@@ -31,7 +32,9 @@ struct OrbisRenderSystemRuntimePrefix {
     ScePthreadCond submit_condition;
     std::uint64_t submit_token;
     bool submit_thread_running;
-    std::uint8_t reserved_3849[431];
+    std::uint8_t reserved_3849[303];
+    EngineThreadRuntime submit_thread;
+    std::uint8_t submit_thread_wrapper_state[32];
     std::int32_t submission_lock_depth;
     std::uint8_t reserved_4284[4];
     ScePthreadMutex submission_mutex;
@@ -57,6 +60,8 @@ static_assert(
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) == 4152);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submission_lock_depth) == 4280);
 static_assert(
@@ -257,6 +262,11 @@ void orbis_set_cached_flip_rate(
     std::int32_t rate) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->cached_flip_rate = rate;
+}
+
+EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->submit_thread;
 }
 
 std::size_t orbis_active_render_frame_index() {

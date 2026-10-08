@@ -12,13 +12,11 @@ struct OrbisVertexBuffer;
 
 void orbis_register_render_factories(OrbisRenderSystem& system);
 
-void orbis_start_submit_thread(
+void orbis_configure_submit_thread(
     OrbisRenderSystem& system,
     OrbisSubmitThreadEntry entry,
     const char* name,
     std::uint32_t priority);
-void orbis_initialize_submit_profiler(OrbisRenderSystem& system);
-void orbis_join_submit_thread(OrbisRenderSystem& system);
 OrbisVertexBuffer& orbis_allocate_default_vertex_buffer(
     OrbisRenderSystem& system,
     const char* name);

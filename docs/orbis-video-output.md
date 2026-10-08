@@ -15,7 +15,8 @@ Startup performs the following work:
 5. Register the Orbis render factories, create the double-buffered display
    target, and allocate the platform render context.
 6. Initialize the submit condition variable.
-7. Start `SubmitDoneThread` at priority 699 and initialize its profiling state.
+7. Configure and start the joinable `SubmitDoneThread` at round-robin priority
+   699 through the shared engine thread runtime.
 8. Wait until the worker publishes readiness, then hide the system splash
    screen.
 
@@ -41,7 +42,8 @@ The deleting destructor at `0x8D7B00` runs the Orbis object destructor and then
 frees the 4,352-byte allocation.
 
 The matching platform shutdown at `0x8D8040` clears the submit-thread run flag
-and joins the worker. It conditionally destroys the worker condition variable,
+and joins the worker through its typed SCE pthread handle. It conditionally
+destroys the worker condition variable,
 deletes the active back buffer, deletes the primary and additional render
 contexts in reverse order, removes GNM event 64, deletes the event queue, and
 closes the video-output handle. The base render-system shutdown invokes this

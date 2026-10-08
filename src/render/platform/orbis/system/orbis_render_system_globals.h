@@ -10,6 +10,7 @@ namespace rb4 {
 struct OrbisRenderSystem;
 struct OrbisRenderContext;
 struct OrbisBackBuffer;
+struct EngineThreadRuntime;
 struct RenderSystem;
 
 extern OrbisRenderSystem* g_orbis_render_system;
@@ -58,6 +59,7 @@ std::int32_t orbis_cached_flip_rate(const OrbisRenderSystem& system);
 void orbis_set_cached_flip_rate(
     OrbisRenderSystem& system,
     std::int32_t rate);
+EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system);
 std::size_t orbis_active_render_frame_index();
 void orbis_render_system_publish_instance(OrbisRenderSystem& system);
 void orbis_render_system_clear_instance();

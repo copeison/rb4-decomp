@@ -7,6 +7,7 @@
 #include <system_service.h>
 #include <video_out.h>
 
+#include "core/threading/engine_thread.h"
 #include "core/time/performance_counter.h"
 #include "render/core/settings/render_settings.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
@@ -275,14 +276,14 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_create_render_context(system);
 
     orbis_initialize_submit_condition(system);
-    orbis_start_submit_thread(
+    orbis_configure_submit_thread(
         system,
         orbis_submit_done_thread_entry,
         kSubmitThreadName,
         kSubmitThreadPriority);
     orbis_set_submit_thread_running(system, true);
     orbis_consume_submit_token(system);
-    orbis_initialize_submit_profiler(system);
+    engine_thread_start(orbis_submit_thread(system));
     orbis_wait_for_submit_thread(system);
     orbis_hide_system_splash_screen();
 }
@@ -290,7 +291,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 // Reconstructed from eboot.elf at 0x8D8040.
 void orbis_render_system_shutdown(OrbisRenderSystem& system) {
     orbis_set_submit_thread_running(system, false);
-    orbis_join_submit_thread(system);
+    engine_thread_join(orbis_submit_thread(system));
     orbis_destroy_submit_condition(system);
     auto& base = orbis_render_system_base(system);
     render_system_release_back_buffer(base);

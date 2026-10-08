@@ -5,8 +5,9 @@ coherent responsibility. This is a project-wide rule. Broad subsystem and layer
 folders contain domain folders rather than accumulating implementation files,
 including game, input, UI, rendering, audio, and future reconstructed systems.
 
-Engine-wide utilities live under narrow domains in `src/core`. Performance
-counter declarations shared by audio and rendering live under `src/core/time`.
+Engine-wide utilities live under narrow domains in `src/core`. Shared thread
+runtime code lives under `src/core/threading`, while performance-counter
+declarations shared by audio and rendering live under `src/core/time`.
 
 Shared renderer code is divided under `src/render/core` into buffers, capture,
 context, debug, frame, meshes, platform, settings, shaders, synchronization, system,
