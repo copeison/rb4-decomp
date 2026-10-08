@@ -343,6 +343,8 @@
   128-sample function-table texture.
 - [x] Recover the four clamped transfer curves used to populate the renderer's
   function-table texture.
+- [x] Reconstruct primary-shader finalization, virtual mode selection, and
+  startup-option gating.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder

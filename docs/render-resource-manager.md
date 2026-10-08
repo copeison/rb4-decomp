@@ -24,8 +24,11 @@ layer samples one engine transfer function over the inclusive `[0, 1]` range,
 copies it into an owned mip descriptor, and is then consumed by the common
 texture-array factory. The four source-owned functions are inverse linear,
 inverse-square falloff, normalized negative exponential, and normalized
-descending sigmoid curves. Primary-shader finalization remains the focused
-boundary.
+descending sigmoid curves. Primary-shader finalization is source-owned as
+well: it performs the common prepare step, reads shader mode
+from virtual slot `0x28`, gates modes zero and one with render-system startup
+options, and initializes the backend only when that mode is enabled. The
+prepare and backend-initialize leaf operations remain focused boundaries.
 
 Shader reload at `0x641F30` walks both intrusive lists directly. Primary
 resources place their manager link at offset `0x110`; each owns six 32-byte

@@ -9,6 +9,7 @@
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/system/render_system_state.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_array_1d.h"
@@ -75,7 +76,13 @@ static_assert(sizeof(RenderResourceNameArray) == 40);
 static_assert(sizeof(RenderResourceSpecializedState) == 240);
 
 struct RenderPrimaryShaderResource {
-    std::uint8_t reserved_0[12];
+    struct Dispatch {
+        void* reserved_0[5];
+        std::int32_t (*mode)(RenderPrimaryShaderResource* shader);
+    };
+
+    Dispatch* dispatch;
+    std::uint8_t reserved_8[4];
     bool compiled;
     std::uint8_t reserved_13[3];
     RenderManagedObjectArray compiled_objects[6];
@@ -84,6 +91,7 @@ struct RenderPrimaryShaderResource {
 };
 
 static_assert(sizeof(RenderManagedObjectArray) == 32);
+static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, mode) == 40);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled) == 12);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled_objects) == 16);
 static_assert(
@@ -162,6 +170,28 @@ void destruct_name_array(RenderResourceNameArray& names) {
             reinterpret_cast<std::uint8_t*>(names.begin));
         engine_deallocate_sized(names.begin, byte_count);
     }
+}
+
+// Reconstructed from eboot.elf at 0x6383D0.
+void finalize_primary_shader(RenderPrimaryShaderResource& shader) {
+    render_primary_shader_prepare(&shader);
+
+    const auto mode = shader.dispatch->mode(&shader);
+    const auto& options =
+        render_system_core_state(*render_system_instance()).init_options;
+    if (mode == 1) {
+        if (!options.option2) {
+            return;
+        }
+    } else if (mode == 0) {
+        if (!options.initialize_rendering) {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    render_primary_shader_initialize_backend(&shader);
 }
 
 // Reconstructed from eboot.elf at 0x645F20.
@@ -253,7 +283,7 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
     for (auto* node = manager.primary_list->next;
          node != manager.primary_list;
          node = node->next) {
-        render_primary_shader_finalize(&primary_shader_from_link(*node));
+        finalize_primary_shader(primary_shader_from_link(*node));
     }
 
     constexpr std::uint32_t kFunctionCount = 4;
