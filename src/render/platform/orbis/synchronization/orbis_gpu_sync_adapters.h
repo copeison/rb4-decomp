@@ -17,7 +17,6 @@ bool orbis_submission_counters_empty(const OrbisRenderSystem& system);
 void orbis_thread_yield();
 void orbis_gpu_wait_end(OrbisRenderSystem& system);
 
-std::uint64_t orbis_current_frame_index(const OrbisRenderSystem& system);
 void orbis_lock_retired_allocations(OrbisRenderSystem& system);
 void orbis_unlock_retired_allocations(OrbisRenderSystem& system);
 std::size_t orbis_retired_allocation_count(

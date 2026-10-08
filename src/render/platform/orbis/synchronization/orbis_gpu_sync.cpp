@@ -2,8 +2,10 @@
 
 #include <cstddef>
 
+#include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync_adapters.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {
 
@@ -32,7 +34,7 @@ void orbis_wait_for_gpu_idle(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D8200.
 void orbis_release_retired_allocations(OrbisRenderSystem& system) {
-    const auto frame = orbis_current_frame_index(system);
+    const auto frame = orbis_render_system_epoch(system);
     if (frame < 2) {
         return;
     }
@@ -61,7 +63,7 @@ void orbis_defer_allocation_release(
 
     orbis_lock_retired_allocations(system);
     orbis_enqueue_retired_allocation(
-        system, allocation, orbis_current_frame_index(system));
+        system, allocation, current_render_epoch());
     orbis_unlock_retired_allocations(system);
 }
 
