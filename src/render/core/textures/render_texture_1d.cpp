@@ -7,6 +7,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_1d_adapters.h"
+#include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {
 
@@ -25,6 +26,14 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x6F5A90.
+void render_texture_1d_descriptor_construct(
+    RenderTexture1DDescriptor& descriptor) {
+    render_texture_descriptor_construct(descriptor.texture_state);
+    render_texture_mip_chain_descriptor_construct(descriptor.mip_chain);
+    descriptor.texture_state.descriptor_type = 0;
+}
 
 // Reconstructed from eboot.elf at 0x6F5870.
 void render_texture_1d_construct(

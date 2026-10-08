@@ -34,6 +34,8 @@ static_assert(sizeof(RenderTextureArrayCubeDescriptor) == 168);
 static_assert(sizeof(RenderTextureCubeArray) == 32);
 static_assert(sizeof(RenderTextureArrayCube) == 344);
 
+void render_texture_array_cube_descriptor_construct(
+    RenderTextureArrayCubeDescriptor& descriptor);
 void render_texture_array_cube_construct(
     RenderTextureArrayCube& texture,
     const RenderTextureArrayCubeDescriptor& descriptor);

@@ -19,6 +19,8 @@ struct RenderTextureArray2D : RenderTexture {
 static_assert(sizeof(RenderTextureArray2DDescriptor) == 168);
 static_assert(sizeof(RenderTextureArray2D) == 344);
 
+void render_texture_array_2d_descriptor_construct(
+    RenderTextureArray2DDescriptor& descriptor);
 void render_texture_array_2d_construct(
     RenderTextureArray2D& texture,
     const RenderTextureArray2DDescriptor& descriptor);

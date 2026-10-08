@@ -39,9 +39,10 @@ matching single-layer array descriptors, while cubes and cube arrays each
 build six owned face descriptors. The normal families set texture creation
 mode 3; every family sets creation values 8 and 9 to 2 and 1 respectively.
 
-The cleaned implementation calls the typed common 1D, 2D, 3D, cube, 1D-array,
-2D-array, and cube-array factories directly. Only the shared mip pixel-format
-conversion remains at the engine boundary.
+The cleaned implementation calls each dimension's typed descriptor constructor
+and common 1D, 2D, 3D, cube, 1D-array, 2D-array, and cube-array factory
+directly. Only the shared mip pixel-format conversion remains at the engine
+boundary.
 
 The descriptor type values are corroborated by the resource-class switch at
 `0x6ACF40`: `0` through `5` map to `RndTexture1DResource`,

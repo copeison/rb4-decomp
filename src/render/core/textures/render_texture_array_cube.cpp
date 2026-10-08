@@ -26,6 +26,14 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x69AF00.
+void render_texture_array_cube_descriptor_construct(
+    RenderTextureArrayCubeDescriptor& descriptor) {
+    render_texture_descriptor_construct(descriptor.texture_state);
+    descriptor.cubes = {};
+    descriptor.texture_state.descriptor_type = 7;
+}
+
 // Reconstructed from eboot.elf at 0x69AAC0.
 void render_texture_array_cube_construct(
     RenderTextureArrayCube& texture,

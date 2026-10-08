@@ -8,6 +8,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_cube_adapters.h"
+#include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {
 
@@ -26,6 +27,16 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x6A1030.
+void render_texture_cube_descriptor_construct(
+    RenderTextureCubeDescriptor& descriptor) {
+    render_texture_descriptor_construct(descriptor.texture_state);
+    for (auto& face : descriptor.cube.faces) {
+        render_texture_mip_chain_descriptor_construct(face);
+    }
+    descriptor.texture_state.descriptor_type = 3;
+}
 
 // Reconstructed from eboot.elf at 0x6A0DA0.
 void render_texture_cube_construct(

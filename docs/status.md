@@ -275,6 +275,8 @@
 - [x] Centralize the verified 44-byte texture creation state within the common
   descriptor model.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
+- [x] Reconstruct typed descriptor construction for all seven common texture
+  dimensions and use those constructors in default-resource creation.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

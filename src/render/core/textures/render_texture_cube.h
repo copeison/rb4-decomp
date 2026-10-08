@@ -29,6 +29,8 @@ static_assert(sizeof(RenderTextureCubeState) == 480);
 static_assert(sizeof(RenderTextureCubeDescriptor) == 624);
 static_assert(sizeof(RenderTextureCube) == 792);
 
+void render_texture_cube_descriptor_construct(
+    RenderTextureCubeDescriptor& descriptor);
 void render_texture_cube_construct(
     RenderTextureCube& texture,
     const RenderTextureCubeDescriptor& descriptor);

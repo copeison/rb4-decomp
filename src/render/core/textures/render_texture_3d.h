@@ -19,6 +19,8 @@ struct RenderTexture3D : RenderTexture {
 static_assert(sizeof(RenderTexture3DDescriptor) == 224);
 static_assert(sizeof(RenderTexture3D) == 392);
 
+void render_texture_3d_descriptor_construct(
+    RenderTexture3DDescriptor& descriptor);
 void render_texture_3d_construct(
     RenderTexture3D& texture,
     const RenderTexture3DDescriptor& descriptor);

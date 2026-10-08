@@ -104,23 +104,19 @@ private:
     std::size_t byte_count_ = 0;
 };
 
-void initialize_texture_state(
+void configure_texture_state(
     RenderTextureDescriptorState& state,
-    std::int32_t descriptor_type,
     const DefaultTextureSpec& spec) {
-    render_texture_descriptor_construct(state);
-    state.descriptor_type = descriptor_type;
     state.creation_state.values[0] = spec.creation_mode;
     state.creation_state.values[8] = 2;
     state.creation_state.values[9] = 1;
     state.name = spec.name;
 }
 
-void initialize_mip(
+void populate_mip(
     RenderTextureMipChainDescriptor& mip,
     const RenderFloatImageView& image,
     std::int32_t data_format) {
-    render_texture_mip_chain_descriptor_construct(mip);
     const RenderTextureExtent3D extent{
         image.width,
         image.height,
@@ -131,8 +127,25 @@ void initialize_mip(
     render_texture_mip_chain_descriptor_copy_float_image(mip, image);
 }
 
+void initialize_mip(
+    RenderTextureMipChainDescriptor& mip,
+    const RenderFloatImageView& image,
+    std::int32_t data_format) {
+    render_texture_mip_chain_descriptor_construct(mip);
+    populate_mip(mip, image, data_format);
+}
+
 void destruct_mip(RenderTextureMipChainDescriptor& mip) {
     render_texture_mip_chain_descriptor_destruct(mip);
+}
+
+void populate_cube_mips(
+    RenderTextureCubeDescriptorState& cube,
+    const RenderFloatImageView& image,
+    std::int32_t data_format) {
+    for (auto& face : cube.faces) {
+        populate_mip(face, image, data_format);
+    }
 }
 
 void initialize_cube_mips(
@@ -157,43 +170,51 @@ void create_texture_family(
     DefaultPixelBuffer pixels(spec);
 
     auto image = pixels.reshape(spec.extent, 1, 1);
-    RenderTextureMipChainDescriptor mip_1d;
-    initialize_mip(mip_1d, image, data_format);
-
-    RenderTexture1DDescriptor texture_1d{};
-    initialize_texture_state(texture_1d.texture_state, 0, spec);
-    texture_1d.mip_chain = mip_1d;
+    RenderTexture1DDescriptor texture_1d;
+    render_texture_1d_descriptor_construct(texture_1d);
+    configure_texture_state(texture_1d.texture_state, spec);
+    populate_mip(texture_1d.mip_chain, image, data_format);
     family.texture_1d = render_create_texture_1d(texture_1d, nullptr);
 
-    RenderTextureArray1DDescriptor array_1d{};
-    initialize_texture_state(array_1d.texture_state, 4, spec);
-    array_1d.mip_chains = {&mip_1d, &mip_1d + 1, &mip_1d + 1};
+    RenderTextureArray1DDescriptor array_1d;
+    render_texture_array_1d_descriptor_construct(array_1d);
+    configure_texture_state(array_1d.texture_state, spec);
+    array_1d.mip_chains = {
+        &texture_1d.mip_chain,
+        &texture_1d.mip_chain + 1,
+        &texture_1d.mip_chain + 1,
+    };
     family.texture_array_1d =
         render_create_texture_array_1d(array_1d, nullptr);
 
     image = pixels.reshape(spec.extent, spec.extent, 1);
-    RenderTextureMipChainDescriptor mip_2d;
-    initialize_mip(mip_2d, image, data_format);
-
-    RenderTexture2DDescriptor texture_2d{};
-    initialize_texture_state(texture_2d.texture_state, 1, spec);
-    texture_2d.mip_chain = mip_2d;
+    RenderTexture2DDescriptor texture_2d;
+    render_texture_2d_descriptor_construct(texture_2d);
+    configure_texture_state(texture_2d.texture_state, spec);
+    populate_mip(texture_2d.mip_chain, image, data_format);
     family.texture_2d = render_create_texture_2d(texture_2d);
 
-    RenderTextureArray2DDescriptor array_2d{};
-    initialize_texture_state(array_2d.texture_state, 5, spec);
-    array_2d.mip_chains = {&mip_2d, &mip_2d + 1, &mip_2d + 1};
+    RenderTextureArray2DDescriptor array_2d;
+    render_texture_array_2d_descriptor_construct(array_2d);
+    configure_texture_state(array_2d.texture_state, spec);
+    array_2d.mip_chains = {
+        &texture_2d.mip_chain,
+        &texture_2d.mip_chain + 1,
+        &texture_2d.mip_chain + 1,
+    };
     family.texture_array_2d = render_create_texture_array_2d(array_2d);
 
-    RenderTextureCubeDescriptor cube{};
-    initialize_texture_state(cube.texture_state, 3, spec);
-    initialize_cube_mips(cube.cube, image, data_format);
+    RenderTextureCubeDescriptor cube;
+    render_texture_cube_descriptor_construct(cube);
+    configure_texture_state(cube.texture_state, spec);
+    populate_cube_mips(cube.cube, image, data_format);
     family.texture_cube = render_create_texture_cube(cube, nullptr);
 
     RenderTextureCubeDescriptorState array_cube_state{};
     initialize_cube_mips(array_cube_state, image, data_format);
-    RenderTextureArrayCubeDescriptor array_cube{};
-    initialize_texture_state(array_cube.texture_state, 7, spec);
+    RenderTextureArrayCubeDescriptor array_cube;
+    render_texture_array_cube_descriptor_construct(array_cube);
+    configure_texture_state(array_cube.texture_state, spec);
     array_cube.cubes = {
         &array_cube_state,
         &array_cube_state + 1,
@@ -203,18 +224,17 @@ void create_texture_family(
         render_create_texture_array_cube(array_cube, nullptr);
 
     image = pixels.reshape(spec.extent, spec.extent, spec.extent);
-    RenderTextureMipChainDescriptor mip_3d;
-    initialize_mip(mip_3d, image, data_format);
-    RenderTexture3DDescriptor texture_3d{};
-    initialize_texture_state(texture_3d.texture_state, 2, spec);
-    texture_3d.mip_chain = mip_3d;
+    RenderTexture3DDescriptor texture_3d;
+    render_texture_3d_descriptor_construct(texture_3d);
+    configure_texture_state(texture_3d.texture_state, spec);
+    populate_mip(texture_3d.mip_chain, image, data_format);
     family.texture_3d = render_create_texture_3d(texture_3d, nullptr);
 
-    destruct_mip(mip_3d);
+    destruct_mip(texture_3d.mip_chain);
     destruct_cube_mips(array_cube_state);
     destruct_cube_mips(cube.cube);
-    destruct_mip(mip_2d);
-    destruct_mip(mip_1d);
+    destruct_mip(texture_2d.mip_chain);
+    destruct_mip(texture_1d.mip_chain);
 }
 
 }  // namespace

@@ -26,6 +26,14 @@ void write_value(std::uint8_t* destination, std::size_t offset, T value) {
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x6972D0.
+void render_texture_array_1d_descriptor_construct(
+    RenderTextureArray1DDescriptor& descriptor) {
+    render_texture_descriptor_construct(descriptor.texture_state);
+    descriptor.mip_chains = {};
+    descriptor.texture_state.descriptor_type = 4;
+}
+
 // Reconstructed from eboot.elf at 0x696C00.
 void render_texture_array_1d_construct(
     RenderTextureArray1D& texture,
