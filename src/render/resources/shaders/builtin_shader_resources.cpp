@@ -218,16 +218,6 @@ void render_test_shader_construct(void* shader) {
     shader_field(shader, 336) = 0;
 }
 
-// Reconstructed from eboot.elf at 0x6F2B40.
-void render_dof_disc_blur_compute_shader_construct(void* shader) {
-    auto* fields = construct_shader(
-        shader, render_dof_disc_blur_compute_shader_install_dispatch);
-    for (std::size_t index = 0; index < 10; ++index) {
-        fields[index] = -1;
-    }
-    fields[10] = 0;
-}
-
 // Reconstructed from eboot.elf at 0x6D26D0.
 void render_vscat_density_compute_shader_construct(void* shader) {
     construct_parameterized_compute_shader(

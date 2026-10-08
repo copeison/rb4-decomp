@@ -394,6 +394,8 @@
   inputs, unordered outputs, and distance/tile constant layouts.
 - [x] Reconstruct the blur-classification compute-shader dispatch, texture
   bindings, unordered classification output, and tile constant layout.
+- [x] Reconstruct the DOF disc-blur compute-shader dispatch, sampled scene
+  inputs, texture and structured outputs, constants, and tile definitions.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
