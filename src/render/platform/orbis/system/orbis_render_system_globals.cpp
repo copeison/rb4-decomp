@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "render/core/frame/render_frame_owner.h"
+#include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
@@ -15,16 +16,13 @@ struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_0[56];
     OrbisRenderContext* render_context;
     bool frame_active;
-    std::uint8_t reserved_65[95];
-    std::uint64_t frame_epoch;
-    std::uint8_t reserved_168[3672];
+    std::uint8_t reserved_65[3775];
     std::uint64_t submit_token;
     bool submit_thread_running;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
-static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_epoch) == 160);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
@@ -51,9 +49,8 @@ bool orbis_frame_is_active(const OrbisRenderSystem& system) {
 }
 
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system) {
-    const auto* runtime =
-        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
-    return runtime->frame_epoch;
+    const auto& base = reinterpret_cast<const RenderSystem&>(system);
+    return render_epoch(base);
 }
 
 bool orbis_submit_token_available(const OrbisRenderSystem& system) {

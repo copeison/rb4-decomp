@@ -24,6 +24,5 @@ bool render_system_attach_frame_owner(
     RenderFrameOwner& owner);
 void render_system_clear_active_frame(RenderSystem& system);
 void render_system_finish_frame(RenderSystem& system, bool auxiliary_frame);
-void render_system_increment_skipped_frame_count(RenderSystem& system);
 
 }  // namespace rb4

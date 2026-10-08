@@ -1,5 +1,6 @@
 #include "render/core/system/render_system_frame.h"
 
+#include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -65,7 +66,7 @@ void render_system_skip_frame() {
     }
 
     render_system_lock(*system);
-    render_system_increment_skipped_frame_count(*system);
+    advance_render_epoch(*system);
     render_system_unlock(*system);
 }
 
