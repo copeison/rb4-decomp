@@ -259,6 +259,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-render-system-submit-frame": 0x8D8300,
     "orbis-defer-allocation-release": 0x8D83F0,
     "orbis-release-all-retired-allocations": 0x8D84B0,
+    "orbis-create-fence": 0x8D85C0,
+    "orbis-fence-construct": 0x8E1570,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,

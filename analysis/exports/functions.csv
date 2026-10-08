@@ -27936,6 +27936,17 @@ address,end,size,name,library,thunk
 0x8D8580,0x8D8581,1,nullsub_3153,False,False
 0x8D8590,0x8D8593,3,sub_8D8590,False,False
 0x8D85A0,0x8D85BF,31,sub_8D85A0,False,False
+0x8D85C0,0x8D85F0,48,orbis_create_fence,False,False
+0x8D85F0,0x8D8980,912,sub_8D85F0,False,False
+0x8D8980,0x8D89B0,48,sub_8D8980,False,False
+0x8D89B0,0x8D89E0,48,sub_8D89B0,False,False
+0x8D89E0,0x8D8A10,48,sub_8D89E0,False,False
+0x8D8A10,0x8D8A40,48,sub_8D8A10,False,False
+0x8D8A40,0x8D8A70,48,sub_8D8A40,False,False
+0x8D8A70,0x8D8AA0,48,sub_8D8A70,False,False
+0x8D8AA0,0x8D8AD0,48,sub_8D8AA0,False,False
+0x8D8AD0,0x8D8B30,96,sub_8D8AD0,False,False
+0x8D8B30,0x8D8C60,304,sub_8D8B30,False,False
 0x8D8C60,0x8D8C61,1,nullsub_3154,False,False
 0x8D8C70,0x8D8C75,5,sub_8D8C70,False,True
 0x8D95E0,0x8D9770,400,sub_8D95E0,False,False
@@ -27962,7 +27973,7 @@ address,end,size,name,library,thunk
 0x8E0D70,0x8E1068,760,sub_8E0D70,False,False
 0x8E1070,0x8E125E,494,sub_8E1070,False,False
 0x8E1550,0x8E156F,31,sub_8E1550,False,False
-0x8E1570,0x8E15BD,77,sub_8E1570,False,False
+0x8E1570,0x8E15BD,77,orbis_fence_construct,False,False
 0x8E16D0,0x8E1741,113,sub_8E16D0,False,False
 0x8E1750,0x8E176F,31,sub_8E1750,False,False
 0x8E1770,0x8E1789,25,sub_8E1770,False,False
