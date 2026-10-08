@@ -55,6 +55,8 @@
   shared engine thread wrapper and their exact affinity-record fields.
 - [x] Reconstruct the shared CPU-mask builder and centralize the engine's
   six-processor default affinity policy.
+- [x] Recover default engine-thread object initialization and cancellation,
+  including the Orbis submit worker's initial priority and name.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and

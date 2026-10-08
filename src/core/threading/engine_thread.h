@@ -9,6 +9,7 @@ namespace rb4 {
 using EngineThreadCallback = std::int32_t (*)(void* context);
 
 constexpr std::uint32_t kMinimumEngineThreadStackSize = 0x20000;
+constexpr std::int32_t kDefaultEngineThreadPriority = 700;
 
 struct EngineThreadInvocation {
     EngineThreadCallback callback;
@@ -39,7 +40,7 @@ struct EngineThreadWrapperInvocation {
 };
 
 struct EngineThread {
-    const void* vtable;
+    std::uint8_t reserved_0[8];
     EngineThreadRuntime runtime;
     EngineThreadWrapperInvocation invocation;
 };
@@ -57,6 +58,7 @@ static_assert(sizeof(EngineThread) == 136);
 static_assert(offsetof(EngineThread, runtime) == 8);
 static_assert(offsetof(EngineThread, invocation) == 104);
 
+void engine_thread_initialize(EngineThread& thread, const char* name);
 void engine_thread_configure_runtime(
     EngineThreadRuntime& runtime,
     EngineThreadCallback callback,
@@ -78,5 +80,6 @@ void engine_thread_configure(
 
 void engine_thread_start(EngineThreadRuntime& runtime);
 std::int32_t engine_thread_join(EngineThreadRuntime& runtime);
+void engine_thread_cancel(EngineThreadRuntime& runtime);
 
 }  // namespace rb4

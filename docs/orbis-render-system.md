@@ -6,7 +6,8 @@ shared render-system base, installs the Orbis vtable, and initializes the
 following platform state:
 
 - video-output and flip state;
-- worker state with the initial label `Unknown Thread!`;
+- the complete shared engine-thread wrapper with default priority 700 and the
+  initial label `Unknown Thread!`;
 - two recursive submission mutexes;
 - eight fallback mesh-stream descriptors, nine identity-instance descriptors,
   and their two GPU allocation pointers;
@@ -16,9 +17,9 @@ following platform state:
 - the Orbis renderer singleton at `g_orbis_render_system`.
 
 The Orbis destructor at `0x8D79B0` clears that singleton first, releases every
-node in the deferred-command list, destroys both recursive mutexes, releases
-profiling and condition-variable state when present, and then invokes the base
-render-system destructor.
+node in the deferred-command list, destroys both recursive mutexes, cancels a
+remaining submit pthread when present, releases condition-variable state, and
+then invokes the base render-system destructor.
 
 Runtime shutdown remains a separate phase. `render_system_shutdown` closes the
 active backend and owned GPU resources before the virtual deleting destructor

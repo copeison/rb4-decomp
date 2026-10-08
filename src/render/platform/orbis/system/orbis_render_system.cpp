@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/threading/engine_thread.h"
 #include "render/platform/orbis/system/orbis_render_system_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/core/system/render_system_lifecycle.h"
@@ -27,7 +28,8 @@ OrbisRenderSystem* orbis_render_system_create() {
 void orbis_render_system_construct(OrbisRenderSystem& system) {
     render_system_construct(orbis_render_system_base(system));
     orbis_render_system_initialize_video_state(system);
-    orbis_render_system_initialize_worker_state(system, kUnknownWorkerName);
+    engine_thread_initialize(
+        orbis_submit_thread_wrapper(system), kUnknownWorkerName);
     orbis_render_system_initialize_submission_state(system);
     orbis_render_system_initialize_command_list(system);
     orbis_set_cached_flip_rate(system, -1);
@@ -39,7 +41,7 @@ void orbis_render_system_destruct(OrbisRenderSystem& system) {
     orbis_render_system_clear_instance();
     orbis_render_system_destroy_command_list(system);
     orbis_render_system_destroy_submission_state(system);
-    orbis_render_system_destroy_profile_state(system);
+    engine_thread_cancel(orbis_submit_thread(system));
     orbis_render_system_destroy_condition_state(system);
     render_system_destruct(orbis_render_system_base(system));
 }

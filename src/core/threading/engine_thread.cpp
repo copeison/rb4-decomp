@@ -30,6 +30,20 @@ std::int32_t engine_thread_wrapper_entry(void* argument) {
 
 }  // namespace
 
+// Reconstructed from the inlined worker initialization at eboot.elf 0x8D77F0.
+void engine_thread_initialize(EngineThread& thread, const char* name) {
+    thread.runtime.thread = nullptr;
+    thread.runtime.processor = 0;
+    thread.runtime.priority = kDefaultEngineThreadPriority;
+    thread.runtime.stack_size = 0;
+    thread.runtime.affinity_mask = 0;
+    std::snprintf(
+        thread.runtime.name, sizeof(thread.runtime.name), "%s", name);
+    thread.runtime.invocation = {};
+    thread.runtime.trailing_state = 0;
+    thread.invocation = {};
+}
+
 // Reconstructed from eboot.elf at 0x25C3E0.
 void engine_thread_configure_runtime(
     EngineThreadRuntime& runtime,
@@ -115,6 +129,13 @@ std::int32_t engine_thread_join(EngineThreadRuntime& runtime) {
     scePthreadJoin(runtime.thread, &result);
     runtime.thread = nullptr;
     return runtime.invocation.result;
+}
+
+// Reconstructed from eboot.elf at 0x25C3C0.
+void engine_thread_cancel(EngineThreadRuntime& runtime) {
+    if (runtime.thread != nullptr) {
+        scePthreadCancel(runtime.thread);
+    }
 }
 
 }  // namespace rb4
