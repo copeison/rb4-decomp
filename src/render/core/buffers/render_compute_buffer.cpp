@@ -25,8 +25,8 @@ void render_compute_buffer_construct(
     const RenderComputeBufferDescriptor& descriptor) {
     render_compute_buffer_set_base_dispatch(buffer);
     buffer.frame_stamp = -1;
-    buffer.element_count = descriptor.element_count;
     buffer.element_stride = descriptor.element_stride;
+    buffer.element_count = descriptor.element_count;
     buffer.initial_data = descriptor.initial_data;
     buffer.external_gpu_data = descriptor.external_gpu_data;
     buffer.reserved = descriptor.reserved;

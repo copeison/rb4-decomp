@@ -13,8 +13,10 @@ initialization method.
 
 The common object is 80 bytes. Its first 16 bytes are the render-resource base,
 followed by a byte-for-byte 48-byte descriptor copy and a CPU staging pointer
-at offset `+64`. The descriptor carries the element count, stride, initial CPU
-data, optional external GPU address, flags, and name. The common destructor at
+at offset `+64`. The descriptor carries the element stride at `+0x00`, element
+count at `+0x08`, initial CPU data, optional external GPU address, flags, and
+name. The copied fields occupy `+0x10` and `+0x18` in the common object. The
+common destructor at
 `0x636D10` releases the staging allocation, while the deleting destructor at
 `0x636D50` also frees the object. Virtual slot 2 returns the unsigned sentinel
 `0xFFFFFFFF`.

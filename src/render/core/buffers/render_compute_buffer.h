@@ -6,8 +6,8 @@
 namespace rb4 {
 
 struct RenderComputeBufferDescriptor {
-    std::size_t element_count;
     std::size_t element_stride;
+    std::size_t element_count;
     const void* initial_data;
     void* external_gpu_data;
     std::uint32_t reserved;
@@ -18,8 +18,8 @@ struct RenderComputeBufferDescriptor {
 struct RenderComputeBuffer {
     void* implementation;
     std::int64_t frame_stamp;
-    std::size_t element_count;
     std::size_t element_stride;
+    std::size_t element_count;
     const void* initial_data;
     void* external_gpu_data;
     std::uint32_t reserved;
@@ -30,7 +30,11 @@ struct RenderComputeBuffer {
 };
 
 static_assert(sizeof(RenderComputeBufferDescriptor) == 48);
+static_assert(offsetof(RenderComputeBufferDescriptor, element_stride) == 0);
+static_assert(offsetof(RenderComputeBufferDescriptor, element_count) == 8);
 static_assert(sizeof(RenderComputeBuffer) == 80);
+static_assert(offsetof(RenderComputeBuffer, element_stride) == 16);
+static_assert(offsetof(RenderComputeBuffer, element_count) == 24);
 
 RenderComputeBuffer* render_create_compute_buffer(
     const RenderComputeBufferDescriptor& descriptor);

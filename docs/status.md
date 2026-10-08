@@ -34,6 +34,7 @@
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
 - [x] Recover the exact 232-byte renderer-settings layout and signed limit fields.
 - [x] Identify renderer tile dimensions and light-capacity settings.
+- [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
@@ -167,6 +168,7 @@
 - [x] Recover typed active-bank descriptor and allocation selection for Orbis
   compute buffers.
 - [x] Reconstruct the common render compute-buffer factory and 80-byte base layout.
+- [x] Correct the compute-buffer descriptor's stride/count field order.
 - [x] Reconstruct the Orbis particle-buffer allocation, upload, draw, and destruction paths.
 - [x] Reconstruct the common render particle-buffer factory and 64-byte base layout.
 - [x] Reconstruct the Orbis occlusion-query lifecycle and conditional-rendering commands.
