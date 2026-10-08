@@ -9,8 +9,6 @@ namespace rb4 {
 
 struct RenderTexture;
 
-bool render_target_resources_force_64_bit_light_accumulation(
-    const RenderTargetResources& resources);
 RenderTexture* render_target_resources_create_light_accumulation_target_raw(
     RenderTargetResources& resources,
     const char* name,
@@ -18,7 +16,4 @@ RenderTexture* render_target_resources_create_light_accumulation_target_raw(
     RenderExtent extent,
     std::int32_t attachment_index,
     RenderTexture* reusable_target);
-std::int32_t render_target_allocation_index(const RenderTexture& target);
-std::int32_t render_target_allocation_count(const RenderTexture& target);
-
 }  // namespace rb4

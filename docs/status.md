@@ -59,6 +59,8 @@
   typed fields and local enum-to-field mappings.
 - [x] Correct owner and per-scene render-resource slots from the unrelated
   32-byte target wrapper to their shared render-texture base type.
+- [x] Type render-texture attachment indices and counts and use them directly
+  for light-accumulation and depth/stencil cursor advancement.
 - [x] Recover the concrete 1,552-byte render-target state constructor and
   deleting destructor, including its verified resource-owner prefix mapping.
 - [x] Inline verified render-target source binding, unidentified-slot teardown,

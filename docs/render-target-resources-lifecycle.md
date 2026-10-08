@@ -107,3 +107,8 @@ and the shadow-contribution array is a 2D-array texture. Owner and per-scene
 slots therefore use the common `RenderTexture` base, including release and
 reuse paths. The separate 32-byte `RenderTarget` wrapper remains limited to
 its own active-state lifecycle.
+
+The shared texture fields at `+0x90` and `+0x94` are the attachment index and
+attachment count for these resources. Light accumulation and depth/stencil
+creation now update the owner's attachment cursor directly from those fields;
+an index of `-1` continues to mean that no attachment was assigned.

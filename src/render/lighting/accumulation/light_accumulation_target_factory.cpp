@@ -2,6 +2,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_texture.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory_adapters.h"
 
 namespace rb4 {
@@ -30,7 +31,7 @@ RenderTexture* render_light_accumulation_target_create(
     const auto& settings =
         *render_system_settings(*render_system_instance());
     const bool use_64_bit_format = settings.use_64_bit_light_accum ||
-        render_target_resources_force_64_bit_light_accumulation(resources);
+        (resources.flags & 0x20000000U) != 0;
 
     const auto full_extent = resources.extent;
     const RenderExtent extent{
@@ -50,11 +51,11 @@ RenderTexture* render_light_accumulation_target_create(
             extent,
             attachment_index,
             reusable_target);
-    const auto allocation_index = render_target_allocation_index(*target);
+    const auto allocation_index = target->attachment_index;
     if (allocation_index != -1) {
         resources.attachment_cursor =
             static_cast<std::uint32_t>(
-                allocation_index + render_target_allocation_count(*target));
+                allocation_index + target->attachment_count);
     }
     return target;
 }

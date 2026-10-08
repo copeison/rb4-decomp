@@ -4,6 +4,7 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/depth/depth_stencil_target_adapters.h"
 
@@ -27,10 +28,9 @@ void render_depth_stencil_target_create(
 
     auto attachment_index = partial_frame
         ? kUnassignedAttachment
-        : render_target_resources_depth_attachment_end(resources);
+        : static_cast<std::int32_t>(resources.attachment_cursor);
     if (!partial_frame && reusable_target != nullptr) {
-        if (render_depth_stencil_target_has_unassigned_attachment(
-                *reusable_target)) {
+        if (reusable_target->attachment_index == kUnassignedAttachment) {
             attachment_index = kUnassignedAttachment;
         } else {
             reusable_target = nullptr;
@@ -46,7 +46,10 @@ void render_depth_stencil_target_create(
         reusable_target,
         !partial_frame);
     block.depth_stencil = target;
-    render_target_resources_update_depth_attachment_end(resources, *target);
+    if (target->attachment_index != kUnassignedAttachment) {
+        resources.attachment_cursor = static_cast<std::uint32_t>(
+            target->attachment_index + target->attachment_count);
+    }
 }
 
 // Reconstructed from the depth/stencil portion of eboot.elf at 0x6AFFE0.

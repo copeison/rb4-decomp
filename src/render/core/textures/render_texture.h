@@ -29,8 +29,14 @@ struct RenderTexture {
     std::uint32_t source_size;
     bool backend_initialized;
     std::uint8_t reserved_141[3];
-    std::int32_t bindless_index;
-    std::uint32_t resource_flags;
+    union {
+        std::int32_t bindless_index;
+        std::int32_t attachment_index;
+    };
+    union {
+        std::uint32_t resource_flags;
+        std::int32_t attachment_count;
+    };
     const char* name;
     std::int32_t resource_index;
     std::uint8_t trailing_reserved[4];
