@@ -3,11 +3,21 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/core/render_constant_buffer.h"
+
 namespace rb4 {
 
-struct OrbisConstantBuffer;
 struct OrbisRenderContext;
-struct RenderConstantBufferDescriptor;
+
+struct OrbisConstantBuffer : RenderConstantBuffer {
+    std::uint8_t backend_reserved[16];
+    void* frame_data;
+    void* gpu_data;
+    std::size_t gpu_size;
+    std::uint64_t frame_stamp;
+};
+
+static_assert(sizeof(OrbisConstantBuffer) == 112);
 
 OrbisConstantBuffer* orbis_create_constant_buffer(
     const RenderConstantBufferDescriptor& descriptor,

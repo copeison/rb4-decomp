@@ -9,6 +9,14 @@ element count and a pointer to the inline data region immediately after the
 header. This layout keeps the constant-buffer object and its element storage in
 a single allocation.
 
+The common base at `0x639FF0` is exactly 64 bytes. It preserves the descriptor
+owner, binding slot, shader-stage mask, descriptor-default element count,
+selected element count, CPU data pointer, and pending-upload state. The generic
+factory at `0x639F30` substitutes the descriptor's element count when its caller
+passes `size_t(-1)`. Unless flag bit `0x01` requests deferred initialization,
+the factory immediately invokes the platform initializer and clears the
+pending-upload byte.
+
 The platform constructor at `0x8E3800` clears 32 bytes of backend state at
 object offset `+80`. Initialization at `0x8E3900` allocates a persistent GPU
 copy named `CBuffer`. Its size is `16 * element_count`, with a 16-byte minimum

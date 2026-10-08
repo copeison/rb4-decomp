@@ -78,6 +78,7 @@
 - [x] Recover the Orbis GPU-stat timestamp lifecycle and clock conversion.
 - [x] Recover the Orbis compute-buffer counter copy command.
 - [x] Reconstruct the Orbis constant-buffer allocation, updates, binding, and destruction paths.
+- [x] Reconstruct the common render constant-buffer factory and 64-byte base layout.
 - [x] Recover the Orbis 1D texture factory and platform constructor.
 - [x] Reconstruct Orbis 1D texture storage, uploads, and destruction.
 - [x] Reconstruct Orbis 1D texture shader-stage binding.
