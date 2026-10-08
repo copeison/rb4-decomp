@@ -19,7 +19,7 @@ struct DefaultLightingState {
     std::vector<RndObjectId> directional_lights;
     std::vector<RndObjectId> shadowed_spot_lights;
     DefaultLightingMode mode = DefaultLightingMode::kDirectional;
-    float scale = 1.0f;
+    float scale = 100.0f;
 };
 
 RndSceneResource* render_load_scene_resource(const char* path);

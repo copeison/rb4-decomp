@@ -21082,7 +21082,7 @@ address,end,size,name,library,thunk
 0x6BDAD0,0x6BDAD1,1,nullsub_2211,False,False
 0x6BDAE0,0x6BDAE1,1,nullsub_2212,False,False
 0x6BDB10,0x6BDB2F,31,sub_6BDB10,False,False
-0x6BDB30,0x6BDC1A,234,sub_6BDB30,False,False
+0x6BDB30,0x6BDC1A,234,render_construct_default_resources,False,False
 0x6BDC20,0x6BDC94,116,sub_6BDC20,False,False
 0x6BDCA0,0x6BDE57,439,render_initialize_default_resources,False,False
 0x6BDE60,0x6BEAE1,3201,render_create_default_textures,False,False

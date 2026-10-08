@@ -233,6 +233,7 @@ FOCUSED_DECOMPILATIONS = {
     "fmod-buffered-output-update": 0x2764C0,
     "fmod-buffered-output-get-handle": 0x276520,
     "fmod-load-modules-and-set-thread-affinity": 0x261F60,
+    "render-construct-default-resources": 0x6BDB30,
     "render-initialize-default-resources": 0x6BDCA0,
     "render-release-default-resources": 0x6BF860,
     "render-poll-default-resources": 0x6BFA00,

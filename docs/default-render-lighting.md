@@ -18,11 +18,16 @@ render-state subobject:
 | `0x1F0` | Directional-light object-ID vector. |
 | `0x210` | Shadowed-spot object-ID vector. |
 | `0x230` | Active light set: `0` for directional, `1` for shadowed spot. |
-| `0x234` | Scale used for falloff distances and the spot transform position. |
+| `0x234` | Scale used for falloff distances and the spot transform position; defaults to `100.0`. |
 
 The source uses `DefaultLightingState` instead of padding a partial structure
 out to those offsets. The table preserves the binary evidence while keeping the
 reconstructed control flow readable.
+
+The default-resource constructor at `0x6BDB30` zeroes the resource pointers,
+texture table, compute buffers, camera, materials, and light vectors. Its final
+eight-byte store initializes the lighting mode to directional (`0`) and the
+scale to the IEEE-754 value `100.0f` (`0x42C80000`).
 
 ## Scene load
 
