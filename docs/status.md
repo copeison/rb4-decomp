@@ -91,6 +91,8 @@
 - [x] Replace scaled intermediate creation adapters with shared texture
   descriptor and data-format construction.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
+- [x] Inline shadow-contribution 2D-array, stencil, scratch, and soften-tile
+  descriptors and owner registration.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.
 - [x] Reconstruct the fallback light-probe accumulation target.
 - [x] Inline the fallback light-probe accumulation descriptor, correct its

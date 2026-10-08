@@ -38,6 +38,14 @@ common resource-mode field at offset `0xA0`. The tiled-light view is now a
 verified typed overlay on the scene block rather than an external offset
 adapter.
 
+Shadow contribution uses the common 2D-array factory for its
+`{8, 10, 0, 1, -1}` contribution layers. At resolutions above 1920x1080 it
+halves the working extent and adds a `{24, 11, 0, 1, -1}` stencil texture with
+creation-state type `2` and target flag `16`, plus a second scratch texture.
+Scratch textures use `{64, 4, 2, 1, -1}` and the two soften-tile textures use
+`{8, 10, 0, 1, -1}` at the rounded tile extent. The 2D resources use filter
+value `1`; every created texture is registered with the owner.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.

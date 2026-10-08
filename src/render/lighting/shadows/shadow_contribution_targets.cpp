@@ -2,8 +2,10 @@
 
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/lighting/shadows/shadow_contribution_target_adapters.h"
 
 namespace rb4 {
 
@@ -69,13 +71,57 @@ void create_target(
     ShadowContributionTargetKind kind,
     RenderExtent extent,
     std::uint32_t texture_array_layers = 1) {
-    target_slot(resources, kind) =
-        render_target_resources_create_shadow_contribution_target(
-            resources,
-            kind,
-            extent,
-            texture_array_layers,
-            reusable_target(reusable_resources, kind));
+    RenderTextureCreationState creation_state{};
+    creation_state.values[6] = 1;
+    creation_state.values[8] = static_cast<std::uint32_t>(
+        render_texture_default_address_mode(27));
+    creation_state.values[9] =
+        kind == ShadowContributionTargetKind::kTextureArray
+        ? static_cast<std::uint32_t>(render_texture_default_filter_mode(27))
+        : 1U;
+    creation_state.values[10] = 10;
+
+    RenderDataFormatDescriptor format_descriptor{8, 10, 0, 1, -1};
+    const char* name = "Shadow Soften Tiles";
+    std::uint32_t target_flags = 0;
+    if (kind == ShadowContributionTargetKind::kTextureArray) {
+        name = "Shadow Contrib TexArray";
+    } else if (kind == ShadowContributionTargetKind::kStencil) {
+        creation_state.values[0] = 2;
+        format_descriptor = {24, 11, 0, 1, -1};
+        name = "Shadow Contrib Stencil";
+        target_flags = 16;
+    } else if (
+        kind == ShadowContributionTargetKind::kScratchPrimary ||
+        kind == ShadowContributionTargetKind::kScratchSecondary) {
+        format_descriptor = {64, 4, 2, 1, -1};
+        name = "Shadow Contrib Scratch";
+    }
+
+    const auto data_format = render_data_format_resolve(format_descriptor, 7);
+    auto* target = kind == ShadowContributionTargetKind::kTextureArray
+        ? render_target_resources_create_texture_array_2d(
+              resources,
+              name,
+              creation_state,
+              data_format,
+              extent,
+              texture_array_layers,
+              -1,
+              target_flags,
+              reusable_target(reusable_resources, kind))
+        : render_target_resources_create_texture_2d(
+              resources,
+              name,
+              creation_state,
+              data_format,
+              extent,
+              -1,
+              target_flags,
+              reusable_target(reusable_resources, kind));
+    target_slot(resources, kind) = target;
+    resources.registered_resources_begin[
+        resources.registered_resource_count++] = target;
 }
 
 void release_target(
