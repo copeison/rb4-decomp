@@ -16,6 +16,8 @@ std::size_t render_system_frame_owner_count(const RenderSystem& system);
 RenderFrameOwner& render_system_frame_owner_at(
     RenderSystem& system,
     std::size_t index);
+bool render_system_has_pending_frame(const RenderSystem& system);
+void render_system_activate_pending_frame(RenderSystem& system);
 void render_system_publish_instance(RenderSystem& system);
 void render_system_clear_instance();
 

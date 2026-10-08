@@ -4,6 +4,7 @@
 #include <_pthread.h>
 
 #include "render/core/system/render_epoch.h"
+#include "render/core/system/render_system_globals.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync_adapters.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -14,8 +15,9 @@ namespace rb4 {
 void orbis_render_system_wait_idle(OrbisRenderSystem& system) {
     orbis_wait_for_gpu_idle(system);
     orbis_release_retired_allocations(system);
-    if (orbis_frame_is_active(system)) {
-        orbis_flush_active_frame(system);
+    auto& base = orbis_render_system_base(system);
+    if (render_system_has_pending_frame(base)) {
+        render_system_activate_pending_frame(base);
     }
     orbis_render_context_reset_active_frame(
         orbis_render_system_context(system));
@@ -26,8 +28,9 @@ void orbis_wait_for_gpu_idle(OrbisRenderSystem& system) {
     while (!orbis_render_context_submissions_complete(
         orbis_render_system_context(system))) {
         scePthreadYield();
-        if (orbis_frame_is_active(system)) {
-            orbis_flush_active_frame(system);
+        auto& base = orbis_render_system_base(system);
+        if (render_system_has_pending_frame(base)) {
+            render_system_activate_pending_frame(base);
         }
     }
 }

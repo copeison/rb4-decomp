@@ -45,8 +45,6 @@ void render_system_set_render_context(
 void render_system_set_back_buffer(
     OrbisRenderSystem& system,
     OrbisBackBuffer& back_buffer);
-bool orbis_frame_is_active(const OrbisRenderSystem& system);
-void orbis_flush_active_frame(OrbisRenderSystem& system);
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system);
 bool orbis_submit_token_available(const OrbisRenderSystem& system);
 void orbis_publish_submit_token(OrbisRenderSystem& system);

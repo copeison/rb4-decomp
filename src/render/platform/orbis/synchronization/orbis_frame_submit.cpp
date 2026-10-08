@@ -1,6 +1,7 @@
 #include "render/platform/orbis/synchronization/orbis_frame_submit.h"
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
+#include "render/core/system/render_system_globals.h"
 #include "render/platform/orbis/synchronization/orbis_frame_submit_adapters.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -20,8 +21,9 @@ void orbis_render_system_submit_frame(
     orbis_consume_submit_token(system);
 
     orbis_submit_scope_end(system);
-    if (orbis_frame_is_active(system)) {
-        orbis_flush_active_frame(system);
+    auto& base = orbis_render_system_base(system);
+    if (render_system_has_pending_frame(base)) {
+        render_system_activate_pending_frame(base);
     }
 
     orbis_render_context_submit_frame(orbis_render_system_context(system));

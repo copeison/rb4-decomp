@@ -37,6 +37,8 @@
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
 - [x] Reconstruct base render-system construction and destruction ordering.
 - [x] Recover the common render-system singleton and shared epoch accessor.
+- [x] Type deferred frame activation and reconstruct the common context
+  activation wrapper.
 - [x] Reconstruct render-system runtime initialization and shutdown ordering.
 - [x] Reconstruct Orbis render-system allocation and object lifetime.
 - [x] Recover the separate Orbis render-system singleton lifecycle.

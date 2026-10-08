@@ -6,7 +6,7 @@ folders contain domain folders rather than accumulating implementation files,
 including game, input, UI, rendering, audio, and future reconstructed systems.
 
 Shared renderer code is divided under `src/render/core` into buffers, capture,
-debug, frame, meshes, platform, settings, shaders, synchronization, system,
+context, debug, frame, meshes, platform, settings, shaders, synchronization, system,
 targets, and textures. Default resources are divided under
 `src/render/resources` into camera, lighting, materials, system, and textures.
 The PS4 backend is rooted at

@@ -10,6 +10,7 @@
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/core/system/render_system_frame_adapters.h"
+#include "render/core/system/render_system_globals.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
@@ -230,8 +231,8 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
     auto& base = orbis_render_system_base(system);
     render_system_lock(base);
     render_system_enter_locked_call(base);
-    if (orbis_frame_is_active(system)) {
-        orbis_flush_active_frame(system);
+    if (render_system_has_pending_frame(base)) {
+        render_system_activate_pending_frame(base);
     }
     render_system_leave_locked_call(base);
     render_system_unlock(base);

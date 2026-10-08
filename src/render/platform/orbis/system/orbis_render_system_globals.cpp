@@ -21,8 +21,7 @@ struct RetiredAllocationNode {
 struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_0[56];
     OrbisRenderContext* render_context;
-    bool frame_active;
-    std::uint8_t reserved_65[47];
+    std::uint8_t reserved_64[48];
     OrbisBackBuffer* back_buffer;
     std::uint8_t reserved_120[3684];
     std::int32_t video_output_handle;
@@ -45,7 +44,6 @@ struct OrbisRenderSystemRuntimePrefix {
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
-static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, back_buffer) == 112);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, video_output_handle) == 3804);
@@ -203,12 +201,6 @@ void render_system_set_back_buffer(
     OrbisBackBuffer& back_buffer) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->back_buffer = &back_buffer;
-}
-
-bool orbis_frame_is_active(const OrbisRenderSystem& system) {
-    const auto* runtime =
-        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
-    return runtime->frame_active;
 }
 
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system) {
