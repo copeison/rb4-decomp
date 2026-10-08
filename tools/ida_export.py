@@ -262,6 +262,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-create-fence": 0x8D85C0,
     "orbis-create-texture-2d": 0x8D89B0,
     "orbis-texture-2d-construct": 0x8D62C0,
+    "orbis-create-texture-cube": 0x8D8A10,
+    "orbis-texture-cube-construct": 0x8E6BA0,
     "orbis-fence-destruct": 0x8E15F0,
     "orbis-fence-base-destruct": 0x8E1640,
     "orbis-fence-delete": 0x8E1680,
