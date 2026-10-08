@@ -101,7 +101,9 @@ an adapter.
 
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
-populated with capability flags and resolutions.
+populated with capability flags and resolutions. The render system addresses
+the typed 128-byte slots directly and destroys their resolution vectors in
+reverse slot order.
 
 Runtime initialization now writes the initialized flag and copies the exact
 16-byte `GameSystemInitOptions` block directly before invoking platform vtable

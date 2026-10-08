@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "render/core/debug/render_gpu_stat_block.h"
+#include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_system_lifecycle_adapters.h"
@@ -183,7 +184,7 @@ void render_system_destruct(RenderSystem& system) {
         render_system_default_resources(system));
 
     for (std::size_t index = kPlatformConfigCount; index != 0; --index) {
-        render_platform_config_destroy(
+        render_platform_config_destruct(
             render_system_platform_config_at(system, index - 1));
     }
 

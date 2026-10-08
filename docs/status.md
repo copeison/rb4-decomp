@@ -290,6 +290,8 @@
   active-frame, epoch, timing, settings, and factory state.
 - [x] Reconstruct common render-system core-prefix construction, inline owner
   list setup, dynamic-array teardown, and recursive mutex lifetime.
+- [x] Type the 128-byte platform configuration, its defaults, resolution-vector
+  lifetime, fixed array accessor, and platform-seven boot predicate.
 - [x] Reconstruct common primary and auxiliary frame preparation, attachment,
   submission control flow, timing, and epoch advancement.
 - [x] Recover the 128-byte common GPU-stat block, typed frame query ID, and
