@@ -23,7 +23,8 @@ void orbis_render_system_wait_idle(OrbisRenderSystem& system) {
 // Reconstructed from eboot.elf at 0x8D8140.
 void orbis_wait_for_gpu_idle(OrbisRenderSystem& system) {
     orbis_gpu_wait_begin(system);
-    while (!orbis_submission_counters_empty(system)) {
+    while (!orbis_render_context_submissions_complete(
+        orbis_render_system_context(system))) {
         orbis_thread_yield();
         if (orbis_frame_is_active(system)) {
             orbis_flush_active_frame(system);

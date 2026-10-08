@@ -11,7 +11,6 @@ struct OrbisRenderSystem;
 void orbis_flush_active_frame(OrbisRenderSystem& system);
 
 void orbis_gpu_wait_begin(OrbisRenderSystem& system);
-bool orbis_submission_counters_empty(const OrbisRenderSystem& system);
 void orbis_thread_yield();
 void orbis_gpu_wait_end(OrbisRenderSystem& system);
 

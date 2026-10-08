@@ -22,12 +22,19 @@ constexpr std::size_t kComputeQueueRingAlignment = 256;
 constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
+constexpr std::size_t kSubmissionCounterCount = 10;
 
 struct OrbisRenderContextRuntimePrefix {
-    std::uint8_t reserved_0[0x40D90];
+    std::uint8_t reserved_0[0x22880];
+    volatile std::int32_t
+        submission_counters[kOrbisFrameSlotCount][kSubmissionCounterCount];
+    std::uint8_t reserved_228D0[0x1E4C0];
     std::size_t active_frame;
 };
 
+static_assert(
+    offsetof(OrbisRenderContextRuntimePrefix, submission_counters) ==
+    0x22880);
 static_assert(
     offsetof(OrbisRenderContextRuntimePrefix, active_frame) == 0x40D90);
 
@@ -117,6 +124,19 @@ std::size_t orbis_render_context_active_frame(
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
     return runtime->active_frame;
+}
+
+bool orbis_render_context_submissions_complete(
+    const OrbisRenderContext& context) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
+    const auto frame = runtime->active_frame;
+    for (std::size_t index = 0; index < kSubmissionCounterCount; ++index) {
+        if (runtime->submission_counters[frame][index] != 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void orbis_render_context_set_active_frame(

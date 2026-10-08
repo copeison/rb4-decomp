@@ -40,6 +40,8 @@ void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context);
 std::size_t orbis_render_context_active_frame(
     const OrbisRenderContext& context);
+bool orbis_render_context_submissions_complete(
+    const OrbisRenderContext& context);
 void orbis_render_context_set_active_frame(
     OrbisRenderContext& context,
     std::size_t frame);
