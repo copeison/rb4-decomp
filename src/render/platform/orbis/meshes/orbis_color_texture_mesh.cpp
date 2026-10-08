@@ -4,8 +4,8 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
-#include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
+#include "render/platform/orbis/meshes/orbis_mesh_storage.h"
 
 namespace rb4 {
 
@@ -15,6 +15,12 @@ constexpr std::size_t kOrbisMeshSize = 472;
 constexpr const char* kVertexCopyAllocationName = "VerticesCopy";
 
 using ColorTextureMeshLayout = OrbisMeshLayout<ColorTextureMeshVertex>;
+
+ColorTextureMeshVertex default_color_texture_vertex() {
+    ColorTextureMeshVertex vertex{};
+    vertex.color[3] = 1.0F;
+    return vertex;
+}
 
 static_assert(
     sizeof(ColorTextureMeshVertex) == 36,
@@ -32,6 +38,14 @@ std::size_t orbis_color_texture_mesh_vertex_count(const OrbisMesh& mesh) {
     return mesh_vertex_count<ColorTextureMeshVertex>(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x44B2F0.
+void orbis_color_texture_mesh_grow_vertices(
+    OrbisMesh& mesh,
+    std::size_t additional_count) {
+    orbis_mesh_grow_vertex_storage<ColorTextureMeshVertex>(
+        mesh, additional_count, default_color_texture_vertex);
+}
+
 // Reconstructed from eboot.elf at 0x8DB640.
 void orbis_color_texture_mesh_resize_vertices(
     OrbisMesh& mesh,
@@ -43,12 +57,18 @@ void orbis_color_texture_mesh_resize_vertices(
             mesh, vertex_count - current_count);
         return;
     }
-    layout.vertices_end = layout.vertices_begin + vertex_count;
+    layout.vertices_end = vertex_count == 0
+        ? layout.vertices_begin
+        : layout.vertices_begin + vertex_count;
 }
 
 // Reconstructed from eboot.elf at 0x8DB690.
 void orbis_color_texture_mesh_clear_vertices(OrbisMesh& mesh) {
     orbis_color_texture_mesh_release_vertices(mesh);
+}
+
+void orbis_color_texture_mesh_release_vertices(OrbisMesh& mesh) {
+    orbis_mesh_release_vertex_storage<ColorTextureMeshVertex>(mesh);
 }
 
 // Reconstructed from eboot.elf at 0x8DB720.
@@ -82,10 +102,23 @@ void orbis_color_texture_mesh_finalize_backend(OrbisMesh& mesh) {
     orbis_color_texture_mesh_rebuild_index_buffer(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x8DBE60.
+void orbis_color_texture_mesh_rebuild_vertex_buffers(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_vertex_buffers<ColorTextureMeshVertex>(
+        mesh, RenderMeshFormat::kColorTexture);
+}
+
+// Reconstructed from eboot.elf at 0x8DC070.
+void orbis_color_texture_mesh_rebuild_index_buffer(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_index_buffer<ColorTextureMeshVertex>(mesh);
+}
+
 // Reconstructed from eboot.elf at 0x8DB7D0.
 void orbis_color_texture_mesh_update_backend(
     OrbisMesh& mesh,
+    void* update_context,
     MeshUpdateFlags flags) {
+    (void)update_context;
     if (!has_mesh_update_flag(flags, MeshUpdateFlags::kVertices)) {
         return;
     }

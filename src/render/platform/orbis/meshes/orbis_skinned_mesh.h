@@ -20,18 +20,25 @@ struct SkinnedMeshVertex {
 };
 
 std::size_t orbis_skinned_mesh_vertex_count(const OrbisMesh& mesh);
+void orbis_skinned_mesh_grow_vertices(
+    OrbisMesh& mesh,
+    std::size_t additional_count);
 void orbis_skinned_mesh_resize_vertices(
     OrbisMesh& mesh,
     std::size_t vertex_count);
 void orbis_skinned_mesh_clear_vertices(OrbisMesh& mesh);
+void orbis_skinned_mesh_release_vertices(OrbisMesh& mesh);
 SkinnedMeshVertex* orbis_skinned_mesh_vertex_at(
     OrbisMesh& mesh,
     std::size_t index);
 SkinnedMeshVertex* orbis_skinned_mesh_copy_vertices(
     const OrbisMesh& mesh);
 void orbis_skinned_mesh_finalize_backend(OrbisMesh& mesh);
+void orbis_skinned_mesh_rebuild_vertex_buffers(OrbisMesh& mesh);
+void orbis_skinned_mesh_rebuild_index_buffer(OrbisMesh& mesh);
 void orbis_skinned_mesh_update_backend(
     OrbisMesh& mesh,
+    void* update_context,
     MeshUpdateFlags flags);
 
 }  // namespace rb4

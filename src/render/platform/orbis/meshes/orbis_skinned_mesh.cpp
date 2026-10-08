@@ -4,8 +4,8 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
-#include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
+#include "render/platform/orbis/meshes/orbis_mesh_storage.h"
 
 namespace rb4 {
 
@@ -15,6 +15,12 @@ constexpr std::size_t kOrbisMeshSize = 472;
 constexpr const char* kVertexCopyAllocationName = "VerticesCopy";
 
 using SkinnedMeshLayout = OrbisMeshLayout<SkinnedMeshVertex>;
+
+SkinnedMeshVertex default_skinned_vertex() {
+    SkinnedMeshVertex vertex{};
+    vertex.color[3] = 1.0F;
+    return vertex;
+}
 
 static_assert(
     sizeof(SkinnedMeshVertex) == 100,
@@ -32,6 +38,14 @@ std::size_t orbis_skinned_mesh_vertex_count(const OrbisMesh& mesh) {
     return mesh_vertex_count<SkinnedMeshVertex>(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x8DE0F0.
+void orbis_skinned_mesh_grow_vertices(
+    OrbisMesh& mesh,
+    std::size_t additional_count) {
+    orbis_mesh_grow_vertex_storage<SkinnedMeshVertex>(
+        mesh, additional_count, default_skinned_vertex);
+}
+
 // Reconstructed from eboot.elf at 0x8DDC40.
 void orbis_skinned_mesh_resize_vertices(
     OrbisMesh& mesh,
@@ -43,12 +57,18 @@ void orbis_skinned_mesh_resize_vertices(
             mesh, vertex_count - current_count);
         return;
     }
-    layout.vertices_end = layout.vertices_begin + vertex_count;
+    layout.vertices_end = vertex_count == 0
+        ? layout.vertices_begin
+        : layout.vertices_begin + vertex_count;
 }
 
 // Reconstructed from eboot.elf at 0x8DDC90.
 void orbis_skinned_mesh_clear_vertices(OrbisMesh& mesh) {
     orbis_skinned_mesh_release_vertices(mesh);
+}
+
+void orbis_skinned_mesh_release_vertices(OrbisMesh& mesh) {
+    orbis_mesh_release_vertex_storage<SkinnedMeshVertex>(mesh);
 }
 
 // Reconstructed from eboot.elf at 0x8DDD20.
@@ -82,10 +102,23 @@ void orbis_skinned_mesh_finalize_backend(OrbisMesh& mesh) {
     orbis_skinned_mesh_rebuild_index_buffer(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x8DE6D0.
+void orbis_skinned_mesh_rebuild_vertex_buffers(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_vertex_buffers<SkinnedMeshVertex>(
+        mesh, RenderMeshFormat::kSkinned);
+}
+
+// Reconstructed from eboot.elf at 0x8DE8E0.
+void orbis_skinned_mesh_rebuild_index_buffer(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_index_buffer<SkinnedMeshVertex>(mesh);
+}
+
 // Reconstructed from eboot.elf at 0x8DDDD0.
 void orbis_skinned_mesh_update_backend(
     OrbisMesh& mesh,
+    void* update_context,
     MeshUpdateFlags flags) {
+    (void)update_context;
     if (!has_mesh_update_flag(flags, MeshUpdateFlags::kVertices)) {
         return;
     }

@@ -4,8 +4,8 @@
 #include <cstring>
 
 #include "core/memory/engine_memory.h"
-#include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
+#include "render/platform/orbis/meshes/orbis_mesh_storage.h"
 
 namespace rb4 {
 
@@ -33,6 +33,16 @@ std::size_t orbis_position_mesh_vertex_count(const OrbisMesh& mesh) {
     return mesh_vertex_count<PositionMeshVertex>(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x6B3ED0.
+void orbis_position_mesh_grow_vertices(
+    OrbisMesh& mesh,
+    std::size_t additional_count) {
+    orbis_mesh_grow_vertex_storage<PositionMeshVertex>(
+        mesh,
+        additional_count,
+        [] { return PositionMeshVertex{}; });
+}
+
 // Reconstructed from eboot.elf at 0x8D9130.
 void orbis_position_mesh_resize_vertices(
     OrbisMesh& mesh,
@@ -44,12 +54,18 @@ void orbis_position_mesh_resize_vertices(
             mesh, vertex_count - current_count);
         return;
     }
-    layout.vertices_end = layout.vertices_begin + vertex_count;
+    layout.vertices_end = vertex_count == 0
+        ? layout.vertices_begin
+        : layout.vertices_begin + vertex_count;
 }
 
 // Reconstructed from eboot.elf at 0x8D9180.
 void orbis_position_mesh_clear_vertices(OrbisMesh& mesh) {
     orbis_position_mesh_release_vertices(mesh);
+}
+
+void orbis_position_mesh_release_vertices(OrbisMesh& mesh) {
+    orbis_mesh_release_vertex_storage<PositionMeshVertex>(mesh);
 }
 
 // Reconstructed from eboot.elf at 0x8D9210.
@@ -83,10 +99,23 @@ void orbis_position_mesh_finalize_backend(OrbisMesh& mesh) {
     orbis_position_mesh_rebuild_index_buffer(mesh);
 }
 
+// Reconstructed from eboot.elf at 0x8D9920.
+void orbis_position_mesh_rebuild_vertex_buffers(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_vertex_buffers<PositionMeshVertex>(
+        mesh, RenderMeshFormat::kPositionOnly);
+}
+
+// Reconstructed from eboot.elf at 0x8D9B30.
+void orbis_position_mesh_rebuild_index_buffer(OrbisMesh& mesh) {
+    orbis_mesh_rebuild_index_buffer<PositionMeshVertex>(mesh);
+}
+
 // Reconstructed from eboot.elf at 0x8D92C0.
 void orbis_position_mesh_update_backend(
     OrbisMesh& mesh,
+    void* update_context,
     MeshUpdateFlags flags) {
+    (void)update_context;
     if (!has_mesh_update_flag(flags, MeshUpdateFlags::kVertices)) {
         return;
     }

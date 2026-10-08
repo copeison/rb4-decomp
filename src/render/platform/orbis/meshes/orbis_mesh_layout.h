@@ -38,8 +38,10 @@ const OrbisMeshLayout<Vertex>& mesh_layout(const OrbisMesh& mesh) {
 template <typename Vertex>
 std::size_t mesh_vertex_count(const OrbisMesh& mesh) {
     const auto& layout = mesh_layout<Vertex>(mesh);
-    return static_cast<std::size_t>(
-        layout.vertices_end - layout.vertices_begin);
+    return layout.vertices_begin == nullptr
+        ? 0
+        : static_cast<std::size_t>(
+              layout.vertices_end - layout.vertices_begin);
 }
 
 inline bool has_mesh_update_flag(

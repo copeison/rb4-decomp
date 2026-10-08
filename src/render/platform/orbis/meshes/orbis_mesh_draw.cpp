@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include "render/core/system/render_epoch.h"
-#include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
+#include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
 

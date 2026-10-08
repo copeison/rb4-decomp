@@ -5,7 +5,7 @@
 
 #include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
-#include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
+#include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {

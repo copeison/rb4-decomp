@@ -16,5 +16,8 @@ enum class MeshUpdateFlags : std::uint32_t {
 
 OrbisMesh* orbis_create_mesh(RenderMeshFormat format, const char* name);
 RenderMeshFormat render_mesh_format_from_name(const char* name);
+void orbis_mesh_set_format_backend_defaults(
+    OrbisMesh& mesh,
+    RenderMeshFormat format);
 
 }  // namespace rb4
