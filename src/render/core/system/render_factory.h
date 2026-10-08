@@ -13,6 +13,10 @@ struct RenderMesh;
 struct RenderOcclusionQuery;
 struct RenderParticleBuffer;
 struct RenderShader;
+struct RenderTexture2D;
+struct RenderTexture2DDescriptor;
+struct RenderTextureArray2D;
+struct RenderTextureArray2DDescriptor;
 
 enum class RenderShaderStage : std::uint32_t;
 enum class RenderMeshFormat : std::uint32_t;
@@ -27,6 +31,12 @@ RenderMesh* render_factory_create_mesh(
     RenderFactory& factory,
     RenderMeshFormat format,
     const char* name);
+RenderTexture2D* render_factory_create_texture_2d(
+    RenderFactory& factory,
+    const RenderTexture2DDescriptor& descriptor);
+RenderTextureArray2D* render_factory_create_texture_array_2d(
+    RenderFactory& factory,
+    const RenderTextureArray2DDescriptor& descriptor);
 RenderConstantBuffer* render_factory_create_constant_buffer(
     RenderFactory& factory,
     const RenderConstantBufferDescriptor& descriptor,

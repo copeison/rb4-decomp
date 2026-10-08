@@ -10,7 +10,15 @@ struct RenderFactoryDispatch {
         RenderFactory& factory,
         RenderMeshFormat format,
         const char* name);
-    std::uint8_t reserved_32[7 * sizeof(void*)];
+    void* create_texture_1d;
+    RenderTexture2D* (*create_texture_2d)(
+        RenderFactory& factory,
+        const RenderTexture2DDescriptor& descriptor);
+    std::uint8_t reserved_48[3 * sizeof(void*)];
+    RenderTextureArray2D* (*create_texture_array_2d)(
+        RenderFactory& factory,
+        const RenderTextureArray2DDescriptor& descriptor);
+    void* create_texture_array_cube;
     RenderConstantBuffer* (*create_constant_buffer)(
         RenderFactory& factory,
         const RenderConstantBufferDescriptor& descriptor,
@@ -36,6 +44,9 @@ const RenderFactoryDispatch& dispatch(const RenderFactory& factory) {
 }
 
 static_assert(offsetof(RenderFactoryDispatch, create_mesh) == 24);
+static_assert(offsetof(RenderFactoryDispatch, create_texture_2d) == 40);
+static_assert(
+    offsetof(RenderFactoryDispatch, create_texture_array_2d) == 72);
 static_assert(
     offsetof(RenderFactoryDispatch, create_constant_buffer) == 88);
 
@@ -46,6 +57,18 @@ RenderMesh* render_factory_create_mesh(
     RenderMeshFormat format,
     const char* name) {
     return dispatch(factory).create_mesh(factory, format, name);
+}
+
+RenderTexture2D* render_factory_create_texture_2d(
+    RenderFactory& factory,
+    const RenderTexture2DDescriptor& descriptor) {
+    return dispatch(factory).create_texture_2d(factory, descriptor);
+}
+
+RenderTextureArray2D* render_factory_create_texture_array_2d(
+    RenderFactory& factory,
+    const RenderTextureArray2DDescriptor& descriptor) {
+    return dispatch(factory).create_texture_array_2d(factory, descriptor);
 }
 
 RenderConstantBuffer* render_factory_create_constant_buffer(

@@ -126,6 +126,8 @@
 - [x] Replace the common constant-buffer, shader, compute-buffer,
   particle-buffer, and occlusion-query factory adapters with typed vtable
   dispatch.
+- [x] Recover the common 2D and 2D-array texture factory dispatch used by
+  render-target resource creation.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
 - [x] Unify the render-system epoch used by common mesh updates, Orbis mesh
   draws, and resource synchronization.

@@ -88,3 +88,9 @@ Three adjacent owner helpers complete the active-block controls:
 - `render_target_resources_select_partial_frame` at `0x6B2A20` stores the
   active block index and scene context. Passing `-1, -1` selects the primary
   block and clears the context.
+
+The owner's remaining creation virtuals ultimately use common render-factory
+slots `+0x28` and `+0x48` for 2D and 2D-array textures. Those slots now have
+typed common dispatch wrappers, matching the already reconstructed Orbis
+factory vtable and providing the final platform-neutral handoff needed by the
+owner's descriptor-building routines at `0x6B4120` and `0x6B41F0`.
