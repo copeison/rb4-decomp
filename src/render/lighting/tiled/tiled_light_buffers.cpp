@@ -6,7 +6,6 @@
 #include <limits>
 
 #include "render/core/buffers/render_compute_buffer.h"
-#include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"

@@ -2,7 +2,7 @@
 
 #include <new>
 
-#include "render/core/buffers/render_compute_buffer_adapters.h"
+#include "render/core/buffers/render_compute_buffer.h"
 #include "render/core/system/render_system.h"
 #include "render/core/textures/render_texture_adapters.h"
 
