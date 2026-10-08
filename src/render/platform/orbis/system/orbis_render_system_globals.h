@@ -69,6 +69,7 @@ void orbis_set_default_vertex_buffer(
     void* buffer);
 OrbisBufferDescriptor* orbis_identity_instance_descriptors(
     OrbisRenderSystem& system);
+const OrbisBufferDescriptor* orbis_identity_instance_descriptors();
 void orbis_set_identity_instance_buffer(
     OrbisRenderSystem& system,
     void* buffer);

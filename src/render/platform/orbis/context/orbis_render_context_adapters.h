@@ -23,11 +23,6 @@ void orbis_transient_vertex_buffer_construct(
     OrbisRenderContext& context,
     std::size_t bank,
     std::size_t format);
-void orbis_transient_vertex_buffer_initialize(
-    OrbisRenderContext& context,
-    std::size_t bank,
-    std::size_t format,
-    std::size_t vertex_capacity);
 void orbis_render_context_initialize_allocation_map(
     OrbisRenderContext& context);
 void orbis_render_context_initialize_gfx_slot(
@@ -101,10 +96,6 @@ void orbis_render_context_reset_compute_slot(
 void orbis_render_context_initialize_frame_command_state(
     OrbisRenderContext& context,
     std::size_t frame);
-void orbis_transient_vertex_buffer_reset(
-    OrbisRenderContext& context,
-    std::size_t frame,
-    std::size_t format);
 void orbis_render_context_emit_default_control_state(
     OrbisRenderContext& context,
     std::size_t frame);

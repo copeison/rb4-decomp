@@ -97,6 +97,8 @@
 - [x] Recover masked Orbis shader-resource clearing.
 - [x] Reconstruct accelerated and raster Orbis depth-stencil clears.
 - [x] Reconstruct format-specific Orbis transient vertex drawing.
+- [x] Type the 168-byte Orbis transient vertex buffer and recover its
+  allocation, append, reset, fallback-stream, and identity-instance binding.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover Orbis GPU fence sequencing, signaling, and command-buffer waits.
 - [x] Recover cross-queue Orbis resource signaling and grouped waits.

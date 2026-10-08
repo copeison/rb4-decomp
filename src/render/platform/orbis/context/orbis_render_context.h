@@ -9,6 +9,8 @@ struct OrbisRenderSystem;
 struct OrbisRenderContext;
 struct OrbisBlendConfiguration;
 struct OrbisRenderTargetBinding;
+struct OrbisRenderCommandContext;
+struct OrbisTransientVertexBuffer;
 
 enum class RndMaterialBlendMode : std::int32_t;
 
@@ -42,6 +44,12 @@ bool orbis_render_context_compute_queues_enabled(
     const OrbisRenderContext& context);
 std::size_t orbis_render_context_active_frame(
     const OrbisRenderContext& context);
+OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t format);
+OrbisRenderCommandContext& orbis_active_render_command_context(
+    OrbisRenderContext& context);
 bool orbis_render_context_submissions_complete(
     const OrbisRenderContext& context);
 bool orbis_render_context_frame_submissions_complete(

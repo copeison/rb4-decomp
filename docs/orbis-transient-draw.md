@@ -19,3 +19,12 @@ indexed call with the standard Gnmx prepare/finish pair.
 The append helper at `0x8EC8C0` copies `vertex_count * stride` bytes and advances
 the buffer's used-vertex cursor. Active-frame reset clears that cursor for all
 eight transient formats before recording the next frame.
+
+Each frame owns eight exact 168-byte transient-buffer records at render-context
+offset `0x40DB8`, with a frame stride of `0x540`. A record contains eight Gnm
+descriptors, an active-stream mask, the allocation pointer, vertex stride,
+capacity, and used count. Initialization at `0x8EC7E0` allocates `0x40000`
+vertices for each mesh format and builds its descriptors. Binding at `0x8EC910`
+selects each active descriptor and substitutes the renderer's typed default
+descriptor for every absent stream. The draw then binds the nine identity
+instance descriptors directly from `OrbisRenderSystem + 0xF98`.

@@ -314,6 +314,13 @@ OrbisBufferDescriptor* orbis_identity_instance_descriptors(
     return runtime->identity_instance_descriptors;
 }
 
+const OrbisBufferDescriptor* orbis_identity_instance_descriptors() {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(
+            g_orbis_render_system);
+    return runtime->identity_instance_descriptors;
+}
+
 void orbis_set_identity_instance_buffer(
     OrbisRenderSystem& system,
     void* buffer) {

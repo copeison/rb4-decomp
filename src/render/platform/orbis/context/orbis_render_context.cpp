@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
@@ -24,6 +25,10 @@ constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
 constexpr std::size_t kSubmissionCounterCount = 10;
+constexpr std::size_t kGraphicsCommandContextOffset = 0x5728;
+constexpr std::size_t kGraphicsCommandContextStride = 0xE888;
+constexpr std::size_t kTransientVertexBufferOffset = 0x40DB8;
+constexpr std::size_t kTransientVertexBufferBankStride = 0x540;
 
 struct OrbisRenderContextRuntimePrefix {
     std::uint8_t reserved_0[9];
@@ -81,7 +86,10 @@ void orbis_render_context_construct(OrbisRenderContext& context) {
              format < kOrbisTransientFormatCount;
              ++format) {
             orbis_transient_vertex_buffer_initialize(
-                context, bank, format, kTransientVertexCapacity);
+                orbis_render_context_transient_vertex_buffer(
+                    context, bank, format),
+                static_cast<RenderMeshFormat>(format),
+                kTransientVertexCapacity);
         }
     }
 
@@ -136,6 +144,26 @@ std::size_t orbis_render_context_active_frame(
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
     return runtime->active_frame;
+}
+
+OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
+    OrbisRenderContext& context,
+    std::size_t frame,
+    std::size_t format) {
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
+    return *reinterpret_cast<OrbisTransientVertexBuffer*>(
+        bytes + kTransientVertexBufferOffset +
+        frame * kTransientVertexBufferBankStride +
+        format * sizeof(OrbisTransientVertexBuffer));
+}
+
+OrbisRenderCommandContext& orbis_active_render_command_context(
+    OrbisRenderContext& context) {
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
+    return *reinterpret_cast<OrbisRenderCommandContext*>(
+        bytes + kGraphicsCommandContextOffset +
+        orbis_render_context_active_frame(context) *
+            kGraphicsCommandContextStride);
 }
 
 bool orbis_render_context_submissions_complete(
@@ -247,7 +275,9 @@ void orbis_render_context_reset_active_frame(OrbisRenderContext& context) {
     for (std::size_t format = 0;
          format < kOrbisTransientFormatCount;
          ++format) {
-        orbis_transient_vertex_buffer_reset(context, frame, format);
+        orbis_transient_vertex_buffer_reset(
+            orbis_render_context_transient_vertex_buffer(
+                context, frame, format));
     }
     orbis_render_context_emit_default_control_state(context, frame);
 }
