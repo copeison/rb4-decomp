@@ -8,6 +8,11 @@ namespace rb4 {
 struct RenderGpuStatBlock;
 
 void render_gpu_root_statistic_destruct(void* statistic);
+void* render_gpu_statistic_find_or_create(
+    RenderGpuStatBlock& block,
+    const char* name,
+    const char* full_name,
+    void* parent);
 void render_gpu_statistic_construct(
     void* statistic_base,
     const char* name,

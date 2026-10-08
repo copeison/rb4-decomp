@@ -15,6 +15,11 @@ struct RenderContextSubmissionResource {
     std::uint64_t flags;
 };
 
+struct RenderGpuStatScope {
+    void* statistic;
+    std::uint64_t query_id;
+};
+
 struct RenderContextVtable {
     void* reserved_0;
     void (*delete_context)(RenderContext* context);
@@ -41,6 +46,7 @@ static_assert(offsetof(RenderContext, frame_active) == 8);
 static_assert(offsetof(RenderContext, mode) == 12);
 static_assert(sizeof(RenderContext) == 16);
 static_assert(sizeof(RenderContextSubmissionResource) == 32);
+static_assert(sizeof(RenderGpuStatScope) == 16);
 static_assert(
     offsetof(RenderContextVtable, prepare_submission_resources) == 168);
 static_assert(offsetof(RenderContextVtable, begin_gpu_stat) == 248);
@@ -53,7 +59,15 @@ void render_context_prepare_submission_resources(
     RenderContext& context,
     const RenderContextSubmissionResource* resources,
     std::size_t resource_count);
+RenderGpuStatScope* render_context_last_gpu_stat_scope(
+    RenderContext& context);
+void render_context_push_gpu_stat_scope(
+    RenderContext& context,
+    const RenderGpuStatScope& scope);
 void render_context_pop_gpu_stat_scope(RenderContext& context);
+void render_context_begin_gpu_stat(
+    RenderContext& context,
+    std::uint64_t query_id);
 void render_context_end_gpu_stat(
     RenderContext& context,
     std::uint64_t query_id);

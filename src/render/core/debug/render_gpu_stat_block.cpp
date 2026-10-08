@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 
@@ -139,6 +140,51 @@ void append_root_statistic(
     block.root_statistics_capacity = new_begin + new_capacity;
 }
 
+void append_query_id(
+    void* statistic,
+    std::uint64_t frame_slot,
+    std::uint64_t query_id) {
+    constexpr std::size_t kHistoryOffset = 56;
+    constexpr std::size_t kHistoryStride = 32;
+
+    auto* bytes = static_cast<std::uint8_t*>(statistic);
+    auto** history = reinterpret_cast<std::uint64_t**>(
+        bytes + kHistoryOffset + frame_slot * kHistoryStride);
+    auto*& begin = history[0];
+    auto*& end = history[1];
+    auto*& capacity = history[2];
+
+    if (end != capacity) {
+        *end++ = query_id;
+        return;
+    }
+
+    const auto size = begin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(end - begin);
+    const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
+    auto* new_begin = static_cast<std::uint64_t*>(
+        engine_allocate_sized(new_capacity * sizeof(std::uint64_t)));
+    if (size != 0) {
+        std::memmove(
+            new_begin,
+            begin,
+            size * sizeof(std::uint64_t));
+    }
+    new_begin[size] = query_id;
+
+    if (begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(capacity) -
+            reinterpret_cast<std::uint8_t*>(begin));
+        engine_deallocate_sized(begin, byte_count);
+    }
+
+    begin = new_begin;
+    end = new_begin + size + 1;
+    capacity = new_begin + new_capacity;
+}
+
 }  // namespace
 
 RenderGpuStatBlock& render_system_gpu_stat_block(RenderSystem& system) {
@@ -228,6 +274,50 @@ void render_gpu_stat_block_destruct(RenderGpuStatBlock& block) {
         block.statistics_begin,
         block.statistics_end,
         block.statistics_capacity);
+}
+
+// Reconstructed from eboot.elf at 0x62AF80.
+std::int64_t render_gpu_stat_block_begin(
+    RenderGpuStatBlock& block,
+    RenderContext& context,
+    const char* name) {
+    if (block.backend == nullptr) {
+        return -1;
+    }
+
+    auto* parent_scope = render_context_last_gpu_stat_scope(context);
+    auto* parent = parent_scope == nullptr
+        ? nullptr
+        : parent_scope->statistic;
+    const char* full_name = name;
+    char nested_name[4096]{};
+    if (parent != nullptr) {
+        auto* parent_bytes = static_cast<std::uint8_t*>(parent);
+        parent_bytes[41] = 1;
+        const auto* parent_name =
+            *reinterpret_cast<const char* const*>(parent_bytes + 24);
+        std::snprintf(
+            nested_name,
+            sizeof(nested_name),
+            "%s %s",
+            parent_name,
+            name);
+        full_name = nested_name;
+    }
+
+    scePthreadMutexLock(&block.mutex);
+    ++block.lock_depth;
+    auto* statistic = render_gpu_statistic_find_or_create(
+        block, name, full_name, parent);
+    const auto query_id = block.next_query_id++;
+    append_query_id(statistic, block.frame_slot, query_id);
+    --block.lock_depth;
+    scePthreadMutexUnlock(&block.mutex);
+
+    render_context_begin_gpu_stat(context, query_id);
+    render_context_push_gpu_stat_scope(
+        context, {statistic, query_id});
+    return static_cast<std::int64_t>(query_id);
 }
 
 // Reconstructed from eboot.elf at 0x62B5B0.
