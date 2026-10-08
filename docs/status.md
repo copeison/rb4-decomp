@@ -51,6 +51,7 @@
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.
 - [x] Reconstruct shadow-contribution, scratch, stencil, and soften-tile targets.
 - [x] Reconstruct mono and stereo volumetric-scattering texture chains.
+- [x] Reconstruct the fallback light-probe accumulation target.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.
