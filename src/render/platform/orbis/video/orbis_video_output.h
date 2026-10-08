@@ -6,7 +6,17 @@
 namespace rb4 {
 
 struct OrbisRenderSystem;
-struct OrbisSubmitEvent;
+
+enum class OrbisSubmitEventType {
+    kFlipComplete,
+    kEndOfPipe,
+};
+
+struct OrbisSubmitEvent {
+    OrbisSubmitEventType type;
+};
+
+using OrbisSubmitThreadEntry = void (*)(OrbisRenderSystem& system);
 
 void orbis_video_output_open(OrbisRenderSystem& system);
 void orbis_video_output_set_flip_rate(

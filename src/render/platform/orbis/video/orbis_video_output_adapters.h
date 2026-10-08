@@ -3,21 +3,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/platform/orbis/video/orbis_video_output.h"
+
 namespace rb4 {
 
 struct OrbisRenderSystem;
 struct OrbisVertexBuffer;
-
-enum class OrbisSubmitEventType {
-    kFlipComplete,
-    kEndOfPipe,
-};
-
-struct OrbisSubmitEvent {
-    OrbisSubmitEventType type;
-};
-
-using OrbisSubmitThreadEntry = void (*)(OrbisRenderSystem& system);
 
 void orbis_register_render_factories(OrbisRenderSystem& system);
 
