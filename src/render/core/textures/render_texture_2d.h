@@ -12,7 +12,7 @@ struct RenderTexture2DDescriptor {
 };
 
 struct RenderTexture2D : RenderTexture {
-    std::uint8_t descriptor_state[144];
+    RenderTextureDescriptorState descriptor_state;
     RenderTextureMipChainState mip_chain;
     void* linked_resource;
     std::int64_t linked_resource_index;

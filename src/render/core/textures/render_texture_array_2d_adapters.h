@@ -18,7 +18,7 @@ void render_texture_mip_chain_array_append(
     const RenderTextureMipChainDescriptor& descriptor,
     bool has_source_data);
 void render_texture_array_2d_resolve_descriptor(
-    std::uint8_t (&descriptor_state)[144]);
+    RenderTextureDescriptorState& descriptor_state);
 void render_texture_mip_chain_array_destruct(
     RenderTextureMipChainArray& mip_chains);
 void render_delete_texture_array_2d_storage(

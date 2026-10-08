@@ -1,8 +1,5 @@
 #include "render/core/textures/render_texture_2d.h"
 
-#include <cstddef>
-#include <cstring>
-
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
@@ -10,22 +7,6 @@
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {
-
-namespace {
-
-template <typename T>
-T read_value(const std::uint8_t* source, std::size_t offset) {
-    T value;
-    std::memcpy(&value, source + offset, sizeof(value));
-    return value;
-}
-
-template <typename T>
-void write_value(std::uint8_t* destination, std::size_t offset, T value) {
-    std::memcpy(destination + offset, &value, sizeof(value));
-}
-
-}  // namespace
 
 // Reconstructed from eboot.elf at 0x690330.
 void render_texture_2d_descriptor_construct(
@@ -42,10 +23,7 @@ void render_texture_2d_construct(
     render_texture_construct(texture);
     render_texture_2d_set_base_dispatch(texture);
 
-    std::memcpy(
-        texture.descriptor_state,
-        &descriptor.texture_state,
-        sizeof(texture.descriptor_state));
+    texture.descriptor_state = descriptor.texture_state;
     render_texture_mip_chain_construct(
         texture.mip_chain,
         &descriptor.mip_chain,
@@ -54,22 +32,13 @@ void render_texture_2d_construct(
     texture.linked_resource = nullptr;
     texture.linked_resource_index = -1;
     texture.resource_index = 0;
-    write_value(
-        texture.descriptor_state,
-        92,
-        descriptor.mip_chain.fields.data_format);
-    write_value(
-        texture.descriptor_state,
-        96,
-        read_value<std::uint64_t>(descriptor.mip_chain.storage, 8));
-    write_value(
-        texture.descriptor_state,
-        104,
-        descriptor.mip_chain.fields.depth);
-    std::memcpy(
-        &texture.descriptor_type,
-        texture.descriptor_state,
-        sizeof(texture.descriptor_state));
+    texture.descriptor_state.data_format =
+        descriptor.mip_chain.fields.data_format;
+    texture.descriptor_state.width = descriptor.mip_chain.fields.width;
+    texture.descriptor_state.height = descriptor.mip_chain.fields.height;
+    texture.descriptor_state.depth = descriptor.mip_chain.fields.depth;
+    render_texture_apply_descriptor_state(
+        texture, texture.descriptor_state);
 }
 
 // Reconstructed from eboot.elf at 0x68FE80.

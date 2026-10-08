@@ -25,7 +25,7 @@ struct RenderTextureCubeArray {
 };
 
 struct RenderTextureArrayCube : RenderTexture {
-    std::uint8_t descriptor_state[144];
+    RenderTextureDescriptorState descriptor_state;
     RenderTextureCubeArray cubes;
 };
 

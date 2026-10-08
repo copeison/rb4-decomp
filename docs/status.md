@@ -272,6 +272,8 @@
   2D, and 3D texture descriptor layouts to 224 bytes.
 - [x] Recover the exact typed 144-byte common texture-descriptor state and use
   it across every reconstructed texture family.
+- [x] Replace derived texture descriptor byte arrays and offset writes with
+  typed format, extent, source, and array-count fields.
 - [x] Centralize the verified 44-byte texture creation state within the common
   descriptor model.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.

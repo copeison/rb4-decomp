@@ -1,5 +1,7 @@
 #include "render/core/textures/render_texture.h"
 
+#include <cstring>
+
 #include "render/core/textures/render_texture_adapters.h"
 
 namespace rb4 {
@@ -43,6 +45,15 @@ void render_texture_descriptor_construct(
 bool render_texture_descriptor_has_source_data(
     const RenderTextureDescriptorState& descriptor) {
     return descriptor.backend_initialized || (descriptor.flags & 5U) != 0;
+}
+
+void render_texture_apply_descriptor_state(
+    RenderTexture& texture,
+    const RenderTextureDescriptorState& descriptor) {
+    std::memcpy(
+        &texture.descriptor_type,
+        &descriptor,
+        sizeof(descriptor));
 }
 
 // Reconstructed from eboot.elf at 0x69B6E0.

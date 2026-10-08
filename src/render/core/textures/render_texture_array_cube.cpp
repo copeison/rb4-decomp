@@ -1,30 +1,11 @@
 #include "render/core/textures/render_texture_array_cube.h"
 
-#include <cstddef>
-#include <cstring>
-
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/core/textures/render_texture_array_cube_adapters.h"
 
 namespace rb4 {
-
-namespace {
-
-template <typename T>
-T read_value(const std::uint8_t* source, std::size_t offset) {
-    T value;
-    std::memcpy(&value, source + offset, sizeof(value));
-    return value;
-}
-
-template <typename T>
-void write_value(std::uint8_t* destination, std::size_t offset, T value) {
-    std::memcpy(destination + offset, &value, sizeof(value));
-}
-
-}  // namespace
 
 // Reconstructed from eboot.elf at 0x69AF00.
 void render_texture_array_cube_descriptor_construct(
@@ -48,27 +29,15 @@ void render_texture_array_cube_construct(
     render_texture_cube_array_validate(texture.cubes);
 
     texture.resource_index = 2;
-    const auto& first_face = texture.cubes.begin->faces[0].storage;
-    write_value(
-        texture.descriptor_state,
-        92,
-        read_value<std::uint32_t>(first_face, 20));
-    write_value(
-        texture.descriptor_state,
-        96,
-        read_value<std::uint64_t>(first_face, 8));
-    write_value(
-        texture.descriptor_state,
-        104,
-        read_value<std::uint32_t>(first_face, 16));
-    write_value(
-        texture.descriptor_state,
-        112,
-        static_cast<std::uint64_t>(texture.cubes.end - texture.cubes.begin));
-    std::memcpy(
-        &texture.descriptor_type,
-        texture.descriptor_state,
-        sizeof(texture.descriptor_state));
+    const auto& first_face = texture.cubes.begin->faces[0].fields;
+    texture.descriptor_state.data_format = first_face.data_format;
+    texture.descriptor_state.width = first_face.width;
+    texture.descriptor_state.height = first_face.height;
+    texture.descriptor_state.depth = first_face.depth;
+    texture.descriptor_state.array_size =
+        static_cast<std::size_t>(texture.cubes.end - texture.cubes.begin);
+    render_texture_apply_descriptor_state(
+        texture, texture.descriptor_state);
 }
 
 // Reconstructed from eboot.elf at 0x69AA60.

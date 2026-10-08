@@ -7,7 +7,7 @@ namespace rb4 {
 void render_texture_array_cube_set_base_dispatch(
     RenderTextureArrayCube& texture);
 void render_texture_cube_array_construct(
-    std::uint8_t (&descriptor_state)[144],
+    RenderTextureDescriptorState& descriptor_state,
     RenderTextureCubeArray& cubes,
     const RenderTextureArrayCubeDescriptor& descriptor,
     bool has_source_data);

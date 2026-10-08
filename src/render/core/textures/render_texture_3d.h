@@ -12,7 +12,7 @@ struct RenderTexture3DDescriptor {
 };
 
 struct RenderTexture3D : RenderTexture {
-    std::uint8_t descriptor_state[144];
+    RenderTextureDescriptorState descriptor_state;
     RenderTextureMipChainState mip_chain;
 };
 

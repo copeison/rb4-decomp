@@ -12,7 +12,7 @@ struct RenderTextureArray2DDescriptor {
 };
 
 struct RenderTextureArray2D : RenderTexture {
-    std::uint8_t descriptor_state[144];
+    RenderTextureDescriptorState descriptor_state;
     RenderTextureMipChainArray mip_chains;
 };
 

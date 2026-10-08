@@ -27,7 +27,10 @@ struct RenderTextureDescriptorState {
     std::uint32_t height;
     std::uint32_t depth;
     std::uint32_t reserved_6C;
-    void* source_data;
+    union {
+        void* source_data;
+        std::size_t array_size;
+    };
     union {
         std::uint32_t source_size;
         std::uint32_t target_flags;
@@ -60,7 +63,10 @@ struct RenderTexture {
     std::uint32_t height;
     std::uint32_t depth;
     std::uint8_t reserved_124[4];
-    void* source_data;
+    union {
+        void* source_data;
+        std::size_t array_size;
+    };
     union {
         std::uint32_t source_size;
         std::uint32_t target_flags;
@@ -124,6 +130,10 @@ static_assert(offsetof(RenderTextureDescriptorState, data_format) == 92);
 static_assert(offsetof(RenderTextureDescriptorState, source_data) == 112);
 static_assert(offsetof(RenderTextureDescriptorState, attachment_index) == 128);
 static_assert(offsetof(RenderTextureDescriptorState, name) == 136);
+static_assert(
+    offsetof(RenderTexture, name) + sizeof(RenderTexture::name) -
+        offsetof(RenderTexture, descriptor_type) ==
+    sizeof(RenderTextureDescriptorState));
 static_assert(sizeof(RenderTextureMipChainFields) == 80);
 static_assert(offsetof(RenderTextureMipChainFields, width) == 8);
 static_assert(offsetof(RenderTextureMipChainFields, data_format) == 20);
@@ -136,6 +146,9 @@ static_assert(sizeof(RenderTextureMipChainArray) == 32);
 
 void render_texture_descriptor_construct(
     RenderTextureDescriptorState& descriptor);
+void render_texture_apply_descriptor_state(
+    RenderTexture& texture,
+    const RenderTextureDescriptorState& descriptor);
 bool render_texture_descriptor_has_source_data(
     const RenderTextureDescriptorState& descriptor);
 void render_texture_construct(RenderTexture& texture);
