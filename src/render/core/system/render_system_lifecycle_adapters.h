@@ -27,8 +27,6 @@ void render_system_construct_default_resources(RenderSystem& system);
 void render_system_destroy_default_resources(RenderSystem& system);
 void render_resource_manager_construct(void* state);
 void render_resource_manager_destroy(void* state);
-void render_lighting_resources_construct(void* state);
-void render_lighting_resources_destroy(void* state);
 
 RenderSettings* render_settings_allocate();
 void render_settings_release(RenderSettings* settings);

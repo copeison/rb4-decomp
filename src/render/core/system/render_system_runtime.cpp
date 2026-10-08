@@ -16,6 +16,8 @@
 #include "render/core/system/render_system_runtime_adapters.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/audio/audio_analysis_textures.h"
+#include "render/resources/lighting/render_lighting_resources.h"
+#include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/resources/system/default_render_resources.h"
 
@@ -27,7 +29,6 @@ constexpr std::size_t kBuiltinBufferDescriptorOffset = 2712;
 constexpr std::size_t kBuiltinBufferStorageOffset = 3712;
 constexpr std::size_t kFloatsPerConstantBufferElement = 4;
 constexpr std::size_t kResourceManagerOffset = 2544;
-constexpr std::size_t kLightingResourcesOffset = 3256;
 constexpr std::size_t kBackendResourceOffset = 3560;
 constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
@@ -101,7 +102,7 @@ void finish_builtin_buffer_upload(RenderConstantBuffer& buffer) {
 
 void initialize_runtime_resources(RenderSystem& system) {
     render_lighting_resources_initialize(
-        runtime_state_at(system, kLightingResourcesOffset));
+        render_system_lighting_resources(system));
     render_backend_resource_create(
         runtime_pointer_at(system, kBackendResourceOffset));
 
@@ -125,7 +126,7 @@ void shutdown_runtime_resources(RenderSystem& system) {
     render_backend_resource_release(
         runtime_pointer_at(system, kBackendResourceOffset));
     render_lighting_resources_shutdown(
-        runtime_state_at(system, kLightingResourcesOffset));
+        render_system_lighting_resources(system));
     render_resource_manager_shutdown(
         runtime_state_at(system, kResourceManagerOffset));
 
