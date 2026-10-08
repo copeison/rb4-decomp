@@ -1,4 +1,4 @@
-# Orbis cube texture-array factory
+# Orbis cube texture-array backend
 
 `orbis_create_texture_array_cube` at `0x8D8AA0` is virtual slot 29 of the
 Orbis render system. It allocates a 360-byte object and passes the supplied
@@ -10,3 +10,19 @@ zeros the final 16 bytes of backend state. The common constructor copies each
 six-face, 480-byte cube descriptor and stores the cube count. The wrapper at
 `0x69AA60` assigns descriptor type 7 and dispatches through the matching
 factory slot.
+
+Backend initialization at `0x8E6730` creates a 32-byte Gnm texture descriptor
+with texture type 11. Its array-slice count is six times the number of
+480-byte cube records, while width, height, format, mip count, tile mode, and
+fragment count come from the common descriptor and first face.
+
+After calculating the tiled size and alignment, the function allocates named
+GPU storage. It visits every cube, each of its six 80-byte face records, and
+every mip in each face. The flattened Gnm array slice is `cube * 6 + face`.
+Each CPU image is copied to the tiled offset for that slice and mip before the
+descriptor receives its 256-byte base address and resource memory type `16`.
+
+The final 16 bytes hold the Gnm texture descriptor pointer and its allocation.
+Destruction at `0x8E6670` defers the allocation through the Orbis render
+system, releases the descriptor, clears its object field, and invokes the
+common cube-array destructor. The deleting destructor follows at `0x8E66D0`.
