@@ -289,6 +289,8 @@
   active-frame, epoch, timing, settings, and factory state.
 - [x] Reconstruct common primary and auxiliary frame preparation, attachment,
   submission control flow, timing, and epoch advancement.
+- [x] Reconstruct the render-system deferred-release queue, growth, drain, and
+  shutdown behavior.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.

@@ -77,6 +77,12 @@ The default-resource block is the exact 568-byte range at render-system offset
 and shutdown releases it directly, removing the previous system-level wrapper
 for both operations.
 
+The deferred-release queue at `0xEA0` is a typed 48-byte recursive-lock state:
+lock depth, mutex, begin/end/capacity pointers, and allocator state. Normal
+enqueue doubles capacity, frame finish and shutdown drain the queue under the
+lock, and enqueue during shutdown releases the object immediately. Only the
+object-specific destruction routine remains an adapter.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.

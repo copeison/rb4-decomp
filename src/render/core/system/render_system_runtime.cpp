@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "render/core/context/render_context.h"
+#include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_runtime_adapters.h"
 #include "render/resources/system/default_render_resources.h"
