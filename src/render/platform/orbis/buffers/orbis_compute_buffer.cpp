@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_adapters.h"
 

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/targets/render_target_adapters.h"
 
 namespace rb4 {

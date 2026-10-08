@@ -6,7 +6,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
 void render_target_set_base_dispatch(RenderTarget& target);
 void render_target_state_construct(
     RenderTargetState* state,

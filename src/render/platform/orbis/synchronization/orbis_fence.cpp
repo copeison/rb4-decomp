@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/synchronization/orbis_fence_adapters.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"

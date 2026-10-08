@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/shaders/orbis_shader_adapters.h"
 
 namespace rb4 {

@@ -7,10 +7,6 @@
 
 namespace rb4 {
 
-void* render_allocate_named(
-    std::size_t size,
-    const char* name,
-    std::uint32_t alignment);
 void orbis_constant_buffer_install_vtable(OrbisConstantBuffer& buffer);
 void orbis_defer_constant_buffer_release(void* allocation);
 void* orbis_allocate_constant_buffer_storage(

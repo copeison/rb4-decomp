@@ -6,7 +6,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
 void orbis_occlusion_query_install_vtable(OrbisOcclusionQuery& query);
 void* orbis_occlusion_query_allocate_result(
     OrbisRenderContext& context,

@@ -7,7 +7,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
 void orbis_particle_buffer_install_vtable(OrbisParticleBuffer& buffer);
 void orbis_defer_particle_buffer_release(void* allocation);
 void orbis_particle_buffer_allocate_vertex_stream(

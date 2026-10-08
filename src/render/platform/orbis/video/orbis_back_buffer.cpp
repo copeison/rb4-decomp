@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/targets/render_target.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"

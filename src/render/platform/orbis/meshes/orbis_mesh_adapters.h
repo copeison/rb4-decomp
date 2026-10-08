@@ -8,11 +8,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
-void* render_allocate_named(
-    std::size_t size,
-    const char* name,
-    std::size_t alignment);
 void orbis_mesh_set_format_backend_defaults(
     OrbisMesh& mesh,
     RenderMeshFormat format);

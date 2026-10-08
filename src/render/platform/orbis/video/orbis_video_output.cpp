@@ -7,6 +7,7 @@
 #include <system_service.h>
 #include <video_out.h>
 
+#include "core/memory/engine_memory.h"
 #include "core/threading/engine_thread.h"
 #include "core/time/performance_counter.h"
 #include "render/core/settings/render_settings.h"
@@ -20,7 +21,6 @@
 #include "render/platform/orbis/system/orbis_render_factory.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/textures/orbis_texture_2d.h"
-#include "render/platform/orbis/video/orbis_video_output_adapters.h"
 
 extern "C" {
 

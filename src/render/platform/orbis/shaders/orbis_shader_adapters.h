@@ -6,7 +6,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
 void orbis_vertex_shader_set_backend_defaults(OrbisShader& shader);
 void orbis_geometry_shader_set_backend_defaults(OrbisShader& shader);
 void orbis_pixel_shader_set_backend_defaults(OrbisShader& shader);

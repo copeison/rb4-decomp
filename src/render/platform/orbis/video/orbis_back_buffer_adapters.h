@@ -9,8 +9,6 @@ namespace rb4 {
 
 struct OrbisTexture2D;
 
-void* render_allocate(std::size_t size);
-void render_free(void* allocation);
 void orbis_back_buffer_install_vtable(OrbisBackBuffer& back_buffer);
 OrbisBackBufferSpecification orbis_back_buffer_specification(
     const OrbisRenderSystem& system,

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/synchronization/render_occlusion_query_adapters.h"
 #include "render/platform/orbis/synchronization/orbis_occlusion_query_adapters.h"
 

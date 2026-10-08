@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/buffers/orbis_constant_buffer_adapters.h"
 
 namespace rb4 {

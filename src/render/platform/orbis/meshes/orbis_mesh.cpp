@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 
 namespace rb4 {

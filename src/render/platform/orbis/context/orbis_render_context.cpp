@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"

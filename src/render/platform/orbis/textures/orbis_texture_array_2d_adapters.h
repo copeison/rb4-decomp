@@ -6,12 +6,10 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
 void orbis_texture_array_2d_install_vtable(
     OrbisTextureArray2D& texture);
 void orbis_defer_texture_allocation(void* allocation);
 void* orbis_color_target_metadata_allocation(void* color_target);
-void render_release(void* allocation);
 void orbis_texture_array_2d_initialize_depth_storage(
     OrbisTextureArray2D& texture);
 void orbis_texture_array_2d_initialize_color_storage(

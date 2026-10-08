@@ -7,8 +7,6 @@
 
 namespace rb4 {
 
-void* render_allocate(std::size_t size);
-void render_free(void* allocation);
 void orbis_render_context_construct_base(OrbisRenderContext& context);
 void orbis_render_context_destruct_base(OrbisRenderContext& context);
 void orbis_render_context_install_vtable(OrbisRenderContext& context);
