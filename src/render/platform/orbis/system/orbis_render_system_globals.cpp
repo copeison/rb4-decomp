@@ -118,6 +118,13 @@ bool orbis_submit_thread_running(const OrbisRenderSystem& system) {
     return runtime->submit_thread_running;
 }
 
+void orbis_set_submit_thread_running(
+    OrbisRenderSystem& system,
+    bool running) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->submit_thread_running = running;
+}
+
 std::size_t orbis_active_render_frame_index() {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(

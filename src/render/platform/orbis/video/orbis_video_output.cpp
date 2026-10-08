@@ -117,6 +117,8 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
         orbis_submit_done_thread_entry,
         kSubmitThreadName,
         kSubmitThreadPriority);
+    orbis_set_submit_thread_running(system, true);
+    orbis_consume_submit_token(system);
     orbis_initialize_submit_profiler(system);
     orbis_wait_for_submit_thread(system);
     orbis_hide_system_splash_screen();
@@ -124,7 +126,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D8040.
 void orbis_render_system_shutdown(OrbisRenderSystem& system) {
-    orbis_request_submit_thread_stop(system);
+    orbis_set_submit_thread_running(system, false);
     orbis_join_submit_thread(system);
     orbis_destroy_submit_condition(system);
     orbis_release_frame_runtime(system);
