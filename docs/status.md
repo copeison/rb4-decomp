@@ -102,7 +102,7 @@
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Reconstruct Orbis compute-buffer storage, updates, binding, and destruction.
 - [x] Reconstruct the Orbis particle-buffer allocation, upload, draw, and destruction paths.
-- [x] Recover the Orbis occlusion-query factory and vtable method boundaries.
+- [x] Reconstruct the Orbis occlusion-query lifecycle and conditional-rendering commands.
 - [x] Recover the Orbis vertex, geometry, pixel, and compute shader factory.
 - [x] Reconstruct Orbis compute and pixel shader backends.
 - [x] Reconstruct Orbis geometry and vertex shader backends.
