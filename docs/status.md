@@ -399,6 +399,8 @@
   including storage reuse and optional source copying.
 - [x] Reconstruct the full 85-ID data-format descriptor table and its 31-entry
   compact variant bit-width mapping.
+- [x] Reconstruct exact data-format lookup for fixed descriptor tuples and all
+  compact platform-variant layout families.
 - [x] Recover the shared deleting-dispatch slot for textures, compute buffers,
   meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.

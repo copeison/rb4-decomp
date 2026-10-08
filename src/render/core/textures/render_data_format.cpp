@@ -104,4 +104,128 @@ std::uint32_t render_data_format_bits_per_pixel(
     return render_data_format_describe(data_format).bit_width;
 }
 
+// Reconstructed from eboot.elf at 0x68E070.
+std::int32_t render_data_format_find_exact(
+    const RenderDataFormatDescriptor& descriptor) {
+    constexpr std::int32_t kInvalidFormat = -1;
+    if (descriptor.layout < 1) {
+        return kInvalidFormat;
+    }
+
+    if (descriptor.variant >= 1) {
+        if (descriptor.variant <= 4) {
+            return 27 + (descriptor.variant - 1) * 2 +
+                (descriptor.layout == 1 ? 0 : 1);
+        }
+        if (descriptor.variant >= 5 && descriptor.variant <= 10) {
+            return descriptor.layout == 1
+                ? 30 + descriptor.variant
+                : kInvalidFormat;
+        }
+        if (descriptor.variant == 11 || descriptor.variant == 12) {
+            return 19 + descriptor.variant * 2 +
+                (descriptor.layout == 1 ? 0 : 1);
+        }
+        if (descriptor.variant == 13 || descriptor.variant == 14) {
+            return descriptor.layout == 1
+                ? 32 + descriptor.variant
+                : kInvalidFormat;
+        }
+        if (descriptor.variant >= 15 && descriptor.variant <= 17) {
+            return 17 + descriptor.variant * 2 +
+                (descriptor.layout == 1 ? 0 : 1);
+        }
+        if (descriptor.variant >= 18 && descriptor.variant <= 31) {
+            return descriptor.variant +
+                (descriptor.layout == 1 ? 39 : 53);
+        }
+        return kInvalidFormat;
+    }
+
+    if (descriptor.bit_width == 0 ||
+        descriptor.channel_layout == static_cast<std::uint32_t>(-1) ||
+        descriptor.numeric_type == static_cast<std::uint32_t>(-1)) {
+        return kInvalidFormat;
+    }
+
+    const auto layout_one = descriptor.layout == 1;
+    switch (descriptor.numeric_type) {
+    case 0:
+        switch (descriptor.channel_layout) {
+        case 0:
+            if (!layout_one) return kInvalidFormat;
+            if (descriptor.bit_width == 16) return 1;
+            if (descriptor.bit_width == 32) return 17;
+            return kInvalidFormat;
+        case 2:
+            if (descriptor.bit_width == 24) return layout_one ? 2 : 3;
+            return layout_one && descriptor.bit_width == 48
+                ? 19 : kInvalidFormat;
+        case 3:
+            return descriptor.bit_width == 24
+                ? (layout_one ? 4 : 5) : kInvalidFormat;
+        case 4:
+            if (descriptor.bit_width == 32) return layout_one ? 6 : 7;
+            return layout_one && descriptor.bit_width == 64
+                ? 20 : kInvalidFormat;
+        case 5:
+            return descriptor.bit_width == 32
+                ? (layout_one ? 8 : 9) : kInvalidFormat;
+        case 6:
+            return descriptor.bit_width == 32
+                ? (layout_one ? 11 : 12) : kInvalidFormat;
+        case 7:
+            return descriptor.bit_width == 32
+                ? (layout_one ? 13 : 14) : kInvalidFormat;
+        case 10:
+            if (!layout_one) return kInvalidFormat;
+            if (descriptor.bit_width == 8) return 0;
+            if (descriptor.bit_width == 16) return 15;
+            return kInvalidFormat;
+        case 11:
+            if (!layout_one) return kInvalidFormat;
+            if (descriptor.bit_width == 24) return 54;
+            if (descriptor.bit_width == 32) return 55;
+            return kInvalidFormat;
+        case 12:
+            return layout_one && descriptor.bit_width == 16
+                ? 53 : kInvalidFormat;
+        default:
+            return kInvalidFormat;
+        }
+    case 1:
+        return layout_one && descriptor.channel_layout == 4 &&
+                descriptor.bit_width == 32
+            ? 25 : kInvalidFormat;
+    case 2:
+        if (!layout_one) return kInvalidFormat;
+        switch (descriptor.channel_layout) {
+        case 0:
+            if (descriptor.bit_width == 32) return 18;
+            if (descriptor.bit_width == 64) return 23;
+            return kInvalidFormat;
+        case 2:
+            return descriptor.bit_width == 32 ? 26 : kInvalidFormat;
+        case 4:
+            if (descriptor.bit_width == 64) return 21;
+            if (descriptor.bit_width == 128) return 24;
+            return kInvalidFormat;
+        case 10:
+            if (descriptor.bit_width == 16) return 16;
+            if (descriptor.bit_width == 32) return 22;
+            return kInvalidFormat;
+        case 11:
+            return descriptor.bit_width == 40 ? 56 : kInvalidFormat;
+        default:
+            return kInvalidFormat;
+        }
+    case 3:
+        return layout_one && descriptor.channel_layout == 4 &&
+                descriptor.bit_width == 32
+            ? 10 : kInvalidFormat;
+    default:
+        return kInvalidFormat;
+    }
+}
+
 }  // namespace rb4

@@ -12,6 +12,11 @@ IDs `57` through `84` expose two layout families over variants `18` through
 `31`. The recovered 31-entry variant-width table includes the sub-byte 2-bit
 and 4-bit formats as well as the un-sized platform variants.
 
+Exact descriptor lookup at `0x68E070` is source-owned too. It maps the fixed
+bit-width/channel/numeric tuples and both compact-variant layout families back
+to their format IDs, returning `-1` for unsupported tuples. The mapping is the
+inverse of the recovered descriptor table across IDs `0` through `84`.
+
 Mip source allocation uses the recovered total bit width to calculate
 `width * height * depth * bits / 8`. Descriptor-to-format resolution at
 `0x68E4D0` still remains a focused boundary because it also consults the
