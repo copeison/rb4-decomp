@@ -106,6 +106,7 @@
 - [x] Reconstruct the Orbis particle-buffer allocation, upload, draw, and destruction paths.
 - [x] Reconstruct the common render particle-buffer factory and 64-byte base layout.
 - [x] Reconstruct the Orbis occlusion-query lifecycle and conditional-rendering commands.
+- [x] Reconstruct the common render occlusion-query factory and 64-byte base layout.
 - [x] Recover the Orbis vertex, geometry, pixel, and compute shader factory.
 - [x] Reconstruct Orbis compute and pixel shader backends.
 - [x] Reconstruct Orbis geometry and vertex shader backends.

@@ -1,9 +1,16 @@
 #pragma once
 
+#include "render/core/render_occlusion_query.h"
+
 namespace rb4 {
 
-struct OrbisOcclusionQuery;
 struct OrbisRenderContext;
+
+struct OrbisOcclusionQuery : RenderOcclusionQuery {
+    void* result_address;
+};
+
+static_assert(sizeof(OrbisOcclusionQuery) == 72);
 
 OrbisOcclusionQuery* orbis_create_occlusion_query(void* owner);
 void orbis_occlusion_query_construct(

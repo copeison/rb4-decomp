@@ -3,7 +3,10 @@
 `orbis_create_occlusion_query` at `0x8D8C30` is virtual slot 34 of the Orbis
 render system. It allocates a 72-byte object and calls the platform constructor
 at `0x8E28C0`. The common constructor at `0x5F7D50` stores the owner, resets
-the query flags and per-frame values, and initializes an intrusive-list node.
+three query-state flags, initializes five signed state values to `-1`, clears
+the result field, and creates a self-linked intrusive-list node. These fields
+form the exact 64-byte `RenderOcclusionQuery` base; the meaning of the five
+signed values is not yet established by the recovered callers.
 
 The Orbis constructor installs the platform vtable and clears the eight-byte
 backend query address. The begin method at `0x8E2920` reserves a 256-byte block
@@ -23,10 +26,17 @@ unlinks the query's intrusive-list node. The deleting destructor at `0x8E2900`
 then frees the object. The query result belongs to the per-frame command arena
 and therefore needs no object-owned release.
 
+The shared lifecycle is reconstructed in
+`src/render/core/render_occlusion_query.cpp`. The Orbis type derives from that
+base and adds only the eight-byte result address, preserving the original
+72-byte platform object.
+
 IDA originally treated the five methods after the constructor as data inside
 the next function. Their boundaries are now restored at `0x8E2900`,
 `0x8E2920`, `0x8E29E0`, `0x8E2A30`, and `0x8E2A60`.
 
 IDA evidence is preserved in
+`analysis/exports/render-occlusion-query.asm`,
+`analysis/exports/render-occlusion-query.c`,
 `analysis/exports/orbis-occlusion-query-backend.asm` and
 `analysis/exports/orbis-occlusion-query-backend.c`.

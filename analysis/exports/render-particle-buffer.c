@@ -45,4 +45,3 @@ double __fastcall render_particle_buffer_delete(__int64 a1)
 {
   return sub_37BF50(a1);
 }
-
