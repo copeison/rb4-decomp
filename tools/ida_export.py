@@ -260,6 +260,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-defer-allocation-release": 0x8D83F0,
     "orbis-release-all-retired-allocations": 0x8D84B0,
     "orbis-create-fence": 0x8D85C0,
+    "orbis-create-texture-2d": 0x8D89B0,
+    "orbis-texture-2d-construct": 0x8D62C0,
     "orbis-fence-destruct": 0x8E15F0,
     "orbis-fence-base-destruct": 0x8E1640,
     "orbis-fence-delete": 0x8E1680,

@@ -50,6 +50,7 @@
 - [x] Recover the Orbis GPU fence factory and backing allocation.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.
+- [x] Recover the Orbis 2D texture factory and platform constructor.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
