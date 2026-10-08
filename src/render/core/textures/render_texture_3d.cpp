@@ -43,10 +43,7 @@ RenderTexture3D* render_create_texture_3d(
     RenderTexture3DDescriptor& descriptor,
     RenderTexture3D* reusable_texture) {
     render_texture_resolve_descriptor_fields(
-        &descriptor.texture_state.usage_type,
-        2,
-        descriptor.texture_state.creation_state.values,
-        -1);
+        descriptor.texture_state, 2, -1);
     auto& factory = *render_system_factory(*render_system_instance());
     auto* texture = render_factory_create_texture_3d(factory, descriptor);
     render_texture_initialize_backend(*texture, reusable_texture);

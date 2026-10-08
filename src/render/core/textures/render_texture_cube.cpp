@@ -89,10 +89,7 @@ RenderTextureCube* render_create_texture_cube(
     RenderTextureCubeDescriptor& descriptor,
     RenderTextureCube* reusable_texture) {
     render_texture_resolve_descriptor_fields(
-        &descriptor.texture_state.usage_type,
-        3,
-        descriptor.texture_state.creation_state.values,
-        -1);
+        descriptor.texture_state, 3, -1);
     render_texture_cube_prepare_descriptor(descriptor.cube);
 
     auto& factory = *render_system_factory(*render_system_instance());

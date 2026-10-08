@@ -87,10 +87,7 @@ void render_texture_array_2d_construct(
 RenderTextureArray2D* render_create_texture_array_2d(
     RenderTextureArray2DDescriptor& descriptor) {
     render_texture_resolve_descriptor_fields(
-        &descriptor.texture_state.usage_type,
-        5,
-        descriptor.texture_state.creation_state.values,
-        -1);
+        descriptor.texture_state, 5, -1);
     auto& factory = *render_system_factory(*render_system_instance());
     auto* texture = render_factory_create_texture_array_2d(
         factory, descriptor);

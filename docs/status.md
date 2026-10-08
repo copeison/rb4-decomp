@@ -389,6 +389,8 @@
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU
   values, backend uploads, ownership, and shutdown release.
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
+- [x] Reconstruct the shared texture creation-profile merge, resolved-field and
+  sampler defaults, flag propagation, and special usage-class behavior.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.
 - [x] Reconstruct the common 80-byte mip-chain vector construction, doubling

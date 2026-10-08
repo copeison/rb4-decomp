@@ -162,6 +162,10 @@ void render_texture_apply_descriptor_state(
     const RenderTextureDescriptorState& descriptor);
 bool render_texture_descriptor_has_source_data(
     const RenderTextureDescriptorState& descriptor);
+void render_texture_resolve_descriptor_fields(
+    RenderTextureDescriptorState& descriptor,
+    std::int32_t descriptor_type,
+    std::int64_t fallback_mode);
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);
 void render_texture_delete(RenderTexture& texture);

@@ -42,11 +42,7 @@ void initialize_mip_descriptor(
 void resolve_descriptor(
     RenderTextureDescriptorState& state,
     std::int32_t descriptor_type) {
-    render_texture_resolve_descriptor_fields(
-        &state.usage_type,
-        descriptor_type,
-        state.creation_state.values,
-        -1);
+    render_texture_resolve_descriptor_fields(state, descriptor_type, -1);
 }
 
 RenderFactory& render_factory() {

@@ -8,6 +8,14 @@ namespace rb4 {
 
 namespace {
 
+struct RenderTextureResolvedFields {
+    RenderTextureUsage usage_type;
+    std::uint32_t values[7];
+    std::uint32_t address_mode;
+    std::uint32_t filter_mode;
+    std::uint32_t flags;
+};
+
 struct RenderTextureDispatch {
     void* reserved_destruct;
     void (*release_dynamic)(RenderTexture& texture);
@@ -29,8 +37,80 @@ static_assert(offsetof(RenderTextureDispatch, update_gpu_data) == 104);
 static_assert(offsetof(RenderTextureDispatch, descriptor_type) == 16);
 static_assert(offsetof(RenderTextureDispatch, release_dynamic) == 8);
 static_assert(offsetof(RenderTextureDispatch, initialize_backend) == 120);
+static_assert(sizeof(RenderTextureResolvedFields) == 44);
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x6A4770.
+void render_texture_resolve_descriptor_fields(
+    RenderTextureDescriptorState& descriptor,
+    std::int32_t descriptor_type,
+    std::int64_t fallback_mode) {
+    auto& fields = reinterpret_cast<RenderTextureResolvedFields&>(
+        descriptor.usage_type);
+    const auto& defaults = descriptor.creation_state.values;
+    fields.usage_type = static_cast<RenderTextureUsage>(defaults[0]);
+    for (std::size_t index = 0; index < 7; ++index) {
+        if (fields.values[index] == 0) {
+            fields.values[index] = defaults[index + 1];
+        }
+    }
+    if (fields.address_mode == 0) {
+        fields.address_mode = defaults[8];
+    }
+    if (fields.filter_mode == 0) {
+        fields.filter_mode = defaults[9];
+    }
+    fields.flags |= defaults[10];
+
+    const auto usage = static_cast<std::int32_t>(fields.usage_type);
+    const auto default_like_usage = usage == 0 || usage == 8 || usage == 9;
+    const auto standard_usage = usage == 0 || usage == 8;
+    if (fields.values[3] == 0) {
+        fields.values[3] = default_like_usage ? 2 : 1;
+    }
+    if (usage == 9) {
+        fields.values[3] = 2;
+    }
+    if (fields.values[5] == 0) {
+        fields.values[5] = usage == 8 ? 1 : 2;
+    }
+    if (fields.address_mode == 0) {
+        const auto is_cube = (descriptor_type | 4) == 7;
+        fields.address_mode = is_cube ? 1 : (usage == 8 ? 1 : 2);
+    }
+    if (fields.filter_mode == 0) {
+        fields.filter_mode = fields.values[5] == 1 ? 2 : 3;
+    }
+
+    const auto resolved_fallback = fallback_mode == -1 ? 4 : fallback_mode;
+    if (fields.values[0] == 0 && standard_usage) {
+        fields.values[0] = resolved_fallback == 4 ? 3 : 1;
+    }
+    if (fields.values[1] == 0) {
+        fields.values[1] = resolved_fallback == 4
+            ? (standard_usage ? 3 : 1)
+            : 1;
+    }
+    if (fields.values[4] == 0) {
+        fields.values[4] = (fields.flags & 3U) == 0 ? 2 : 1;
+    }
+
+    if (usage == 9) {
+        fields.values[0] = 1;
+        if ((fields.flags & 2U) != 0) {
+            fields.values[4] = 1;
+            fields.values[5] = 1;
+            fields.filter_mode = 2;
+        } else {
+            fields.flags |= 4U;
+            fields.values[4] = 2;
+            fields.values[5] = 2;
+            fields.filter_mode = 3;
+        }
+        fields.address_mode = (descriptor_type | 4) == 7 ? 1 : 2;
+    }
+}
 
 // Reconstructed from eboot.elf at 0x69B930.
 void render_texture_descriptor_construct(
