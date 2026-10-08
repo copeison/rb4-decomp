@@ -38,6 +38,11 @@ void render_texture_mip_chain_descriptor_construct(
     RenderTextureMipChainDescriptor& descriptor);
 void render_texture_mip_chain_descriptor_destruct(
     RenderTextureMipChainDescriptor& descriptor);
+void render_texture_mip_chain_descriptor_allocate_source(
+    RenderTextureMipChainDescriptor& descriptor,
+    const RenderTextureExtent3D& extent,
+    std::int32_t data_format,
+    const void* source_data);
 void render_texture_mip_chain_construct(
     RenderTextureMipChainState& mip_chain,
     const RenderTextureMipChainDescriptor& descriptor,

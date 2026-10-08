@@ -395,6 +395,8 @@
   growth, deep-copy append, validation, and ownership teardown.
 - [x] Type and reconstruct recursive mip-level ownership, deep source-pixel
   copies, auxiliary release, and common descriptor/state teardown.
+- [x] Recover the texture data-format bit widths used by mip source allocation,
+  including storage reuse and optional source copying.
 - [x] Recover the shared deleting-dispatch slot for textures, compute buffers,
   meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
