@@ -6,7 +6,6 @@
 #include <_pthread.h>
 
 #include "core/memory/engine_memory.h"
-#include "render/core/synchronization/render_deferred_release_adapters.h"
 #include "render/core/system/render_system.h"
 #include "render/core/system/render_system_state.h"
 
@@ -29,6 +28,11 @@ struct RenderDeferredReleaseState {
     std::uint32_t reserved_60;
 };
 
+struct RenderDeferredObjectDispatch {
+    void* reserved_destruct;
+    void (*release_dynamic)(void* object);
+};
+
 static_assert(sizeof(RenderDeferredReleaseState) == 64);
 static_assert(offsetof(RenderDeferredReleaseState, mutex) == 8);
 static_assert(offsetof(RenderDeferredReleaseState, begin) == 16);
@@ -41,6 +45,14 @@ RenderDeferredReleaseState& deferred_release_state(
     auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
     return *reinterpret_cast<RenderDeferredReleaseState*>(
         bytes + kDeferredReleaseQueueOffset);
+}
+
+void release_deferred_object(void* object) {
+    if (object == nullptr) {
+        return;
+    }
+    auto* dispatch = *static_cast<RenderDeferredObjectDispatch**>(object);
+    dispatch->release_dynamic(object);
 }
 
 void append_deferred_object(
@@ -132,7 +144,7 @@ void render_system_flush_deferred_releases(RenderSystem& system) {
     ++queue.lock_depth;
 
     for (auto** item = queue.begin; item != queue.end; ++item) {
-        render_deferred_object_release(*item);
+        release_deferred_object(*item);
     }
     queue.end = queue.begin;
 
@@ -145,7 +157,7 @@ void render_system_enqueue_deferred_release(
     RenderSystem& system,
     void* object) {
     if (render_system_core_state(system).shutting_down) {
-        render_deferred_object_release(object);
+        release_deferred_object(object);
         return;
     }
 

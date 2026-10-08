@@ -384,8 +384,8 @@
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
   ownership lifecycle.
-- [x] Reconstruct the render-system deferred-release queue, growth, drain, and
-  shutdown behavior.
+- [x] Reconstruct the render-system deferred-release queue, direct deleting
+  dispatch, growth, drain, and shutdown behavior.
 - [x] Reconstruct deferred-release queue construction, capacity teardown,
   recursive mutex lifetime, and adjacent frame-phase initialization.
 - [x] Reconstruct the four built-in render constant buffers, their fixed CPU
