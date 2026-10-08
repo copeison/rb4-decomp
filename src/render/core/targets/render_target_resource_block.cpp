@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/targets/render_target_resource_block_adapters.h"
+#include "core/memory/engine_memory.h"
 #include "render/core/textures/render_texture.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
@@ -70,6 +70,24 @@ RenderTexture* tiled_light_reuse_target(
         : nullptr;
 }
 
+RenderPartialFrameState* create_partial_frame_state() {
+    auto* state = static_cast<RenderPartialFrameState*>(
+        render_allocate(sizeof(RenderPartialFrameState)));
+    *state = {};
+    for (auto& value : state->values_00) {
+        value = -1;
+    }
+    for (auto& value : state->values_18) {
+        value = -1;
+    }
+    state->values_28[2] = 33;
+    state->values_28[3] = 0xFFFFFFFFU;
+    for (auto& value : state->values_40) {
+        value = -1;
+    }
+    return state;
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6B2660.
@@ -80,7 +98,7 @@ void render_target_resource_block_initialize(
     const RenderTargetResourceBlock* reusable_block) {
     const auto flags = resources.flags;
     if (partial_frame) {
-        render_target_resource_block_create_partial_frame_state(block);
+        block.partial_frame_state = create_partial_frame_state();
         if (has_flag(flags, ResourceFlag::kLightAccumulation)) {
             render_partial_light_accumulation_target_create(
                 resources, block, reusable_block);

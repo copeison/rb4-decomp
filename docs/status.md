@@ -65,6 +65,8 @@
 - [x] Replace the shared light-accumulation creation adapter with direct
   descriptor assembly and recover texture address/filter default tables.
 - [x] Reconstruct per-scene render-target resource-block initialization.
+- [x] Recover the exact 80-byte partial-frame state initialization and replace
+  its allocation and release adapters with typed ownership.
 - [x] Reconstruct top-level render-target resource-owner initialization.
 - [x] Reconstruct top-level render-target resource-owner teardown.
 - [x] Recover the exact 1,552-byte render-target resource-owner and 216-byte

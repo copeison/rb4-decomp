@@ -2,11 +2,11 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/core/targets/render_target_resource_block.h"
-#include "render/core/targets/render_target_resource_block_adapters.h"
 #include "render/core/targets/render_target_resources_lifecycle_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
 #include "render/depth/depth_stencil_target.h"
@@ -215,7 +215,10 @@ void render_target_resources_release(RenderTargetResources& resources) {
     const auto block_count = resources.block_count;
     for (std::size_t index = 0; index < block_count; ++index) {
         auto& block = resources.blocks_begin[index];
-        render_target_resource_block_release_partial_frame_state(block);
+        if (block.partial_frame_state != nullptr) {
+            render_free(block.partial_frame_state);
+            block.partial_frame_state = nullptr;
+        }
         render_partial_light_accumulation_target_release(block);
         render_depth_stencil_target_release(block);
         release_target(block.unclassified_target_18);
@@ -246,7 +249,7 @@ void render_target_resources_set_resource_mode(
 }
 
 // Reconstructed from eboot.elf at 0x6B2910.
-void* render_target_resources_acquire_partial_frame_state(
+RenderPartialFrameState* render_target_resources_acquire_partial_frame_state(
     RenderTargetResources& resources,
     std::size_t partial_scene_index) {
     const auto block_index = partial_scene_index + 1;

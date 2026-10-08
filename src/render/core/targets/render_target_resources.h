@@ -12,8 +12,22 @@ struct RenderMesh;
 struct RenderTexture;
 struct RenderTexture3D;
 
+struct RenderPartialFrameState {
+    std::int32_t values_00[5];
+    std::uint32_t reserved_14;
+    std::int32_t values_18[4];
+    std::uint32_t values_28[4];
+    std::uint32_t value_38;
+    bool value_3C;
+    std::uint8_t reserved_3D[3];
+    std::int32_t values_40[3];
+    std::uint16_t value_4C;
+    bool value_4E;
+    std::uint8_t reserved_4F;
+};
+
 struct RenderTargetResourceBlock {
-    void* partial_frame_state;
+    RenderPartialFrameState* partial_frame_state;
     RenderTexture* partial_light_accumulation;
     RenderTexture* depth_stencil;
     RenderTexture* unclassified_target_18;
@@ -76,6 +90,11 @@ struct RenderTargetResources {
     std::int64_t active_scene_context;
 };
 
+static_assert(sizeof(RenderPartialFrameState) == 80);
+static_assert(offsetof(RenderPartialFrameState, values_18) == 0x18);
+static_assert(offsetof(RenderPartialFrameState, values_28) == 0x28);
+static_assert(offsetof(RenderPartialFrameState, value_38) == 0x38);
+static_assert(offsetof(RenderPartialFrameState, values_40) == 0x40);
 static_assert(sizeof(RenderTargetResourceBlock) == 216);
 static_assert(offsetof(RenderTargetResourceBlock, depth_stencil) == 0x10);
 static_assert(offsetof(RenderTargetResourceBlock, gbuffer_color) == 0x28);
