@@ -21,6 +21,5 @@ void render_delete_texture_2d_storage(RenderTexture2D& texture);
 const void* orbis_texture_2d_binding_view(
     const OrbisTexture2D& texture,
     std::uint32_t flags);
-std::uint64_t orbis_active_render_frame_index();
 
 }  // namespace rb4
