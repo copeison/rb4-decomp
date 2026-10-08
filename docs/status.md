@@ -209,6 +209,8 @@
   reverse shutdown ownership path.
 - [x] Centralize the verified 312-byte render-system core prefix shared by
   frame activation, epoch tracking, settings, factory, and owner lifetime.
+- [x] Embed the shared core prefix in the Orbis runtime layout and use its
+  common context and back-buffer slots directly.
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.

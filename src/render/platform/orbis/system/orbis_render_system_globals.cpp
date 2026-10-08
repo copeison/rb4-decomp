@@ -6,6 +6,7 @@
 #include "core/memory/engine_memory.h"
 #include "core/threading/engine_thread.h"
 #include "render/core/system/render_epoch.h"
+#include "render/core/system/render_system_state.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
@@ -23,11 +24,8 @@ struct RetiredAllocationNode {
 };
 
 struct OrbisRenderSystemRuntimePrefix {
-    std::uint8_t reserved_0[56];
-    OrbisRenderContext* render_context;
-    std::uint8_t reserved_64[48];
-    OrbisBackBuffer* back_buffer;
-    std::uint8_t reserved_120[3684];
+    RenderSystemCoreState core;
+    std::uint8_t reserved_312[3492];
     std::int32_t video_output_handle;
     SceKernelEqueue event_queue;
     std::uint8_t reserved_3816[8];
@@ -55,8 +53,7 @@ struct OrbisRenderSystemRuntimePrefix {
     std::int32_t cached_flip_rate;
 };
 
-static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
-static_assert(offsetof(OrbisRenderSystemRuntimePrefix, back_buffer) == 112);
+static_assert(offsetof(OrbisRenderSystemRuntimePrefix, core) == 0);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, video_output_handle) == 3804);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, event_queue) == 3808);
@@ -152,7 +149,8 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
 
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    return *runtime->render_context;
+    return *static_cast<OrbisRenderContext*>(
+        runtime->core.render_context_storage);
 }
 
 std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system) {
@@ -337,14 +335,14 @@ void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    runtime->render_context = &context;
+    runtime->core.render_context_storage = &context;
 }
 
 void render_system_set_back_buffer(
     OrbisRenderSystem& system,
     OrbisBackBuffer& back_buffer) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    runtime->back_buffer = &back_buffer;
+    runtime->core.frame_owner_storage = &back_buffer;
 }
 
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system) {
@@ -453,7 +451,9 @@ std::size_t orbis_active_render_frame_index() {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(
             g_orbis_render_system);
-    return runtime->back_buffer->active_buffer;
+    const auto* back_buffer = static_cast<const OrbisBackBuffer*>(
+        runtime->core.frame_owner_storage);
+    return back_buffer->active_buffer;
 }
 
 void orbis_render_system_publish_instance(OrbisRenderSystem& system) {

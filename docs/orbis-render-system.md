@@ -21,6 +21,11 @@ node in the deferred-command list, destroys both recursive mutexes, cancels a
 remaining submit pthread when present, releases condition-variable state, and
 then invokes the base render-system destructor.
 
+The platform runtime prefix now embeds the shared 312-byte
+`RenderSystemCoreState` directly. The Orbis render context and back buffer use
+the common offset-zero slots at `0x38` and `0x70`; platform-only state begins
+after the shared prefix and reaches the video-output handle at `0xEDC`.
+
 These constructor and destructor fields and the complete 17-entry Orbis class
 vtable are now source-owned. The table preserves the seven recovered
 lifecycle, GPU-idle, and frame-submit methods; its no-op and zero-result hooks;

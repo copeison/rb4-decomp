@@ -24,12 +24,16 @@ struct RenderSystemCoreState {
     union {
         RenderContext* render_context;
         RenderFrameOwner* primary_frame_owner;
+        void* render_context_storage;
     };
     bool frame_activation_pending;
     std::uint8_t reserved_65[3];
     std::uint32_t frame_activation_flags;
     RenderFrameOwnerArray frame_owners;
-    RenderFrameOwner* frame_owner;
+    union {
+        RenderFrameOwner* frame_owner;
+        void* frame_owner_storage;
+    };
     std::uint8_t reserved_120[40];
     std::uint64_t frame_epoch;
     std::uint8_t reserved_168[128];
