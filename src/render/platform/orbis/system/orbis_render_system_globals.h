@@ -28,6 +28,10 @@ void orbis_set_event_queue(
 void orbis_initialize_submit_condition(OrbisRenderSystem& system);
 void orbis_destroy_submit_condition(OrbisRenderSystem& system);
 void orbis_wait_for_submit_token(OrbisRenderSystem& system);
+void orbis_lock_submission(OrbisRenderSystem& system);
+void orbis_unlock_submission(OrbisRenderSystem& system);
+void orbis_submit_scope_begin(OrbisRenderSystem& system);
+void orbis_submit_scope_end(OrbisRenderSystem& system);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);

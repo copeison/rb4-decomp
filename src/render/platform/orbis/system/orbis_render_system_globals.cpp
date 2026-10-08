@@ -115,6 +115,26 @@ void orbis_wait_for_submit_token(OrbisRenderSystem& system) {
         &runtime->submit_condition, runtime->submit_condition_mutex);
 }
 
+void orbis_lock_submission(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    scePthreadMutexLock(&runtime->submission_mutex);
+}
+
+void orbis_unlock_submission(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    scePthreadMutexUnlock(&runtime->submission_mutex);
+}
+
+void orbis_submit_scope_begin(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    ++runtime->submission_lock_depth;
+}
+
+void orbis_submit_scope_end(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    --runtime->submission_lock_depth;
+}
+
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context) {
