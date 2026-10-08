@@ -333,13 +333,11 @@ std::int32_t orbis_submit_done_thread_entry(void* context) {
 // Reconstructed from eboot.elf at 0x8D7340.
 void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
     auto& base = orbis_render_system_base(system);
-    render_system_lock(base);
-    render_system_enter_locked_call(base);
+    render_system_acquire_frame_lock(base);
     if (render_system_has_pending_frame(base)) {
         render_system_activate_pending_frame(base);
     }
-    render_system_leave_locked_call(base);
-    render_system_unlock(base);
+    render_system_release_frame_lock(base);
 
     orbis_lock_submission(system);
     orbis_publish_submit_token(system);

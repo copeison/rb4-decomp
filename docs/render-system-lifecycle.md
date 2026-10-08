@@ -35,7 +35,9 @@ includes the recursive mutex and lock bookkeeping at `0x08`-`0x1F`, the copied
 `0x78`/`0x80`, primary and auxiliary frame epochs at `0xA0`/`0xA8`, frame
 timing state at `0x100`-`0x127`, settings at `0x128`, and the render factory at
 `0x130`. Shared lock helpers live in `src/render/core/synchronization` and
-operate directly on this prefix.
+operate directly on this prefix. The submit-done worker uses the full frame
+lock pair, including owner-thread tracking; polling uses the lighter recursive
+mutex and depth-counter sequence found in its own function.
 
 Ending a frame clears the active target-state array and owner directly. The
 array is a 32-byte begin/end/capacity/allocator record, distinct from the
