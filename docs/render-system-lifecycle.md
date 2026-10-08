@@ -28,6 +28,11 @@ array backward, deletes each remaining frame owner, and leaves the primary
 owner and active back-buffer owner as separate pointers at offsets `0x38` and
 `0x70`.
 
+`src/render/core/system/render_system_state.h` centralizes the verified
+312-byte prefix shared by frame activation and lifetime code. It also exposes
+the frame epoch at `0xA0`, settings at `0x128`, and render factory at `0x130`,
+so these users no longer maintain overlapping private byte layouts.
+
 The fixed platform array is separate from the supported-platform list. Every
 slot receives its empty constructor, while only IDs named by configuration are
 populated with capability flags and resolutions.
