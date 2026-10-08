@@ -21,5 +21,9 @@ void orbis_texture_1d_set_gpu_texture(
     void* descriptor);
 void texture_1d_destruct(OrbisTexture1D& texture);
 void render_delete_texture_1d(OrbisTexture1D& texture);
+OrbisSamplerAddressMode orbis_texture_1d_address_mode(
+    const OrbisTexture1D& texture);
+std::uint32_t orbis_texture_1d_filter_mode(
+    const OrbisTexture1D& texture);
 
 }  // namespace rb4

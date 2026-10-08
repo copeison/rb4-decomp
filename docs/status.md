@@ -80,11 +80,13 @@
 - [x] Recover the Orbis inline constant-buffer factory.
 - [x] Recover the Orbis 1D texture factory and platform constructor.
 - [x] Reconstruct Orbis 1D texture storage, uploads, and destruction.
+- [x] Reconstruct Orbis 1D texture shader-stage binding.
 - [x] Recover the Orbis 2D texture factory and platform constructor.
 - [x] Reconstruct Orbis 2D texture storage, views, updates, and destruction.
 - [x] Reconstruct Orbis 2D texture shader-stage binding.
 - [x] Recover the Orbis 3D texture factory and platform constructor.
 - [x] Reconstruct Orbis 3D texture storage, uploads, and destruction.
+- [x] Reconstruct Orbis 3D texture shader-stage binding.
 - [x] Recover the Orbis cube texture factory and platform constructor.
 - [x] Reconstruct Orbis cube texture storage, views, and destruction.
 - [x] Reconstruct Orbis cube texture shader-stage binding.

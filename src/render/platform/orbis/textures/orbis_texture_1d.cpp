@@ -10,6 +10,19 @@ namespace {
 
 constexpr std::size_t kOrbisTexture1DSize = 408;
 
+void bind_texture_stage(
+    const OrbisTexture1D& texture,
+    OrbisRenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_texture(
+        context, stage, slot, orbis_texture_1d_gpu_texture(texture),
+        orbis_texture_1d_address_mode(texture),
+        orbis_texture_1d_filter_mode(texture), flags, border_color);
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x8D8980.
@@ -48,6 +61,66 @@ void orbis_texture_1d_delete(OrbisTexture1D& texture) {
 // Reconstructed from eboot.elf at 0x8E5050.
 void orbis_texture_1d_initialize_backend(OrbisTexture1D& texture) {
     orbis_texture_1d_initialize_storage(texture);
+}
+
+// Reconstructed from eboot.elf at 0x8E52D0.
+void orbis_texture_1d_bind_vertex(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kVertex, slot, flags,
+        border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8E52F0.
+void orbis_texture_1d_bind_hull(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kHull, slot, flags,
+        border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8E5310.
+void orbis_texture_1d_bind_domain(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kDomain, slot, flags,
+        border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8E5330.
+void orbis_texture_1d_bind_geometry(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kGeometry, slot, flags,
+        border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8E5350.
+void orbis_texture_1d_bind_pixel(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kPixel, slot, flags,
+        border_color);
+}
+
+// Reconstructed from eboot.elf at 0x8E5370.
+void orbis_texture_1d_bind_compute(
+    const OrbisTexture1D& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    bind_texture_stage(
+        texture, context, RenderShaderStage::kCompute, slot, flags,
+        border_color);
 }
 
 }  // namespace rb4

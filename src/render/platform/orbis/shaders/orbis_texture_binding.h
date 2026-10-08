@@ -17,6 +17,16 @@ enum OrbisTextureBindingFlag : std::uint32_t {
     kOrbisTextureBindingSuppressSampler = 1U << 4,
 };
 
+void orbis_bind_texture(
+    OrbisRenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    const void* texture,
+    OrbisSamplerAddressMode address_mode,
+    std::uint32_t filter_mode,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color);
+
 void orbis_bind_vertex_texture(
     OrbisRenderContext& context,
     std::uint32_t slot,

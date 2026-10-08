@@ -31,6 +31,48 @@ void bind_graphics_sampled_texture(
 
 }  // namespace
 
+void orbis_bind_texture(
+    OrbisRenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    const void* texture,
+    OrbisSamplerAddressMode address_mode,
+    std::uint32_t filter_mode,
+    std::uint32_t flags,
+    const OrbisSamplerBorderColor& border_color) {
+    switch (stage) {
+    case RenderShaderStage::kVertex:
+        orbis_bind_vertex_texture(
+            context, slot, texture, address_mode, filter_mode, border_color);
+        break;
+    case RenderShaderStage::kHull:
+        orbis_bind_hull_texture(
+            context, slot, texture, address_mode, filter_mode, flags,
+            border_color);
+        break;
+    case RenderShaderStage::kDomain:
+        orbis_bind_domain_texture(
+            context, slot, texture, address_mode, filter_mode, flags,
+            border_color);
+        break;
+    case RenderShaderStage::kGeometry:
+        orbis_bind_geometry_texture(
+            context, slot, texture, address_mode, filter_mode, flags,
+            border_color);
+        break;
+    case RenderShaderStage::kPixel:
+        orbis_bind_pixel_texture(
+            context, slot, texture, address_mode, filter_mode, flags,
+            border_color);
+        break;
+    case RenderShaderStage::kCompute:
+        orbis_bind_compute_texture(
+            context, slot, texture, address_mode, filter_mode, flags,
+            border_color);
+        break;
+    }
+}
+
 // Reconstructed from eboot.elf at 0x8E1EE0.
 void orbis_bind_vertex_texture(
     OrbisRenderContext& context,
