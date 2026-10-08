@@ -25,6 +25,10 @@ call-site names include `Arrow Mesh`, `Text`, `Scene Mask Mesh`, and
 `vocal_tube_mesh`.
 
 The position-only specialization is reconstructed in
-`src/render/orbis_mesh.cpp`. Its CPU vertex-vector accessors, double-buffered
+`src/render/orbis_position_mesh.cpp`. Its CPU vertex-vector accessors, double-buffered
 GPU update path, index-width selection, and missing IDA method boundaries are
 documented in `docs/orbis-position-mesh.md`.
+
+The 28-byte position-plus-float4-color specialization is reconstructed in
+`src/render/orbis_color_mesh.cpp` and documented in
+`docs/orbis-color-mesh.md`.
