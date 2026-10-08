@@ -6,6 +6,23 @@
 
 namespace rb4 {
 
+namespace {
+
+struct RenderComputeBufferDispatch {
+    void* reserved_destruct;
+    void (*release_dynamic)(RenderComputeBuffer& buffer);
+};
+
+static_assert(offsetof(RenderComputeBufferDispatch, release_dynamic) == 8);
+
+const RenderComputeBufferDispatch& dispatch(
+    const RenderComputeBuffer& buffer) {
+    return *static_cast<const RenderComputeBufferDispatch*>(
+        buffer.implementation);
+}
+
+}  // namespace
+
 // Reconstructed from eboot.elf at 0x636C70.
 RenderComputeBuffer* render_create_compute_buffer(
     const RenderComputeBufferDescriptor& descriptor) {
@@ -46,6 +63,10 @@ void render_compute_buffer_destruct(RenderComputeBuffer& buffer) {
 void render_compute_buffer_delete(RenderComputeBuffer& buffer) {
     render_compute_buffer_destruct(buffer);
     render_delete_compute_buffer_storage(buffer);
+}
+
+void render_compute_buffer_release_dynamic(RenderComputeBuffer& buffer) {
+    dispatch(buffer).release_dynamic(buffer);
 }
 
 // Reconstructed from eboot.elf at 0x636DB0.

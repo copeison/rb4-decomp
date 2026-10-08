@@ -6,7 +6,6 @@ namespace rb4 {
 
 void render_texture_set_base_dispatch(RenderTexture& texture);
 void render_delete_texture_storage(RenderTexture& texture);
-void render_texture_release_dynamic(RenderTexture& texture);
 void render_texture_resolve_descriptor_fields(
     void* resolved_fields,
     std::int32_t descriptor_type,

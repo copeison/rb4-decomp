@@ -43,6 +43,7 @@ void render_compute_buffer_construct(
     const RenderComputeBufferDescriptor& descriptor);
 void render_compute_buffer_destruct(RenderComputeBuffer& buffer);
 void render_compute_buffer_delete(RenderComputeBuffer& buffer);
+void render_compute_buffer_release_dynamic(RenderComputeBuffer& buffer);
 std::uint32_t render_compute_buffer_type(
     const RenderComputeBuffer& buffer);
 

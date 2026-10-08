@@ -141,6 +141,7 @@ bool render_texture_descriptor_has_source_data(
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);
 void render_texture_delete(RenderTexture& texture);
+void render_texture_release_dynamic(RenderTexture& texture);
 void render_texture_initialize_backend(
     RenderTexture& texture,
     const RenderTexture* reusable_texture);

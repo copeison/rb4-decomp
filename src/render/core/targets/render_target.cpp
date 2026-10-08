@@ -13,6 +13,17 @@ namespace {
 
 constexpr std::size_t kRenderTargetStateSize = 1552;
 
+struct RenderTargetDispatch {
+    void* reserved_destruct;
+    void (*release_dynamic)(RenderTarget& target);
+};
+
+static_assert(offsetof(RenderTargetDispatch, release_dynamic) == 8);
+
+const RenderTargetDispatch& dispatch(const RenderTarget& target) {
+    return *static_cast<const RenderTargetDispatch*>(target.implementation);
+}
+
 static_assert(kRenderTargetStateSize == sizeof(RenderTargetResources));
 static_assert(
     offsetof(RenderTargetState, state_flags) ==
@@ -86,6 +97,10 @@ void render_target_destruct(RenderTarget& target) {
 void render_target_delete(RenderTarget& target) {
     render_target_destruct(target);
     render_delete_target_storage(target);
+}
+
+void render_target_release_dynamic(RenderTarget& target) {
+    dispatch(target).release_dynamic(target);
 }
 
 // Reconstructed from eboot.elf at 0x11B2DE0.

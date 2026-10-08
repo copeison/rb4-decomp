@@ -9,6 +9,21 @@
 
 namespace rb4 {
 
+namespace {
+
+struct RenderMeshDispatch {
+    void* reserved_destruct;
+    void (*release_dynamic)(RenderMesh& mesh);
+};
+
+static_assert(offsetof(RenderMeshDispatch, release_dynamic) == 8);
+
+const RenderMeshDispatch& dispatch(const RenderMesh& mesh) {
+    return *static_cast<const RenderMeshDispatch*>(mesh.implementation);
+}
+
+}  // namespace
+
 // Reconstructed from eboot.elf at 0x5C26D0.
 RenderMesh* render_create_mesh(
     RenderMeshFormat format,
@@ -50,6 +65,10 @@ void render_mesh_destruct(RenderMesh& mesh) {
 void render_mesh_delete(RenderMesh& mesh) {
     render_mesh_destruct(mesh);
     render_delete_mesh_storage(mesh);
+}
+
+void render_mesh_release_dynamic(RenderMesh& mesh) {
+    dispatch(mesh).release_dynamic(mesh);
 }
 
 // Reconstructed from eboot.elf at 0x5C2930.

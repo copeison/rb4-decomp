@@ -66,6 +66,7 @@ RenderMesh* render_create_mesh(RenderMeshFormat format, const char* name);
 void render_mesh_construct(RenderMesh& mesh, const char* name);
 void render_mesh_destruct(RenderMesh& mesh);
 void render_mesh_delete(RenderMesh& mesh);
+void render_mesh_release_dynamic(RenderMesh& mesh);
 void render_mesh_set_vertices_resident(RenderMesh& mesh, bool resident);
 void render_mesh_set_vertex_usage_flags(
     RenderMesh& mesh,

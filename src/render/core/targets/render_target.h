@@ -41,6 +41,7 @@ void render_target_construct(
     bool create_state);
 void render_target_destruct(RenderTarget& target);
 void render_target_delete(RenderTarget& target);
+void render_target_release_dynamic(RenderTarget& target);
 std::size_t render_target_active_buffer_index(const RenderTarget& target);
 RenderTargetStateHandle render_target_active_state_handle(
     RenderTarget& target);

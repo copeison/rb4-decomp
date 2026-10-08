@@ -22,6 +22,5 @@ void render_mesh_resize_position_vertices(
 PositionMeshVertex& render_mesh_position_vertex_at(
     RenderMesh& mesh,
     std::size_t index);
-void render_mesh_release_dynamic(RenderMesh& mesh);
 
 }  // namespace rb4

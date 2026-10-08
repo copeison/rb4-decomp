@@ -8,6 +8,5 @@ namespace rb4 {
 
 void render_target_set_base_dispatch(RenderTarget& target);
 void render_delete_target_storage(RenderTarget& target);
-void render_target_release_dynamic(RenderTarget& target);
 
 }  // namespace rb4

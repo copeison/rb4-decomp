@@ -277,6 +277,8 @@
 - [x] Reconstruct common texture-descriptor defaults and source-data detection.
 - [x] Reconstruct typed descriptor construction for all seven common texture
   dimensions and use those constructors in default-resource creation.
+- [x] Recover the shared deleting-dispatch slot for textures, compute buffers,
+  meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

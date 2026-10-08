@@ -7,7 +7,8 @@ namespace rb4 {
 namespace {
 
 struct RenderTextureDispatch {
-    std::uint8_t reserved_0[2 * sizeof(void*)];
+    void* reserved_destruct;
+    void (*release_dynamic)(RenderTexture& texture);
     std::int32_t (*descriptor_type)(const RenderTexture& texture);
     std::uint8_t reserved_24[10 * sizeof(void*)];
     void (*update_gpu_data)(RenderTexture& texture);
@@ -24,6 +25,7 @@ const RenderTextureDispatch& dispatch(const RenderTexture& texture) {
 
 static_assert(offsetof(RenderTextureDispatch, update_gpu_data) == 104);
 static_assert(offsetof(RenderTextureDispatch, descriptor_type) == 16);
+static_assert(offsetof(RenderTextureDispatch, release_dynamic) == 8);
 static_assert(offsetof(RenderTextureDispatch, initialize_backend) == 120);
 
 }  // namespace
@@ -79,6 +81,10 @@ void render_texture_destruct(RenderTexture&) {
 void render_texture_delete(RenderTexture& texture) {
     render_texture_destruct(texture);
     render_delete_texture_storage(texture);
+}
+
+void render_texture_release_dynamic(RenderTexture& texture) {
+    dispatch(texture).release_dynamic(texture);
 }
 
 // Reconstructed from eboot.elf at 0x69B7A0.
