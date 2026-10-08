@@ -4,7 +4,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
-#include "render/resources/names/render_resource_name_adapters.h"
+#include "render/resources/names/render_resource_name.h"
 
 namespace rb4 {
 
@@ -423,7 +423,7 @@ void render_shader_constant_registry_release(
     for (auto* definition = registry->begin;
          definition != registry->end;
          ++definition) {
-        render_resource_name_destruct(&definition->comment);
+        render_resource_name_destruct(definition->comment);
     }
     if (registry->begin != nullptr) {
         const auto byte_count = static_cast<std::size_t>(

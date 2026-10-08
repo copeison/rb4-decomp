@@ -12,7 +12,7 @@
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/resources/names/render_resource_name_adapters.h"
+#include "render/resources/names/render_resource_name.h"
 
 namespace rb4 {
 
@@ -42,7 +42,7 @@ struct RenderQueryIdArray {
 struct RenderGpuStatisticBase {
     RenderGpuStatisticDispatch* dispatch;
     const void* name_key;
-    std::uint8_t resource_name[16];
+    RenderResourceName resource_name;
     RenderGpuStatisticBase* parent;
     std::uint8_t reserved_40;
     bool has_children;

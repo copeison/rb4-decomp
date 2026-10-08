@@ -7,7 +7,7 @@
 #include "core/types/symbol.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
-#include "render/resources/names/render_resource_name_adapters.h"
+#include "render/resources/names/render_resource_name.h"
 #include "render/resources/shaders/primary_shader_resource_adapters.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
@@ -36,7 +36,7 @@ struct RenderManagedObjectArray {
 
 struct RenderShaderNameRecord {
     std::uint8_t reserved_0[16];
-    std::uint8_t resource_name[16];
+    RenderResourceName resource_name;
 };
 
 struct RenderShaderNameRecordArray {
@@ -115,7 +115,7 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& registry) {
     for (auto* parameter = registry.begin;
          parameter != registry.end;
          ++parameter) {
-        render_resource_name_destruct(&parameter->name);
+        render_resource_name_destruct(parameter->name);
     }
     release_array_storage(
         registry.begin,

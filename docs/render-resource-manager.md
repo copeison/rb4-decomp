@@ -85,7 +85,10 @@ lighting paths, and shared structure sizes. Comment records own the engine's
 16-byte resource-name type; that common layout now lives under
 `src/render/resources/names` and is reused by shader and GPU-stat resources.
 Registry growth doubles capacity from one record, matching the original
-32-byte record array.
+32-byte record array. The shared 16-byte resource-name implementation is now
+source-owned. It preserves the capacity word immediately before each string,
+the process-wide empty-string representation, exact-size growth, and sized
+release used by registry records.
 
 The primary-shader layout and ownership implementation are kept in the
 dedicated `src/render/resources/shaders` domain. Registration at `0x638A20`
@@ -108,6 +111,4 @@ shader-constant blocks and three transient blocks, destroys every constant-name
 record before freeing its registry, tears down the shader-parameter registry set
 containing six 40-byte arrays in reverse order, and invokes
 the dynamic release slot for the function-table texture and all 35 resource
-slots. Every owning slot is cleared immediately after release. Only the
-record-specific name destructor remains a focused adapter boundary because it
-installs an unidentified dispatch table and releases its string allocation.
+slots. Every owning slot is cleared immediately after release.

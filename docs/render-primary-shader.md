@@ -21,8 +21,9 @@ state entry storage, and walks all 24 backend-state arrays in reverse order.
 It then unlinks the manager node, dynamically releases the compiled objects,
 and frees the six compiled-array capacities in reverse order. Each owning
 support pointer is cleared as soon as it is released. The base dispatch
-installation, resource-name lifetime, and backend initialization remain
-narrow adapter boundaries.
+installation and backend initialization remain narrow adapter boundaries. The
+shared resource-name owner is source-owned, including its capacity-prefixed
+string allocation and empty-string representation.
 
 The 20-byte binding, 40-byte registry, and 240-byte six-registry set are shared
 with the resource manager through `shader_parameter_registry.h`. This keeps

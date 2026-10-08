@@ -1,7 +1,7 @@
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 #include "core/memory/engine_memory.h"
-#include "render/resources/names/render_resource_name_adapters.h"
+#include "render/resources/names/render_resource_name.h"
 
 namespace rb4 {
 
@@ -34,7 +34,7 @@ RenderShaderParameterRecord& append_record(
         for (auto* record = registry.begin;
              record != registry.end;
              ++record) {
-            render_resource_name_destruct(&record->name);
+            render_resource_name_destruct(record->name);
         }
         if (registry.begin != nullptr) {
             const auto byte_count = static_cast<std::size_t>(
