@@ -66,6 +66,7 @@
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
 - [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Recover Orbis sampler construction and shader unbinding.
+- [x] Reconstruct shared Orbis texture and sampler stage binding.
 - [x] Recover masked Orbis shader-resource clearing.
 - [x] Reconstruct accelerated and raster Orbis depth-stencil clears.
 - [x] Reconstruct format-specific Orbis transient vertex drawing.
