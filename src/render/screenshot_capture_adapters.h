@@ -1,0 +1,25 @@
+#pragma once
+
+#include <cstdint>
+
+#include "screenshot_capture.h"
+
+namespace rb4 {
+
+struct ScreenshotRenderTarget;
+
+ScreenshotResolution screenshot_resolution_mode();
+ScreenshotRenderTarget* screenshot_recreate_render_target(
+    ScreenshotRenderTarget* previous,
+    RenderExtent extent,
+    const char* name);
+void screenshot_bind_render_target(
+    ScreenshotRenderTarget& target,
+    std::uint32_t draw_mode,
+    std::uint32_t debug_view);
+void screenshot_invoke_render_callback();
+void screenshot_submit_render_target(ScreenshotRenderTarget& target);
+void screenshot_copy_render_target_to_readback(ScreenshotRenderTarget& target);
+void screenshot_write_readback_png(const char* path);
+
+}  // namespace rb4

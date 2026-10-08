@@ -1,7 +1,9 @@
 # Render frame lifecycle
 
 The main game loop uses four entry points on the global render system. Their
-clean reconstruction now lives in `src/render/render_system_frame.cpp`.
+clean reconstruction now lives in `src/render/render_system_frame.cpp`. Before
+beginning a normal frame, it also services the pending screenshot capture
+described in `docs/screenshot-capture.md`.
 
 ## Poll and skipped frames
 

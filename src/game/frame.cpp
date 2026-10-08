@@ -1,6 +1,7 @@
 #include "startup.h"
 
 #include "render/render_system_frame.h"
+#include "render/screenshot_capture.h"
 
 namespace rb4 {
 
@@ -31,8 +32,6 @@ void network_connection_monitor_update();      // 0xBD9430
 void resource_request_queue_update();          // 0x928FC0
 
 bool ui_layout_consume_skip_frame();           // 0x8B1840
-bool platform_frame_callback_pending();         // 0x43B130
-void run_platform_frame_callback();             // 0x43B140
 void ui_manager_render();                      // 0x8C9A80
 bool exit_requested();
 
@@ -77,8 +76,8 @@ bool game_run_frame() {
     if (ui_layout_consume_skip_frame()) {
         render_system_skip_frame();
     } else {
-        if (platform_frame_callback_pending()) {
-            run_platform_frame_callback();
+        if (screenshot_capture_pending()) {
+            screenshot_capture_current_frame();
         }
 
         if (render_system_begin_frame()) {
