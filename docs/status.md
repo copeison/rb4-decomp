@@ -52,6 +52,8 @@
   filtering, and timeout submission recovery.
 - [x] Recover flip-complete buffer identification and pending-presentation
   counter retirement.
+- [x] Reconstruct end-of-pipe counter polling, forced-submit timing, runtime
+  vsync application, flip submission, and buffer rotation.
 - [x] Reconstruct Orbis GPU idle waits and deferred-allocation retirement.
 - [x] Reconstruct the Orbis frame-submit handshake.
 - [x] Complete the Orbis deferred GPU-allocation queue lifecycle.

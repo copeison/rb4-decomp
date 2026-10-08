@@ -33,9 +33,4 @@ void render_system_destroy_callback_state(RenderSystem& system);
 
 RenderSettings* render_settings_allocate();
 void render_settings_release(RenderSettings* settings);
-RenderSettings* render_system_settings(RenderSystem& system);
-void render_system_set_settings(
-    RenderSystem& system,
-    RenderSettings* settings);
-
 }  // namespace rb4

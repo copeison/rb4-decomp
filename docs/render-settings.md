@@ -33,7 +33,10 @@ async compute and tiled lighting off.
 
 The numeric `vsync_mode` loaded from configuration is separate from the
 runtime `vsync_enabled` flag. `toggle_vsync` at `0x6BA880` flips the latter;
-its default is true.
+its default is true. The submit worker reads the packed runtime fields at
+offsets `0x14` and `0x98` respectively; the cleaned settings structure remains
+a logical source model, so exact runtime access goes through a checked prefix
+view rather than relying on its C++ member offsets.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the

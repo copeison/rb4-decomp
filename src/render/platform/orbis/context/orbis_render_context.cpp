@@ -140,9 +140,15 @@ std::size_t orbis_render_context_active_frame(
 
 bool orbis_render_context_submissions_complete(
     const OrbisRenderContext& context) {
+    return orbis_render_context_frame_submissions_complete(
+        context, orbis_render_context_active_frame(context));
+}
+
+bool orbis_render_context_frame_submissions_complete(
+    const OrbisRenderContext& context,
+    std::size_t frame) {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
-    const auto frame = runtime->active_frame;
     for (std::size_t index = 0; index < kSubmissionCounterCount; ++index) {
         if (runtime->submission_counters[frame][index] != 0) {
             return false;

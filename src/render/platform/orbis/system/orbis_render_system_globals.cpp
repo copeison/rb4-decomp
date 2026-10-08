@@ -41,6 +41,8 @@ struct OrbisRenderSystemRuntimePrefix {
     RetiredAllocationNode* retired_allocations_head;
     RetiredAllocationNode* retired_allocations_tail;
     std::size_t retired_allocation_count;
+    std::uint8_t retired_allocation_allocator[8];
+    std::int32_t cached_flip_rate;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
@@ -71,6 +73,8 @@ static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, retired_allocations_tail) == 4320);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, retired_allocation_count) == 4328);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, cached_flip_rate) == 4344);
 
 }  // namespace
 
@@ -240,6 +244,19 @@ void orbis_set_submit_thread_running(
     bool running) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->submit_thread_running = running;
+}
+
+std::int32_t orbis_cached_flip_rate(const OrbisRenderSystem& system) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(&system);
+    return runtime->cached_flip_rate;
+}
+
+void orbis_set_cached_flip_rate(
+    OrbisRenderSystem& system,
+    std::int32_t rate) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->cached_flip_rate = rate;
 }
 
 std::size_t orbis_active_render_frame_index() {

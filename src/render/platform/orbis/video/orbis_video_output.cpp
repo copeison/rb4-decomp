@@ -7,6 +7,8 @@
 #include <system_service.h>
 #include <video_out.h>
 
+#include "core/time/performance_counter.h"
+#include "render/core/settings/render_settings.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/core/system/render_system_frame_adapters.h"
@@ -41,6 +43,37 @@ constexpr const char* kIdentityInstanceBufferName =
     "IdentityInstanceVBuffer";
 constexpr std::uint32_t kGnmEventId = 64;
 constexpr std::uint32_t kSubmitThreadPriority = 699;
+constexpr float kSubmitDoneTimeoutMilliseconds = 1000.0F;
+constexpr std::size_t kBackBufferCount = 2;
+constexpr std::int64_t kInitialPreviousBuffer = 2;
+
+struct OrbisSubmitWorkerState {
+    std::size_t next_buffer = 0;
+    std::int64_t previous_buffer = kInitialPreviousBuffer;
+    std::uint64_t last_submit_check = 0;
+    std::uint64_t pending_submit_ticks = 0;
+};
+
+template <typename Callback>
+void for_each_output_texture(
+    OrbisRenderSystem& system,
+    Callback callback) {
+    auto& base = orbis_render_system_base(system);
+    auto* frame_owner = render_system_frame_owner(base);
+    const auto states = render_frame_owner_target_states(*frame_owner);
+    for (std::size_t index = 0; index < states.count; ++index) {
+        auto* texture = render_target_state_texture(*states.states[index]);
+        if (texture != nullptr) {
+            callback(reinterpret_cast<OrbisTexture2D&>(*texture));
+        }
+    }
+}
+
+std::uint32_t video_flip_mode(std::int32_t rate) {
+    return rate == 0
+        ? SCE_VIDEO_OUT_FLIP_MODE_HSYNC
+        : SCE_VIDEO_OUT_FLIP_MODE_WINDOW_2;
+}
 
 }  // namespace
 
@@ -141,10 +174,14 @@ bool orbis_wait_for_submit_events(
     return true;
 }
 
-void orbis_process_submit_timeout(OrbisRenderSystem& system) {
+void orbis_process_submit_timeout(
+    OrbisRenderSystem& system,
+    OrbisSubmitWorkerState& state) {
     orbis_lock_submission(system);
     orbis_submit_scope_begin(system);
+    state.last_submit_check = performance_counter_read();
     sceGnmSubmitDone();
+    state.pending_submit_ticks = 0;
     orbis_submit_scope_end(system);
     orbis_unlock_submission(system);
 }
@@ -155,24 +192,70 @@ void orbis_process_flip_complete(OrbisRenderSystem& system) {
 
     const auto completed_buffer =
         static_cast<std::uint64_t>(status.flipArg);
-    constexpr std::uint64_t kBackBufferCount = 2;
     if (completed_buffer >= kBackBufferCount) {
         return;
     }
 
-    auto& base = orbis_render_system_base(system);
-    auto* frame_owner = render_system_frame_owner(base);
-    const auto states = render_frame_owner_target_states(*frame_owner);
-    for (std::size_t index = 0; index < states.count; ++index) {
-        auto* texture = render_target_state_texture(*states.states[index]);
-        if (texture != nullptr) {
-            auto& orbis_texture =
-                reinterpret_cast<OrbisTexture2D&>(*texture);
+    for_each_output_texture(
+        system,
+        [completed_buffer](OrbisTexture2D& texture) {
             orbis_texture_2d_complete_pending_presentation(
-                orbis_texture,
-                static_cast<std::size_t>(completed_buffer));
-        }
+                texture, static_cast<std::size_t>(completed_buffer));
+        });
+}
+
+void orbis_process_end_of_pipe(
+    OrbisRenderSystem& system,
+    OrbisSubmitWorkerState& state) {
+    orbis_lock_submission(system);
+    orbis_submit_scope_begin(system);
+
+    auto& context = orbis_render_system_context(system);
+    bool submit_done = orbis_render_context_frame_submissions_complete(
+        context, state.next_buffer);
+    if (!submit_done) {
+        const auto now = performance_counter_read();
+        state.pending_submit_ticks += now - state.last_submit_check;
+        state.last_submit_check = now;
+        submit_done = static_cast<float>(
+            performance_counter_ticks_to_milliseconds(
+                state.pending_submit_ticks)) >=
+            kSubmitDoneTimeoutMilliseconds;
     }
+
+    if (submit_done) {
+        state.last_submit_check = performance_counter_read();
+        sceGnmSubmitDone();
+        state.pending_submit_ticks = 0;
+    }
+
+    for_each_output_texture(
+        system,
+        [&state](OrbisTexture2D& texture) {
+            orbis_texture_2d_add_pending_presentation(
+                texture, state.next_buffer);
+        });
+
+    orbis_publish_submit_token(system);
+    orbis_submit_scope_end(system);
+    orbis_unlock_submission(system);
+    orbis_signal_submit_condition(system);
+
+    auto& base = orbis_render_system_base(system);
+    const auto rate = render_settings_active_vsync_mode(
+        *render_system_settings(base));
+    if (rate != orbis_cached_flip_rate(system)) {
+        orbis_set_cached_flip_rate(system, rate);
+        orbis_video_output_set_flip_rate(system, rate == 2);
+    }
+
+    sceVideoOutSubmitFlip(
+        orbis_video_output_handle(system),
+        static_cast<std::int32_t>(state.next_buffer),
+        video_flip_mode(rate),
+        state.previous_buffer);
+    state.previous_buffer = static_cast<std::int64_t>(state.next_buffer);
+    state.next_buffer = (state.next_buffer + 1) % kBackBufferCount;
 }
 
 // Reconstructed from eboot.elf at 0x8D7B20.
@@ -270,12 +353,14 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
     orbis_unlock_submission(system);
     orbis_signal_submit_condition(system);
 
+    OrbisSubmitWorkerState state;
+    state.last_submit_check = performance_counter_read();
     std::array<OrbisSubmitEvent, 4> events{};
     while (orbis_submit_thread_running(system)) {
         std::size_t event_count = 0;
         if (!orbis_wait_for_submit_events(
                 system, events.data(), events.size(), event_count)) {
-            orbis_process_submit_timeout(system);
+            orbis_process_submit_timeout(system, state);
             continue;
         }
 
@@ -285,7 +370,7 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
                 orbis_process_flip_complete(system);
                 break;
             case OrbisSubmitEventType::kEndOfPipe:
-                orbis_process_end_of_pipe(system, events[index]);
+                orbis_process_end_of_pipe(system, state);
                 break;
             }
         }

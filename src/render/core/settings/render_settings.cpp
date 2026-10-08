@@ -1,6 +1,7 @@
 #include "render/core/settings/render_settings.h"
 
 #include <cctype>
+#include <cstddef>
 #include <cstdlib>
 
 #include "render/core/settings/render_settings_adapters.h"
@@ -8,6 +9,17 @@
 namespace rb4 {
 
 namespace {
+
+struct RenderSettingsVsyncPrefix {
+    std::uint8_t reserved_0[20];
+    std::int32_t configured_mode;
+    std::uint8_t reserved_24[128];
+    bool enabled;
+};
+
+static_assert(
+    offsetof(RenderSettingsVsyncPrefix, configured_mode) == 20);
+static_assert(offsetof(RenderSettingsVsyncPrefix, enabled) == 152);
 
 bool equals_ignore_ascii_case(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
@@ -124,6 +136,13 @@ void apply_platform_limits(RenderSettings& settings) {
 }
 
 }  // namespace
+
+std::int32_t render_settings_active_vsync_mode(
+    const RenderSettings& settings) {
+    const auto* runtime =
+        reinterpret_cast<const RenderSettingsVsyncPrefix*>(&settings);
+    return runtime->enabled ? runtime->configured_mode : 0;
+}
 
 // Reconstructed from eboot.elf at 0x441940.
 bool render_parse_resolution(const char* text, RenderExtent& extent) {

@@ -30,6 +30,7 @@ void orbis_render_system_construct(OrbisRenderSystem& system) {
     orbis_render_system_initialize_worker_state(system, kUnknownWorkerName);
     orbis_render_system_initialize_submission_state(system);
     orbis_render_system_initialize_command_list(system);
+    orbis_set_cached_flip_rate(system, -1);
     orbis_render_system_publish_instance(system);
 }
 

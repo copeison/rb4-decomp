@@ -24,6 +24,8 @@ struct RenderSystemFramePrefix {
     RenderFrameOwner** frame_owners_end;
     std::uint8_t reserved_88[24];
     RenderFrameOwner* frame_owner;
+    std::uint8_t reserved_120[176];
+    RenderSettings* settings;
 };
 
 static_assert(
@@ -36,6 +38,7 @@ static_assert(
     offsetof(RenderSystemFramePrefix, frame_owners_begin) == 72);
 static_assert(offsetof(RenderSystemFramePrefix, frame_owners_end) == 80);
 static_assert(offsetof(RenderSystemFramePrefix, frame_owner) == 112);
+static_assert(offsetof(RenderSystemFramePrefix, settings) == 296);
 
 }  // namespace
 
@@ -80,6 +83,18 @@ void render_system_activate_pending_frame(RenderSystem& system) {
         *runtime->render_context, runtime->frame_activation_flags);
     runtime->frame_activation_pending = false;
     runtime->frame_activation_flags = 0;
+}
+
+RenderSettings* render_system_settings(RenderSystem& system) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    return runtime->settings;
+}
+
+void render_system_set_settings(
+    RenderSystem& system,
+    RenderSettings* settings) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    runtime->settings = settings;
 }
 
 void render_system_publish_instance(RenderSystem& system) {

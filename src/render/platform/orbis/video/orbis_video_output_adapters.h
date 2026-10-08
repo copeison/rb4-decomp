@@ -41,10 +41,6 @@ void orbis_bind_identity_instance_buffer(
     OrbisRenderSystem& system,
     OrbisVertexBuffer& buffer);
 
-void orbis_process_end_of_pipe(
-    OrbisRenderSystem& system,
-    const OrbisSubmitEvent& event);
-
 void render_free(void* allocation);
 
 }  // namespace rb4

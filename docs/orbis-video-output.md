@@ -20,10 +20,22 @@ Startup performs the following work:
    screen.
 
 The worker at `0x8D7340` waits for up to four events at a time. Flip-complete
-events retire per-buffer fences. End-of-pipe events call `sceGnmSubmitDone`,
-advance submission fences, signal the waiting condition, apply changes to the
-runtime vsync flag and mode, and submit the next video flip. A failed or timed
-wait also calls `sceGnmSubmitDone` under the submission lock.
+events read `SceVideoOutFlipStatus::flipArg`, accept buffer indices zero and
+one, and retire that buffer's pending-presentation count on every attached
+output texture. End-of-pipe events inspect the ten submission counters for the
+worker's current buffer. They call `sceGnmSubmitDone` immediately when all ten
+are clear or after pending time accumulates to 1,000 ms, advance the current
+buffer's presentation counts, publish the submit token, and wake its waiter.
+
+The runtime vsync enable byte is at `RenderSettings + 0x98`; when enabled, the
+configured mode comes from `+0x14`, otherwise mode zero is used. The worker
+caches that mode at `OrbisRenderSystem + 0x10F8`. Mode two selects video flip
+rate one; all other modes select rate zero. Mode zero submits with
+`SCE_VIDEO_OUT_FLIP_MODE_HSYNC`, while every other value uses
+`SCE_VIDEO_OUT_FLIP_MODE_WINDOW_2`. The previous buffer index is carried as
+the flip argument so the later flip-complete event can retire it. A failed or
+timed wait also calls `sceGnmSubmitDone` under the submission lock and resets
+the accumulated timer.
 
 The deleting destructor at `0x8D7B00` runs the Orbis object destructor and then
 frees the 4,352-byte allocation.

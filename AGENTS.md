@@ -27,3 +27,5 @@ they grow, not only rendering, audio, or platform code.
 - Add a new domain folder in any subsystem when a coherent responsibility would
   otherwise accumulate in a broad parent directory. Do not wait for the broad
   directory to become crowded before placing new work correctly.
+- Put engine-wide utilities under a matching domain in `src/core`, such as
+  `time` for performance-counter access shared by rendering and audio.

@@ -44,7 +44,6 @@ bool orbis_wait_for_submit_events(
     OrbisSubmitEvent* events,
     std::size_t capacity,
     std::size_t& event_count);
-void orbis_process_submit_timeout(OrbisRenderSystem& system);
 void orbis_process_flip_complete(OrbisRenderSystem& system);
 void orbis_render_system_initialize(OrbisRenderSystem& system);
 void orbis_render_system_shutdown(OrbisRenderSystem& system);
