@@ -9,6 +9,7 @@ constexpr const char* kDefaultLightingScene =
 constexpr const char* kDefaultDirectional = "default_directional";
 constexpr const char* kDefaultShadowedSpot = "default_spot_with_shadows";
 constexpr const char* kDefaultProbe = "default_probe";
+constexpr const char* kFallbackDirectional = "default_directional_light";
 
 constexpr float kProbeFalloffStartScale = 2.0f;
 constexpr float kProbeFalloffEndScale = 3.0f;
@@ -163,6 +164,28 @@ void render_configure_default_shadowed_spot(
     rnd_light_spot_set_falloff_end(
         *light, state.scale * kSpotFalloffEndScale);
     rnd_object_reset_transform_with_scaled_position(object, state.scale);
+}
+
+// Reconstructed from eboot.elf at 0x6BF4F0.
+void render_create_fallback_default_lighting(
+    DefaultLightingState& state,
+    RndScene& scene) {
+    state.scene_settings = rnd_scene_settings(scene);
+
+    auto* object = rnd_scene_create_object(scene, kFallbackDirectional);
+    if (object == nullptr) {
+        return;
+    }
+
+    auto* light = rnd_object_add_directional_light(*object);
+    if (light == nullptr) {
+        return;
+    }
+
+    rnd_light_directional_set_intensity(*light, 2.0f);
+    rnd_object_set_default_directional_light_transform(*object);
+    state.directional_lights.push_back(rnd_object_id(*object));
+    render_apply_default_lighting_mode(state);
 }
 
 }  // namespace rb4

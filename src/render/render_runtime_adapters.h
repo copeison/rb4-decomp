@@ -59,12 +59,16 @@ RndObjectId rnd_object_id(const RndObject& object);
 
 RndLightCom* rnd_object_light(RndObject& object);
 RndLightDirectionalCom* rnd_object_directional_light(RndObject& object);
+RndLightDirectionalCom* rnd_object_add_directional_light(RndObject& object);
 RndLightSpotCom* rnd_object_spot_light(RndObject& object);
 RndLightProbeCom* rnd_object_light_probe(RndObject& object);
 RndMaterial* rnd_object_add_material(RndObject& object);
 RndCameraCom* rnd_object_add_camera(RndObject& object);
 
 void rnd_light_set_enabled(RndLightCom& light, bool enabled);
+void rnd_light_directional_set_intensity(
+    RndLightDirectionalCom& light,
+    float intensity);
 void rnd_light_probe_set_enabled(RndLightProbeCom& probe, bool enabled);
 void rnd_light_probe_set_falloff_start(
     RndLightProbeCom& probe,
@@ -77,6 +81,7 @@ void rnd_light_spot_set_falloff_end(RndLightSpotCom& light, float distance);
 void rnd_object_reset_transform_with_scaled_position(
     RndObject& object,
     float position_scale);
+void rnd_object_set_default_directional_light_transform(RndObject& object);
 void rnd_material_set_sharing_type(
     RndMaterial& material,
     RndObject& owner,

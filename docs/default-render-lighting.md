@@ -60,4 +60,5 @@ the engine default and multiplies only the position by the same scale.
 intensity field to `2.0`, orients its transform from engine defaults, appends
 its object ID to the directional list, and applies the active lighting mode.
 Its transform construction remains in IDA until the involved math types and
-global basis vectors are recovered.
+global basis vectors are recovered. The high-level fallback path is now in the
+cleaned source; a narrow transform adapter contains that remaining math detail.
