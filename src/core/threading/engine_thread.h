@@ -8,7 +8,6 @@ namespace rb4 {
 
 using EngineThreadCallback = std::int32_t (*)(void* context);
 
-constexpr std::size_t kEngineProcessorCount = 6;
 constexpr std::uint32_t kMinimumEngineThreadStackSize = 0x20000;
 
 struct EngineThreadInvocation {

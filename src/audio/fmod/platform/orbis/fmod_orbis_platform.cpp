@@ -4,6 +4,7 @@
 
 #include "audio/fmod/api/fmod_api.h"
 #include "core/threading/thread_affinity.h"
+#include "core/threading/thread_affinity_adapters.h"
 
 namespace rb4 {
 

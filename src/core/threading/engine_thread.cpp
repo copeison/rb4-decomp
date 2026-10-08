@@ -6,6 +6,7 @@
 #include <sys/sched.h>
 
 #include "core/threading/engine_thread_adapters.h"
+#include "core/threading/thread_affinity.h"
 
 namespace rb4 {
 
@@ -66,13 +67,8 @@ void engine_thread_configure(
     thread.invocation.result = 0;
     thread.invocation.owner = &thread;
 
-    if (processor != -1) {
-        affinity_mask |= SceKernelCpumask{1} << processor;
-    }
-    if (affinity_mask == 0) {
-        affinity_mask =
-            (SceKernelCpumask{1} << kEngineProcessorCount) - 1;
-    }
+    affinity_mask = thread_affinity_build_cpu_mask(
+        processor, affinity_mask);
 
     engine_thread_configure_runtime(
         thread.runtime,

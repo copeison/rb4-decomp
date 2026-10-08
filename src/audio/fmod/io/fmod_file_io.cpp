@@ -9,6 +9,7 @@
 
 #include "core/threading/engine_thread.h"
 #include "core/threading/thread_affinity.h"
+#include "core/threading/thread_affinity_adapters.h"
 
 namespace rb4 {
 

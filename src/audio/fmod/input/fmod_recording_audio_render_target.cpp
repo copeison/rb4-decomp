@@ -5,6 +5,7 @@
 #include "audio/core/runtime/audio_runtime_adapters.h"
 #include "audio/fmod/mixing/fmod_mix_callback.h"
 #include "core/threading/thread_affinity.h"
+#include "core/threading/thread_affinity_adapters.h"
 
 namespace rb4 {
 
