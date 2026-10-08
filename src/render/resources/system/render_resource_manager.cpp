@@ -12,7 +12,7 @@
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 #include "render/resources/names/render_resource_name.h"

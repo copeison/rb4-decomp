@@ -19,6 +19,7 @@ inverse of the recovered descriptor table across IDs `0` through `84`.
 
 Mip source allocation uses the recovered total bit width to calculate
 `width * height * depth * bits / 8`. Descriptor-to-format resolution at
-`0x68E4D0` still remains a focused boundary because it also consults the
-active render platform's supported-format masks and applies several fallback
-transformations.
+`0x68E4D0` and `0x68E550` is source-owned. It checks the active render
+platform's supported-format bitsets, retries the original channel-layout
+fallback sequence, applies the resource-class-eight numeric conversion, and
+searches the packed 24/32/40-bit family in its original preference order.

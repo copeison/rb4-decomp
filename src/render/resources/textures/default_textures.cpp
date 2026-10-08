@@ -4,7 +4,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_texture_mip_chain_adapters.h"
 
 namespace rb4 {

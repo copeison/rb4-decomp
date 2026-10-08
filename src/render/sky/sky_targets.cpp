@@ -1,7 +1,7 @@
 #include "render/sky/sky_targets.h"
 
 #include "render/core/targets/render_target_resource_factory.h"
-#include "render/core/textures/render_data_format_adapters.h"
+#include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_texture_adapters.h"
 
 namespace rb4 {

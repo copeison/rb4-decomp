@@ -20,5 +20,8 @@ std::uint32_t render_data_format_bits_per_pixel(
     std::int32_t data_format);
 std::int32_t render_data_format_find_exact(
     const RenderDataFormatDescriptor& descriptor);
+std::int32_t render_data_format_resolve(
+    const RenderDataFormatDescriptor& descriptor,
+    std::uint32_t resource_class);
 
 }  // namespace rb4

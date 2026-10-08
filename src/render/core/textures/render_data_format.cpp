@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 
+#include "render/core/system/render_system_globals.h"
+
 namespace rb4 {
 
 namespace {
@@ -31,6 +33,53 @@ RenderDataFormatDescriptor make_variant_format(
         static_cast<std::uint32_t>(-1),
         layout,
         variant);
+}
+
+bool data_format_supported(
+    std::int32_t data_format,
+    std::uint32_t resource_class) {
+    if (data_format < 0) {
+        return false;
+    }
+    const auto* system = reinterpret_cast<const std::uint8_t*>(
+        render_system_instance());
+    const auto* supported_words = reinterpret_cast<const std::uint64_t*>(
+        system + 424 + static_cast<std::size_t>(resource_class) * 128);
+    const auto format = static_cast<std::uint32_t>(data_format);
+    return (supported_words[format >> 6] &
+            (std::uint64_t{1} << (format & 63))) != 0;
+}
+
+std::uint32_t channel_divisor(std::uint32_t channel_layout) {
+    constexpr std::array<std::uint32_t, 12> kDivisors{
+        2, 2, 3, 3, 4, 3, 4, 3, 4, 3, 1, 2,
+    };
+    return channel_layout < kDivisors.size()
+        ? kDivisors[channel_layout]
+        : 4;
+}
+
+bool try_supported_format(
+    const RenderDataFormatDescriptor& descriptor,
+    std::uint32_t resource_class,
+    std::int32_t& result) {
+    result = render_data_format_find_exact(descriptor);
+    return data_format_supported(result, resource_class);
+}
+
+bool try_channel_fallback(
+    RenderDataFormatDescriptor& descriptor,
+    std::uint32_t resource_class,
+    std::int32_t& result) {
+    constexpr std::array<std::uint32_t, 6> kFallbacks{
+        3, 2, 6, 7, 4, 5,
+    };
+    if (descriptor.channel_layout < 2 || descriptor.channel_layout > 7) {
+        return false;
+    }
+    descriptor.channel_layout =
+        kFallbacks[descriptor.channel_layout - 2];
+    return try_supported_format(descriptor, resource_class, result);
 }
 
 }  // namespace
@@ -226,6 +275,90 @@ std::int32_t render_data_format_find_exact(
     default:
         return kInvalidFormat;
     }
+}
+
+// Reconstructed from eboot.elf at 0x68E4D0 and 0x68E550.
+std::int32_t render_data_format_resolve(
+    const RenderDataFormatDescriptor& descriptor,
+    std::uint32_t resource_class) {
+    std::int32_t result = -1;
+    if (try_supported_format(descriptor, resource_class, result)) {
+        return result;
+    }
+    const auto exact_format = result;
+
+    if (descriptor.variant < -1 || descriptor.variant >= 1) {
+        return resource_class == 8 ? 21 : -1;
+    }
+
+    auto working = descriptor;
+    const auto divisor = channel_divisor(working.channel_layout);
+    if (working.channel_layout == 2 || working.channel_layout == 3) {
+        working.bit_width = 4 * (working.bit_width / divisor);
+        working.channel_layout = working.channel_layout == 2 ? 5 : 7;
+        if (try_supported_format(working, resource_class, result)) {
+            return result;
+        }
+    }
+    if (try_channel_fallback(working, resource_class, result)) {
+        return result;
+    }
+
+    working = descriptor;
+    if (working.channel_layout == 2 || working.channel_layout == 3) {
+        working.bit_width = 4 * (
+            working.bit_width / channel_divisor(working.channel_layout));
+        working.channel_layout = working.channel_layout == 2 ? 4 : 6;
+        if (try_supported_format(working, resource_class, result)) {
+            return result;
+        }
+    }
+    if (try_channel_fallback(working, resource_class, result)) {
+        return result;
+    }
+
+    if (resource_class == 8 && descriptor.numeric_type != 2) {
+        working = descriptor;
+        working.numeric_type = 2;
+        if (try_supported_format(working, resource_class, result)) {
+            return result;
+        }
+
+        const auto numeric_divisor =
+            channel_divisor(working.channel_layout);
+        working.bit_width = 4 * (working.bit_width / numeric_divisor);
+        if (working.channel_layout == 2) {
+            working.channel_layout = 4;
+        } else if (working.channel_layout == 3) {
+            working.channel_layout = 6;
+        }
+        if (try_supported_format(working, resource_class, result)) {
+            return result;
+        }
+    }
+
+    if (descriptor.channel_layout == 11) {
+        constexpr std::array<std::int32_t, 3> kPackedFormats{54, 55, 56};
+        std::int32_t exact_index = exact_format - kPackedFormats.front();
+        if (exact_index < 0 || exact_index >=
+                static_cast<std::int32_t>(kPackedFormats.size())) {
+            exact_index = -1;
+        }
+        for (std::int32_t index = exact_index + 1;
+             index < static_cast<std::int32_t>(kPackedFormats.size());
+             ++index) {
+            if (data_format_supported(kPackedFormats[index], resource_class)) {
+                return kPackedFormats[index];
+            }
+        }
+        for (auto index = exact_index; index > 0; --index) {
+            if (data_format_supported(kPackedFormats[index - 1], resource_class)) {
+                return kPackedFormats[index - 1];
+            }
+        }
+    }
+
+    return -1;
 }
 
 }  // namespace rb4
