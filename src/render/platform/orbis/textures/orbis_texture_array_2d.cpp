@@ -73,7 +73,7 @@ void orbis_texture_array_2d_destruct(OrbisTextureArray2D& texture) {
 // Reconstructed from eboot.elf at 0x8E5E50.
 void orbis_texture_array_2d_delete(OrbisTextureArray2D& texture) {
     orbis_texture_array_2d_destruct(texture);
-    render_delete_texture_array_2d_storage(texture);
+    render_release(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E5E70.

@@ -14,7 +14,5 @@ void orbis_texture_array_2d_initialize_depth_storage(
     OrbisTextureArray2D& texture);
 void orbis_texture_array_2d_initialize_color_storage(
     OrbisTextureArray2D& texture);
-void render_delete_texture_array_2d_storage(
-    OrbisTextureArray2D& texture);
 
 }  // namespace rb4

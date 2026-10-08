@@ -439,6 +439,8 @@
   linked-resource resolution, source-data release, and deleting lifecycle.
 - [x] Reconstruct the common 1D-array texture dispatch, per-layer mip/source
   queries, source-data release, and deleting lifecycle.
+- [x] Reconstruct the common 2D-array texture dispatch, per-layer mip/source
+  queries, source-data release, validation, and deleting lifecycle.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
