@@ -27,3 +27,15 @@ After all resources are created, the owner propagates its mode field to every
 registered resource. Flag `0x20000000` forces the 64-bit light-accumulation
 format, while flag `0x80000000` marks the source texture as externally owned
 during release.
+
+`render_target_resources_release` at `0x6AFFE0` conditionally releases the
+source texture, tears down every owner-level target group, and visits every
+active per-scene block. The block pass releases partial-frame state, depth,
+GBuffer, linear depth, ambient occlusion, tiled-light buffers, and volumetric
+textures. It then clears the block count, extent, attachment cursor, and
+registered-resource count.
+
+The owner pointer at `0x188` and per-scene pointers at `0x18` and `0x20` are
+confirmed virtual resources but do not yet have feature identities. Their
+exact null-safe virtual teardown and slot clearing are retained behind narrow
+unclassified-resource adapters.

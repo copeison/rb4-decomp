@@ -6,11 +6,20 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_adapters.h"
 #include "render/core/targets/render_target_resource_block.h"
+#include "render/core/targets/render_target_resource_block_adapters.h"
 #include "render/core/targets/render_target_resources_lifecycle_adapters.h"
+#include "render/core/textures/render_texture_adapters.h"
+#include "render/depth/depth_stencil_target.h"
+#include "render/depth/linear_depth_targets.h"
+#include "render/gbuffer/gbuffer_targets.h"
 #include "render/intermediate/scaled_targets.h"
+#include "render/lighting/accumulation/partial_light_accumulation_target.h"
 #include "render/lighting/accumulation/light_accumulation_targets.h"
+#include "render/lighting/ambient_occlusion/ambient_occlusion_target.h"
 #include "render/lighting/probes/light_probe_accumulation_target.h"
 #include "render/lighting/shadows/shadow_contribution_targets.h"
+#include "render/lighting/tiled/tiled_light_target_buffers.h"
+#include "render/lighting/volumetric/volumetric_scattering_textures.h"
 #include "render/masking/scene_mask_targets.h"
 #include "render/masking/scene_mask_tiles.h"
 #include "render/postprocessing/antialiasing/cmaa_targets.h"
@@ -99,6 +108,45 @@ void render_target_resources_initialize(
     }
 
     render_target_resources_propagate_resource_mode(resources);
+}
+
+// Reconstructed from eboot.elf at 0x6AFFE0.
+void render_target_resources_release(RenderTargetResources& resources) {
+    const auto flags = render_target_resources_flags(resources);
+    auto*& source_texture = render_target_resources_source_texture(resources);
+    if (!has_flag(
+            flags, RenderTargetResourceFlag::kSourceTextureNotOwned) &&
+        source_texture != nullptr) {
+        render_texture_release_dynamic(*source_texture);
+    }
+    source_texture = nullptr;
+
+    render_light_accumulation_targets_release(resources);
+    render_target_resources_release_unclassified_target(resources);
+    render_light_probe_accumulation_target_release(resources);
+    render_sky_targets_release(resources);
+    render_scaled_targets_release(resources);
+    render_scene_mask_targets_release(resources);
+    render_cmaa_targets_release(resources);
+    render_shadow_contribution_targets_release(resources);
+    render_scene_mask_tiles_release(resources);
+
+    const auto block_count = render_target_resources_block_count(resources);
+    for (std::size_t index = 0; index < block_count; ++index) {
+        auto& block = render_target_resources_block_at(resources, index);
+        render_target_resource_block_release_partial_frame_state(block);
+        render_partial_light_accumulation_target_release(block);
+        render_depth_stencil_target_release(block);
+        render_target_resource_block_release_unclassified_targets(block);
+        render_gbuffer_targets_release(block);
+        render_linear_depth_targets_release(block);
+        render_ambient_occlusion_target_release(block);
+        render_tiled_light_target_buffers_release(
+            render_target_resource_block_tiled_light_resources(block));
+        render_volumetric_scattering_textures_release(block);
+    }
+
+    render_target_resources_finish_release(resources);
 }
 
 }  // namespace rb4
