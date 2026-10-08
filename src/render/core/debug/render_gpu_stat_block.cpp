@@ -10,6 +10,7 @@
 #include "core/types/symbol.h"
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
+#include "render/resources/system/render_resource_manager_adapters.h"
 
 namespace rb4 {
 
@@ -22,21 +23,33 @@ struct RenderGpuStatisticDispatch {
     void (*release_dynamic)(void* statistic);
 };
 
-struct RenderGpuRootStatistic {
-    std::uint8_t storage[384];
+struct RenderPointerArray {
+    void** begin;
+    void** end;
+    void** capacity;
+    void* allocator;
 };
 
+struct RenderGpuRootStatistic {
+    RenderPointerArray children;
+    std::uint8_t statistic_base[56];
+    RenderPointerArray history[4];
+    std::uint8_t reserved_216[168];
+};
+
+static_assert(offsetof(RenderGpuRootStatistic, statistic_base) == 32);
+static_assert(offsetof(RenderGpuRootStatistic, history) == 88);
 static_assert(sizeof(RenderGpuRootStatistic) == 384);
 
 void* root_statistic_base(RenderGpuRootStatistic& statistic) {
-    return statistic.storage + 32;
+    return statistic.statistic_base;
 }
 
 void initialize_root_statistic(
     RenderGpuRootStatistic& statistic,
     const char* name,
     RenderGpuRootStatistic* parent) {
-    std::memset(statistic.storage, 0, 32);
+    std::memset(&statistic.children, 0, sizeof(statistic.children));
     render_gpu_statistic_construct(
         root_statistic_base(statistic),
         name,
@@ -44,15 +57,18 @@ void initialize_root_statistic(
 }
 
 bool& root_has_children(RenderGpuRootStatistic& statistic) {
-    return *reinterpret_cast<bool*>(&statistic.storage[73]);
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&statistic);
+    return *reinterpret_cast<bool*>(bytes + 73);
 }
 
 float& root_counter_scale(RenderGpuRootStatistic& statistic) {
-    return *reinterpret_cast<float*>(&statistic.storage[76]);
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&statistic);
+    return *reinterpret_cast<float*>(bytes + 76);
 }
 
 std::uint32_t& root_counter_index(RenderGpuRootStatistic& statistic) {
-    return *reinterpret_cast<std::uint32_t*>(&statistic.storage[80]);
+    auto* bytes = reinterpret_cast<std::uint8_t*>(&statistic);
+    return *reinterpret_cast<std::uint32_t*>(bytes + 80);
 }
 
 std::uint64_t root_sort_key(const void* statistic) {
@@ -102,6 +118,20 @@ void release_pointer_array(
     begin = nullptr;
     end = nullptr;
     capacity = nullptr;
+}
+
+void destruct_root_statistic(RenderGpuRootStatistic& statistic) {
+    for (std::size_t index = 4; index != 0; --index) {
+        auto& history = statistic.history[index - 1];
+        release_pointer_array(
+            history.begin, history.end, history.capacity);
+    }
+
+    render_resource_name_destruct(statistic.statistic_base + 16);
+    release_pointer_array(
+        statistic.children.begin,
+        statistic.children.end,
+        statistic.children.capacity);
 }
 
 void append_root_statistic(
@@ -210,11 +240,12 @@ const void* root_statistic_name(const void* statistic) {
 void append_root_child(
     RenderGpuRootStatistic& root,
     void* statistic) {
-    auto** array = reinterpret_cast<void***>(root.storage);
-    auto*& begin = array[0];
-    auto*& end = array[1];
-    auto*& capacity = array[2];
-    insert_pointer(begin, end, capacity, end, statistic);
+    insert_pointer(
+        root.children.begin,
+        root.children.end,
+        root.children.capacity,
+        root.children.end,
+        statistic);
 }
 
 float& statistic_counter_scale(void* statistic) {
@@ -437,9 +468,10 @@ void render_gpu_stat_block_destruct(RenderGpuStatBlock& block) {
 
     for (auto** item = block.root_statistics_begin;
          item != block.root_statistics_end;
-         ++item) {
+        ++item) {
         if (*item != nullptr) {
-            render_gpu_root_statistic_destruct(*item);
+            destruct_root_statistic(
+                *static_cast<RenderGpuRootStatistic*>(*item));
             render_release(*item);
         }
     }

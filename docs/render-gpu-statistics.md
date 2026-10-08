@@ -28,6 +28,9 @@ Frame finish at
 under the recursive mutex, and clears the new slot's sample range for every
 statistic.
 
-Destruction at `0x62ABA0` dynamically releases runtime statistics, destroys
-and releases every 384-byte root statistic, unwinds the recursive mutex, and
-frees both pointer arrays by capacity.
+Destruction at `0x62ABA0` dynamically releases runtime statistics, then tears
+down every 384-byte root directly. Each root owns a 32-byte child pointer
+array, the statistic base at offset `0x20`, and four 32-byte history arrays at
+offset `0x58`; the histories are released in reverse order before the embedded
+name record and child array. The block then unwinds the recursive mutex and
+frees both top-level pointer arrays by capacity.
