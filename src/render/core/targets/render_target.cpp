@@ -1,7 +1,6 @@
 #include "render/core/targets/render_target.h"
 
 #include <cstddef>
-#include <limits>
 
 #include "render/core/targets/render_target_adapters.h"
 
@@ -68,38 +67,6 @@ void render_target_set_state(
     RenderTargetState* state) {
     target.owned_state = state;
     target.active_state = state;
-}
-
-std::uint32_t render_target_width(const RenderTarget& target) {
-    return target.active_state == nullptr ? 0 : target.active_state->width;
-}
-
-std::uint32_t render_target_height(const RenderTarget& target) {
-    return target.active_state == nullptr ? 0 : target.active_state->height;
-}
-
-std::uint32_t render_target_draw_mode(const RenderTarget& target) {
-    return target.active_state == nullptr
-        ? std::numeric_limits<std::uint32_t>::max()
-        : target.active_state->draw_mode;
-}
-
-std::uint32_t render_target_debug_view(const RenderTarget& target) {
-    return target.active_state == nullptr
-        ? std::numeric_limits<std::uint32_t>::max()
-        : target.active_state->debug_view;
-}
-
-void render_target_set_draw_mode(RenderTarget& target, std::uint32_t mode) {
-    if (target.active_state != nullptr) {
-        target.active_state->draw_mode = mode;
-    }
-}
-
-void render_target_set_debug_view(RenderTarget& target, std::uint32_t view) {
-    if (target.active_state != nullptr) {
-        target.active_state->debug_view = view;
-    }
 }
 
 }  // namespace rb4

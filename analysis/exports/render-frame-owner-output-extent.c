@@ -1,4 +1,4 @@
-// Returns the first render target's width and height, or zero when absent.
+// Returns the first active render-target state's width and height, or zero when absent.
 unsigned __int64 __fastcall render_frame_owner_output_extent(__int64 a1)
 {
   __int64 v1; // rax

@@ -1,4 +1,4 @@
-// Returns the first render target's buffer-debug view, or -1 when absent.
+// Returns the first active render-target state's debug view, or -1 when absent.
 __int64 __fastcall render_frame_owner_debug_view(__int64 a1)
 {
   __int64 v1; // rax

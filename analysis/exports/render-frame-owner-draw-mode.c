@@ -1,4 +1,4 @@
-// Returns the first render target's draw-debug mode, or -1 when absent.
+// Returns the first active render-target state's draw mode, or -1 when absent.
 __int64 __fastcall render_frame_owner_draw_mode(__int64 a1)
 {
   __int64 v1; // rax

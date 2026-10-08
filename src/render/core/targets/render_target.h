@@ -25,7 +25,7 @@ struct RenderTarget {
 };
 
 struct RenderTargetStateHandle {
-    RenderTargetState** state;
+    RenderTargetState** states;
     std::size_t count;
 };
 
@@ -43,11 +43,5 @@ std::size_t render_target_active_buffer_index(const RenderTarget& target);
 RenderTargetStateHandle render_target_active_state_handle(
     RenderTarget& target);
 void render_target_set_state(RenderTarget& target, RenderTargetState* state);
-std::uint32_t render_target_width(const RenderTarget& target);
-std::uint32_t render_target_height(const RenderTarget& target);
-std::uint32_t render_target_draw_mode(const RenderTarget& target);
-std::uint32_t render_target_debug_view(const RenderTarget& target);
-void render_target_set_draw_mode(RenderTarget& target, std::uint32_t mode);
-void render_target_set_debug_view(RenderTarget& target, std::uint32_t view);
 
 }  // namespace rb4

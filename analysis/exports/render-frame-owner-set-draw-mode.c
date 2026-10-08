@@ -1,4 +1,4 @@
-// Sets the material draw-debug mode on every render target owned by the frame owner.
+// Sets the draw mode on every active render-target state owned by the frame owner.
 __int64 *__fastcall render_frame_owner_set_draw_mode(__int64 a1, int a2)
 {
   __int64 *result; // rax
