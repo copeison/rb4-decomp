@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
-#include "render/core/buffers/render_particle_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_particle_buffer_adapters.h"
 
 namespace rb4 {

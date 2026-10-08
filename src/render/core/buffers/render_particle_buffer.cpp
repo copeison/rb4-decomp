@@ -1,10 +1,30 @@
 #include "render/core/buffers/render_particle_buffer.h"
 
-#include "render/core/buffers/render_particle_buffer_adapters.h"
+#include "core/memory/engine_memory.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
+
+namespace {
+
+struct RenderParticleBufferDispatch {
+    void (*destruct)(RenderParticleBuffer& buffer);
+    void (*delete_buffer)(RenderParticleBuffer& buffer);
+    void (*reserved_initialize)();
+};
+
+RenderParticleBufferDispatch kBaseParticleBufferDispatch{
+    render_particle_buffer_destruct,
+    render_particle_buffer_delete,
+    nullptr,
+};
+
+void set_base_dispatch(RenderParticleBuffer& buffer) {
+    buffer.implementation = &kBaseParticleBufferDispatch;
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x6EAFD0.
 RenderParticleBuffer* render_create_particle_buffer(
@@ -20,7 +40,7 @@ void render_particle_buffer_construct(
     RenderParticleBuffer& buffer,
     std::size_t particle_count,
     void* context) {
-    render_particle_buffer_set_base_dispatch(buffer);
+    set_base_dispatch(buffer);
     buffer.capacity = particle_count;
     buffer.active_count = 0;
     buffer.particle_data = nullptr;
@@ -40,6 +60,10 @@ void render_particle_buffer_destruct(RenderParticleBuffer&) {
 // Reconstructed from eboot.elf at 0x6ECB90.
 void render_particle_buffer_delete(RenderParticleBuffer& buffer) {
     render_delete_particle_buffer_storage(buffer);
+}
+
+void render_delete_particle_buffer_storage(RenderParticleBuffer& buffer) {
+    render_release(&buffer);
 }
 
 }  // namespace rb4

@@ -31,5 +31,6 @@ void render_particle_buffer_construct(
     void* context);
 void render_particle_buffer_destruct(RenderParticleBuffer& buffer);
 void render_particle_buffer_delete(RenderParticleBuffer& buffer);
+void render_delete_particle_buffer_storage(RenderParticleBuffer& buffer);
 
 }  // namespace rb4
