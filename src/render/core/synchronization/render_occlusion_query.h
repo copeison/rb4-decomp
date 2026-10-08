@@ -30,5 +30,6 @@ void render_occlusion_query_construct(
     void* owner);
 void render_occlusion_query_destruct(RenderOcclusionQuery& query);
 void render_occlusion_query_delete(RenderOcclusionQuery& query);
+void render_delete_occlusion_query_storage(RenderOcclusionQuery& query);
 
 }  // namespace rb4

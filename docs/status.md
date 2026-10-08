@@ -423,6 +423,8 @@
   release.
 - [x] Reconstruct common particle-buffer base dispatch and deleting storage
   release.
+- [x] Reconstruct common occlusion-query base dispatch, intrusive unlinking,
+  and deleting storage release.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

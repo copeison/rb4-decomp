@@ -1,10 +1,30 @@
 #include "render/core/synchronization/render_occlusion_query.h"
 
-#include "render/core/synchronization/render_occlusion_query_adapters.h"
+#include "core/memory/engine_memory.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
 namespace rb4 {
+
+namespace {
+
+struct RenderOcclusionQueryDispatch {
+    void (*destruct)(RenderOcclusionQuery& query);
+    void (*delete_query)(RenderOcclusionQuery& query);
+    void (*reserved_methods[4])();
+};
+
+RenderOcclusionQueryDispatch kBaseOcclusionQueryDispatch{
+    render_occlusion_query_destruct,
+    render_occlusion_query_delete,
+    {},
+};
+
+void set_base_dispatch(RenderOcclusionQuery& query) {
+    query.implementation = &kBaseOcclusionQueryDispatch;
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x5F7D30.
 RenderOcclusionQuery* render_create_occlusion_query(void* owner) {
@@ -16,7 +36,7 @@ RenderOcclusionQuery* render_create_occlusion_query(void* owner) {
 void render_occlusion_query_construct(
     RenderOcclusionQuery& query,
     void* owner) {
-    render_occlusion_query_set_base_dispatch(query);
+    set_base_dispatch(query);
     query.owner = owner;
     query.state_flags[0] = 0;
     query.state_flags[1] = 0;
@@ -32,7 +52,7 @@ void render_occlusion_query_construct(
 
 // Reconstructed from eboot.elf at 0x5F7DA0.
 void render_occlusion_query_destruct(RenderOcclusionQuery& query) {
-    render_occlusion_query_set_base_dispatch(query);
+    set_base_dispatch(query);
     query.link.next->previous = query.link.previous;
     query.link.previous->next = query.link.next;
 }
@@ -41,6 +61,10 @@ void render_occlusion_query_destruct(RenderOcclusionQuery& query) {
 void render_occlusion_query_delete(RenderOcclusionQuery& query) {
     render_occlusion_query_destruct(query);
     render_delete_occlusion_query_storage(query);
+}
+
+void render_delete_occlusion_query_storage(RenderOcclusionQuery& query) {
+    render_release(&query);
 }
 
 }  // namespace rb4
