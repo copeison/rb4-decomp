@@ -18,6 +18,14 @@ Construction proceeds in this order:
    in this build, so its precise source-level purpose remains open.
 8. Allocate the 232-byte renderer settings block and initialize it.
 
+The common 312-byte prefix construction is now source-owned. It installs the
+base vtable, creates the recursive frame mutex, applies the three true startup
+option defaults, initializes both dynamic pointer arrays, points the submitted
+owner list at its six inline slots, sets the GPU query sentinel to `-1`, and
+clears the timing, settings, and factory fields. Destruction frees the active
+target-state and render-context arrays by their recorded capacities, drains
+the recursive lock depth, and destroys the frame mutex.
+
 `render_system_destruct` at `0x3DD790` releases the settings block, callback
 state, backend objects, default resources, platform configurations, core
 vectors, and mutexes in reverse ownership order.

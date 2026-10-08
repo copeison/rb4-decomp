@@ -10,8 +10,7 @@ struct RenderPlatformConfig;
 struct RenderSettings;
 struct RenderSystem;
 
-void render_system_construct_core_state(RenderSystem& system);
-void render_system_destroy_core_state(RenderSystem& system);
+void render_system_install_base_vtable(RenderSystem& system);
 
 RenderPlatformConfig& render_system_platform_config_at(
     RenderSystem& system,

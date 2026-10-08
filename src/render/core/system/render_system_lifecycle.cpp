@@ -1,10 +1,13 @@
 #include "render/core/system/render_system_lifecycle.h"
 
 #include <cstddef>
+#include <_pthread.h>
 
+#include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_lifecycle_adapters.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/system/render_system_state.h"
 
 namespace rb4 {
 
@@ -13,11 +16,90 @@ namespace {
 constexpr std::size_t kPlatformConfigCount = 13;
 constexpr std::size_t kCurrentPlatformConfig = 7;
 
+template <typename T>
+void release_array(T*& begin, T*& end, T*& capacity) {
+    if (begin != nullptr) {
+        const auto byte_count = static_cast<std::size_t>(
+            reinterpret_cast<std::uint8_t*>(capacity) -
+            reinterpret_cast<std::uint8_t*>(begin));
+        engine_deallocate_sized(begin, byte_count);
+    }
+    begin = nullptr;
+    end = nullptr;
+    capacity = nullptr;
+}
+
+void initialize_recursive_mutex(ScePthreadMutex& mutex) {
+    ScePthreadMutexattr attributes{};
+    scePthreadMutexattrInit(&attributes);
+    scePthreadMutexattrSettype(&attributes, 2);
+    scePthreadMutexInit(&mutex, &attributes, "hx crit sec");
+    scePthreadMutexattrDestroy(&attributes);
+}
+
+void destroy_recursive_mutex(
+    ScePthreadMutex& mutex,
+    std::int32_t& lock_depth) {
+    scePthreadMutexLock(&mutex);
+    scePthreadMutexUnlock(&mutex);
+    while (lock_depth > 0) {
+        --lock_depth;
+        scePthreadMutexUnlock(&mutex);
+    }
+    scePthreadMutexDestroy(&mutex);
+}
+
+void construct_core_state(RenderSystem& system) {
+    render_system_install_base_vtable(system);
+    auto& state = render_system_core_state(system);
+    state.lock_depth = 0;
+    initialize_recursive_mutex(state.frame_mutex);
+    state.lock_owner = {};
+    state.initialized = false;
+    state.init_options = {true, true, true, {}, 0};
+    state.render_context = nullptr;
+    state.frame_activation_pending = false;
+    state.frame_activation_flags = 0;
+    state.render_contexts = {};
+    state.frame_owner = nullptr;
+    state.active_frame_owner = nullptr;
+    state.active_target_states = {};
+    state.frame_epoch = 0;
+    state.auxiliary_frame_epoch = 0;
+    state.frame_in_progress = false;
+    state.shutting_down = false;
+
+    auto* inline_owners = reinterpret_cast<RenderFrameOwner**>(
+        reinterpret_cast<std::uint8_t*>(&system) + 208);
+    state.submitted_frame_owners = {inline_owners, 0};
+    state.previous_frame_counter = 0;
+    state.initial_frame_tick_span = 0;
+    state.frame_timing_initialized = 0;
+    state.gpu_frame_stat_id = -1;
+    state.instantaneous_frame_rate = 0.0F;
+    state.smoothed_frame_rate = 0.0F;
+    state.settings = nullptr;
+    state.factory = nullptr;
+}
+
+void destroy_core_state(RenderSystem& system) {
+    auto& state = render_system_core_state(system);
+    release_array(
+        state.active_target_states.begin,
+        state.active_target_states.end,
+        state.active_target_states.capacity);
+    release_array(
+        state.render_contexts.begin,
+        state.render_contexts.end,
+        state.render_contexts.capacity);
+    destroy_recursive_mutex(state.frame_mutex, state.lock_depth);
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x3DD410.
 void render_system_construct(RenderSystem& system) {
-    render_system_construct_core_state(system);
+    construct_core_state(system);
 
     for (std::size_t index = 0; index < kPlatformConfigCount; ++index) {
         render_platform_config_construct(
@@ -61,7 +143,7 @@ void render_system_destruct(RenderSystem& system) {
             render_system_platform_config_at(system, index - 1));
     }
 
-    render_system_destroy_core_state(system);
+    destroy_core_state(system);
 }
 
 }  // namespace rb4
