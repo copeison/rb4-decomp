@@ -38,6 +38,8 @@ void orbis_render_context_create_gfx_contexts(
     OrbisRenderContext& context);
 void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context);
+bool orbis_render_context_compute_queues_enabled(
+    const OrbisRenderContext& context);
 std::size_t orbis_render_context_active_frame(
     const OrbisRenderContext& context);
 bool orbis_render_context_submissions_complete(

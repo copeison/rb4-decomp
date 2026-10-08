@@ -25,13 +25,17 @@ constexpr std::size_t kHighPriorityComputeContextCount = 3;
 constexpr std::size_t kSubmissionCounterCount = 10;
 
 struct OrbisRenderContextRuntimePrefix {
-    std::uint8_t reserved_0[0x22880];
+    std::uint8_t reserved_0[9];
+    bool compute_queues_disabled;
+    std::uint8_t reserved_10[0x22876];
     volatile std::int32_t
         submission_counters[kOrbisFrameSlotCount][kSubmissionCounterCount];
     std::uint8_t reserved_228D0[0x1E4C0];
     std::size_t active_frame;
 };
 
+static_assert(
+    offsetof(OrbisRenderContextRuntimePrefix, compute_queues_disabled) == 9);
 static_assert(
     offsetof(OrbisRenderContextRuntimePrefix, submission_counters) ==
     0x22880);
@@ -117,6 +121,13 @@ void orbis_render_context_create_gpu_timestamp_pool(
     OrbisRenderContext& context) {
     orbis_render_context_initialize_timestamp_records(
         context, kTimestampBufferSize);
+}
+
+bool orbis_render_context_compute_queues_enabled(
+    const OrbisRenderContext& context) {
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
+    return !runtime->compute_queues_disabled;
 }
 
 std::size_t orbis_render_context_active_frame(

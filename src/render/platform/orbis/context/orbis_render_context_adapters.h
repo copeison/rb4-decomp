@@ -41,8 +41,6 @@ void orbis_render_context_initialize_gfx_slot(
 void orbis_render_context_initialize_timestamp_records(
     OrbisRenderContext& context,
     std::size_t timestamp_buffer_size);
-bool orbis_render_context_compute_queues_enabled(
-    const OrbisRenderContext& context);
 void orbis_render_context_initialize_compute_queue(
     OrbisRenderContext& context,
     std::size_t queue,
