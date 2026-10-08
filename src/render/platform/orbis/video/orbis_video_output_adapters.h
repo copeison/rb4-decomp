@@ -41,9 +41,6 @@ void orbis_bind_identity_instance_buffer(
     OrbisRenderSystem& system,
     OrbisVertexBuffer& buffer);
 
-void orbis_process_flip_complete(
-    OrbisRenderSystem& system,
-    const OrbisSubmitEvent& event);
 void orbis_process_end_of_pipe(
     OrbisRenderSystem& system,
     const OrbisSubmitEvent& event);

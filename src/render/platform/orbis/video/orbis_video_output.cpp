@@ -11,8 +11,10 @@
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "render/platform/orbis/textures/orbis_texture_2d.h"
 #include "render/platform/orbis/video/orbis_video_output_adapters.h"
 
 extern "C" {
@@ -147,6 +149,32 @@ void orbis_process_submit_timeout(OrbisRenderSystem& system) {
     orbis_unlock_submission(system);
 }
 
+void orbis_process_flip_complete(OrbisRenderSystem& system) {
+    SceVideoOutFlipStatus status{};
+    sceVideoOutGetFlipStatus(orbis_video_output_handle(system), &status);
+
+    const auto completed_buffer =
+        static_cast<std::uint64_t>(status.flipArg);
+    constexpr std::uint64_t kBackBufferCount = 2;
+    if (completed_buffer >= kBackBufferCount) {
+        return;
+    }
+
+    auto& base = orbis_render_system_base(system);
+    auto* frame_owner = render_system_frame_owner(base);
+    const auto states = render_frame_owner_target_states(*frame_owner);
+    for (std::size_t index = 0; index < states.count; ++index) {
+        auto* texture = render_target_state_texture(*states.states[index]);
+        if (texture != nullptr) {
+            auto& orbis_texture =
+                reinterpret_cast<OrbisTexture2D&>(*texture);
+            orbis_texture_2d_complete_pending_presentation(
+                orbis_texture,
+                static_cast<std::size_t>(completed_buffer));
+        }
+    }
+}
+
 // Reconstructed from eboot.elf at 0x8D7B20.
 void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_video_output_open(system);
@@ -254,7 +282,7 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
         for (std::size_t index = 0; index < event_count; ++index) {
             switch (events[index].type) {
             case OrbisSubmitEventType::kFlipComplete:
-                orbis_process_flip_complete(system, events[index]);
+                orbis_process_flip_complete(system);
                 break;
             case OrbisSubmitEventType::kEndOfPipe:
                 orbis_process_end_of_pipe(system, events[index]);

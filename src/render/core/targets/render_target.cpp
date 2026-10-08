@@ -10,6 +10,14 @@ namespace {
 
 constexpr std::size_t kRenderTargetStateSize = 1552;
 
+struct RenderTargetStateTexturePrefix {
+    std::uint8_t reserved_0[368];
+    RenderTexture* texture;
+};
+
+static_assert(
+    offsetof(RenderTargetStateTexturePrefix, texture) == 368);
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x11B2CD0.
@@ -59,6 +67,12 @@ std::size_t render_target_active_buffer_index(const RenderTarget&) {
 RenderTargetStateHandle render_target_active_state_handle(
     RenderTarget& target) {
     return {&target.active_state, 1};
+}
+
+RenderTexture* render_target_state_texture(RenderTargetState& state) {
+    auto* runtime =
+        reinterpret_cast<RenderTargetStateTexturePrefix*>(&state);
+    return runtime->texture;
 }
 
 // Reconstructed from eboot.elf at 0x11B2E00.

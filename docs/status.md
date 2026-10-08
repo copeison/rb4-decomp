@@ -50,6 +50,8 @@
   thread-yield adapters with direct PS4 SDK calls.
 - [x] Recover the submit-worker startup handshake, one-second event wait and
   filtering, and timeout submission recovery.
+- [x] Recover flip-complete buffer identification and pending-presentation
+  counter retirement.
 - [x] Reconstruct Orbis GPU idle waits and deferred-allocation retirement.
 - [x] Reconstruct the Orbis frame-submit handshake.
 - [x] Complete the Orbis deferred GPU-allocation queue lifecycle.

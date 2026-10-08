@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "render/core/textures/render_texture_2d.h"
@@ -28,7 +29,7 @@ struct OrbisTexture2D : RenderTexture2D {
     std::uint8_t reserved_480[8];
     OrbisGpuRenderTarget* render_targets[2];
     OrbisGpuDepthRenderTarget* depth_target;
-    void* auxiliary_backend;
+    std::int32_t* pending_presentation_counts;
 };
 
 static_assert(sizeof(OrbisTextureMemoryRequirements) == 8);
@@ -45,6 +46,12 @@ void orbis_texture_2d_initialize_backend(
     OrbisTexture2D& texture,
     const OrbisTexture2D* storage_source);
 void orbis_texture_2d_update_gpu_data(OrbisTexture2D& texture);
+void orbis_texture_2d_add_pending_presentation(
+    OrbisTexture2D& texture,
+    std::size_t buffer);
+void orbis_texture_2d_complete_pending_presentation(
+    OrbisTexture2D& texture,
+    std::size_t buffer);
 const OrbisGpuRenderTarget* orbis_texture_2d_render_target(
     const OrbisTexture2D& texture);
 const OrbisGpuDepthRenderTarget* orbis_texture_2d_depth_target(

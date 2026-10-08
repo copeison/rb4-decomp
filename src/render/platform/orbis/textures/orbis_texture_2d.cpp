@@ -7,6 +7,9 @@
 
 namespace rb4 {
 
+static_assert(
+    offsetof(OrbisTexture2D, pending_presentation_counts) == 512);
+
 // Reconstructed from eboot.elf at 0x8D89B0.
 OrbisTexture2D* orbis_create_texture_2d(
     const RenderTexture2DDescriptor& descriptor) {
@@ -34,7 +37,7 @@ void orbis_texture_2d_construct(
     texture.render_targets[0] = nullptr;
     texture.render_targets[1] = nullptr;
     texture.depth_target = nullptr;
-    texture.auxiliary_backend = nullptr;
+    texture.pending_presentation_counts = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8D6310.
@@ -61,9 +64,9 @@ void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
         render_release(texture.depth_target);
         texture.depth_target = nullptr;
     }
-    if (texture.auxiliary_backend != nullptr) {
-        orbis_texture_2d_release_auxiliary(texture.auxiliary_backend);
-        texture.auxiliary_backend = nullptr;
+    if (texture.pending_presentation_counts != nullptr) {
+        render_release(texture.pending_presentation_counts);
+        texture.pending_presentation_counts = nullptr;
     }
     orbis_texture_2d_release_allocation(texture.allocation_control);
     texture.allocation_control = nullptr;
@@ -92,6 +95,18 @@ void orbis_texture_2d_initialize_backend(
 void orbis_texture_2d_update_gpu_data(OrbisTexture2D& texture) {
     orbis_texture_2d_flip_active_storage(texture);
     orbis_texture_2d_upload_active_mips(texture);
+}
+
+void orbis_texture_2d_add_pending_presentation(
+    OrbisTexture2D& texture,
+    std::size_t buffer) {
+    ++texture.pending_presentation_counts[buffer];
+}
+
+void orbis_texture_2d_complete_pending_presentation(
+    OrbisTexture2D& texture,
+    std::size_t buffer) {
+    --texture.pending_presentation_counts[buffer];
 }
 
 // Reconstructed from eboot.elf at 0x8D71E0.
