@@ -8,6 +8,40 @@
 
 namespace rb4 {
 
+// Reconstructed from eboot.elf at 0x698910.
+bool render_texture_array_2d_validate(
+    const RenderTextureArray2D& texture) {
+    const auto& mip_chains = texture.mip_chains;
+    if (mip_chains.begin == mip_chains.end || mip_chains.begin == nullptr) {
+        return false;
+    }
+    const auto count = static_cast<std::size_t>(
+        mip_chains.end - mip_chains.begin);
+    if (count > 2048) {
+        return false;
+    }
+
+    const auto& first = *mip_chains.begin;
+    if (first.fields.depth != 1) {
+        return false;
+    }
+    const auto expected_levels =
+        render_texture_mip_chain_level_count(first);
+    for (auto* mip_chain = mip_chains.begin + 1;
+         mip_chain != mip_chains.end;
+         ++mip_chain) {
+        if (mip_chain->fields.width != first.fields.width ||
+            mip_chain->fields.height != first.fields.height ||
+            mip_chain->fields.depth != first.fields.depth ||
+            mip_chain->fields.data_format != first.fields.data_format ||
+            render_texture_mip_chain_level_count(*mip_chain) !=
+                expected_levels) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Reconstructed from eboot.elf at 0x698770.
 void render_texture_array_2d_descriptor_construct(
     RenderTextureArray2DDescriptor& descriptor) {
@@ -36,7 +70,7 @@ void render_texture_array_2d_construct(
             *mip_chain,
             render_texture_descriptor_has_source_data(descriptor.texture_state));
     }
-    render_texture_array_2d_resolve_descriptor(texture.descriptor_state);
+    render_texture_array_2d_validate(texture);
 
     texture.resource_index = 0;
     const auto& first = texture.mip_chains.begin->fields;

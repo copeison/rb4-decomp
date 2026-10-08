@@ -236,11 +236,15 @@ void render_texture_mip_chain_array_validate(
     }
 
     const auto& first = *mip_chains.begin;
+    if (first.fields.height != 1 || first.fields.depth != 1) {
+        return;
+    }
     const auto expected_levels = mip_chain_level_count(first);
     for (auto* mip_chain = mip_chains.begin + 1;
          mip_chain != mip_chains.end;
          ++mip_chain) {
-        if (mip_chain->fields.width != first.fields.width ||
+        if (mip_chain->fields.height != 1 || mip_chain->fields.depth != 1 ||
+            mip_chain->fields.width != first.fields.width ||
             mip_chain->fields.data_format != first.fields.data_format ||
             mip_chain_level_count(*mip_chain) != expected_levels) {
             return;

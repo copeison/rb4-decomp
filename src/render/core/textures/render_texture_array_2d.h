@@ -24,6 +24,8 @@ void render_texture_array_2d_descriptor_construct(
 void render_texture_array_2d_construct(
     RenderTextureArray2D& texture,
     const RenderTextureArray2DDescriptor& descriptor);
+bool render_texture_array_2d_validate(
+    const RenderTextureArray2D& texture);
 RenderTextureArray2D* render_create_texture_array_2d(
     RenderTextureArray2DDescriptor& descriptor);
 void render_texture_array_2d_destruct(RenderTextureArray2D& texture);
