@@ -45,6 +45,17 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_hide_system_splash_screen();
 }
 
+// Reconstructed from eboot.elf at 0x8D8040.
+void orbis_render_system_shutdown(OrbisRenderSystem& system) {
+    orbis_request_submit_thread_stop(system);
+    orbis_join_submit_thread(system);
+    orbis_destroy_submit_condition(system);
+    orbis_release_frame_runtime(system);
+    orbis_unregister_gnm_event(system, kGnmEventId);
+    orbis_delete_event_queue(system);
+    orbis_video_output_close(system);
+}
+
 // Reconstructed from eboot.elf at 0x8D7DB0.
 void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
     auto& buffer = orbis_allocate_default_vertex_buffer(

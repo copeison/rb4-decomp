@@ -45,6 +45,15 @@ void orbis_start_submit_thread(
 void orbis_initialize_submit_profiler(OrbisRenderSystem& system);
 void orbis_wait_for_submit_thread(OrbisRenderSystem& system);
 void orbis_hide_system_splash_screen();
+void orbis_request_submit_thread_stop(OrbisRenderSystem& system);
+void orbis_join_submit_thread(OrbisRenderSystem& system);
+void orbis_destroy_submit_condition(OrbisRenderSystem& system);
+void orbis_release_frame_runtime(OrbisRenderSystem& system);
+void orbis_unregister_gnm_event(
+    OrbisRenderSystem& system,
+    std::uint32_t event_id);
+void orbis_delete_event_queue(OrbisRenderSystem& system);
+void orbis_video_output_close(OrbisRenderSystem& system);
 
 OrbisVertexBuffer& orbis_allocate_default_vertex_buffer(
     OrbisRenderSystem& system,

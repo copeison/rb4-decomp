@@ -27925,7 +27925,7 @@ address,end,size,name,library,thunk
 0x8D7B20,0x8D7D22,514,orbis_render_system_initialize,False,False
 0x8D7DB0,0x8D7EAF,255,orbis_create_default_vertex_buffer,False,False
 0x8D7EB0,0x8D8034,388,orbis_create_identity_instance_buffer,False,False
-0x8D8040,0x8D80BB,123,sub_8D8040,False,False
+0x8D8040,0x8D80BB,123,orbis_render_system_shutdown,False,False
 0x8D8140,0x8D81F8,184,sub_8D8140,False,False
 0x8D8200,0x8D82F5,245,sub_8D8200,False,False
 0x8D83E0,0x8D83E3,3,sub_8D83E0,False,False

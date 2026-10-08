@@ -25,3 +25,9 @@ wait also calls `sceGnmSubmitDone` under the submission lock.
 
 The deleting destructor at `0x8D7B00` runs the Orbis object destructor and then
 frees the 4,352-byte allocation.
+
+The matching platform shutdown at `0x8D8040` clears the submit-thread run flag
+and joins the worker. It conditionally destroys the worker condition variable,
+releases frame-runtime objects, removes GNM event 64, deletes the event queue,
+and closes the video-output handle. The base render-system shutdown invokes
+this routine only after its shared GPU resources have been released.

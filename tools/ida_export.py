@@ -246,6 +246,7 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-render-system-delete": 0x8D7B00,
     "orbis-create-default-vertex-buffer": 0x8D7DB0,
     "orbis-create-identity-instance-buffer": 0x8D7EB0,
+    "orbis-render-system-shutdown": 0x8D8040,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,
