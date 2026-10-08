@@ -105,6 +105,7 @@
 - [x] Recover the Orbis vertex, geometry, pixel, and compute shader factory.
 - [x] Reconstruct Orbis compute and pixel shader backends.
 - [x] Reconstruct Orbis geometry and vertex shader backends.
+- [x] Reconstruct the common render-shader lifecycle and layout.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.

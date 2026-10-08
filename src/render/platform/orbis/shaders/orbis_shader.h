@@ -1,21 +1,12 @@
 #pragma once
 
-#include <cstdint>
+#include "render/core/render_shader.h"
 
 namespace rb4 {
 
-enum class RenderShaderStage : std::uint32_t {
-    kVertex = 0,
-    kHull = 1,
-    kDomain = 2,
-    kGeometry = 3,
-    kPixel = 4,
-    kCompute = 5,
-};
-
-struct OrbisShader;
+struct OrbisShader : RenderShader {};
 struct OrbisRenderContext;
-struct OrbisShaderBinary;
+using OrbisShaderBinary = RenderShaderBinary;
 
 OrbisShader* orbis_create_shader(RenderShaderStage stage);
 void orbis_vertex_shader_construct(OrbisShader& shader);

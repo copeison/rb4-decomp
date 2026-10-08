@@ -51,25 +51,25 @@ OrbisShader* orbis_create_shader(RenderShaderStage stage) {
 
 // Reconstructed from eboot.elf at 0x8E46E0.
 void orbis_vertex_shader_construct(OrbisShader& shader) {
-    shader_construct(shader);
+    render_shader_construct(shader);
     orbis_vertex_shader_set_backend_defaults(shader);
 }
 
 // Reconstructed from eboot.elf at 0x8E40A0.
 void orbis_geometry_shader_construct(OrbisShader& shader) {
-    shader_construct(shader);
+    render_shader_construct(shader);
     orbis_geometry_shader_set_backend_defaults(shader);
 }
 
 // Reconstructed from eboot.elf at 0x8E43D0.
 void orbis_pixel_shader_construct(OrbisShader& shader) {
-    shader_construct(shader);
+    render_shader_construct(shader);
     orbis_pixel_shader_set_backend_defaults(shader);
 }
 
 // Reconstructed from eboot.elf at 0x8E3D20.
 void orbis_compute_shader_construct(OrbisShader& shader) {
-    shader_construct(shader);
+    render_shader_construct(shader);
     orbis_compute_shader_set_backend_defaults(shader);
 }
 

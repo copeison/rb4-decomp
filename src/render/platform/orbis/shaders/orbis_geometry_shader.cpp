@@ -6,13 +6,14 @@ namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x8E40D0.
 void orbis_geometry_shader_destruct(OrbisShader& shader) {
-    shader_destruct(shader);
+    render_shader_release(shader);
+    render_shader_destruct(shader);
 }
 
 // Reconstructed from eboot.elf at 0x8E4100.
 void orbis_geometry_shader_delete(OrbisShader& shader) {
     orbis_geometry_shader_destruct(shader);
-    render_delete_shader(shader);
+    render_shader_delete(shader);
 }
 
 // Reconstructed from eboot.elf at 0x8E4140.
