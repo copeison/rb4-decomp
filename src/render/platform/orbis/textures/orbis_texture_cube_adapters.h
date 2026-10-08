@@ -42,5 +42,9 @@ void orbis_texture_cube_set_depth_target(
     OrbisGpuDepthRenderTarget* target);
 void texture_cube_destruct(OrbisTextureCube& texture);
 void render_delete_texture_cube(OrbisTextureCube& texture);
+OrbisSamplerAddressMode orbis_texture_cube_address_mode(
+    const OrbisTextureCube& texture);
+std::uint32_t orbis_texture_cube_filter_mode(
+    const OrbisTextureCube& texture);
 
 }  // namespace rb4

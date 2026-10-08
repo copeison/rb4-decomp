@@ -24,3 +24,8 @@ Accessors at `0x8E7270` and `0x8E7280` expose the color and depth target views.
 Destruction at `0x8E6BE0` defers GPU allocations through the Orbis render
 system, releases the descriptor objects, and then invokes the common cube
 texture destructor. The deleting destructor follows at `0x8E6CC0`.
+
+The six virtual methods at `0x8E71A0` through `0x8E725F` forward the single
+texture view at offset 792 to the shared vertex, hull, domain, geometry,
+pixel, and compute binding functions. They also forward the common address
+mode, filter mode, binding flags, and sampler border color.

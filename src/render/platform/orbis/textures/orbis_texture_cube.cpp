@@ -86,4 +86,43 @@ const OrbisGpuDepthRenderTarget* orbis_texture_cube_depth_target(
     return orbis_texture_cube_mutable_depth_target(texture);
 }
 
+// Reconstructed from eboot.elf at 0x8E71A0.
+void orbis_texture_cube_bind_vertex(
+    const OrbisTextureCube& texture, OrbisRenderContext& context,
+    std::uint32_t slot, std::uint32_t,
+    const OrbisSamplerBorderColor& border_color) {
+    orbis_bind_vertex_texture(
+        context, slot, orbis_texture_cube_gpu_texture(texture),
+        orbis_texture_cube_address_mode(texture),
+        orbis_texture_cube_filter_mode(texture), border_color);
+}
+
+#define RB4_DEFINE_CUBE_BINDING(method, shared_method)                     \
+    void method(                                                           \
+        const OrbisTextureCube& texture, OrbisRenderContext& context,       \
+        std::uint32_t slot, std::uint32_t flags,                            \
+        const OrbisSamplerBorderColor& border_color) {                      \
+        shared_method(                                                      \
+            context, slot, orbis_texture_cube_gpu_texture(texture),         \
+            orbis_texture_cube_address_mode(texture),                       \
+            orbis_texture_cube_filter_mode(texture), flags, border_color);  \
+    }
+
+// Reconstructed from eboot.elf at 0x8E71C0.
+RB4_DEFINE_CUBE_BINDING(orbis_texture_cube_bind_hull, orbis_bind_hull_texture)
+// Reconstructed from eboot.elf at 0x8E71E0.
+RB4_DEFINE_CUBE_BINDING(
+    orbis_texture_cube_bind_domain, orbis_bind_domain_texture)
+// Reconstructed from eboot.elf at 0x8E7200.
+RB4_DEFINE_CUBE_BINDING(
+    orbis_texture_cube_bind_geometry, orbis_bind_geometry_texture)
+// Reconstructed from eboot.elf at 0x8E7220.
+RB4_DEFINE_CUBE_BINDING(
+    orbis_texture_cube_bind_pixel, orbis_bind_pixel_texture)
+// Reconstructed from eboot.elf at 0x8E7240.
+RB4_DEFINE_CUBE_BINDING(
+    orbis_texture_cube_bind_compute, orbis_bind_compute_texture)
+
+#undef RB4_DEFINE_CUBE_BINDING
+
 }  // namespace rb4

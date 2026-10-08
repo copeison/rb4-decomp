@@ -87,6 +87,7 @@
 - [x] Reconstruct Orbis 3D texture storage, uploads, and destruction.
 - [x] Recover the Orbis cube texture factory and platform constructor.
 - [x] Reconstruct Orbis cube texture storage, views, and destruction.
+- [x] Reconstruct Orbis cube texture shader-stage binding.
 - [x] Recover the Orbis 1D texture-array factory and platform constructor.
 - [x] Reconstruct Orbis 1D texture-array storage, uploads, and destruction.
 - [x] Recover the Orbis 2D texture-array factory and platform constructor.
