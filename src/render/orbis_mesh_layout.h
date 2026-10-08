@@ -12,7 +12,12 @@ template <typename Vertex>
 struct OrbisMeshLayout {
     std::uint8_t base_to_vertex_count[56];
     std::size_t vertex_count;
-    std::uint8_t base_tail[64];
+    std::size_t triangle_count;
+    std::uint8_t base_after_counts[12];
+    std::uint32_t mesh_flags;
+    std::uint8_t base_before_frame[24];
+    std::uint64_t last_draw_frame;
+    std::uint8_t base_tail[8];
     Vertex* vertices_begin;
     Vertex* vertices_end;
     Vertex* vertices_capacity_end;
