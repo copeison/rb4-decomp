@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
+
+#include "core/threading/engine_thread.h"
+#include "core/threading/thread_affinity.h"
 
 namespace rb4 {
 
@@ -37,7 +39,7 @@ std::condition_variable g_async_changed;
 std::vector<FMOD_ASYNCREADINFO*> g_async_requests;
 FMOD_ASYNCREADINFO* g_active_request = nullptr;
 bool g_async_stopping = false;
-std::thread g_async_thread;
+EngineThread g_async_thread{};
 
 FmodFileHandle* as_file_handle(void* handle) {
     return static_cast<FmodFileHandle*>(handle);
@@ -60,7 +62,7 @@ void process_async_request(FMOD_ASYNCREADINFO& request) {
 }
 
 // Reconstructed from eboot.elf at 0x27A270.
-void fmod_async_file_reader_thread() {
+std::int32_t fmod_async_file_reader_thread(void*) {
     std::unique_lock<std::mutex> lock(g_async_mutex);
     while (!g_async_stopping) {
         g_async_changed.wait(lock, [] {
@@ -80,6 +82,7 @@ void fmod_async_file_reader_thread() {
         g_active_request = nullptr;
         g_async_changed.notify_all();
     }
+    return 0;
 }
 
 }  // namespace
@@ -206,8 +209,21 @@ FMOD_RESULT fmod_file_async_cancel(FMOD_ASYNCREADINFO* info, void* user_data) {
 
 // Reconstructed from eboot.elf at 0x27A1C0.
 void fmod_async_file_reader_initialize() {
+    constexpr const char* kAffinityGroupName = "stream_reader";
+    constexpr const char* kThreadName = "FmodFileWrapper";
+
     g_async_stopping = false;
-    g_async_thread = std::thread(fmod_async_file_reader_thread);
+    const auto& affinity = *thread_affinity_find_group(kAffinityGroupName);
+    engine_thread_configure(
+        g_async_thread,
+        fmod_async_file_reader_thread,
+        nullptr,
+        kThreadName,
+        affinity.primary_processor,
+        affinity.priority,
+        affinity.stack_size,
+        affinity.additional_processor_mask);
+    engine_thread_start(g_async_thread.runtime);
 }
 
 // Reconstructed from eboot.elf at 0x27A460.
@@ -217,9 +233,7 @@ void fmod_async_file_reader_shutdown() {
         g_async_stopping = true;
     }
     g_async_changed.notify_one();
-    if (g_async_thread.joinable()) {
-        g_async_thread.join();
-    }
+    engine_thread_join(g_async_thread.runtime);
 }
 
 }  // namespace rb4

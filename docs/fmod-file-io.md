@@ -34,6 +34,10 @@ The underlying virtual file adapters are now named in IDA:
 
 The initializer at `0x27A1C0` creates a condition variable and starts a worker
 named `FmodFileWrapper` using the `stream_reader` platform thread settings.
+Those settings now flow through the shared 136-byte engine thread wrapper:
+the affinity record supplies stack size at `+0x10`, processor at `+0x18`,
+priority at `+0x20`, and the additional CPU mask at `+0x28`. Shutdown joins
+the embedded 96-byte pthread runtime directly.
 Requests use the 56-byte FMOD 1.10.04 `FMOD_ASYNCREADINFO` layout. The observed
 offsets are preserved with compile-time assertions in `fmod_api.h`.
 

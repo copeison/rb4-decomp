@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
-#include <thread>
 
 #include "audio/fmod/system/fmod_audio_system.h"
+#include "core/threading/engine_thread.h"
 
 namespace rb4 {
 
@@ -43,12 +43,14 @@ public:
     FmodAudioState& audio_state();
 
 private:
+    static std::int32_t recording_thread_entry(void* context);
     FMOD_RESULT read_mixer_output(FMOD_OUTPUT_STATE& output_state);
 
     FmodAudioState& audio_state_;
     float* mix_buffer_ = nullptr;
     std::uint32_t frames_per_buffer_ = 0;
-    std::thread recording_thread_;
+    EngineThread recording_thread_{};
+    RecordingLoop recording_loop_;
     std::atomic_bool stop_requested_{false};
     std::recursive_mutex target_mutex_;
     std::recursive_mutex audio_mutex_;

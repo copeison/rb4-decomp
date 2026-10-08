@@ -32,6 +32,7 @@ recording loop through the thunk at `0x276110`, and exposes a wait operation at
 target, tears down the worker and FMOD state, and finally destroys the base
 object.
 
-The cleaned source uses `std::thread`, `std::function`, and recursive mutexes
-to express the observed ownership and lock order without reproducing the
-engine's thread wrapper or type-erased callback layout.
+The cleaned source now uses the recovered engine thread wrapper for this
+worker. It retains `std::function` for the still-semantic generic recording
+callback and recursive mutexes for the observed lock order; the launch,
+affinity, result, and join path match the executable.
