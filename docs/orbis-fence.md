@@ -23,3 +23,15 @@ Defining this factory also exposed ten neighboring Orbis resource-factory
 boundaries that IDA had previously treated as unowned code. They remain with
 address-based names until their resource types are supported by stronger
 strings or call-site evidence.
+
+`orbis_fence_next_value` at `0x8E16D0` advances the 32-bit sequence associated
+with the label. When the sequence reaches `FFFFFFFF`, it retires the old label,
+allocates and zeroes a replacement, and restarts at one. Replacing the label
+avoids making an in-flight wrap indistinguishable from an already completed
+fence value.
+
+The render-context methods at `0x8EB730` and `0x8EB7F0` signal and wait for the
+current sequence. Graphics recording uses a release-memory packet and a
+`WAIT_REG_MEM` address comparison. Standalone compute recording emits the
+corresponding compute release-memory packet and `sceGnmComputeWaitOnAddress`.
+Both waits compare all 32 bits and use the equality comparison mode.
