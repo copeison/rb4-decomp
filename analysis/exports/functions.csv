@@ -14463,10 +14463,10 @@ address,end,size,name,library,thunk
 0x4F34F0,0x4F360B,283,sub_4F34F0,False,False
 0x4F3610,0x4F3722,274,sub_4F3610,False,False
 0x4F3730,0x4F373C,12,sub_4F3730,False,False
-0x4F3790,0x4F379C,12,sub_4F3790,False,False
-0x4F3870,0x4F38BF,79,sub_4F3870,False,False
+0x4F3790,0x4F379C,12,rnd_material_set_shader_graph,False,False
+0x4F3870,0x4F38BF,79,rnd_material_set_sharing_type,False,False
 0x4F3900,0x4F39FB,251,sub_4F3900,False,False
-0x4F3A00,0x4F3A16,22,sub_4F3A00,False,False
+0x4F3A00,0x4F3A16,22,rnd_material_set_blend_mode,False,False
 0x4F3DD0,0x4F3DDC,12,sub_4F3DD0,False,False
 0x4F3E50,0x4F45BE,1902,sub_4F3E50,False,False
 0x4F4A10,0x4F4A1B,11,sub_4F4A10,False,False
