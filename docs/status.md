@@ -61,6 +61,8 @@
   32-byte target wrapper to their shared render-texture base type.
 - [x] Type render-texture attachment indices and counts and use them directly
   for light-accumulation and depth/stencil cursor advancement.
+- [x] Reconstruct the render-target owner's concrete 2D and 2D-array texture
+  creation virtuals and shared backend initialization dispatch.
 - [x] Recover the concrete 1,552-byte render-target state constructor and
   deleting destructor, including its verified resource-owner prefix mapping.
 - [x] Inline verified render-target source binding, unidentified-slot teardown,

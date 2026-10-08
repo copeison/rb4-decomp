@@ -112,3 +112,13 @@ The shared texture fields at `+0x90` and `+0x94` are the attachment index and
 attachment count for these resources. Light accumulation and depth/stencil
 creation now update the owner's attachment cursor directly from those fields;
 an index of `-1` continues to mean that no attachment was assigned.
+
+The concrete creation virtuals at `0x6B4120` and `0x6B41F0` are reconstructed
+in `render_target_resource_factory.cpp`. Both copy the caller's 44-byte
+creation state into a common descriptor, resolve its defaults, construct
+80-byte mip descriptors with depth one, dispatch through the shared render
+factory, and invoke the texture backend initializer. The array path allocates
+one mip descriptor per layer and releases that temporary range after the
+factory copies it. The common initializer at `0x69B7A0` preserves texture
+reuse for platform backends and performs the source-free GPU update through
+virtual slots `+0x78` and `+0x68`.

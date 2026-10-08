@@ -26,7 +26,10 @@ struct RenderTexture {
     std::uint32_t depth;
     std::uint8_t reserved_124[4];
     void* source_data;
-    std::uint32_t source_size;
+    union {
+        std::uint32_t source_size;
+        std::uint32_t target_flags;
+    };
     bool backend_initialized;
     std::uint8_t reserved_141[3];
     union {
@@ -86,5 +89,8 @@ static_assert(sizeof(RenderTextureMipChainArray) == 32);
 void render_texture_construct(RenderTexture& texture);
 void render_texture_destruct(RenderTexture& texture);
 void render_texture_delete(RenderTexture& texture);
+void render_texture_initialize_backend(
+    RenderTexture& texture,
+    const RenderTexture* reusable_texture);
 
 }  // namespace rb4
