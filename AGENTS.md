@@ -1,5 +1,15 @@
 # Repository organization
 
+## Work continuity
+
+- Continue reconstruction autonomously across milestones. Do not stop after a
+  progress report, successful build, documentation update, or commit.
+- Stop only when further progress genuinely requires information, files,
+  credentials, hardware interaction, or a decision that only the user can
+  provide. State the exact blocker when that happens.
+- Keep making focused milestone commits, updating the documentation, and
+  validating changes without waiting for the user to ask again.
+
 This organization rule applies project-wide. Group every reconstructed source
 file first by subsystem and then by a coherent responsibility. Broad subsystem
 and layer folders contain domain folders rather than accumulating implementation
