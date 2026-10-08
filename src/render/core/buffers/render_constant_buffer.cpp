@@ -1,7 +1,6 @@
 #include "render/core/buffers/render_constant_buffer.h"
 
 #include "core/memory/engine_memory.h"
-#include "render/core/buffers/render_constant_buffer_adapters.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -10,6 +9,16 @@ namespace rb4 {
 namespace {
 
 constexpr std::uint32_t kDeferInitialUpload = 1U << 0;
+
+RenderConstantBufferDispatch kBaseConstantBufferDispatch{
+    render_constant_buffer_destruct,
+    render_constant_buffer_delete,
+    nullptr,
+};
+
+void set_base_dispatch(RenderConstantBuffer& buffer) {
+    buffer.dispatch = &kBaseConstantBufferDispatch;
+}
 
 }  // namespace
 
@@ -39,7 +48,7 @@ void render_constant_buffer_construct(
     std::uint32_t flags,
     std::size_t element_count,
     void* data) {
-    render_constant_buffer_set_base_dispatch(buffer);
+    set_base_dispatch(buffer);
     buffer.owner = descriptor.owner;
     buffer.flags = flags;
     buffer.slot = descriptor.slot;
@@ -59,12 +68,16 @@ void render_constant_buffer_delete(RenderConstantBuffer& buffer) {
     render_delete_constant_buffer_storage(buffer);
 }
 
+void render_delete_constant_buffer_storage(RenderConstantBuffer& buffer) {
+    render_release(&buffer);
+}
+
 void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer) {
-    buffer.dispatch->initialize_backend(&buffer);
+    buffer.dispatch->initialize_backend(buffer);
 }
 
 void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer) {
-    buffer.dispatch->destruct(&buffer);
+    buffer.dispatch->destruct(buffer);
     render_release(&buffer);
 }
 

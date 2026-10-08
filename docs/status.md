@@ -419,6 +419,8 @@
   meshes, and render targets and remove their dynamic-release adapters.
 - [x] Reconstruct common compute-buffer base dispatch, staging ownership,
   backend initialization, and deleting storage release.
+- [x] Reconstruct common constant-buffer base dispatch and deleting storage
+  release.
 - [x] Reconstruct the synchronous and asynchronous FMOD file I/O bridge.
 - [x] Reconstruct the engine-to-FMOD listener transform bridge.
 - [x] Reconstruct the `HMX.BufferedOutput` plugin and custom-output startup path.
