@@ -76,7 +76,7 @@ void orbis_texture_cube_destruct(OrbisTextureCube& texture) {
 // Reconstructed from eboot.elf at 0x8E6CC0.
 void orbis_texture_cube_delete(OrbisTextureCube& texture) {
     orbis_texture_cube_destruct(texture);
-    render_delete_texture_cube_storage(texture);
+    render_release(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E6CE0.

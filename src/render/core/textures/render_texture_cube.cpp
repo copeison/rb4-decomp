@@ -1,12 +1,94 @@
 #include "render/core/textures/render_texture_cube.h"
 
+#include <cstddef>
+
+#include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/core/textures/render_texture_cube_adapters.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 
 namespace rb4 {
+
+namespace {
+
+struct RenderTextureCubeDispatch {
+    void (*destruct)(RenderTextureCube& texture);
+    void (*delete_texture)(RenderTextureCube& texture);
+    std::int32_t (*descriptor_type)(const RenderTextureCube& texture);
+    void (*reserved_bind_methods[7])();
+    std::size_t (*mip_level_count)(const RenderTextureCube& texture);
+    std::size_t (*source_size)(const RenderTextureCube& texture);
+    void (*apply_creation_state)(
+        RenderTextureCube& texture,
+        const RenderTextureCreationState& state);
+    void (*release_source_data)(RenderTextureCube& texture);
+    RenderTextureCube* (*identity)(
+        RenderTextureCube& texture,
+        std::int64_t& resource_index);
+    void (*initialize_backend)(
+        RenderTextureCube& texture,
+        const RenderTextureCube* reusable_texture);
+    bool (*reserved_predicate)(const RenderTextureCube& texture);
+};
+
+std::int32_t descriptor_type(const RenderTextureCube& texture) {
+    return texture.descriptor_type;
+}
+
+std::size_t mip_level_count(const RenderTextureCube& texture) {
+    return render_texture_mip_chain_level_count(texture.cube.faces[0]);
+}
+
+std::size_t source_size(const RenderTextureCube& texture) {
+    return render_texture_cube_state_source_size(texture.cube);
+}
+
+void apply_creation_state(
+    RenderTextureCube& texture,
+    const RenderTextureCreationState& state) {
+    texture.descriptor_state.creation_state = state;
+    render_texture_apply_descriptor_state(texture, texture.descriptor_state);
+}
+
+void release_source_data(RenderTextureCube& texture) {
+    render_texture_cube_state_release_source_data(texture.cube);
+}
+
+RenderTextureCube* identity(
+    RenderTextureCube& texture,
+    std::int64_t&) {
+    return &texture;
+}
+
+bool reserved_predicate(const RenderTextureCube&) {
+    return false;
+}
+
+RenderTextureCubeDispatch kBaseTextureCubeDispatch{
+    render_texture_cube_destruct,
+    render_texture_cube_delete,
+    descriptor_type,
+    {},
+    mip_level_count,
+    source_size,
+    apply_creation_state,
+    release_source_data,
+    identity,
+    nullptr,
+    reserved_predicate,
+};
+
+static_assert(offsetof(RenderTextureCubeDispatch, mip_level_count) == 80);
+static_assert(offsetof(RenderTextureCubeDispatch, release_source_data) == 104);
+static_assert(offsetof(RenderTextureCubeDispatch, initialize_backend) == 120);
+static_assert(sizeof(RenderTextureCubeDispatch) == 17 * sizeof(void*));
+
+void set_base_dispatch(RenderTextureCube& texture) {
+    texture.implementation = &kBaseTextureCubeDispatch;
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x68CC00.
 void render_texture_cube_state_construct(
@@ -22,6 +104,24 @@ void render_texture_cube_state_construct(
 void render_texture_cube_state_destruct(RenderTextureCubeState& cube) {
     for (std::size_t index = 6; index != 0; --index) {
         render_texture_mip_chain_destruct(cube.faces[index - 1]);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x68D740.
+std::size_t render_texture_cube_state_source_size(
+    const RenderTextureCubeState& cube) {
+    std::size_t size = 0;
+    for (const auto& face : cube.faces) {
+        size += render_texture_mip_chain_source_size(face);
+    }
+    return size;
+}
+
+// Reconstructed from eboot.elf at 0x68D010.
+void render_texture_cube_state_release_source_data(
+    RenderTextureCubeState& cube) {
+    for (auto& face : cube.faces) {
+        render_texture_mip_chain_release_source_data(face);
     }
 }
 
@@ -65,7 +165,7 @@ void render_texture_cube_construct(
     RenderTextureCube& texture,
     const RenderTextureCubeDescriptor& descriptor) {
     render_texture_construct(texture);
-    render_texture_cube_set_base_dispatch(texture);
+    set_base_dispatch(texture);
 
     texture.descriptor_state = descriptor.texture_state;
     render_texture_cube_state_construct(
@@ -105,7 +205,7 @@ RenderTextureCube* render_create_texture_cube(
 
 // Reconstructed from eboot.elf at 0x6A0EA0.
 void render_texture_cube_destruct(RenderTextureCube& texture) {
-    render_texture_cube_set_base_dispatch(texture);
+    set_base_dispatch(texture);
     render_texture_cube_state_destruct(texture.cube);
     render_texture_destruct(texture);
 }
@@ -113,7 +213,7 @@ void render_texture_cube_destruct(RenderTextureCube& texture) {
 // Reconstructed from eboot.elf at 0x6A0F10.
 void render_texture_cube_delete(RenderTextureCube& texture) {
     render_texture_cube_destruct(texture);
-    render_delete_texture_cube_storage(texture);
+    render_release(&texture);
 }
 
 }  // namespace rb4

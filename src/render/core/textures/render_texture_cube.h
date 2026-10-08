@@ -31,6 +31,10 @@ void render_texture_cube_state_construct(
     const RenderTextureCubeDescriptorState& descriptor,
     bool has_source_data);
 void render_texture_cube_state_destruct(RenderTextureCubeState& cube);
+std::size_t render_texture_cube_state_source_size(
+    const RenderTextureCubeState& cube);
+void render_texture_cube_state_release_source_data(
+    RenderTextureCubeState& cube);
 
 static_assert(sizeof(RenderTextureCubeDescriptorState) == 480);
 static_assert(sizeof(RenderTextureCubeState) == 480);

@@ -16,6 +16,5 @@ void* orbis_render_target_metadata_allocation(
 void* orbis_render_target_surface_allocation(
     const OrbisGpuRenderTarget& target);
 void orbis_defer_texture_allocation(void* allocation);
-void render_delete_texture_cube_storage(RenderTextureCube& texture);
 
 }  // namespace rb4
