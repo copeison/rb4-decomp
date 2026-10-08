@@ -51,6 +51,8 @@
 - [x] Reconstruct per-scene render-target resource-block initialization.
 - [x] Reconstruct top-level render-target resource-owner initialization.
 - [x] Reconstruct top-level render-target resource-owner teardown.
+- [x] Recover the exact 1,552-byte render-target resource-owner and 216-byte
+  per-scene block layouts, including inline storage and lifecycle defaults.
 - [x] Reconstruct render-target owner mode and partial-block controls.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.

@@ -9,6 +9,8 @@ namespace rb4 {
 
 struct RenderTexture;
 
+void render_target_resources_set_base_dispatch(
+    RenderTargetResources& resources);
 RenderTexture*& render_target_resources_source_texture(
     RenderTargetResources& resources);
 void render_target_resources_bind_source_texture(

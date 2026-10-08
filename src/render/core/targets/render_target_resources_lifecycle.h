@@ -29,6 +29,11 @@ enum class RenderTargetResourceFlag : std::uint32_t {
     kSourceTextureNotOwned = 0x80000000,
 };
 
+void render_target_resources_construct(
+    RenderTargetResources& resources,
+    std::uint32_t flags,
+    std::int32_t resource_mode);
+void render_target_resources_destruct(RenderTargetResources& resources);
 void render_target_resources_initialize(
     RenderTargetResources& resources,
     RenderTexture& source_texture,

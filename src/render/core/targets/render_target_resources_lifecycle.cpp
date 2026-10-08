@@ -45,6 +45,29 @@ const RenderTargetResourceBlock* reusable_block(
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x6AFEA0.
+void render_target_resources_construct(
+    RenderTargetResources& resources,
+    std::uint32_t flags,
+    std::int32_t resource_mode) {
+    resources = RenderTargetResources{};
+    render_target_resources_set_base_dispatch(resources);
+    resources.flags = flags;
+    resources.resource_mode = resource_mode;
+    resources.registered_resources_begin =
+        resources.registered_resources_inline;
+    resources.registered_resource_capacity = 38;
+    resources.blocks_begin = resources.blocks_inline;
+    resources.block_capacity = 4;
+    resources.active_scene_context = -1;
+}
+
+// Reconstructed from eboot.elf at 0x6AFFC0.
+void render_target_resources_destruct(RenderTargetResources& resources) {
+    render_target_resources_set_base_dispatch(resources);
+    render_target_resources_release(resources);
+}
+
 // Reconstructed from eboot.elf at 0x6B0760.
 void render_target_resources_initialize(
     RenderTargetResources& resources,

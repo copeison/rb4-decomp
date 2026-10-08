@@ -1,5 +1,13 @@
 # Render-target resource-owner initialization
 
+`render_target_resources_construct` at `0x6AFEA0` initializes the exact
+1,552-byte owner layout. The owner embeds storage for 38 registered-resource
+pointers and four 216-byte scene blocks; construction points both containers
+at their inline storage, sets their capacities, selects primary block zero,
+and initializes the active scene context to `-1`.
+`render_target_resources_destruct` at `0x6AFFC0` restores the base dispatch
+table before running the common release path.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.
@@ -20,8 +28,8 @@ The owner always contains one primary 216-byte per-scene block. Flag
 `0x40000000` expands the block array to one plus
 `max_partial_framerate_scenes` and initializes the added blocks as partial
 frames. Matching blocks from the previous owner supply reusable resources.
-The block array has four inline entries in the constructor; its storage and
-growth remain behind a narrow container adapter.
+The block array has four inline entries in the constructor; its growth remains
+behind a narrow container adapter.
 
 After all resources are created, the owner propagates its mode field to every
 registered resource. Flag `0x20000000` forces the 64-bit light-accumulation
