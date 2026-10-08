@@ -283,6 +283,8 @@ FOCUSED_DECOMPILATIONS = {
     "orbis-compute-buffer-construct": 0x8E3250,
     "orbis-create-particle-buffer": 0x8D8BF0,
     "orbis-particle-buffer-construct": 0x8E2AA0,
+    "orbis-create-occlusion-query": 0x8D8C30,
+    "orbis-occlusion-query-construct": 0x8E28C0,
     "render-supported-platform-ids": 0x3641B0,
     "render-platform-config-construct": 0x6B9940,
     "render-platform-config-initialize": 0x6B99B0,

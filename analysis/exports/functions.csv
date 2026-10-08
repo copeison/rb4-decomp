@@ -18432,8 +18432,8 @@ address,end,size,name,library,thunk
 0x5F7900,0x5F7904,4,sub_5F7900,False,False
 0x5F7910,0x5F79F1,225,sub_5F7910,False,False
 0x5F7A00,0x5F7D08,776,sub_5F7A00,False,False
-0x5F7D30,0x5F7D50,32,sub_5F7D30,False,False
-0x5F7D50,0x5F7D97,71,sub_5F7D50,False,False
+0x5F7D30,0x5F7D50,32,render_create_occlusion_query,False,False
+0x5F7D50,0x5F7D97,71,occlusion_query_construct,False,False
 0x5F7DA0,0x5F7DC2,34,sub_5F7DA0,False,False
 0x5F7DD0,0x5F7DF6,38,sub_5F7DD0,False,False
 0x5F7E00,0x5F7E6F,111,sub_5F7E00,False,False
@@ -27949,7 +27949,7 @@ address,end,size,name,library,thunk
 0x8D8B30,0x8D8BB3,131,sub_8D8B30,False,False
 0x8D8BC0,0x8D8BEA,42,orbis_create_compute_buffer,False,False
 0x8D8BF0,0x8D8C29,57,orbis_create_particle_buffer,False,False
-0x8D8C30,0x8D8C5A,42,sub_8D8C30,False,False
+0x8D8C30,0x8D8C5A,42,orbis_create_occlusion_query,False,False
 0x8D8C60,0x8D8C61,1,nullsub_3154,False,False
 0x8D8C70,0x8D8C75,5,sub_8D8C70,False,True
 0x8D95E0,0x8D9770,400,sub_8D95E0,False,False
@@ -27992,8 +27992,13 @@ address,end,size,name,library,thunk
 0x8E24A0,0x8E285B,955,sub_8E24A0,False,False
 0x8E2890,0x8E289D,13,sub_8E2890,False,False
 0x8E28A0,0x8E28BF,31,sub_8E28A0,False,False
-0x8E28C0,0x8E28EB,43,sub_8E28C0,False,False
-0x8E28F0,0x8E28F5,5,sub_8E28F0,False,True
+0x8E28C0,0x8E28EB,43,orbis_occlusion_query_construct,False,False
+0x8E28F0,0x8E28F5,5,orbis_occlusion_query_destruct,False,True
+0x8E2900,0x8E291C,28,orbis_occlusion_query_delete,False,False
+0x8E2920,0x8E29DB,187,orbis_occlusion_query_begin,False,False
+0x8E29E0,0x8E2A2C,76,orbis_occlusion_query_end,False,False
+0x8E2A30,0x8E2A56,38,orbis_occlusion_query_resolve,False,False
+0x8E2A60,0x8E2A78,24,sub_8E2A60,False,False
 0x8E2A80,0x8E2A9F,31,sub_8E2A80,False,False
 0x8E2AA0,0x8E2D2B,651,orbis_particle_buffer_construct,False,False
 0x8E3250,0x8E3287,55,orbis_compute_buffer_construct,False,False
