@@ -31,5 +31,6 @@ void render_configure_default_shadowed_spot(
 void render_create_fallback_default_lighting(
     DefaultLightingState& state,
     RndScene& scene);
+float render_default_shadow_offset(const DefaultLightingState& state);
 
 }  // namespace rb4

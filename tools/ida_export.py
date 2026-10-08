@@ -245,6 +245,8 @@ FOCUSED_DECOMPILATIONS = {
     "render-apply-default-lighting-mode": 0x6BFA60,
     "render-configure-default-shadowed-spot": 0x6BFD40,
     "render-load-scene-resource": 0x6C0160,
+    "render-default-shadow-offset": 0x6BFEA0,
+    "render-get-default-texture": 0x6C00F0,
     "rnd-material-set-shader-graph": 0x4F3790,
     "rnd-material-set-sharing-type": 0x4F3870,
     "rnd-material-set-blend-mode": 0x4F3A00,

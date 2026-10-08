@@ -188,4 +188,25 @@ void render_create_fallback_default_lighting(
     render_apply_default_lighting_mode(state);
 }
 
+// Reconstructed from eboot.elf at 0x6BFEA0.
+float render_default_shadow_offset(const DefaultLightingState& state) {
+    if (state.resource == nullptr || state.shadowed_spot_lights.empty()) {
+        return 0.0f;
+    }
+
+    auto* scene = rnd_scene_resource_scene(*state.resource);
+    if (scene == nullptr) {
+        return 0.0f;
+    }
+
+    auto* object = rnd_scene_find_object(
+        *scene, state.shadowed_spot_lights.front());
+    if (object == nullptr) {
+        return 0.0f;
+    }
+
+    auto* light = rnd_object_spot_light(*object);
+    return light == nullptr ? 0.0f : rnd_light_spot_shadow_offset(*light);
+}
+
 }  // namespace rb4

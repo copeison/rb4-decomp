@@ -18,7 +18,7 @@ the source tree.
 | `0x6BEF40`-`0x6C0160` | default render lighting and fallback | `src/render/default_lighting.cpp` | `RndSceneResource` loading, authored light/probe discovery, object-ID lists, mode switching, scale-dependent probe/spot setup, and fallback directional-light creation recovered. |
 | `0x6BEC50` | default render materials | `src/render/default_materials.cpp` | Six named material objects, shader-graph paths, unique sharing, and explicit additive/source blend modes recovered. |
 | `0x6BEBC0` | default render camera | `src/render/default_camera.cpp` | Creation of `default_cam` and attachment of its `RndCameraCom` recovered. |
-| `0x6BDE60` | default fallback textures | `src/render/default_textures.cpp` | Seven named color/error families, exact extents, and all seven texture shapes recovered. |
+| `0x6BDE60`, `0x6C00F0` | default fallback textures | `src/render/default_textures.cpp` | Seven named color/error families, exact extents, all seven texture shapes, and indexed lookup recovered. |
 | `0x6BDCA0` | default render-resource initialization | `src/render/default_render_resources.cpp` | Feature gate, scene resource, texture and compute buffers, camera, materials, lighting fallback, and finalization order recovered. |
 | `0x27A1C0`-`0x27A850` | FMOD file callbacks and asynchronous reader | `src/audio/fmod_file_io.cpp` | Open, close, read, seek, priority queue, worker, cancellation, and shutdown behavior recovered. |
 | `0x262300`, `0x27ACB0` | listener update and engine-to-FMOD transform conversion | `src/audio/fmod_listener.cpp` | Primary listener gating, 48-byte transform layout, handedness conversion, and zero velocity recovered. |

@@ -78,6 +78,7 @@ void rnd_light_probe_set_falloff_end(
     float distance);
 void rnd_light_spot_set_falloff_start(RndLightSpotCom& light, float distance);
 void rnd_light_spot_set_falloff_end(RndLightSpotCom& light, float distance);
+float rnd_light_spot_shadow_offset(const RndLightSpotCom& light);
 void rnd_object_reset_transform_with_scaled_position(
     RndObject& object,
     float position_scale);

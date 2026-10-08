@@ -32,3 +32,6 @@ The descriptor type values are corroborated by the resource-class switch at
 `RndTexture2DResource`, `RndTexture3DResource`, `RndTextureCubeResource`,
 `RndTextureArray1DResource`, and `RndTextureArray2DResource`. Descriptor type
 `7` is the six-face array form used by the light-probe texture-array path.
+
+`render_get_default_texture` at `0x6C00F0` indexes these tables by the raw shape
+values `0` through `5` and `7`, returning null for unsupported values.

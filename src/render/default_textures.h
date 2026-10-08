@@ -5,13 +5,7 @@
 
 namespace rb4 {
 
-struct RndTexture1D;
-struct RndTexture2D;
-struct RndTexture3D;
-struct RndTextureArray1D;
-struct RndTextureArray2D;
-struct RndTextureCube;
-struct RndTextureArrayCube;
+struct RndTextureResource;
 
 enum class DefaultTextureKind : std::uint32_t {
     kWhite = 0,
@@ -23,49 +17,63 @@ enum class DefaultTextureKind : std::uint32_t {
     kErrorNormal = 6,
 };
 
+enum class DefaultTextureShape : std::uint32_t {
+    kTexture1D = 0,
+    kTexture2D = 1,
+    kTexture3D = 2,
+    kTextureCube = 3,
+    kTextureArray1D = 4,
+    kTextureArray2D = 5,
+    kTextureArrayCube = 7,
+};
+
 struct DefaultTextureFamily {
-    RndTexture1D* texture_1d = nullptr;
-    RndTexture2D* texture_2d = nullptr;
-    RndTexture3D* texture_3d = nullptr;
-    RndTextureCube* texture_cube = nullptr;
-    RndTextureArray1D* texture_array_1d = nullptr;
-    RndTextureArray2D* texture_array_2d = nullptr;
-    RndTextureArrayCube* texture_array_cube = nullptr;
+    RndTextureResource* texture_1d = nullptr;
+    RndTextureResource* texture_2d = nullptr;
+    RndTextureResource* texture_3d = nullptr;
+    RndTextureResource* texture_cube = nullptr;
+    RndTextureResource* texture_array_1d = nullptr;
+    RndTextureResource* texture_array_2d = nullptr;
+    RndTextureResource* texture_array_cube = nullptr;
 };
 
 struct DefaultTextureSet {
     std::array<DefaultTextureFamily, 7> families{};
 };
 
-RndTexture1D* render_create_default_texture_1d(
+RndTextureResource* render_create_default_texture_1d(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTexture2D* render_create_default_texture_2d(
+RndTextureResource* render_create_default_texture_2d(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTexture3D* render_create_default_texture_3d(
+RndTextureResource* render_create_default_texture_3d(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTextureCube* render_create_default_texture_cube(
+RndTextureResource* render_create_default_texture_cube(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTextureArray1D* render_create_default_texture_array_1d(
+RndTextureResource* render_create_default_texture_array_1d(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTextureArray2D* render_create_default_texture_array_2d(
+RndTextureResource* render_create_default_texture_array_2d(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
-RndTextureArrayCube* render_create_default_texture_array_cube(
+RndTextureResource* render_create_default_texture_array_cube(
     DefaultTextureKind kind,
     const char* name,
     std::uint32_t extent);
 
 void render_create_default_textures(DefaultTextureSet& textures);
+RndTextureResource* render_get_default_texture(
+    const DefaultTextureSet& textures,
+    DefaultTextureShape shape,
+    DefaultTextureKind kind);
 
 }  // namespace rb4

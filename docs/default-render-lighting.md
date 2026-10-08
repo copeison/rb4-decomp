@@ -53,6 +53,10 @@ The corresponding `RndLightSpotCom` fields are at offsets `0xEC` and `0xF0`.
 The shadowed spot uses `scale` and `scale * 2`, then resets its transform from
 the engine default and multiplies only the position by the same scale.
 
+The accessor at `0x6BFEA0` resolves the first shadowed-spot ID and returns its
+`shadow_offset` property at component offset `0x140`; it returns zero when the
+spot list is empty.
+
 ## Fallback path
 
 `render_create_fallback_default_lighting` at `0x6BF4F0` creates an object named

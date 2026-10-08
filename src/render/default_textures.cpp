@@ -49,4 +49,34 @@ void render_create_default_textures(DefaultTextureSet& textures) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x6C00F0.
+RndTextureResource* render_get_default_texture(
+    const DefaultTextureSet& textures,
+    DefaultTextureShape shape,
+    DefaultTextureKind kind) {
+    const auto index = static_cast<std::size_t>(kind);
+    if (index >= textures.families.size()) {
+        return nullptr;
+    }
+
+    const auto& family = textures.families[index];
+    switch (shape) {
+    case DefaultTextureShape::kTexture1D:
+        return family.texture_1d;
+    case DefaultTextureShape::kTexture2D:
+        return family.texture_2d;
+    case DefaultTextureShape::kTexture3D:
+        return family.texture_3d;
+    case DefaultTextureShape::kTextureCube:
+        return family.texture_cube;
+    case DefaultTextureShape::kTextureArray1D:
+        return family.texture_array_1d;
+    case DefaultTextureShape::kTextureArray2D:
+        return family.texture_array_2d;
+    case DefaultTextureShape::kTextureArrayCube:
+        return family.texture_array_cube;
+    }
+    return nullptr;
+}
+
 }  // namespace rb4

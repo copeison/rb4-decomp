@@ -21095,8 +21095,8 @@ address,end,size,name,library,thunk
 0x6BFA00,0x6BFA3C,60,sub_6BFA00,False,False
 0x6BFA60,0x6BFBA7,327,render_apply_default_lighting_mode,False,False
 0x6BFD40,0x6BFE9A,346,render_configure_default_shadowed_spot,False,False
-0x6BFEA0,0x6BFF6B,203,sub_6BFEA0,False,False
-0x6C00F0,0x6C015D,109,sub_6C00F0,False,False
+0x6BFEA0,0x6BFF6B,203,render_default_shadow_offset,False,False
+0x6C00F0,0x6C015D,109,render_get_default_texture,False,False
 0x6C0160,0x6C02AF,335,render_load_scene_resource,False,False
 0x6C02F0,0x6C0326,54,sub_6C02F0,False,False
 0x6C0330,0x6C036E,62,sub_6C0330,False,False
