@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cmath>
 #include <cstdint>
 
 #include "core/memory/engine_memory.h"
@@ -163,6 +164,41 @@ void destruct_name_array(RenderResourceNameArray& names) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x645F20.
+float sample_function_table(
+    std::uint32_t function_index,
+    float input) {
+    float output = 0.0F;
+    switch (function_index) {
+    case 0:
+        output = 1.0F - input;
+        break;
+    case 1: {
+        const auto denominator = 1.25F * input + 0.25F;
+        output = 0.0642857179F / (denominator * denominator) -
+            0.0285714306F;
+        break;
+    }
+    case 2: {
+        constexpr float kMinimum = 0.006737947F;
+        const auto exponential = 1.0F / std::exp(5.0F * input);
+        output = (exponential - kMinimum) / (1.0F - kMinimum);
+        break;
+    }
+    case 3: {
+        constexpr float kMinimum = 0.006692851F;
+        constexpr float kMaximum = 0.993307173F;
+        const auto sigmoid =
+            1.0F / (std::exp((input - 0.5F) * 10.0F) + 1.0F);
+        output = (sigmoid - kMinimum) / (kMaximum - kMinimum);
+        break;
+    }
+    default:
+        break;
+    }
+    return std::max(0.0F, std::min(1.0F, output));
+}
+
 }  // namespace
 
 RenderResourceManager& render_system_resource_manager(RenderSystem& system) {
@@ -256,9 +292,10 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
         for (std::uint32_t sample_index = 0;
              sample_index < kSampleCount;
              ++sample_index) {
-            pixels[sample_index] = render_function_table_sample(
+            const auto sample = sample_function_table(
                 function_index,
                 static_cast<float>(sample_index) * kSampleStep);
+            pixels[sample_index] = {sample, sample, sample, sample};
         }
 
         auto& mip = mip_chains[function_index];

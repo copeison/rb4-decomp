@@ -22,8 +22,10 @@ primary shader resource, and builds the `function_table` texture directly. The
 texture is a four-layer 1D array with 128 RGBA32-float samples per layer. Each
 layer samples one engine transfer function over the inclusive `[0, 1]` range,
 copies it into an owned mip descriptor, and is then consumed by the common
-texture-array factory. Primary-shader finalization and evaluation of the four
-transfer functions remain focused boundaries.
+texture-array factory. The four source-owned functions are inverse linear,
+inverse-square falloff, normalized negative exponential, and normalized
+descending sigmoid curves. Primary-shader finalization remains the focused
+boundary.
 
 Shader reload at `0x641F30` walks both intrusive lists directly. Primary
 resources place their manager link at offset `0x110`; each owns six 32-byte

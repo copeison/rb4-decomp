@@ -341,6 +341,8 @@
   arrays of 40-byte name records.
 - [x] Reconstruct resource-manager finalization and its four-layer,
   128-sample function-table texture.
+- [x] Recover the four clamped transfer curves used to populate the renderer's
+  function-table texture.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
