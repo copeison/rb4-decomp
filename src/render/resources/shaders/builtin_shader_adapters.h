@@ -10,5 +10,17 @@ void render_linearize_depth_shader_install_dispatch(void* shader);
 void render_refine_scene_mask_shader_install_dispatch(void* shader);
 void render_stencil_scene_mask_shader_install_dispatch(void* shader);
 void render_test_pattern_shader_install_dispatch(void* shader);
+void render_compute_shader_install_dispatch(void* shader);
+void render_blur_classify_compute_shader_install_dispatch(void* shader);
+void render_calc_depth_range_compute_shader_install_dispatch(void* shader);
+void render_dof_disc_blur_compute_shader_install_dispatch(void* shader);
+void render_ssao_compute_shader_install_dispatch(void* shader);
+void render_cmaa_edge_detect_compute_shader_install_dispatch(void* shader);
+void render_cmaa_edge_prune_compute_shader_install_dispatch(void* shader);
+void render_cmaa_shape_fit_compute_shader_install_dispatch(void* shader);
+void render_cmaa_final_process_compute_shader_install_dispatch(void* shader);
+void render_signed_distance_compute_shader_install_dispatch(void* shader);
+void render_signed_distance_classify_compute_shader_install_dispatch(
+    void* shader);
 
 }  // namespace rb4

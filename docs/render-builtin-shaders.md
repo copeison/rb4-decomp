@@ -13,6 +13,14 @@ with one handle. Stencil-scene-mask is 312 bytes, test-pattern is 320 bytes,
 and the feature-gated DOF-sprite resource is 304 bytes. Their post-base fields
 preserve the original mix of `-1` invalid handles and zero-valued state.
 
+Ten compact compute resources are source-owned as well: blur classification,
+depth-range calculation, DOF disc blur, SSAO, all four CMAA stages, signed
+distance generation, and signed-distance classification. The compute-derived
+classes pass through the shared compute-shader dispatch before installing
+their concrete dispatch. Their verified trailing regions preserve contiguous
+invalid-handle runs, explicit zero state, and the untouched eight-byte SSAO
+gap at object offset `0x148`.
+
 Every constructor first initializes the shared 288-byte primary-shader base,
 then installs the concrete dispatch and initializes only its verified trailing
 fields. This keeps base ownership, manager-list registration, lazy preparation,

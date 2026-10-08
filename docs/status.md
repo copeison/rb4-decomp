@@ -370,6 +370,8 @@
   behavior.
 - [x] Reconstruct post-base defaults for the FXAA, DOF sprite, display shading
   mode, sphere-map, linear-depth, scene-mask, and test-pattern shaders.
+- [x] Reconstruct compact compute-shader construction for blur classification,
+  depth range, DOF disc blur, SSAO, CMAA, and signed-distance passes.
 - [x] Recover the 304-byte lighting-resource state, constructor defaults,
   fixed owners, pointer arrays, runtime shutdown, and destructor.
 - [x] Recover the 40-byte inline primitive-mesh set and its box/cylinder
