@@ -33,6 +33,7 @@
 - [x] Recover and name the 24-command renderer debug console registry.
 - [x] Reconstruct renderer settings defaults, config keys, and capability gates.
 - [x] Recover the exact 232-byte renderer-settings layout and signed limit fields.
+- [x] Identify renderer tile dimensions and light-capacity settings.
 - [x] Recover the Low, Medium, and High renderer quality-level mapping.
 - [x] Recover runtime resolution parsing and screenshot-mode labels.
 - [x] Distinguish the configured vsync mode from the runtime enable flag.

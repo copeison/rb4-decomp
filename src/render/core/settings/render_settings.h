@@ -29,18 +29,21 @@ struct RenderSettings {
     bool use_tiled_lighting = false;
     std::uint8_t reserved_29[3]{};
 
-    // These defaults are exact, but their engine-facing meanings have not
-    // yet been recovered from consumers of the settings block.
-    std::int64_t unknown_32[4]{32, 8, 16, 256};
-    std::int64_t unknown_64 = 256;
-    std::int64_t unknown_72[2]{32, 16};
-    std::int64_t unknown_88 = 128;
+    std::int64_t light_tile_size = 32;
+    std::int64_t light_tile_depth_slices = 8;
+    std::int64_t volumetric_scattering_tile_size = 16;
+    std::int64_t max_lights_per_tile = 256;
+    std::int64_t max_point_lights = 256;
+    std::int64_t max_spot_lights = 32;
+    std::int64_t max_directional_lights = 16;
+    std::int64_t max_light_probes = 128;
     bool unknown_96 = true;
     std::uint8_t reserved_97[7]{};
 
     std::int64_t max_partial_framerate_scenes = 0;
     std::int64_t max_shadow_contrib_buffers = 0;
-    std::int64_t unknown_120[2]{16, 16};
+    std::int64_t shadow_soften_tile_size = 16;
+    std::int64_t unknown_128 = 16;
 
     RenderExtent output_resolution{1920, 1080};
     bool resolution_overridden = false;
@@ -84,9 +87,19 @@ struct RenderSettings {
 };
 
 static_assert(offsetof(RenderSettings, vsync_mode) == 20);
-static_assert(offsetof(RenderSettings, unknown_32) == 32);
+static_assert(offsetof(RenderSettings, light_tile_size) == 32);
+static_assert(offsetof(RenderSettings, light_tile_depth_slices) == 40);
+static_assert(offsetof(RenderSettings, volumetric_scattering_tile_size) == 48);
+static_assert(offsetof(RenderSettings, max_lights_per_tile) == 56);
+static_assert(offsetof(RenderSettings, max_point_lights) == 64);
+static_assert(offsetof(RenderSettings, max_spot_lights) == 72);
+static_assert(offsetof(RenderSettings, max_directional_lights) == 80);
+static_assert(offsetof(RenderSettings, max_light_probes) == 88);
+static_assert(offsetof(RenderSettings, unknown_96) == 96);
 static_assert(offsetof(RenderSettings, max_partial_framerate_scenes) == 104);
 static_assert(offsetof(RenderSettings, max_shadow_contrib_buffers) == 112);
+static_assert(offsetof(RenderSettings, shadow_soften_tile_size) == 120);
+static_assert(offsetof(RenderSettings, unknown_128) == 128);
 static_assert(offsetof(RenderSettings, output_resolution) == 136);
 static_assert(offsetof(RenderSettings, quality_level) == 148);
 static_assert(offsetof(RenderSettings, vsync_enabled) == 152);

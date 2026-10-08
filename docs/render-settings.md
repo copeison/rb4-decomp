@@ -40,9 +40,26 @@ Five values look like 32-bit settings at the config boundary but occupy signed
 64-bit slots in memory. These are the two scene/buffer limits at `0x68` and
 `0x70`, followed by the geometry, lighting, and light-probe overdraw limits at
 `0xC0`, `0xC8`, and `0xD0`. The original reads a 32-bit value and sign-extends
-it into each slot. Unknown default fields between `0x20` and `0x87` remain
-explicitly named by offset until their consumers establish their meanings;
-their exact defaults and all padding are preserved.
+it into each slot.
+
+The shader generator and render-target allocation paths identify most of the
+other 64-bit defaults:
+
+| Offset | Field | Default |
+| --- | --- | --- |
+| `0x20` | Light tile size | 32 |
+| `0x28` | Light tile depth slices | 8 |
+| `0x30` | Volumetric-scattering tile size | 16 |
+| `0x38` | Maximum lights per tile | 256 |
+| `0x40` | Maximum point lights | 256 |
+| `0x48` | Maximum spotlights | 32 |
+| `0x50` | Maximum directional lights | 16 |
+| `0x58` | Maximum light probes | 128 |
+| `0x78` | Shadow-softening tile size | 16 |
+
+The byte at `0x60` and 64-bit value at `0x80` retain offset-based names until
+their consumers establish their meanings. Their exact defaults and all
+padding are preserved.
 
 A valid command-line `resolution` value must match one of the platform's
 advertised modes. When it does, it replaces both the output resolution and the
