@@ -75,5 +75,34 @@ void orbis_render_context_disable_stream_output(
     OrbisRenderContext& context);
 void orbis_render_context_clear_shader_resources(
     OrbisRenderContext& context);
+void orbis_render_context_cache_depth_mode(
+    OrbisRenderContext& context,
+    std::uint32_t depth_mode);
+void orbis_render_context_cache_stencil_state(
+    OrbisRenderContext& context,
+    std::uint32_t stencil_mode,
+    std::uint8_t reference,
+    std::uint8_t read_mask,
+    std::uint8_t write_mask);
+void orbis_render_context_apply_depth_stencil_state(
+    OrbisRenderContext& context);
+void orbis_render_context_cache_front_face(
+    OrbisRenderContext& context,
+    bool counter_clockwise);
+void orbis_render_context_cache_cull_mode(
+    OrbisRenderContext& context,
+    OrbisCullMode cull_mode);
+void orbis_render_context_cache_polygon_fill(
+    OrbisRenderContext& context,
+    bool enabled);
+void orbis_render_context_apply_primitive_setup(
+    OrbisRenderContext& context);
+void orbis_render_context_set_gnm_render_target_mask(
+    OrbisRenderContext& context,
+    std::uint32_t write_mask);
+void orbis_render_context_cache_color_write_mask(
+    OrbisRenderContext& context,
+    std::uint8_t target_mask,
+    OrbisColorWriteMode write_mode);
 
 }  // namespace rb4

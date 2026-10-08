@@ -64,6 +64,7 @@
 - [x] Reconstruct Orbis graphics/compute render-context allocation.
 - [x] Reconstruct Orbis graphics/compute frame submission and reset.
 - [x] Reconstruct Orbis render-target, blend, and default pipeline state.
+- [x] Recover Orbis depth, stencil, raster, and color-write state setters.
 - [x] Reconstruct format-specific Orbis transient vertex drawing.
 - [x] Recover the Orbis GPU fence destruction and deferred release paths.
 - [x] Recover the Orbis inline constant-buffer factory.

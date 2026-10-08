@@ -15,6 +15,14 @@ namespace {
 constexpr std::size_t kColorRenderTargetCount = 8;
 constexpr std::int32_t kUnboundTargetKind = -1;
 constexpr std::int32_t kPerTargetBlendMode = 11;
+constexpr std::array<std::uint8_t, 10> kStencilMasks = {
+    0xFF, 0x07, 0x08, 0x10, 0x0F,
+    0x1F, 0x20, 0x28, 0x30, 0xC0,
+};
+
+std::uint8_t stencil_mask(std::uint32_t index) {
+    return index < kStencilMasks.size() ? kStencilMasks[index] : 0;
+}
 
 }  // namespace
 
@@ -101,6 +109,77 @@ void orbis_render_context_set_blend_mode(
     for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
         orbis_render_context_set_gnm_blend_control(context, slot, control);
     }
+}
+
+// Reconstructed from eboot.elf at 0x8E9F60.
+void orbis_render_context_set_depth_mode(
+    OrbisRenderContext& context,
+    std::uint32_t depth_mode) {
+    orbis_render_context_cache_depth_mode(context, depth_mode);
+    orbis_render_context_apply_depth_stencil_state(context);
+}
+
+// Reconstructed from eboot.elf at 0x8EA030.
+void orbis_render_context_set_stencil_state(
+    OrbisRenderContext& context,
+    std::uint32_t stencil_mode,
+    std::uint8_t reference,
+    std::uint32_t read_mask,
+    std::uint32_t write_mask) {
+    orbis_render_context_cache_stencil_state(
+        context,
+        stencil_mode,
+        reference,
+        stencil_mask(read_mask),
+        stencil_mask(write_mask));
+    orbis_render_context_apply_depth_stencil_state(context);
+}
+
+// Reconstructed from eboot.elf at 0x8EA150.
+void orbis_render_context_set_front_face(
+    OrbisRenderContext& context,
+    bool counter_clockwise) {
+    orbis_render_context_cache_front_face(context, counter_clockwise);
+    orbis_render_context_apply_primitive_setup(context);
+}
+
+// Reconstructed from eboot.elf at 0x8EA1C0.
+void orbis_render_context_set_cull_mode(
+    OrbisRenderContext& context,
+    OrbisCullMode cull_mode) {
+    orbis_render_context_cache_cull_mode(context, cull_mode);
+    orbis_render_context_apply_primitive_setup(context);
+}
+
+// Reconstructed from eboot.elf at 0x8EA230.
+void orbis_render_context_set_polygon_fill(
+    OrbisRenderContext& context,
+    bool enabled) {
+    orbis_render_context_cache_polygon_fill(context, enabled);
+    orbis_render_context_apply_primitive_setup(context);
+}
+
+// Reconstructed from eboot.elf at 0x8E96F0.
+void orbis_render_context_set_color_write_mask(
+    OrbisRenderContext& context,
+    std::uint8_t target_mask,
+    OrbisColorWriteMode write_mode) {
+    std::uint32_t channel_mask = 0;
+    if (write_mode == OrbisColorWriteMode::kRgba) {
+        channel_mask = 0xF;
+    } else if (write_mode == OrbisColorWriteMode::kRgb) {
+        channel_mask = 0x7;
+    }
+
+    std::uint32_t gnm_mask = 0;
+    for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
+        if ((target_mask & (1U << slot)) != 0) {
+            gnm_mask |= channel_mask << (slot * 4);
+        }
+    }
+    orbis_render_context_set_gnm_render_target_mask(context, gnm_mask);
+    orbis_render_context_cache_color_write_mask(
+        context, target_mask, write_mode);
 }
 
 }  // namespace rb4

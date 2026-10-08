@@ -40,3 +40,22 @@ The reset method clears the context's cached state, unbinds render targets,
 selects the Source blend mode, restores raster and depth/stencil defaults,
 disables stream output, and clears shader-resource bindings for all six shader
 stages. This is the baseline installed before a new frame records draw work.
+
+## Depth, stencil, and raster state
+
+The setters at `0x8E9F60` and `0x8EA030` cache the engine depth/stencil modes
+and rebuild three related Gnm registers together: `DepthStencilControl`, the
+front/back `StencilControl`, and `StencilOpControl`. Stencil reference values
+are stored directly. The ten authored read/write-mask indices map to `FF`,
+`07`, `08`, `10`, `0F`, `1F`, `20`, `28`, `30`, and `C0`; an out-of-range
+index becomes zero.
+
+The raster setters at `0x8EA150`, `0x8EA1C0`, and `0x8EA230` likewise rebuild
+one combined Gnm `PrimitiveSetup` register whenever winding, culling, or fill
+changes. The cull mapping is none, back, and front. Filled polygons select Gnm
+fill mode 2; disabling fill selects line mode 1 for both faces.
+
+Color-write control at `0x8E96F0` takes an eight-bit render-target selection.
+It expands each selected bit to one Gnm nibble: `F` writes RGBA, `7` writes RGB,
+and zero disables color writes. The eight nibbles form the 32-bit mask passed
+to `setRenderTargetMask`.
