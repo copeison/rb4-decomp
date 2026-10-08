@@ -1,5 +1,6 @@
 #include "render/platform/orbis/synchronization/orbis_resource_sync.h"
 
+#include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/synchronization/orbis_resource_sync_adapters.h"
 
 namespace rb4 {

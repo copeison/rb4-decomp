@@ -24,7 +24,9 @@ storage when the residency and usage flags permit it.
 The shared update path at `0x5C2DF0` stamps the current render epoch,
 recalculates the triangle count when triangle data changed, and dispatches the
 format-specific backend update. Both primary and embedded update-listener
-callbacks use that path before atomically clearing the pending flags.
+callbacks use that path before atomically clearing the pending flags. Common
+updates, Orbis draws, and resource synchronization now share the same typed
+epoch interface matching their reads from render-system offset `0xA0`.
 
 The typed base lives in `src/render/core/meshes/render_mesh.cpp`. The Orbis
 layout now embeds it directly before the platform vertex arrays and GPU

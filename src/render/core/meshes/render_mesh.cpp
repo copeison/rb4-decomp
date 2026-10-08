@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "render/core/meshes/render_mesh_adapters.h"
+#include "render/core/system/render_epoch.h"
 
 namespace rb4 {
 

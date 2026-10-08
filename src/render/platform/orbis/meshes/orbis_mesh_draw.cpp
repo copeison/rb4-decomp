@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/meshes/orbis_mesh_adapters.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
 
@@ -120,7 +121,7 @@ void orbis_mesh_draw(
 
     gnmx_finish_draw(context);
     gnm_draw_command_buffer_set_num_instances(context, 1);
-    layout.base.last_used_frame = render_frame_counter();
+    layout.base.last_used_frame = current_render_epoch();
 }
 
 }  // namespace rb4

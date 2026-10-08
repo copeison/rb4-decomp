@@ -99,6 +99,4 @@ void gnm_draw_command_buffer_draw_index_auto(
     OrbisRenderCommandContext& context,
     std::uint32_t vertex_count);
 void gnmx_finish_draw(OrbisRenderCommandContext& context);
-std::uint64_t render_frame_counter();
-
 }  // namespace rb4

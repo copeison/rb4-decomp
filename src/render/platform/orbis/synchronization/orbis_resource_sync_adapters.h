@@ -21,7 +21,6 @@ void orbis_render_context_emit_compute_resource_signal(
     OrbisRenderContext& context,
     volatile std::uint32_t* label,
     std::uint32_t value);
-std::uint64_t current_render_epoch();
 void orbis_render_context_track_resource_signal(
     OrbisRenderContext& context,
     const OrbisResourceSignal& signal);

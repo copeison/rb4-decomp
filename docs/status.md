@@ -50,6 +50,8 @@
 - [x] Recover the Orbis GPU fence factory and backing allocation.
 - [x] Recover the seven-format Orbis mesh factory and format-name map.
 - [x] Reconstruct the common 128-byte render-mesh base and lifetime.
+- [x] Unify the render-system epoch used by common mesh updates, Orbis mesh
+  draws, and resource synchronization.
 - [x] Reconstruct the position-only mesh vertex storage and double-buffered
   GPU update path.
 - [x] Reconstruct the color mesh vertex layout and double-buffered GPU update
