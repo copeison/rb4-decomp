@@ -11,6 +11,14 @@ resource identity: after calling this factory, it allocates a CPU-side block
 from the descriptor's element count and stride and invokes the buffer's
 initialization method.
 
+The common object is 80 bytes. Its first 16 bytes are the render-resource base,
+followed by a byte-for-byte 48-byte descriptor copy and a CPU staging pointer
+at offset `+64`. The descriptor carries the element count, stride, initial CPU
+data, optional external GPU address, flags, and name. The common destructor at
+`0x636D10` releases the staging allocation, while the deleting destructor at
+`0x636D50` also frees the object. Virtual slot 2 returns the unsigned sentinel
+`0xFFFFFFFF`.
+
 Backend initialization at `0x8E3350` first releases both GPU banks. Flag bit
 `0x10` selects two banks; otherwise one bank is created. Each bank receives a
 16-byte Gnm buffer descriptor using the authored element count and stride.

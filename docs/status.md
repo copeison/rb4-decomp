@@ -102,6 +102,7 @@
 - [x] Reconstruct Orbis cube texture-array shader-stage binding.
 - [x] Recover the Orbis compute-buffer factory and repair adjacent function boundaries.
 - [x] Reconstruct Orbis compute-buffer storage, updates, binding, and destruction.
+- [x] Reconstruct the common render compute-buffer factory and 80-byte base layout.
 - [x] Reconstruct the Orbis particle-buffer allocation, upload, draw, and destruction paths.
 - [x] Reconstruct the Orbis occlusion-query lifecycle and conditional-rendering commands.
 - [x] Recover the Orbis vertex, geometry, pixel, and compute shader factory.

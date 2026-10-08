@@ -1,7 +1,9 @@
 #include "render/platform/orbis/buffers/orbis_compute_buffer.h"
 
 #include <cstddef>
+#include <cstring>
 
+#include "render/core/render_compute_buffer_adapters.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_adapters.h"
 
 namespace rb4 {
@@ -25,20 +27,25 @@ OrbisComputeBuffer* orbis_create_compute_buffer(
 void orbis_compute_buffer_construct(
     OrbisComputeBuffer& buffer,
     const RenderComputeBufferDescriptor& descriptor) {
-    compute_buffer_construct(buffer, descriptor);
-    orbis_compute_buffer_clear_backend_state(buffer);
+    render_compute_buffer_construct(buffer, descriptor);
+    orbis_compute_buffer_install_vtable(buffer);
+    buffer.descriptors[0] = {};
+    buffer.descriptors[1] = {};
+    buffer.allocations[0] = nullptr;
+    buffer.allocations[1] = nullptr;
+    buffer.active_bank = 0;
 }
 
 // Reconstructed from eboot.elf at 0x8E3290.
 void orbis_compute_buffer_destruct(OrbisComputeBuffer& buffer) {
     orbis_compute_buffer_release_backend(buffer);
-    compute_buffer_destruct(buffer);
+    render_compute_buffer_destruct(buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E32F0.
 void orbis_compute_buffer_delete(OrbisComputeBuffer& buffer) {
     orbis_compute_buffer_destruct(buffer);
-    render_delete_compute_buffer(buffer);
+    render_delete_compute_buffer_storage(buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E3350.
@@ -50,13 +57,19 @@ bool orbis_compute_buffer_initialize_backend(OrbisComputeBuffer& buffer) {
 
 // Reconstructed from eboot.elf at 0x8E34D0.
 void orbis_compute_buffer_release_backend(OrbisComputeBuffer& buffer) {
-    orbis_compute_buffer_release_allocations(buffer);
+    for (auto& allocation : buffer.allocations) {
+        orbis_defer_compute_buffer_release(allocation);
+        allocation = nullptr;
+    }
 }
 
 // Reconstructed from eboot.elf at 0x8E3510.
 void orbis_compute_buffer_update_gpu_data(OrbisComputeBuffer& buffer) {
-    orbis_compute_buffer_flip_active_storage(buffer);
-    orbis_compute_buffer_upload_active_data(buffer);
+    buffer.active_bank = (buffer.active_bank & 1U) == 0 ? 1 : 0;
+    std::memcpy(
+        buffer.allocations[buffer.active_bank],
+        buffer.staging_data,
+        buffer.staging_size);
 }
 
 // Reconstructed from eboot.elf at 0x8E3580.

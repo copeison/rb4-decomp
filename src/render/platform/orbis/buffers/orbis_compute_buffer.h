@@ -2,13 +2,24 @@
 
 #include <cstdint>
 
+#include "render/core/render_compute_buffer.h"
 #include "render/core/render_shader.h"
 
 namespace rb4 {
 
-struct OrbisComputeBuffer;
 struct OrbisRenderContext;
-struct RenderComputeBufferDescriptor;
+
+struct OrbisGnmBufferDescriptor {
+    std::uint8_t data[16];
+};
+
+struct OrbisComputeBuffer : RenderComputeBuffer {
+    OrbisGnmBufferDescriptor descriptors[2];
+    void* allocations[2];
+    std::size_t active_bank;
+};
+
+static_assert(sizeof(OrbisComputeBuffer) == 136);
 
 OrbisComputeBuffer* orbis_create_compute_buffer(
     const RenderComputeBufferDescriptor& descriptor);
