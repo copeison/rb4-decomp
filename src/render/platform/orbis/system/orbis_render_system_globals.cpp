@@ -20,9 +20,15 @@ struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_120[3684];
     std::int32_t video_output_handle;
     SceKernelEqueue event_queue;
-    std::uint8_t reserved_3816[24];
+    std::uint8_t reserved_3816[8];
+    ScePthreadMutex* submit_condition_mutex;
+    ScePthreadCond submit_condition;
     std::uint64_t submit_token;
     bool submit_thread_running;
+    std::uint8_t reserved_3849[431];
+    std::int32_t submission_lock_depth;
+    std::uint8_t reserved_4284[4];
+    ScePthreadMutex submission_mutex;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
@@ -31,9 +37,17 @@ static_assert(offsetof(OrbisRenderSystemRuntimePrefix, back_buffer) == 112);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, video_output_handle) == 3804);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, event_queue) == 3808);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_condition_mutex) == 3824);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submit_condition) == 3832);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submission_lock_depth) == 4280);
+static_assert(
+    offsetof(OrbisRenderSystemRuntimePrefix, submission_mutex) == 4288);
 
 }  // namespace
 
@@ -74,6 +88,31 @@ void orbis_set_event_queue(
     SceKernelEqueue queue) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->event_queue = queue;
+}
+
+void orbis_initialize_submit_condition(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->submit_condition_mutex = &runtime->submission_mutex;
+
+    ScePthreadCondattr attributes;
+    scePthreadCondattrInit(&attributes);
+    scePthreadCondInit(
+        &runtime->submit_condition, &attributes, "Condition");
+}
+
+void orbis_destroy_submit_condition(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    if (runtime->submit_condition_mutex == nullptr) {
+        return;
+    }
+    scePthreadCondDestroy(&runtime->submit_condition);
+    runtime->submit_condition_mutex = nullptr;
+}
+
+void orbis_wait_for_submit_token(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    scePthreadCondWait(
+        &runtime->submit_condition, runtime->submit_condition_mutex);
 }
 
 void render_system_set_render_context(

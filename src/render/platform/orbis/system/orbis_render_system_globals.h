@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <_pthread.h>
 #include <kernel/equeue.h>
 
 namespace rb4 {
@@ -24,6 +25,9 @@ void orbis_set_video_output_handle(
 void orbis_set_event_queue(
     OrbisRenderSystem& system,
     SceKernelEqueue queue);
+void orbis_initialize_submit_condition(OrbisRenderSystem& system);
+void orbis_destroy_submit_condition(OrbisRenderSystem& system);
+void orbis_wait_for_submit_token(OrbisRenderSystem& system);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
     OrbisRenderContext& context);
