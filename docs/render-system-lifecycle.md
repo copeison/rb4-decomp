@@ -138,6 +138,11 @@ the backend, lighting, and resource-manager state first, then destroys and
 frees the primitive and audio sets, clearing both owning pointers before the
 built-in constant buffers are released.
 
+The backend slot at `0xDE8` is now typed as an owner of a 344-byte resource.
+Its allocation, dynamic release through vtable slot `0x08`, and pointer clear
+are direct; only the resource's internal construction and registration remain
+one focused adapter.
+
 The lifecycle constructor now owns the complete contiguous backend-state setup
 from the resource manager at `0x9F0` through the four null built-in buffer
 slots at `0xE80`. Resource-manager runtime algorithms and lighting

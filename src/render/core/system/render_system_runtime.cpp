@@ -20,6 +20,7 @@
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/resources/system/default_render_resources.h"
+#include "render/resources/system/render_backend_resource.h"
 #include "render/resources/system/render_resource_manager.h"
 #include "render/resources/system/render_resource_manager_adapters.h"
 
@@ -30,7 +31,6 @@ namespace {
 constexpr std::size_t kBuiltinBufferDescriptorOffset = 2712;
 constexpr std::size_t kBuiltinBufferStorageOffset = 3712;
 constexpr std::size_t kFloatsPerConstantBufferElement = 4;
-constexpr std::size_t kBackendResourceOffset = 3560;
 constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
 
@@ -105,7 +105,7 @@ void initialize_runtime_resources(RenderSystem& system) {
     render_lighting_resources_initialize(
         render_system_lighting_resources(system));
     render_backend_resource_create(
-        runtime_pointer_at(system, kBackendResourceOffset));
+        render_system_backend_resource(system));
 
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
@@ -125,7 +125,7 @@ void initialize_runtime_resources(RenderSystem& system) {
 
 void shutdown_runtime_resources(RenderSystem& system) {
     render_backend_resource_release(
-        runtime_pointer_at(system, kBackendResourceOffset));
+        render_system_backend_resource(system));
     render_lighting_resources_shutdown(
         render_system_lighting_resources(system));
     render_resource_manager_shutdown(

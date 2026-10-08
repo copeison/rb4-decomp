@@ -7,7 +7,5 @@ namespace rb4 {
 struct RenderGpuStatBlock;
 struct RenderSystem;
 
-void render_backend_resource_create(void*& resource);
-void render_backend_resource_release(void*& resource);
 void render_gpu_stat_block_initialize(RenderGpuStatBlock& block);
 }  // namespace rb4
