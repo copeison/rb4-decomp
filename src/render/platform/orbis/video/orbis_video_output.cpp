@@ -1,5 +1,6 @@
 #include "render/platform/orbis/video/orbis_video_output.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <kernel/equeue.h>
@@ -22,6 +23,7 @@ std::int32_t sceGnmAddEqEvent(
 std::int32_t sceGnmDeleteEqEvent(
     SceKernelEqueue queue,
     std::uint32_t event_id);
+std::int32_t sceGnmSubmitDone();
 
 }
 
@@ -99,6 +101,49 @@ void orbis_video_output_close(OrbisRenderSystem& system) {
 
 void orbis_hide_system_splash_screen() {
     sceSystemServiceHideSplashScreen();
+}
+
+bool orbis_wait_for_submit_events(
+    OrbisRenderSystem& system,
+    OrbisSubmitEvent* events,
+    std::size_t capacity,
+    std::size_t& event_count) {
+    constexpr SceKernelUseconds kWaitTimeoutMicroseconds = 1'000'000;
+    std::array<SceKernelEvent, 4> kernel_events{};
+    auto timeout = kWaitTimeoutMicroseconds;
+    int kernel_event_count = 0;
+    const auto wait_capacity = static_cast<int>(
+        std::min(capacity, kernel_events.size()));
+    const auto result = sceKernelWaitEqueue(
+        orbis_event_queue(system),
+        kernel_events.data(),
+        wait_capacity,
+        &kernel_event_count,
+        &timeout);
+    if (result != 0) {
+        event_count = 0;
+        return false;
+    }
+
+    event_count = 0;
+    for (int index = 0; index < kernel_event_count; ++index) {
+        const auto filter = sceKernelGetEventFilter(&kernel_events[index]);
+        if (filter == SCE_KERNEL_EVFILT_VIDEO_OUT) {
+            events[event_count++].type =
+                OrbisSubmitEventType::kFlipComplete;
+        } else if (filter == SCE_KERNEL_EVFILT_GNM) {
+            events[event_count++].type = OrbisSubmitEventType::kEndOfPipe;
+        }
+    }
+    return true;
+}
+
+void orbis_process_submit_timeout(OrbisRenderSystem& system) {
+    orbis_lock_submission(system);
+    orbis_submit_scope_begin(system);
+    sceGnmSubmitDone();
+    orbis_submit_scope_end(system);
+    orbis_unlock_submission(system);
 }
 
 // Reconstructed from eboot.elf at 0x8D7B20.

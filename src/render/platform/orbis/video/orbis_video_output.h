@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rb4 {
 
 struct OrbisRenderSystem;
+struct OrbisSubmitEvent;
 
 void orbis_video_output_open(OrbisRenderSystem& system);
 void orbis_video_output_set_flip_rate(
@@ -27,6 +29,12 @@ void orbis_unregister_gnm_event(
 void orbis_delete_event_queue(OrbisRenderSystem& system);
 void orbis_video_output_close(OrbisRenderSystem& system);
 void orbis_hide_system_splash_screen();
+bool orbis_wait_for_submit_events(
+    OrbisRenderSystem& system,
+    OrbisSubmitEvent* events,
+    std::size_t capacity,
+    std::size_t& event_count);
+void orbis_process_submit_timeout(OrbisRenderSystem& system);
 void orbis_render_system_initialize(OrbisRenderSystem& system);
 void orbis_render_system_shutdown(OrbisRenderSystem& system);
 void orbis_render_system_delete(OrbisRenderSystem& system);
