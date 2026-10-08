@@ -21,6 +21,11 @@ node in the deferred-command list, destroys both recursive mutexes, cancels a
 remaining submit pthread when present, releases condition-variable state, and
 then invokes the base render-system destructor.
 
+These constructor and destructor fields are now source-owned. The only narrow
+object-lifetime boundary left here installs the Orbis class vtable, whose
+unrecovered virtual entries extend beyond the resource factory documented
+below.
+
 Runtime shutdown remains a separate phase. `render_system_shutdown` closes the
 active backend and owned GPU resources before the virtual deleting destructor
 reaches this object destructor.

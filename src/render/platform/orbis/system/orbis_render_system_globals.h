@@ -28,6 +28,12 @@ void orbis_set_video_output_handle(
 void orbis_set_event_queue(
     OrbisRenderSystem& system,
     SceKernelEqueue queue);
+void orbis_render_system_initialize_video_state(OrbisRenderSystem& system);
+void orbis_render_system_initialize_submission_state(
+    OrbisRenderSystem& system);
+void orbis_render_system_initialize_command_list(OrbisRenderSystem& system);
+void orbis_render_system_destroy_command_list(OrbisRenderSystem& system);
+void orbis_render_system_destroy_submission_state(OrbisRenderSystem& system);
 void orbis_initialize_submit_condition(OrbisRenderSystem& system);
 void orbis_destroy_submit_condition(OrbisRenderSystem& system);
 void orbis_wait_for_submit_token(OrbisRenderSystem& system);

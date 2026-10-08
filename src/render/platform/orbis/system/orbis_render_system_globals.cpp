@@ -1,7 +1,9 @@
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
+#include <algorithm>
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "core/threading/engine_thread.h"
 #include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
@@ -101,6 +103,28 @@ static_assert(
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, cached_flip_rate) == 4344);
 
+void initialize_recursive_mutex(ScePthreadMutex& mutex) {
+    ScePthreadMutexattr attributes;
+    scePthreadMutexattrInit(&attributes);
+    scePthreadMutexattrSettype(&attributes, 2);
+    scePthreadMutexInit(&mutex, &attributes, "hx crit sec");
+    scePthreadMutexattrDestroy(&attributes);
+}
+
+void destroy_recursive_mutex(
+    ScePthreadMutex& mutex,
+    std::int32_t& lock_depth) {
+    scePthreadMutexLock(&mutex);
+    const auto outstanding_locks = lock_depth;
+    scePthreadMutexUnlock(&mutex);
+
+    for (auto index = 0; index < outstanding_locks; ++index) {
+        --lock_depth;
+        scePthreadMutexUnlock(&mutex);
+    }
+    scePthreadMutexDestroy(&mutex);
+}
+
 }  // namespace
 
 OrbisRenderSystem* orbis_render_system_instance() {
@@ -140,6 +164,57 @@ void orbis_set_event_queue(
     SceKernelEqueue queue) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->event_queue = queue;
+}
+
+void orbis_render_system_initialize_video_state(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    std::fill_n(
+        runtime->reserved_3816,
+        sizeof(runtime->reserved_3816),
+        std::uint8_t{0});
+    runtime->submit_condition_mutex = nullptr;
+    runtime->submit_token = 1;
+    runtime->default_vertex_buffer = nullptr;
+}
+
+void orbis_render_system_initialize_submission_state(
+    OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->submission_lock_depth = 0;
+    initialize_recursive_mutex(runtime->submission_mutex);
+    runtime->retired_allocation_lock_depth = 0;
+    initialize_recursive_mutex(runtime->retired_allocation_mutex);
+}
+
+void orbis_render_system_initialize_command_list(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* sentinel = reinterpret_cast<RetiredAllocationNode*>(
+        &runtime->retired_allocations_head);
+    runtime->retired_allocations_head = sentinel;
+    runtime->retired_allocations_tail = sentinel;
+    runtime->retired_allocation_count = 0;
+}
+
+void orbis_render_system_destroy_command_list(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    auto* sentinel = reinterpret_cast<RetiredAllocationNode*>(
+        &runtime->retired_allocations_head);
+    auto* node = runtime->retired_allocations_head;
+    while (node != sentinel) {
+        auto* next = node->next;
+        engine_deallocate_sized(node, sizeof(*node));
+        node = next;
+    }
+}
+
+void orbis_render_system_destroy_submission_state(OrbisRenderSystem& system) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    destroy_recursive_mutex(
+        runtime->retired_allocation_mutex,
+        runtime->retired_allocation_lock_depth);
+    destroy_recursive_mutex(
+        runtime->submission_mutex,
+        runtime->submission_lock_depth);
 }
 
 void orbis_initialize_submit_condition(OrbisRenderSystem& system) {

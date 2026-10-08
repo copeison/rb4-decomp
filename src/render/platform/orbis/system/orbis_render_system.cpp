@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "core/memory/engine_memory.h"
 #include "core/threading/engine_thread.h"
 #include "render/platform/orbis/system/orbis_render_system_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -27,6 +28,7 @@ OrbisRenderSystem* orbis_render_system_create() {
 // Reconstructed from eboot.elf at 0x8D77F0.
 void orbis_render_system_construct(OrbisRenderSystem& system) {
     render_system_construct(orbis_render_system_base(system));
+    orbis_render_system_install_vtable(system);
     orbis_render_system_initialize_video_state(system);
     engine_thread_initialize(
         orbis_submit_thread_wrapper(system), kUnknownWorkerName);
@@ -42,7 +44,7 @@ void orbis_render_system_destruct(OrbisRenderSystem& system) {
     orbis_render_system_destroy_command_list(system);
     orbis_render_system_destroy_submission_state(system);
     engine_thread_cancel(orbis_submit_thread(system));
-    orbis_render_system_destroy_condition_state(system);
+    orbis_destroy_submit_condition(system);
     render_system_destruct(orbis_render_system_base(system));
 }
 

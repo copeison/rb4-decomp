@@ -11,5 +11,6 @@ void* render_allocate_named(
     std::size_t alignment);
 void render_release(void* allocation);
 void render_free(void* allocation);
+void engine_deallocate_sized(void* allocation, std::size_t size);
 
 }  // namespace rb4

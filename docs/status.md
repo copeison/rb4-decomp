@@ -57,6 +57,8 @@
   six-processor default affinity policy.
 - [x] Recover default engine-thread object initialization and cancellation,
   including the Orbis submit worker's initial priority and name.
+- [x] Reconstruct Orbis submit-state defaults, recursive mutex lifetime, and
+  the self-linked retired-allocation list construction and destruction.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and
