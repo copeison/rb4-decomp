@@ -4,24 +4,6 @@
 
 namespace rb4 {
 
-namespace {
-
-struct RenderFrameOwnerRuntimePrefix {
-    std::uint8_t reserved_0[32];
-    std::size_t active_frame;
-};
-
-static_assert(offsetof(RenderFrameOwnerRuntimePrefix, active_frame) == 32);
-
-}  // namespace
-
-std::size_t render_frame_owner_active_frame_index(
-    const RenderFrameOwner& owner) {
-    const auto* runtime =
-        reinterpret_cast<const RenderFrameOwnerRuntimePrefix*>(&owner);
-    return runtime->active_frame;
-}
-
 // Reconstructed from eboot.elf at 0x448730.
 RenderExtent render_frame_owner_output_extent(const RenderFrameOwner& owner) {
     const auto targets = render_frame_owner_target_states(owner);

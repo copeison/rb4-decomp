@@ -67,9 +67,6 @@ void orbis_render_context_destruct_compute_slot(
     std::size_t slot);
 void orbis_render_context_destruct_command_state(
     OrbisRenderContext& context);
-void render_system_set_render_context(
-    OrbisRenderSystem& system,
-    OrbisRenderContext& context);
 void orbis_render_context_emit_end_of_frame_event(
     OrbisRenderContext& context,
     std::size_t frame);

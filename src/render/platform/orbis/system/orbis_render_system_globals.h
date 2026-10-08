@@ -7,6 +7,7 @@ namespace rb4 {
 
 struct OrbisRenderSystem;
 struct OrbisRenderContext;
+struct OrbisBackBuffer;
 struct RenderSystem;
 
 extern OrbisRenderSystem* g_orbis_render_system;
@@ -14,6 +15,12 @@ extern OrbisRenderSystem* g_orbis_render_system;
 OrbisRenderSystem* orbis_render_system_instance();
 RenderSystem& orbis_render_system_base(OrbisRenderSystem& system);
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
+void render_system_set_render_context(
+    OrbisRenderSystem& system,
+    OrbisRenderContext& context);
+void render_system_set_back_buffer(
+    OrbisRenderSystem& system,
+    OrbisBackBuffer& back_buffer);
 bool orbis_frame_is_active(const OrbisRenderSystem& system);
 std::uint64_t orbis_render_system_epoch(const OrbisRenderSystem& system);
 bool orbis_submit_token_available(const OrbisRenderSystem& system);

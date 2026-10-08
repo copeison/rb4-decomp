@@ -4,6 +4,7 @@
 #include <cstddef>
 
 #include "render/core/targets/render_target.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
 
 namespace rb4 {

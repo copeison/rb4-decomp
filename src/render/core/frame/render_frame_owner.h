@@ -18,8 +18,6 @@ struct RenderExtent {
 };
 
 RenderExtent render_frame_owner_output_extent(const RenderFrameOwner& owner);
-std::size_t render_frame_owner_active_frame_index(
-    const RenderFrameOwner& owner);
 std::uint32_t render_frame_owner_draw_mode(const RenderFrameOwner& owner);
 std::uint32_t render_frame_owner_debug_view(const RenderFrameOwner& owner);
 void render_frame_owner_set_draw_mode(

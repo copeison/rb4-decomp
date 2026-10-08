@@ -39,8 +39,4 @@ void orbis_video_output_register_back_buffers(
     OrbisRenderSystem& system,
     const OrbisGpuRenderTarget* targets,
     std::size_t target_count);
-void render_system_set_back_buffer(
-    OrbisRenderSystem& system,
-    OrbisBackBuffer& back_buffer);
-
 }  // namespace rb4

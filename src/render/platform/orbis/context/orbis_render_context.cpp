@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
+#include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {
 

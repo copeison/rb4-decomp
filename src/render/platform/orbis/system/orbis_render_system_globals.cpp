@@ -2,9 +2,8 @@
 
 #include <cstddef>
 
-#include "render/core/frame/render_frame_owner.h"
 #include "render/core/system/render_epoch.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/platform/orbis/video/orbis_back_buffer.h"
 
 namespace rb4 {
 
@@ -16,13 +15,16 @@ struct OrbisRenderSystemRuntimePrefix {
     std::uint8_t reserved_0[56];
     OrbisRenderContext* render_context;
     bool frame_active;
-    std::uint8_t reserved_65[3775];
+    std::uint8_t reserved_65[47];
+    OrbisBackBuffer* back_buffer;
+    std::uint8_t reserved_120[3720];
     std::uint64_t submit_token;
     bool submit_thread_running;
 };
 
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, render_context) == 56);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, frame_active) == 64);
+static_assert(offsetof(OrbisRenderSystemRuntimePrefix, back_buffer) == 112);
 static_assert(offsetof(OrbisRenderSystemRuntimePrefix, submit_token) == 3840);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread_running) == 3848);
@@ -40,6 +42,20 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
 OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return *runtime->render_context;
+}
+
+void render_system_set_render_context(
+    OrbisRenderSystem& system,
+    OrbisRenderContext& context) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->render_context = &context;
+}
+
+void render_system_set_back_buffer(
+    OrbisRenderSystem& system,
+    OrbisBackBuffer& back_buffer) {
+    auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
+    runtime->back_buffer = &back_buffer;
 }
 
 bool orbis_frame_is_active(const OrbisRenderSystem& system) {
@@ -71,9 +87,10 @@ bool orbis_submit_thread_running(const OrbisRenderSystem& system) {
 }
 
 std::size_t orbis_active_render_frame_index() {
-    auto& base = orbis_render_system_base(*g_orbis_render_system);
-    return render_frame_owner_active_frame_index(
-        *render_system_frame_owner(base));
+    const auto* runtime =
+        reinterpret_cast<const OrbisRenderSystemRuntimePrefix*>(
+            g_orbis_render_system);
+    return runtime->back_buffer->active_buffer;
 }
 
 void orbis_render_system_publish_instance(OrbisRenderSystem& system) {
