@@ -46,6 +46,13 @@ Scratch textures use `{64, 4, 2, 1, -1}` and the two soften-tile textures use
 `{8, 10, 0, 1, -1}` at the rounded tile extent. The 2D resources use filter
 value `1`; every created texture is registered with the owner.
 
+The primary per-scene tiled-light block also creates an interpolation texture
+at an even-width, half-height extent. Its direct descriptor uses creation
+values six and eight set to `1`, value nine set to `2`, value ten set to `10`,
+and format `{64, 4, 2, 1, -1}`. Reuse prefers the prior block's interpolation
+texture, then the owner's primary shadow-contribution scratch texture when it
+is large enough for the requested extent.
+
 `render_target_resources_initialize` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.

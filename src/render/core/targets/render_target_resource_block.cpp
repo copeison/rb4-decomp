@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "render/core/targets/render_target_resource_block_adapters.h"
+#include "render/core/textures/render_texture.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
 #include "render/gbuffer/gbuffer_targets.h"
@@ -58,8 +59,15 @@ RenderTexture* tiled_light_reuse_target(
             return target;
         }
     }
-    return render_target_resources_tiled_light_fallback_target(
-        resources, tiled_light_interpolation_extent(extent));
+    auto* fallback = resources.shadow_contribution_scratch[0];
+    if (fallback == nullptr) {
+        return nullptr;
+    }
+    const auto interpolation_extent = tiled_light_interpolation_extent(extent);
+    return fallback->width >= interpolation_extent.width &&
+            fallback->height >= interpolation_extent.height
+        ? fallback
+        : nullptr;
 }
 
 }  // namespace
@@ -102,6 +110,7 @@ void render_target_resource_block_initialize(
             ? nullptr
             : tiled_light_reuse_target(resources, reusable_block, extent);
         render_tiled_light_target_buffers_create(
+            resources,
             render_target_resource_block_tiled_light_resources(block),
             extent,
             !partial_frame,

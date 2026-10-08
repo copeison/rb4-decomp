@@ -6,8 +6,9 @@
 #include "render/core/buffers/render_compute_buffer_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/core/targets/render_target_resource_factory.h"
+#include "render/core/textures/render_data_format_adapters.h"
 #include "render/core/textures/render_texture_adapters.h"
-#include "render/lighting/tiled/tiled_light_target_buffer_adapters.h"
 
 namespace rb4 {
 
@@ -69,6 +70,7 @@ void release_render_target(RenderTexture*& target) {
 
 // Reconstructed from eboot.elf at 0x6B3380.
 void render_tiled_light_target_buffers_create(
+    RenderTargetResources& owner,
     TiledLightTargetResources& resources,
     RenderExtent extent,
     bool create_interpolation_target,
@@ -103,9 +105,24 @@ void render_tiled_light_target_buffers_create(
             static_cast<std::uint32_t>(
                 divide_round_up(extent.height, std::size_t{2})),
         };
+        RenderTextureCreationState creation_state{};
+        creation_state.values[6] = 1;
+        creation_state.values[8] = 1;
+        creation_state.values[9] = 2;
+        creation_state.values[10] = 10;
+        const RenderDataFormatDescriptor format_descriptor{
+            64, 4, 2, 1, -1,
+        };
         resources.interpolation_target =
-            render_create_tiled_light_interpolation_target(
-                interpolation_extent, existing_interpolation_target);
+            render_target_resources_create_texture_2d(
+                owner,
+                "Tiled Light Interp",
+                creation_state,
+                render_data_format_resolve(format_descriptor, 7),
+                interpolation_extent,
+                -1,
+                0,
+                existing_interpolation_target);
     }
 
     if (stereo) {

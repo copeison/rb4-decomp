@@ -8,6 +8,7 @@
 namespace rb4 {
 
 struct RenderComputeBuffer;
+struct RenderTargetResources;
 struct RenderTexture;
 
 struct TiledLightTargetResources {
@@ -28,6 +29,7 @@ static_assert(
 static_assert(sizeof(TiledLightTargetResources) == 144);
 
 void render_tiled_light_target_buffers_create(
+    RenderTargetResources& owner,
     TiledLightTargetResources& resources,
     RenderExtent extent,
     bool create_interpolation_target,

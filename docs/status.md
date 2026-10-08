@@ -37,6 +37,8 @@
 - [x] Reconstruct shared tiled-light compute-buffer initialization.
 - [x] Reconstruct shared tiled-light compute-buffer teardown.
 - [x] Reconstruct per-target tiled-light and stereo compute-buffer allocation.
+- [x] Inline the tiled-light interpolation descriptor and verified
+  shadow-scratch reuse fallback.
 - [x] Reconstruct per-target tiled-light resource teardown.
 - [x] Reconstruct scene-mask render-target allocation and teardown.
 - [x] Inline full-resolution, scratch, and tile scene-mask descriptors and
