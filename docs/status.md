@@ -44,6 +44,8 @@
 - [x] Recover the separate Orbis render-system singleton lifecycle.
 - [x] Reconstruct Orbis video-output and submit-thread startup.
 - [x] Reconstruct Orbis video-output and submit-thread shutdown.
+- [x] Recover common back-buffer and render-context owner release during
+  renderer shutdown.
 - [x] Type the Orbis video handle, event queue, condition variables, recursive
   submission lock, submit token, and worker-running state.
 - [x] Replace verified video, kernel event, Gnm event, splash-service, and

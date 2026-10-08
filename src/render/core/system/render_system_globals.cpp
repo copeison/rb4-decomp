@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "render/core/context/render_context_adapters.h"
+#include "render/core/system/render_system_frame_adapters.h"
 
 namespace rb4 {
 
@@ -95,6 +96,32 @@ void render_system_set_settings(
     RenderSettings* settings) {
     auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
     runtime->settings = settings;
+}
+
+// Reconstructed from eboot.elf at 0x3DED80.
+void render_system_release_back_buffer(RenderSystem& system) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    if (runtime->frame_owner != nullptr) {
+        render_frame_owner_delete(*runtime->frame_owner);
+        runtime->frame_owner = nullptr;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x3DEEA0.
+void render_system_release_render_contexts(RenderSystem& system) {
+    auto* runtime = reinterpret_cast<RenderSystemFramePrefix*>(&system);
+    if (runtime->primary_frame_owner != nullptr) {
+        render_frame_owner_delete(*runtime->primary_frame_owner);
+        runtime->primary_frame_owner = nullptr;
+    }
+
+    while (runtime->frame_owners_end != runtime->frame_owners_begin) {
+        --runtime->frame_owners_end;
+        auto* context = *runtime->frame_owners_end;
+        if (context != nullptr) {
+            render_frame_owner_delete(*context);
+        }
+    }
 }
 
 void render_system_publish_instance(RenderSystem& system) {

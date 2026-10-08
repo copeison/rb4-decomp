@@ -23,6 +23,8 @@ RenderSettings* render_system_settings(RenderSystem& system);
 void render_system_set_settings(
     RenderSystem& system,
     RenderSettings* settings);
+void render_system_release_back_buffer(RenderSystem& system);
+void render_system_release_render_contexts(RenderSystem& system);
 void render_system_publish_instance(RenderSystem& system);
 void render_system_clear_instance();
 

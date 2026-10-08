@@ -292,7 +292,9 @@ void orbis_render_system_shutdown(OrbisRenderSystem& system) {
     orbis_set_submit_thread_running(system, false);
     orbis_join_submit_thread(system);
     orbis_destroy_submit_condition(system);
-    orbis_release_frame_runtime(system);
+    auto& base = orbis_render_system_base(system);
+    render_system_release_back_buffer(base);
+    render_system_release_render_contexts(base);
     orbis_unregister_gnm_event(system, kGnmEventId);
     orbis_delete_event_queue(system);
     orbis_video_output_close(system);

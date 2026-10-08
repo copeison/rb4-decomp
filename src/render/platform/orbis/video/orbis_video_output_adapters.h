@@ -19,7 +19,6 @@ void orbis_start_submit_thread(
     std::uint32_t priority);
 void orbis_initialize_submit_profiler(OrbisRenderSystem& system);
 void orbis_join_submit_thread(OrbisRenderSystem& system);
-void orbis_release_frame_runtime(OrbisRenderSystem& system);
 OrbisVertexBuffer& orbis_allocate_default_vertex_buffer(
     OrbisRenderSystem& system,
     const char* name);
