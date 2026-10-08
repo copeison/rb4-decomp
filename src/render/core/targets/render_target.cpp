@@ -4,6 +4,9 @@
 
 #include "core/memory/engine_memory.h"
 #include "render/core/targets/render_target_adapters.h"
+#include "render/core/targets/render_target_resources.h"
+#include "render/core/targets/render_target_resources_lifecycle.h"
+#include "render/core/targets/render_target_resources_lifecycle_adapters.h"
 
 namespace rb4 {
 
@@ -11,13 +14,40 @@ namespace {
 
 constexpr std::size_t kRenderTargetStateSize = 1552;
 
-struct RenderTargetStateTexturePrefix {
-    std::uint8_t reserved_0[368];
-    RenderTexture* texture;
-};
-
+static_assert(kRenderTargetStateSize == sizeof(RenderTargetResources));
 static_assert(
-    offsetof(RenderTargetStateTexturePrefix, texture) == 368);
+    offsetof(RenderTargetState, state_flags) ==
+    offsetof(RenderTargetResources, flags));
+static_assert(
+    offsetof(RenderTargetState, reserved_12) ==
+    offsetof(RenderTargetResources, resource_mode));
+static_assert(
+    offsetof(RenderTargetState, draw_mode) ==
+    offsetof(RenderTargetResources, reserved_10));
+static_assert(
+    offsetof(RenderTargetState, width) ==
+    offsetof(RenderTargetResources, extent));
+
+RenderTargetResources& target_resources(RenderTargetState& state) {
+    return reinterpret_cast<RenderTargetResources&>(state);
+}
+
+// Reconstructed from eboot.elf at 0x6B40A0.
+void construct_target_state(
+    RenderTargetState& state,
+    std::uint32_t state_flags,
+    std::int32_t resource_mode) {
+    auto& resources = target_resources(state);
+    render_target_resources_construct(
+        resources, state_flags, resource_mode);
+    render_target_resources_set_concrete_dispatch(resources);
+}
+
+// Reconstructed from eboot.elf at 0x6B40E0.
+void delete_target_state(RenderTargetState& state) {
+    render_target_resources_destruct(target_resources(state));
+    render_release(&state);
+}
 
 }  // namespace
 
@@ -35,7 +65,7 @@ void render_target_construct(
     if (create_state) {
         auto* state = static_cast<RenderTargetState*>(
             render_allocate(kRenderTargetStateSize));
-        render_target_state_construct(state, state_flags, nullptr);
+        construct_target_state(*state, state_flags, 0);
         target.owned_state = state;
         target.active_state = state;
     }
@@ -46,7 +76,7 @@ void render_target_destruct(RenderTarget& target) {
     render_target_set_base_dispatch(target);
     if (target.owns_state) {
         if (target.owned_state != nullptr) {
-            render_target_state_delete(target.owned_state);
+            delete_target_state(*target.owned_state);
         }
         target.owned_state = nullptr;
         target.active_state = nullptr;
@@ -71,9 +101,7 @@ RenderTargetStateHandle render_target_active_state_handle(
 }
 
 RenderTexture* render_target_state_texture(RenderTargetState& state) {
-    auto* runtime =
-        reinterpret_cast<RenderTargetStateTexturePrefix*>(&state);
-    return runtime->texture;
+    return target_resources(state).source_texture;
 }
 
 // Reconstructed from eboot.elf at 0x11B2E00.

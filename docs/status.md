@@ -57,6 +57,8 @@
   access throughout the reconstructed target creation and lifecycle paths.
 - [x] Replace identified owner and per-scene target-slot adapters with direct
   typed fields and local enum-to-field mappings.
+- [x] Recover the concrete 1,552-byte render-target state constructor and
+  deleting destructor, including its verified resource-owner prefix mapping.
 - [x] Reconstruct render-target owner mode and partial-block controls.
 - [x] Reconstruct the four-level sky render-target chain.
 - [x] Reconstruct the paired half-, quarter-, and eighth-size intermediate targets.

@@ -11,6 +11,8 @@ struct RenderTexture;
 
 void render_target_resources_set_base_dispatch(
     RenderTargetResources& resources);
+void render_target_resources_set_concrete_dispatch(
+    RenderTargetResources& resources);
 void render_target_resources_bind_source_texture(
     RenderTargetResources& resources,
     RenderTexture& source_texture);

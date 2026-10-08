@@ -8,6 +8,15 @@ and initializes the active scene context to `-1`.
 `render_target_resources_destruct` at `0x6AFFC0` restores the base dispatch
 table before running the common release path.
 
+The 32-byte `RenderTargetState` header is the prefix of this owner. Its state
+flags map to owner flags, its reserved word maps to resource mode, draw/debug
+values occupy the owner's reserved 64-bit field, and width/height map to the
+owner extent. The concrete state constructor at `0x6B40A0` runs the common
+owner constructor and installs the concrete dispatch table. The deleting
+destructor at `0x6B40E0` runs common teardown before freeing the 1,552-byte
+allocation. The common `RenderTarget` lifecycle now calls these recovered
+paths directly.
+
 Code that consumes the verified layout now reads stable owner fields directly:
 flags, extent, attachment cursor, source texture, block storage and count,
 resource mode, active block, scene context, and every identified target or
