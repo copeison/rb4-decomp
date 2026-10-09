@@ -1,14 +1,21 @@
-#include "render/resources/shaders/builtin_shader_resources.h"
+#include "render/postprocessing/downsample/downsample_shader.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <immintrin.h>
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/core/buffers/render_constant_buffer.h"
+#include "render/core/system/render_system_globals.h"
+#include "render/core/system/render_system_state.h"
+#include "render/core/textures/render_texture.h"
+#include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -153,6 +160,64 @@ void render_downsample_shader_construct(void* shader) {
     shader_field(shader, 352) = -1;
     shader_field(shader, 360) = 0;
     shader_field(shader, 368) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x636080. The texel offset is half a texel
+// of the source, (+x, +y, -x, -y), from a refined hardware reciprocal of its
+// dimensions; it is written and the source bound only when a source exists.
+// The constant buffer is uploaded only while its upload flag is set. HDR10
+// output (mode 1) selects the BT.709-to-BT.2020 permutation.
+void render_downsample_shader_draw(
+    void* shader,
+    RenderContext& context,
+    const RenderDownsampleDrawParameters& parameters) {
+    constexpr std::size_t kPixelKey = 3;
+    constexpr std::uint32_t kTextureFlags = 2;
+    constexpr std::uint32_t kHdr10Output = 1;
+
+    const auto extent = static_cast<std::uint64_t>(shader_field(shader, 360));
+    auto& buffer = render_shader_select_constant_buffer(context, extent);
+    if (auto* source = parameters.source) {
+        const auto width = static_cast<std::int32_t>(source->width);
+        const auto height = static_cast<std::int32_t>(source->height);
+        const auto size = _mm_cvtepi32_ps(
+            _mm_setr_epi32(width, height, width, height));
+        const auto estimate = _mm_rcp_ps(size);
+        const auto refined = _mm_add_ps(
+            estimate,
+            _mm_mul_ps(
+                estimate,
+                _mm_sub_ps(_mm_set1_ps(1.0F), _mm_mul_ps(size, estimate))));
+        const auto offset =
+            _mm_mul_ps(refined, _mm_setr_ps(0.5F, 0.5F, -0.5F, -0.5F));
+        _mm_storeu_ps(
+            static_cast<float*>(render_shader_constant_member(
+                buffer, shader_field(shader, 352))),
+            offset);
+        buffer.upload_pending = true;
+        render_shader_bind_pixel_texture(
+            context, source, shader_field(shader, 368), kTextureFlags);
+    }
+    if (buffer.upload_pending) {
+        render_constant_buffer_update_range(buffer, context, 0, extent);
+        buffer.upload_pending = false;
+    }
+    render_constant_buffer_bind(buffer, context);
+
+    const auto hdr_mode = render_system_core_state(*render_system_instance())
+                              .render_contexts.hdr_output_mode;
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        0, parameter_binding(shader, 0), hdr_mode == kHdr10Output ? 1U : 0U);
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        keys[kPixelKey],
+        parameter_binding(shader, 1),
+        static_cast<std::uint32_t>(parameters.downsample_type));
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        keys[kPixelKey],
+        parameter_binding(shader, 2),
+        parameters.value_based_bloom ? 1U : 0U);
+    render_primary_shader_bind(primary_shader(shader), context, keys);
 }
 
 }  // namespace rb4

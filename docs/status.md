@@ -442,6 +442,8 @@
   pixel texture binding, per-draw constant buffers, and key packing.
 - [x] Reconstruct the output-conversion draw function and the shared
   sRGB-to-linear color conversion.
+- [x] Reconstruct the downsample draw function, including its refined
+  hardware-reciprocal texel offset and HDR10 color-space selection.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
