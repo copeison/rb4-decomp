@@ -1,49 +1,11 @@
-#include "render/debug/render_debug_mode.h"
+#include "render/debug/RndBufferInspection.h"
 
-#include <array>
 #include <cctype>
-#include <cstring>
-
-namespace rb4 {
 
 namespace {
 
-constexpr std::array<const char*, 32> kDrawModeNames = {{
-    "Lit",
-    "Fast + Cheap",
-    "Unlit",
-    "Overdraw",
-    "Batches",
-    "Batch Size",
-    "Lighting Only",
-    "Lit (Diffuse)",
-    "Lit (Specular)",
-    "Lit (Direct)",
-    "Lit (Direct Diffuse)",
-    "Lit (Direct Specular)",
-    "Lit (Indirect)",
-    "Lit (Indirect Diffuse)",
-    "Lit (Indirect Specular)",
-    "No Negative Lights",
-    "Lighting Overdraw",
-    "Light Probe Overdraw",
-    "Vertex Color",
-    "Vertex Alpha",
-    "Vertex Normal",
-    "Vertex Tangent",
-    "Vertex Bitangent",
-    "Pixel Normal",
-    "UV0",
-    "UV1",
-    "Lighting Path",
-    "Material Color",
-    "Material Alpha",
-    "Material Smoothness",
-    "Material Metallicity",
-    "Material Emissive",
-}};
-
-constexpr std::array<const char*, 74> kDebugViewNames = {{
+// Names of the buffer inspection modes. Name not in the reference map.
+const char* const kModeNames[RndBufferInspection::kNumModes] = {
     "None",
     "Thumbnails (Common)",
     "Thumbnails (GBuffer)",
@@ -118,13 +80,14 @@ constexpr std::array<const char*, 74> kDebugViewNames = {{
     "Mask Tile Buffer",
     "Screen Space Ambient Occlusion",
     "Function Table",
-}};
+};
 
-bool equals_ignore_ascii_case(const char* left, const char* right) {
+// Name not in the reference map.
+bool EqualsIgnoreCase(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
-        const auto left_char = static_cast<unsigned char>(*left++);
-        const auto right_char = static_cast<unsigned char>(*right++);
-        if (std::tolower(left_char) != std::tolower(right_char)) {
+        const auto leftChar = static_cast<unsigned char>(*left++);
+        const auto rightChar = static_cast<unsigned char>(*right++);
+        if (std::tolower(leftChar) != std::tolower(rightChar)) {
             return false;
         }
     }
@@ -133,40 +96,21 @@ bool equals_ignore_ascii_case(const char* left, const char* right) {
 
 }  // namespace
 
-// Reconstructed from eboot.elf at 0x645E40.
-const char* render_draw_mode_name(std::uint32_t mode) {
-    return mode < kDrawModeNames.size() ? kDrawModeNames[mode] : nullptr;
-}
-
-// Reconstructed from eboot.elf at 0x645E80.
-std::uint32_t render_draw_mode_from_name(const char* name) {
-    if (name == nullptr) {
-        return kInvalidRenderDebugMode;
-    }
-    for (std::uint32_t index = 0; index < kDrawModeNames.size(); ++index) {
-        if (std::strcmp(kDrawModeNames[index], name) == 0) {
-            return index;
-        }
-    }
-    return kInvalidRenderDebugMode;
-}
-
 // Reconstructed from eboot.elf at 0x6B4EE0.
-const char* render_debug_view_name(std::uint32_t view) {
-    return view < kDebugViewNames.size() ? kDebugViewNames[view] : nullptr;
+const char* RndBufferInspection::ToString(RndBufferInspectionMode mode) {
+    return static_cast<unsigned int>(mode) < kNumModes ? kModeNames[mode]
+                                                       : nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x6B5510.
-std::uint32_t render_debug_view_from_name(const char* name) {
+RndBufferInspectionMode RndBufferInspection::FromString(const char* name) {
     if (name == nullptr) {
-        return kInvalidRenderDebugMode;
+        return static_cast<RndBufferInspectionMode>(-1);
     }
-    for (std::uint32_t index = 0; index < kDebugViewNames.size(); ++index) {
-        if (equals_ignore_ascii_case(name, kDebugViewNames[index])) {
-            return index;
+    for (unsigned int mode = 0; mode < kNumModes; ++mode) {
+        if (EqualsIgnoreCase(name, kModeNames[mode])) {
+            return static_cast<RndBufferInspectionMode>(mode);
         }
     }
-    return kInvalidRenderDebugMode;
+    return static_cast<RndBufferInspectionMode>(-1);
 }
-
-}  // namespace rb4

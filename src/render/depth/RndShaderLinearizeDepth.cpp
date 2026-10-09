@@ -1,6 +1,6 @@
 #include "render/depth/RndShaderLinearizeDepth.h"
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
 
@@ -34,5 +34,5 @@ void RndShaderLinearizeDepth::_InitConfigImpl(
 void RndShaderLinearizeDepth::Select(
     RndContext& context,
     RndTextureBase& depth) {
-    rb4::render_shader_draw_with_pixel_texture(*this, context, depth, mTexture);
+    RndShaderDrawUtl::SelectWithPixelTexture(*this, context, depth, mTexture);
 }

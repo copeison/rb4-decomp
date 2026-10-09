@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/shaders/shader_cache_validation.h"
+#include "render/shaders/RndShaderIncludeChecksums.h"
 #include "render/shaders/RndShaderDefines.h"
 
 class RndShaderError;
@@ -141,7 +141,7 @@ public:
     RndCShaderRenderTestCompute* mRenderTestComputeCShader;
 
     unsigned long mFixedDefinesChecksum;  // Low 32 bits: FNV-1a of the fixed defines.
-    rb4::RenderShaderCacheDefineArray* mIncludeChecksums;
+    RndShaderIncludeChecksums* mIncludeChecksums;
     RndShaderLink* mShaders;
     RndShaderLink* mShaderGraphs;
 };

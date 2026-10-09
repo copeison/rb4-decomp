@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 
@@ -49,12 +49,12 @@ void RndShaderRenderTestSimple::Select(
     constexpr unsigned long kPixelKey = 3;
     if (params.mUseCBufferColor) {
         auto& buffer =
-            rb4::render_shader_select_constant_buffer(context, mCBufferSize);
+            RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
         std::memcpy(
-            rb4::render_shader_constant_member(buffer, mColor),
+            RndShaderDrawUtl::GetCBufferMember(buffer, mColor),
             params.mColor,
             sizeof(params.mColor));
-        rb4::render_shader_commit_constant_buffer(buffer, context, mCBufferSize);
+        RndShaderDrawUtl::CommitCBuffer(buffer, context, mCBufferSize);
     }
 
     const auto globalField = static_cast<RndShaderKey>(

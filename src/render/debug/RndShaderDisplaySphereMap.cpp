@@ -1,6 +1,6 @@
 #include "render/debug/RndShaderDisplaySphereMap.h"
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTexture2D.h"
@@ -35,6 +35,6 @@ void RndShaderDisplaySphereMap::_InitConfigImpl(
 void RndShaderDisplaySphereMap::Select(
     RndContext& context,
     RndTexture2D& sphereMap) {
-    rb4::render_shader_draw_with_pixel_texture(
+    RndShaderDrawUtl::SelectWithPixelTexture(
         *this, context, sphereMap, mSphereMap);
 }

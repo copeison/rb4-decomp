@@ -1,9 +1,7 @@
 #include "render/shaders/RndShaderResourceConfig.h"
 
-#include "render/shaders/shader_source_hash.h"
+#include "render/shaders/RndShaderUtl.h"
 #include "utl/text/Symbol.h"
-
-using namespace rb4;
 
 namespace {
 
@@ -31,11 +29,11 @@ const Symbol& EmptySymbol() {
 }
 
 void Print(unsigned int& hash, const char* text) {
-    render_shader_source_hash_append(hash, text);
+    CrcPrint(hash, text);
 }
 
 void Print(unsigned int& hash, unsigned long value) {
-    render_shader_source_hash_append_unsigned(hash, value);
+    CrcPrintUnsigned(hash, value);
 }
 
 // The original passes possibly-null text straight to the stream; no
@@ -354,12 +352,14 @@ void RndShaderResourceConfig::_PrintTexture(
     Print(hash, Separator(metal));
     PrintOptional(hash, TextureMacro(info, write));
     Print(hash, ", ");
-    PrintOptional(hash, render_shader_constant_type_name(info.mNumericType));
+    const auto numericType =
+        static_cast<RndShaderNumericType>(info.mNumericType);
+    PrintOptional(hash, RndShaderUtl::NumericTypeToHlsl(numericType));
     Print(hash, ", ");
     PrintOptional(
         hash,
-        render_shader_constant_type_name(
-            render_shader_constant_base_type(info.mNumericType)));
+        RndShaderUtl::NumericTypeToHlsl(
+            RndShaderUtl::GetNumericTypeBaseType(numericType)));
     Print(hash, ", ");
     PrintResourceTail(hash, info);
 }
@@ -381,7 +381,8 @@ void RndShaderResourceConfig::_PrintComputeBuffer(
         macro = "HX_BUFFER_APPEND_DEF";
     }
     const auto* element = info.mNumericType != kNone
-        ? render_shader_constant_type_name(info.mNumericType)
+        ? RndShaderUtl::NumericTypeToHlsl(
+              static_cast<RndShaderNumericType>(info.mNumericType))
         : info.mStructName;
     Print(hash, "#  define HX_USE_BUFFER_");
     Print(hash, info.mName);

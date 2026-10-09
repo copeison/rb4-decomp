@@ -3,7 +3,7 @@
 #include <immintrin.h>
 
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -72,7 +72,7 @@ void RndShaderDownsample::Select(RndContext& context, const Params& params) {
     constexpr unsigned int kHdr10Output = 1;
 
     auto& buffer =
-        rb4::render_shader_select_constant_buffer(context, mCBufferSize);
+        RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
     if (auto* source = params.mSource) {
         const auto width = static_cast<int>(source->mBaseDesc.mWidth);
         const auto height = static_cast<int>(source->mBaseDesc.mHeight);
@@ -88,10 +88,10 @@ void RndShaderDownsample::Select(RndContext& context, const Params& params) {
             _mm_mul_ps(refined, _mm_setr_ps(0.5F, 0.5F, -0.5F, -0.5F));
         _mm_storeu_ps(
             static_cast<float*>(
-                rb4::render_shader_constant_member(buffer, mTexelOffset)),
+                RndShaderDrawUtl::GetCBufferMember(buffer, mTexelOffset)),
             offset);
         buffer.mSyncPending = true;
-        rb4::render_shader_bind_pixel_texture(
+        RndShaderDrawUtl::SelectPixelTexture(
             context, source, mTexture, kTextureFlags);
     }
     if (buffer.mSyncPending) {

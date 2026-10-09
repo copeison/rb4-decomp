@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 
@@ -37,20 +37,20 @@ void RndShaderTestPattern::_InitConfigImpl(
 
 // Reconstructed from eboot.elf at 0x645420. Name not in the reference map.
 void RndShaderTestPattern::Select(RndContext& context, const Params& params) {
-    auto& buffer = rb4::render_shader_select_constant_buffer(context, mCBufferSize);
+    auto& buffer = RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mColor0),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mColor0),
         params.mColor0,
         sizeof(params.mColor0));
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mColor1),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mColor1),
         params.mColor1,
         sizeof(params.mColor1));
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mNumTiles),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mNumTiles),
         params.mNumTiles,
         sizeof(params.mNumTiles));
-    rb4::render_shader_commit_constant_buffer(buffer, context, mCBufferSize);
+    RndShaderDrawUtl::CommitCBuffer(buffer, context, mCBufferSize);
     RndShaderKeyGroup keys{};
     _SelectShaderCollection(context, keys);
 }

@@ -19,3 +19,18 @@ constexpr unsigned int kNumShaderProgramTypes = 6;
 enum RndShaderGeoType : int {
     kShaderGeoTypeDefault = 0,
 };
+
+// User-facing shading modes, in the order of ToString's name table; the first
+// is "Lit". Enumerator names are not in the reference map.
+enum RndUserShadingMode : unsigned int {
+    kUserShadingModeLit = 0,
+};
+
+// Name not in the reference map.
+constexpr unsigned int kNumUserShadingModes = 32;
+
+const char* ToString(RndUserShadingMode mode);  // 0x645E40
+
+// Returns the mode whose name matches exactly, or -1. Name not in the
+// reference map.
+RndUserShadingMode UserShadingModeFromString(const char* name);  // 0x645E80

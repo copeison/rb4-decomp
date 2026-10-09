@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+#include "render/shaders/RndShaderEnums.h"
+
 class RndContext;
 
 // Common base of resources that shaders read: compute buffers and textures.
@@ -29,6 +31,18 @@ public:
 
     // Slot 9.
     virtual void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) = 0;
+
+    // Stamps the resource with the frame epoch, raises the context's
+    // input-slot limit for the stage past the slot, and selects the resource
+    // for the stage. The extra argument reaches only the compute stage. The
+    // map's build emits it inline from RndContext.o; this build inlines it
+    // into the draws.
+    void Select(
+        RndContext& context,
+        RndShaderProgramType type,
+        unsigned long slot,
+        unsigned int flags,
+        unsigned long extra);
 
     // Render-system frame epoch of the most recent bind. Name not in the
     // reference map.

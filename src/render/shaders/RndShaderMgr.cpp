@@ -251,7 +251,7 @@ RndShaderMgr::RndShaderMgr()
       mRenderTestSimpleShader(nullptr),
       mRenderTestComputeCShader(nullptr),
       mFixedDefinesChecksum(0) {
-    mIncludeChecksums = new rb4::RenderShaderCacheDefineArray{};
+    mIncludeChecksums = new RndShaderIncludeChecksums{};
     mShaders = create_list_sentinel();
     mShaderGraphs = create_list_sentinel();
 }
@@ -581,12 +581,12 @@ RndShaderMgr::~RndShaderMgr() {
     release_list_sentinel(mShaderGraphs);
 
     if (mIncludeChecksums != nullptr) {
-        auto& array = *mIncludeChecksums;
-        if (array.begin != nullptr) {
+        auto& array = mIncludeChecksums->mChecksums;
+        if (array.mBegin != nullptr) {
             const auto byte_count = static_cast<std::size_t>(
-                reinterpret_cast<std::uint8_t*>(array.capacity) -
-                reinterpret_cast<std::uint8_t*>(array.begin));
-            HmxAllocator::gStlAllocator.deallocate(array.begin, byte_count);
+                reinterpret_cast<std::uint8_t*>(array.mCapacity) -
+                reinterpret_cast<std::uint8_t*>(array.mBegin));
+            HmxAllocator::gStlAllocator.deallocate(array.mBegin, byte_count);
         }
         MemFree(mIncludeChecksums);
         mIncludeChecksums = nullptr;

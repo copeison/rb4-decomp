@@ -1,6 +1,6 @@
 #include "render/masking/RndShaderRefineSceneMask.h"
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
 
@@ -34,6 +34,6 @@ void RndShaderRefineSceneMask::_InitConfigImpl(
 void RndShaderRefineSceneMask::Select(
     RndContext& context,
     RndTextureBase& unrefinedMask) {
-    rb4::render_shader_draw_with_pixel_texture(
+    RndShaderDrawUtl::SelectWithPixelTexture(
         *this, context, unrefinedMask, mUnrefinedMask);
 }

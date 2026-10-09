@@ -1,8 +1,6 @@
 #include "render/shaders/RndShaderCBufferConfig.h"
 
-#include "render/shaders/shader_source_hash.h"
-
-using namespace rb4;
+#include "render/shaders/RndShaderUtl.h"
 
 namespace {
 
@@ -15,15 +13,15 @@ constexpr unsigned long kRegisterCounts[] = {
 constexpr unsigned long kRTSlices = 6;
 
 void Print(unsigned int& hash, const char* text) {
-    render_shader_source_hash_append(hash, text);
+    CrcPrint(hash, text);
 }
 
 void Print(unsigned int& hash, unsigned long value) {
-    render_shader_source_hash_append_unsigned(hash, value);
+    CrcPrintUnsigned(hash, value);
 }
 
 const char* TypeName(RndShaderNumericType type) {
-    return render_shader_constant_type_name(type);
+    return RndShaderUtl::NumericTypeToHlsl(type);
 }
 
 void PrintArraySuffix(

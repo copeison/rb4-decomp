@@ -5,8 +5,8 @@
 #include "os/threading/CritSec.h"
 #include "render/context/RndContext.h"
 #include "render/system/RndCapabilities.h"
-#include "render/shaders/shader_cache_validation.h"
-#include "render/shaders/shader_source_hash.h"
+#include "render/shaders/RndShaderIncludeChecksums.h"
+#include "render/shaders/RndShaderUtl.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderError.h"
@@ -45,14 +45,14 @@ unsigned int ReadWord(BinStream& stream) {
 
 void HashWord(unsigned int& hash, unsigned int value) {
     for (unsigned int shift = 0; shift < 32; shift += 8) {
-        render_shader_source_hash_append_byte(
+        CrcPrintByte(
             hash, static_cast<unsigned char>(value >> shift));
     }
 }
 
 void HashKey(unsigned int& hash, RndShaderKey key) {
     for (unsigned int shift = 0; shift < 64; shift += 8) {
-        render_shader_source_hash_append_byte(
+        CrcPrintByte(
             hash, static_cast<unsigned char>(key >> shift));
     }
 }
@@ -100,48 +100,51 @@ void ChecksumPermutation(
 
 // Reconstructed from eboot.elf at 0x50CA90 and the shrink path of 0x638A40.
 // New entries have the empty name and value zero.
-void ResizeIncludes(RenderShaderCacheDefineArray& includes, std::size_t count) {
-    const auto size = static_cast<std::size_t>(includes.end - includes.begin);
+void ResizeIncludes(
+    RndShaderIncludeChecksums::ChecksumArray& includes,
+    std::size_t count) {
+    const auto size = static_cast<std::size_t>(includes.mEnd - includes.mBegin);
     if (count <= size) {
-        includes.end = includes.begin + count;
+        includes.mEnd = includes.mBegin + count;
         return;
     }
     const auto capacity =
-        static_cast<std::size_t>(includes.capacity - includes.begin);
+        static_cast<std::size_t>(includes.mCapacity - includes.mBegin);
     if (count > capacity) {
         auto newCapacity = size == 0 ? std::size_t{1} : size * 2;
         if (newCapacity < count) {
             newCapacity = count;
         }
-        auto* storage = static_cast<RenderShaderCacheDefine*>(
+        auto* storage = static_cast<RndShaderIncludeChecksums::Checksum*>(
             HmxAllocator::gStlAllocator.allocate(
-                newCapacity * sizeof(RenderShaderCacheDefine)));
+                newCapacity * sizeof(RndShaderIncludeChecksums::Checksum)));
         for (std::size_t i = 0; i < size; ++i) {
-            storage[i] = includes.begin[i];
+            storage[i] = includes.mBegin[i];
         }
-        if (includes.begin != nullptr) {
+        if (includes.mBegin != nullptr) {
             HmxAllocator::gStlAllocator.deallocate(
-                includes.begin, capacity * sizeof(RenderShaderCacheDefine));
+                includes.mBegin,
+                capacity * sizeof(RndShaderIncludeChecksums::Checksum));
         }
-        includes.begin = storage;
-        includes.end = storage + size;
-        includes.capacity = storage + newCapacity;
+        includes.mBegin = storage;
+        includes.mEnd = storage + size;
+        includes.mCapacity = storage + newCapacity;
     }
     const Symbol empty("");
-    for (auto* include = includes.end; include != includes.begin + count;
+    for (auto* include = includes.mEnd; include != includes.mBegin + count;
          ++include) {
-        include->name = empty.Str();
-        include->value = 0;
+        include->mName = empty.Str();
+        include->mChecksum = 0;
     }
-    includes.end = includes.begin + count;
+    includes.mEnd = includes.mBegin + count;
 }
 
-void FreeIncludes(RenderShaderCacheDefineArray& includes) {
-    if (includes.begin != nullptr) {
+void FreeIncludes(RndShaderIncludeChecksums::ChecksumArray& includes) {
+    if (includes.mBegin != nullptr) {
         HmxAllocator::gStlAllocator.deallocate(
-            includes.begin,
-            static_cast<std::size_t>(includes.capacity - includes.begin) *
-                sizeof(RenderShaderCacheDefine));
+            includes.mBegin,
+            static_cast<std::size_t>(includes.mCapacity - includes.mBegin) *
+                sizeof(RndShaderIncludeChecksums::Checksum));
     }
     includes = {};
 }
@@ -316,15 +319,15 @@ bool RndShader::_LoadCached(const char* path, bool validate) {
     const auto configChecksum = ReadWord(stream);
     const auto sourceChecksum = ReadWord(stream);
 
-    RenderShaderCacheDefineArray includes{};
+    RndShaderIncludeChecksums::ChecksumArray includes{};
     unsigned int heap = 0;
     MemPushTemp(heap, true, true);
     ResizeIncludes(includes, ReadWord(stream));
-    for (auto* include = includes.begin; include != includes.end; ++include) {
-        Symbol name(include->name);
+    for (auto* include = includes.mBegin; include != includes.mEnd; ++include) {
+        Symbol name(include->mName);
         stream >> name;
-        include->name = name.Str();
-        stream.ReadEndian(&include->value, sizeof(include->value));
+        include->mName = name.Str();
+        stream.ReadEndian(&include->mChecksum, sizeof(include->mChecksum));
     }
     MemPopTemp(heap);
 
@@ -335,14 +338,13 @@ bool RndShader::_LoadCached(const char* path, bool validate) {
                 static_cast<unsigned int>(mgr.mFixedDefinesChecksum) &&
             definesChecksum == _ChecksumDefines();
         if (valid) {
-            auto hash = kShaderSourceHashBasis;
+            auto hash = kCrcTextStreamBasis;
             mCBufferConfig->PrintCode(hash);
             mResourceConfig->PrintCode(hash);
             valid = configChecksum == hash &&
-                sourceChecksum ==
-                    render_shader_hash_source_file(_GetShaderFilePath()) &&
-                render_shader_cache_defines_match(
-                    *mgr.mIncludeChecksums, includes);
+                sourceChecksum == RndShaderUtl::ChecksumSourceCodeFile(
+                                      _GetShaderFilePath()) &&
+                mgr.mIncludeChecksums->Check(includes);
         }
     }
     bool loaded = false;
@@ -357,13 +359,13 @@ bool RndShader::_LoadCached(const char* path, bool validate) {
 // set of programs: the fixed defines, every define's name and range, and the
 // key of each valid permutation of the graphics program types.
 unsigned int RndShader::_ChecksumDefines() const {
-    auto hash = kShaderSourceHashBasis;
+    auto hash = kCrcTextStreamBasis;
     mFixedDefines->PrintCode(hash);
 
     for (const auto& defines : mDefines->mDefines) {
         HashWord(hash, static_cast<unsigned int>(defines.mEntries.size()));
         for (const auto& entry : defines.mEntries) {
-            render_shader_source_hash_append(hash, entry.mName.c_str());
+            CrcPrint(hash, entry.mName.c_str());
             HashWord(hash, static_cast<unsigned int>(entry.mFirst));
             HashWord(hash, static_cast<unsigned int>(entry.mEnd));
         }

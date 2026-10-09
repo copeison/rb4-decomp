@@ -2,14 +2,12 @@
 
 #include <vector>
 
-#include "render/shaders/shader_source_hash.h"
-
-using namespace rb4;
+#include "render/shaders/RndShaderUtl.h"
 
 namespace {
 
 void Print(unsigned int& hash, const char* text) {
-    render_shader_source_hash_append(hash, text);
+    CrcPrint(hash, text);
 }
 
 struct Enumeration {
@@ -80,7 +78,7 @@ void RndShaderFixedDefines::PrintCode(unsigned int& hash) const {
             Print(hash, "#define ");
             Print(hash, define.mName);
             Print(hash, " ");
-            render_shader_source_hash_append_signed(hash, define.mValue);
+            CrcPrintSigned(hash, define.mValue);
             Print(hash, "\n");
         }
     }

@@ -3,7 +3,7 @@
 #include <cstring>
 
 #include "math/color/Color.h"
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
@@ -80,7 +80,7 @@ void RndShaderOutputConversion::Select(
     constexpr unsigned int kTextureFlags = 2;
 
     auto& buffer =
-        rb4::render_shader_select_constant_buffer(context, mCBufferSize);
+        RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
     const Hmx::Color intensity(
         params.mMinimumIntensity,
         params.mMinimumIntensity,
@@ -89,14 +89,14 @@ void RndShaderOutputConversion::Select(
     Hmx::Color linear(0.0F, 0.0F, 0.0F, 1.0F);
     GammaToLinear_sRGB(intensity, linear);
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mMinIntensity),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mMinIntensity),
         &linear.red,
         sizeof(linear.red));
-    rb4::render_shader_commit_constant_buffer(buffer, context, mCBufferSize);
+    RndShaderDrawUtl::CommitCBuffer(buffer, context, mCBufferSize);
 
-    rb4::render_shader_bind_pixel_texture(
+    RndShaderDrawUtl::SelectPixelTexture(
         context, params.mSource, mSrcTex, kTextureFlags);
-    rb4::render_shader_bind_pixel_texture(
+    RndShaderDrawUtl::SelectPixelTexture(
         context, params.mHmdMask, mHmdMaskTex, kTextureFlags);
 
     const auto globalField = static_cast<RndShaderKey>(

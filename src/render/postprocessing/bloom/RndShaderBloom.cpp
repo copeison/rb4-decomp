@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
@@ -72,23 +72,23 @@ void RndShaderBloom::_InitConfigImpl(
 void RndShaderBloom::Select(RndContext& context, const Params& params) {
     constexpr unsigned long kPixelKey = 3;
 
-    rb4::render_shader_bind_pixel_texture(context, params.mSource, mSrcTex);
-    rb4::render_shader_bind_pixel_texture(
+    RndShaderDrawUtl::SelectPixelTexture(context, params.mSource, mSrcTex);
+    RndShaderDrawUtl::SelectPixelTexture(
         context, params.mHalfSizeBloom, mHalfSizeBloomTex);
-    rb4::render_shader_bind_pixel_texture(
+    RndShaderDrawUtl::SelectPixelTexture(
         context, params.mQuarterSizeBloom, mQtrSizeBloomTex);
 
     auto& buffer =
-        rb4::render_shader_select_constant_buffer(context, mCBufferSize);
+        RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mBloomParams),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mBloomParams),
         params.mBloom,
         sizeof(params.mBloom));
     std::memcpy(
-        rb4::render_shader_constant_member(buffer, mOverbrightParams),
+        RndShaderDrawUtl::GetCBufferMember(buffer, mOverbrightParams),
         params.mOverbright,
         sizeof(params.mOverbright));
-    rb4::render_shader_commit_constant_buffer(buffer, context, mCBufferSize);
+    RndShaderDrawUtl::CommitCBuffer(buffer, context, mCBufferSize);
 
     RndShaderKeyGroup keys{};
     keys.mKeys[kPixelKey] = mSampleHalfSize.SetValue(

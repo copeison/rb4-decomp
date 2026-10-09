@@ -1,6 +1,6 @@
 #include "render/postprocessing/depth_of_field/RndShaderDOFSprite.h"
 
-#include "render/shaders/shader_draw_state.h"
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTexture2D.h"
 
@@ -44,10 +44,8 @@ void RndShaderDOFSprite::Select(
     RndContext& context,
     RndTexture2D& bokeh,
     RndComputeBuffer& sprites) {
-    rb4::render_shader_bind_texture(
-        context, bokeh, kShaderProgramPixel, mBokehTex, 0);
-    rb4::render_shader_bind_buffer(
-        context, sprites, kShaderProgramVertex, mSprites, 0);
+    bokeh.Select(context, kShaderProgramPixel, mBokehTex, 0, 0);
+    sprites.Select(context, kShaderProgramVertex, mSprites, 0, 0);
     RndShaderKeyGroup keys{};
     _SelectShaderCollection(context, keys);
 }
