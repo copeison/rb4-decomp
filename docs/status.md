@@ -575,6 +575,7 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the GPU statistics block to `RndGpuStatsMgr`.
 - [x] Convert the resource manager to `RndShaderMgr` with flat, typed members.
 - [x] Convert the shader system to `RndShader` and `RndShaderCompute`, with
   `RndShaderFixedDefines`, `RndShaderDefines`, `RndShaderDefinesGroup`,

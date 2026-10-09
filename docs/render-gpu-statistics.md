@@ -1,6 +1,6 @@
 # Render GPU statistics
 
-The render system embeds a 128-byte `RenderGpuStatBlock` at offset `0xE00`.
+The render system embeds a 128-byte `RndGpuStatsMgr` at offset `0xE00`.
 Construction at `0x62AAE0` initializes its two pointer arrays, four-slot frame
 ring, query counter, backend pointer, and recursive mutex directly.
 
@@ -44,3 +44,15 @@ are released in reverse order before the embedded name record and child array.
 Runtime statistics use the same base, histories, and result slots, followed by
 their interned full-name key at offset `0x158`. The block then unwinds the
 recursive mutex and frees both top-level pointer arrays by capacity.
+
+## Class
+
+The block is the map's `RndGpuStatsMgr` (`src/render/debug/RndGpuStatsMgr.{h,cpp}`),
+embedded in `RndDevice` at 3584. In this build it has no vtable and no
+`eastl::map`. Instead it keeps two arrays sorted by symbol address: every
+statistic by full name, and the per-name `StatBlock`s. Its lock is a
+`CritSec`. `BeginStatBlock` (0x62AF80) returns a query key, or -1 without a
+backend. `EndStatBlock` (0x62B5B0) ignores negative keys. `EndFrame`
+(0x62B960) advances the frame, and `_GatherStats` (0x62B9E0) resolves and
+smooths the results. The map's printing and query methods (`GetMs`,
+`PrintCSV`, `_Print*`) were not located in this build.

@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert the shader manager to RndShaderMgr` milestone, the
-eleventh step of the conversion to the reference map's original names, classes, and module
+`decomp: convert the GPU statistics to RndGpuStatsMgr` milestone, the
+twelfth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Resource manager converted to `RndShaderMgr` |
+| `80d6619` | GPU statistics converted to `RndGpuStatsMgr` |
+| `4e0a874` | Resource manager converted to `RndShaderMgr` |
 | `0fd029c` | Shader system (`RndShader`, configuration classes, 35 built-in shader subclasses) converted |
 | `f161a7b` | Render buffer collections (`RndBufferCollection`, `RndBufferCollection2D`) converted; missing registrations restored |
 | `7fb80f3` | Render windows (`RndWindow`, `RndBufferedWindow`, `PS4Window`) converted to original classes |
