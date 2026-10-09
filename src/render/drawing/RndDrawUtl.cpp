@@ -1,10 +1,137 @@
 #include "render/drawing/RndDrawUtl.h"
 
 #include "render/context/RndContext.h"
+#include "render/meshes/RndMesh.h"
+#include "render/meshes/RndMeshUtl.h"
 #include "render/meshes/RndVertex.h"
 #include "render/shaders/RndShaderBasic.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndDevice.h"
+
+namespace {
+
+// The shared meshes the drawing helpers use. Names not in the reference map;
+// the map's object keeps them as unnamed file statics.
+RndMesh* gSphereMesh = nullptr;                // 0x1A712E0
+RndMesh* gDiscMesh = nullptr;                  // 0x1A712E8
+RndMesh* gFacingQuadMeshes[6] = {};            // 0x1A712F0
+RndMesh* gBoxMesh = nullptr;                   // 0x1A71320
+RndMesh* gQuadMesh = nullptr;                  // 0x1A71328
+RndMesh* gQuadGridMesh = nullptr;              // 0x1A71330
+RndMesh* gStaticBoxMesh = nullptr;             // 0x1A71338
+RndMesh* gCapsuleMesh = nullptr;               // 0x1A71340
+RndMesh* gNestedConeMesh = nullptr;            // 0x1A71348
+RndMesh* gTruncatedRoundedConeMesh = nullptr;  // 0x1A71350
+
+constexpr float kQuarterPi = 0.78539819F;
+
+// Name not in the reference map.
+void SafeDelete(RndMesh*& mesh) {
+    delete mesh;
+    mesh = nullptr;
+}
+
+// A unit box on the axes. Name not in the reference map.
+RndMeshUtl::CreateBoxParams UnitBoxParams() {
+    RndMeshUtl::CreateBoxParams params;
+    params.mAxisX = {1.0F, 0.0F, 0.0F};
+    params.mAxisY = {0.0F, 1.0F, 0.0F};
+    params.mAxisZ = {0.0F, 0.0F, 1.0F};
+    params.mNumSegmentsX = 1;
+    params.mNumSegmentsY = 1;
+    params.mNumSegmentsZ = 1;
+    return params;
+}
+
+// A unit quad in the xy plane. Name not in the reference map.
+RndMeshUtl::CreateQuadParams UnitQuadParams(int numSegments) {
+    RndMeshUtl::CreateQuadParams params;
+    params.mVertexUsageFlags = 1;
+    params.mAxisU = {1.0F, 0.0F, 0.0F};
+    params.mAxisV = {0.0F, 1.0F, 0.0F};
+    params.mNumSegmentsU = numSegments;
+    params.mNumSegmentsV = numSegments;
+    return params;
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x3DF170. Every mesh uses unskinned
+// vertices and the builders' default names.
+void RndDrawUtl::Init() {
+    {
+        RndMeshUtl::CreateSphereParams params;
+        params.mRadius = 1.0F;
+        params.mNumRings = 16;
+        gSphereMesh = RndMeshUtl::CreateSphere(params);
+    }
+    {
+        RndMeshUtl::CreateTriangleFanParams params;
+        params.mFacing = 2;
+        params.mNumSegments = 64;
+        params.mRadius = 1.0F;
+        gDiscMesh = RndMeshUtl::CreateTriangleFan(params);
+    }
+    for (unsigned int facing = 0; facing < 6; ++facing) {
+        RndMeshUtl::CreateFacingQuadParams params;
+        params.mFacing = facing;
+        params.mWidth = 1.0F;
+        params.mHeight = 1.0F;
+        params.mNumSegmentsU = 1;
+        params.mNumSegmentsV = 1;
+        gFacingQuadMeshes[facing] = RndMeshUtl::CreateFacingQuad(params);
+    }
+    gBoxMesh = RndMeshUtl::CreateBox(UnitBoxParams());
+    gQuadMesh = RndMeshUtl::CreateQuad(UnitQuadParams(1));
+    gQuadGridMesh = RndMeshUtl::CreateQuad(UnitQuadParams(3));
+    {
+        RndMeshUtl::CreateBoxParams params = UnitBoxParams();
+        params.mVertexUsageFlags = 1;
+        gStaticBoxMesh = RndMeshUtl::CreateBox(params);
+    }
+    {
+        RndMeshUtl::CreateCapsuleParams params;
+        params.mVertexUsageFlags = 1;
+        params.mRadius = 1.0F;
+        params.mLength = 2.0F;
+        params.mNumCapSegments = 8;
+        params.mNumSideSegments = 1;
+        gCapsuleMesh = RndMeshUtl::CreateCapsule(params);
+    }
+    {
+        RndMeshUtl::CreateNestedConeParams params;
+        params.mVertexUsageFlags = 1;
+        params.mUnknown72[0] = 0.5F;
+        params.mUnknown72[1] = 1.0F;
+        params.mUnknown80[0] = 2.0F;
+        params.mUnknown80[1] = 2.0F;
+        params.mUnknown88 = 1;
+        params.mUnknown96 = true;
+        gNestedConeMesh = RndMeshUtl::CreateNestedCone(params);
+    }
+    {
+        RndMeshUtl::CreateTruncatedRoundedConeParams params;
+        params.mCone.SetAngleTopRadiusAndLength(kQuarterPi, 0.5F, 2.0F);
+        params.mVertexUsageFlags = 1;
+        gTruncatedRoundedConeMesh = RndMeshUtl::CreateTruncatedRoundedCone(params);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x3DF820. The nested cone mesh is not
+// released.
+void RndDrawUtl::Terminate() {
+    SafeDelete(gSphereMesh);
+    SafeDelete(gDiscMesh);
+    for (RndMesh*& mesh : gFacingQuadMeshes) {
+        SafeDelete(mesh);
+    }
+    SafeDelete(gBoxMesh);
+    SafeDelete(gQuadMesh);
+    SafeDelete(gQuadGridMesh);
+    SafeDelete(gStaticBoxMesh);
+    SafeDelete(gCapsuleMesh);
+    SafeDelete(gTruncatedRoundedConeMesh);
+}
 
 // Reconstructed from eboot.elf at 0x3E0C50. The left and top edges are
 // converted to clip space by mode; the right and bottom edges are first

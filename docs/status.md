@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the render subsystems' init and terminate functions and
+  `RndPixelCanvas` (`docs/render-subsystems.md`).
 - [x] Lay out the default textures by shape as the binary does, and reconstruct
   `_CreateTextures` and the remaining `RndDefaults` methods.
 - [x] Retire the render runtime adapters in favour of the entity, scene, light,

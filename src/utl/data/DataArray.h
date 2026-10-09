@@ -69,6 +69,31 @@ public:
 
 static_assert(sizeof(DataArray) == 24);
 
+// A reference to a DataArray. Header-only apart from the destructor, which
+// the map places out of line in os/System.o; callers inline it.
+class DataArrayPtr {
+public:
+    DataArrayPtr() : mData(nullptr) {}
+    DataArrayPtr(const DataArrayPtr&) = delete;
+    DataArrayPtr& operator=(const DataArrayPtr&) = delete;
+    ~DataArrayPtr() {
+        if (mData != nullptr) {
+            mData->Release();
+        }
+    }
+
+    DataArray* operator->() const {
+        return mData;
+    }
+    operator DataArray*() const {
+        return mData;
+    }
+
+    DataArray* mData;  // Name not in the reference map.
+};
+
+static_assert(sizeof(DataArrayPtr) == 8);
+
 inline DataNode::DataNode(const DataNode& other) : mValue(other.mValue), mType(other.mType) {
     if ((mType & kDataArray) != 0) {
         mValue.array->AddRef();

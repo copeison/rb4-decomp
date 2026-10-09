@@ -245,6 +245,38 @@ void RndPixelData::CopyFrom(const RndPixelData& other, bool keepPixels) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x6836B0.
+void RndPixelData::CopyFrom(const RndPixelData& other) {
+    TryCopyFrom(other);
+}
+
+// Reconstructed from eboot.elf at 0x6836C0. A level without mips accepts a
+// source with mips.
+bool RndPixelData::TryCopyFrom(const RndPixelData& other) {
+    if (mBuffer == nullptr || other.mBuffer == nullptr) {
+        return false;
+    }
+    if (mSize.x != other.mSize.x || mSize.y != other.mSize.y ||
+        mSize.z != other.mSize.z || mBufferSize != other.mBufferSize) {
+        return false;
+    }
+    const RndDataFormatInfo otherInfo = RndGetDataFormatInfo(other.mFormat);
+    const RndDataFormatInfo info = RndGetDataFormatInfo(mFormat);
+    if (info.mOrder != otherInfo.mOrder ||
+        info.mBitsPerPixel != otherInfo.mBitsPerPixel ||
+        info.mStorage != otherInfo.mStorage ||
+        info.mCompression != otherInfo.mCompression ||
+        info.mGamma != otherInfo.mGamma) {
+        return false;
+    }
+    if (mMip != nullptr &&
+        (other.mMip == nullptr || !mMip->TryCopyFrom(*other.mMip))) {
+        return false;
+    }
+    std::memcpy(mBuffer, other.mBuffer, mBufferSize);
+    return true;
+}
+
 // Reconstructed from eboot.elf at 0x6830D0.
 void RndPixelData::CreateEmpty(int width, int height, int depth, int format) {
     Free();

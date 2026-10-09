@@ -5,6 +5,7 @@
 #include "utl/text/Symbol.h"
 
 class DataArray;
+class DataArrayPtr;
 
 // Type tag of a DataNode. The name is the map's; the enumerators follow the
 // Milo engine and are not in the reference map. Types with kDataArray set
@@ -61,6 +62,9 @@ public:
     float Float(const DataArray* source) const;  // 0xEE30
     Symbol Sym(const DataArray* source) const;
     const char* Str(const DataArray* source) const;
+    // The value as an array, evaluating variables, commands and
+    // properties, with a reference held.
+    DataArrayPtr Array(const DataArray* source) const;  // 0x5F0B0
 
     void AddRefWaveform() const;   // 0x239290
     void ReleaseWaveform() const;  // 0x2392A0

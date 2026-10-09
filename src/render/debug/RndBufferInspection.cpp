@@ -2,6 +2,8 @@
 
 #include <cctype>
 
+#include "render/debug/RndBufferInspectionShader.h"
+
 namespace {
 
 // Names of the buffer inspection modes. Name not in the reference map.
@@ -82,6 +84,9 @@ const char* const kModeNames[RndBufferInspection::kNumModes] = {
     "Function Table",
 };
 
+// The inspection shader. Name not in the reference map.
+RndBufferInspectionShader* gShader = nullptr;  // 0x1AAF8D0
+
 // Name not in the reference map.
 bool EqualsIgnoreCase(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
@@ -113,4 +118,17 @@ RndBufferInspectionMode RndBufferInspection::FromString(const char* name) {
         }
     }
     return static_cast<RndBufferInspectionMode>(-1);
+}
+
+// Reconstructed from eboot.elf at 0x6B54A0.
+void RndBufferInspection::Init() {
+    auto* shader = new RndBufferInspectionShader;
+    shader->_Register();
+    gShader = shader;
+}
+
+// Reconstructed from eboot.elf at 0x6B54E0.
+void RndBufferInspection::Terminate() {
+    delete gShader;
+    gShader = nullptr;
 }

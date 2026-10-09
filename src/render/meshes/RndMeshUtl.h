@@ -172,6 +172,71 @@ static_assert(offsetof(CreateTruncatedRoundedConeParams, mNumSideSegments) == 11
 static_assert(offsetof(CreateTruncatedRoundedConeParams, mNumCapSegments) == 120);
 static_assert(sizeof(CreateTruncatedRoundedConeParams) == 128);
 
+// A quad facing along one of the six axis directions, built by CreateQuad.
+// Field names are not in the reference map.
+struct CreateFacingQuadParams : public CreateMeshParams {
+    // Selects the axis-aligned orientation, 0 to 5; other values build a
+    // degenerate quad.
+    unsigned int mFacing;
+    float mWidth;
+    float mHeight;
+    int mNumSegmentsU;
+    int mNumSegmentsV;
+};
+
+static_assert(offsetof(CreateFacingQuadParams, mFacing) == 36);
+static_assert(offsetof(CreateFacingQuadParams, mWidth) == 40);
+static_assert(offsetof(CreateFacingQuadParams, mNumSegmentsU) == 48);
+static_assert(offsetof(CreateFacingQuadParams, mNumSegmentsV) == 52);
+static_assert(sizeof(CreateFacingQuadParams) == 56);
+
+// A disc built as a fan of triangles around its center, facing along one of
+// the six axis directions. Name not in the reference map, which has a
+// CreateTriangleParams instead; field names are not in the reference map.
+struct CreateTriangleFanParams : public CreateMeshParams {
+    unsigned int mFacing;  // As in CreateFacingQuadParams.
+    unsigned long mNumSegments;
+    float mRadius;
+};
+
+static_assert(offsetof(CreateTriangleFanParams, mFacing) == 36);
+static_assert(offsetof(CreateTriangleFanParams, mNumSegments) == 40);
+static_assert(offsetof(CreateTriangleFanParams, mRadius) == 48);
+static_assert(sizeof(CreateTriangleFanParams) == 56);
+
+// A capsule along z swept from a generated contour. Field names are not in
+// the reference map.
+struct CreateCapsuleParams : public CreateRadialSurfaceParams {
+    float mRadius;
+    float mLength;
+    // The contour has mNumSideSegments + 2 * mNumCapSegments + 1 points.
+    unsigned long mNumCapSegments;
+    unsigned long mNumSideSegments;
+};
+
+static_assert(offsetof(CreateCapsuleParams, mRadius) == 72);
+static_assert(offsetof(CreateCapsuleParams, mLength) == 76);
+static_assert(offsetof(CreateCapsuleParams, mNumCapSegments) == 80);
+static_assert(offsetof(CreateCapsuleParams, mNumSideSegments) == 88);
+static_assert(sizeof(CreateCapsuleParams) == 96);
+
+// A radial surface swept from a generated cone contour; its default mesh
+// name is "NestedCone". Name not in the reference map. The fields are not
+// recovered beyond their types: the contour has 2 * mUnknown88 +
+// 2 * mUnknown96 + 2 points.
+struct CreateNestedConeParams : public CreateRadialSurfaceParams {
+    float mUnknown72[2];  // Clamped to be non-negative.
+    float mUnknown80[2];
+    unsigned long mUnknown88;
+    bool mUnknown96;
+};
+
+static_assert(offsetof(CreateNestedConeParams, mUnknown72) == 72);
+static_assert(offsetof(CreateNestedConeParams, mUnknown80) == 80);
+static_assert(offsetof(CreateNestedConeParams, mUnknown88) == 88);
+static_assert(offsetof(CreateNestedConeParams, mUnknown96) == 96);
+static_assert(sizeof(CreateNestedConeParams) == 104);
+
 // Scratch storage shared by the builders.
 extern eastl::vector<ContourVertex> gTmpContour;  // 0x1AA6A58
 extern eastl::vector<float> gTmpUVIntervals;      // 0x1AA6A78
@@ -193,12 +258,27 @@ void _SetupQuadVertsAndFaces(
     unsigned long& vertex,
     unsigned long& face);  // 0x5DB930
 
+// Not reconstructed yet; the default mesh name is "Quad".
+RndMesh* CreateQuad(const CreateQuadParams& params);  // 0x5DB700
+// Not reconstructed yet. Converts the facing to the quad's axes and calls
+// CreateQuad.
+RndMesh* CreateFacingQuad(const CreateFacingQuadParams& params);  // 0x5DC240
+// Not reconstructed yet; the default mesh name is "TriangleFan". Name not in
+// the reference map.
+RndMesh* CreateTriangleFan(const CreateTriangleFanParams& params);  // 0x5DC380
 RndMesh* CreateBox(const CreateBoxParams& params);        // 0x5DCBA0
 RndMesh* CreateSphere(const CreateSphereParams& params);  // 0x5DD0E0
 RndMesh* CreateRadialSurface(
     const eastl::vector<ContourVertex>& contour,
     const CreateRadialSurfaceParams& params);  // 0x5DD5E0
 RndMesh* CreateCylinder(const CreateCylinderParams& params);  // 0x5DDC00
+// Not reconstructed yet. Generates the contour into gTmpContour (0x5DE910)
+// and sweeps it with CreateRadialSurface; the default mesh name is
+// "Capsule".
+RndMesh* CreateCapsule(const CreateCapsuleParams& params);  // 0x5DE890
+// Not reconstructed yet. Generates the contour into gTmpContour (0x5E02C0)
+// and sweeps it with CreateRadialSurface. Name not in the reference map.
+RndMesh* CreateNestedCone(const CreateNestedConeParams& params);  // 0x5E0240
 void ReshapeRadialSurface(
     RndMesh& mesh,
     const eastl::vector<ContourVertex>& contour,

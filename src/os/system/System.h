@@ -13,6 +13,8 @@ void SystemInit(const char* config_path);  // 0x368000
 DataArray* SystemConfig(Symbol key);                          // 0x368B00
 DataArray* SystemConfig(Symbol key1, Symbol key2);            // 0x368CD0
 DataArray* SystemConfig(Symbol key1, Symbol key2, Symbol key3);  // 0x369A90
+// The language the system runs in.
+Symbol SystemLanguage();  // 0x369BA0
 // Updates the core runtime, input assignments, platform services, timers and
 // file state once per frame.
 void SystemPoll();  // 0x369940

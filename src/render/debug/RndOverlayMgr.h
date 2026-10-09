@@ -5,8 +5,8 @@
 #include "utl/text/Symbol.h"
 
 // The registry of debug overlays. Every RndOverlay links itself into one
-// static list on construction. The list operations and the layout constants
-// are reconstructed; Init and DrawAll are declared from the map.
+// static list on construction. The list operations, the layout constants
+// and Init are reconstructed; DrawAll is declared from the map.
 class RndOverlayMgr {
 public:
     // Name not in the reference map.
@@ -31,6 +31,6 @@ public:
     static OverlayList::iterator End();    // 0x5F9630
 
 private:
-    // The overlay list, at 0x1AA7C70. Name not in the reference map.
-    static OverlayList sOverlays;
+    // The overlay list, at 0x1AA7C70.
+    static OverlayList gOverlays;
 };

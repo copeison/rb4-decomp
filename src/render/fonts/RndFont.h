@@ -1,0 +1,90 @@
+#pragma once
+
+#include <cstddef>
+
+#include "math/vector/Vector2i.h"
+#include "utl/containers/Vector.h"
+#include "utl/text/Symbol.h"
+
+class RndFontPage;
+
+// A bitmap font. This build keeps one set of metrics and pages per output
+// resolution; the setters take the resolution whose entry they change and
+// fall back to the first entry when it has none. Only the members the debug
+// font uses are declared.
+class RndFont {
+public:
+    // A kerning table entry. Its fields are not recovered.
+    struct KerningPair {
+        unsigned char mUnknown[8];
+    };
+
+    // The metrics and pages for one output resolution. Name not in the
+    // reference map; field names are not in the reference map, and which of
+    // the 16, 20 and 32 fields is the glyph height, the space size and the
+    // fixed width is inferred from the setter order.
+    struct Size {
+        Vector2i mResolution;
+        Vector2i mGlyphTileSize;
+        int mGlyphHeight;
+        int mSpaceSize;
+        Vector2i mGlyphSpacing;
+        int mGlyphFixedWidth;
+        unsigned long mNumPages;
+        RndFontPage* mPages;  // An array of mNumPages.
+        eastl::vector<KerningPair> mKerningTable;
+    };
+
+    RndFont();   // 0x65D1F0
+    ~RndFont();  // 0x65D220
+
+    // Appends a copy of an empty entry for the resolution. The binary's copy
+    // sits in the debug font's object, so the original is likely inline in
+    // this header. Not reconstructed yet: the modelled vector cannot copy
+    // the kerning table. Name not in the reference map.
+    void AddResolution(const Vector2i& resolution);  // 0x65C390
+    // The entry for the resolution, or the first entry. Inlined into the
+    // setters and into RndDebugFont::Init at 0x65C2A8. Name not in the
+    // reference map.
+    Size* GetSize(const Vector2i& resolution) {
+        Size* size = mSizes.begin();
+        for (Size* it = mSizes.begin(); it != mSizes.end(); ++it) {
+            if (it->mResolution.x == resolution.x && it->mResolution.y == resolution.y) {
+                size = it;
+                break;
+            }
+        }
+        return size;
+    }
+
+    // The map's setters take only the value; this build adds the
+    // resolution.
+    void SetGlyphTileSizeInPixels(const Vector2i& resolution, const Vector2i& size);     // 0x65D320
+    void SetGlyphHeightInPixels(const Vector2i& resolution, int height);                 // 0x65D360
+    void SetSpaceSizeInPixels(const Vector2i& resolution, int size);                     // 0x65D3A0
+    void SetGlyphSpacingInPixels(const Vector2i& resolution, const Vector2i& spacing);   // 0x65D3E0
+    void SetGlyphFixedWidthInPixels(const Vector2i& resolution, int width);              // 0x65D420
+    // Allocates the pages and links them to the font.
+    void SetNumPages(const Vector2i& resolution, unsigned long count);                   // 0x65D460
+    // Finalizes every page and sorts each kerning table.
+    void Finalize();  // 0x65D910
+
+    // Field names are not in the reference map.
+    Symbol mName;
+    int mUnknown8;
+    eastl::vector<Size> mSizes;
+};
+
+static_assert(sizeof(RndFont::KerningPair) == 8);
+static_assert(offsetof(RndFont::Size, mGlyphTileSize) == 8);
+static_assert(offsetof(RndFont::Size, mGlyphHeight) == 16);
+static_assert(offsetof(RndFont::Size, mSpaceSize) == 20);
+static_assert(offsetof(RndFont::Size, mGlyphSpacing) == 24);
+static_assert(offsetof(RndFont::Size, mGlyphFixedWidth) == 32);
+static_assert(offsetof(RndFont::Size, mNumPages) == 40);
+static_assert(offsetof(RndFont::Size, mPages) == 48);
+static_assert(offsetof(RndFont::Size, mKerningTable) == 56);
+static_assert(sizeof(RndFont::Size) == 88);
+static_assert(offsetof(RndFont, mUnknown8) == 8);
+static_assert(offsetof(RndFont, mSizes) == 16);
+static_assert(sizeof(RndFont) == 48);
