@@ -4,8 +4,8 @@
 #include <limits>
 
 #include "game/systems/systems.h"
-#include "core/command_line/command_line.h"
-#include "core/resources/resource_mode.h"
+#include "utl/options/Option.h"
+#include "os/files/File.h"
 #include "ui/layout/ui_layout_id.h"
 
 namespace rb4 {
@@ -70,13 +70,13 @@ bool game_initialize() {
     audio_configure_time_stretch();
     input_refresh_player_assignments();
 
-    if (g_resource_precache_mode) {
+    if (gResourcePrecacheMode) {
         runtime_terminate(0);
     }
 
     ui_load_layout_by_id(
         g_ui_layout_controller, UiLayoutId::kLayoutGameStartup, false);
-    command_line_mark_switches_handled(arguments);
+    OptionCheck(gOptionArgs);
     return true;
 }
 

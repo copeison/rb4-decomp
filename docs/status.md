@@ -449,6 +449,10 @@
 - [x] Reconstruct the test-pattern and render-test-simple draw functions.
 - [x] Reconstruct the DOF sprite draw and generalize draw-time binding to
   per-stage context slot limits and compute-buffer stage binds.
+- [x] Adopt the original names and module layout from the reference map, and
+  convert the engine foundation (`Rand2`, `Hmx::Color`, `BinStream`,
+  `FileStream`, `File`, `String`, `Symbol`, `Thread`, `MemMgr`, options) to
+  real classes under `src/math`, `src/utl`, and `src/os`.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

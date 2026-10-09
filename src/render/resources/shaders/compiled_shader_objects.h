@@ -3,9 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 
+class BinStream;
+
 namespace rb4 {
 
-struct BinStream;
 struct RenderContext;
 
 struct RenderManagedObjectDispatch {

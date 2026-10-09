@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_particle_buffer_adapters.h"
 
 namespace rb4 {
@@ -22,7 +22,7 @@ constexpr const char* kParticleBufferAllocationName = "ParticleBuffer";
 OrbisParticleBuffer* orbis_create_particle_buffer(
     std::uint32_t particle_count,
     void* context) {
-    auto* storage = render_allocate(kOrbisParticleBufferSize);
+    auto* storage = operator new(kOrbisParticleBufferSize);
     auto* buffer = reinterpret_cast<OrbisParticleBuffer*>(storage);
     orbis_particle_buffer_construct(*buffer, particle_count, context);
     return buffer;

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/synchronization/orbis_fence_commands.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -30,7 +30,7 @@ void set_fence_dispatch(OrbisFence& fence) {
 }
 
 std::uint32_t* allocate_fence_value() {
-    return static_cast<std::uint32_t*>(render_allocate_named(
+    return static_cast<std::uint32_t*>(MemAlloc(
         sizeof(std::uint32_t), kFenceAllocationName, 4));
 }
 
@@ -38,7 +38,7 @@ void release_fence_value(OrbisFence& fence) {
     if (auto* system = orbis_render_system_instance()) {
         orbis_defer_allocation_release(*system, fence.value);
     } else {
-        render_release(fence.value);
+        MemFree(fence.value);
     }
 }
 
@@ -46,7 +46,7 @@ void release_fence_value(OrbisFence& fence) {
 
 // Reconstructed from eboot.elf at 0x8D85C0.
 OrbisFence* orbis_create_fence() {
-    auto* storage = render_allocate(sizeof(OrbisFence));
+    auto* storage = operator new(sizeof(OrbisFence));
     auto* fence = reinterpret_cast<OrbisFence*>(storage);
     orbis_fence_construct(*fence);
     return fence;
@@ -79,7 +79,7 @@ void orbis_fence_base_destruct(OrbisFence& fence) {
 void orbis_fence_delete(OrbisFence& fence) {
     set_fence_dispatch(fence);
     release_fence_value(fence);
-    render_release(&fence);
+    MemFree(&fence);
 }
 
 // Reconstructed from eboot.elf at 0x8E16D0.

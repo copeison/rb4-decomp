@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 
 namespace rb4 {
@@ -48,7 +49,7 @@ void release_pointer_array(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
     begin = nullptr;
     end = nullptr;

@@ -2,7 +2,8 @@
 
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 
 namespace rb4 {
 
@@ -65,7 +66,7 @@ void render_context_push_gpu_stat_scope(
         : static_cast<std::size_t>(scopes.end - scopes.begin);
     const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
     auto* new_begin = static_cast<RenderGpuStatScope*>(
-        engine_allocate_sized(new_capacity * sizeof(RenderGpuStatScope)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(RenderGpuStatScope)));
     if (size != 0) {
         std::memmove(
             new_begin,
@@ -78,7 +79,7 @@ void render_context_push_gpu_stat_scope(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(scopes.capacity) -
             reinterpret_cast<std::uint8_t*>(scopes.begin));
-        engine_deallocate_sized(scopes.begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(scopes.begin, byte_count);
     }
 
     scopes.begin = new_begin;

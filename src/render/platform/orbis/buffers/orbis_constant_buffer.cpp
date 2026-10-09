@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_constant_buffer_adapters.h"
 
 namespace rb4 {
@@ -25,7 +25,7 @@ OrbisConstantBuffer* orbis_create_constant_buffer(
     std::size_t element_count) {
     const auto allocation_size =
         kConstantBufferHeaderSize + kConstantBufferElementSize * element_count;
-    auto* storage = render_allocate_named(
+    auto* storage = MemAlloc(
         allocation_size, kConstantBufferAllocationName, 0);
     auto* buffer = reinterpret_cast<OrbisConstantBuffer*>(storage);
     orbis_constant_buffer_construct(

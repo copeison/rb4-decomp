@@ -24,11 +24,11 @@ The underlying virtual file adapters are now named in IDA:
 
 | Address | Name | Behavior |
 | --- | --- | --- |
-| `0x378940` | `engine_file_open` | Opens an engine file with a numeric mode. |
-| `0x378960` | `engine_file_close` | Dispatches the virtual destructor/close operation. |
-| `0x378A10` | `engine_file_read` | Reads bytes into a caller buffer. |
-| `0x378A50` | `engine_file_seek` | Seeks to a position and origin. |
-| `0x378A90` | `engine_file_get_size` | Returns the file size. |
+| `0x378940` | `FileOpen` | Opens an engine file with a numeric mode. |
+| `0x378960` | `FileClose` | Dispatches the virtual destructor/close operation. |
+| `0x378A10` | `FileRead` | Reads bytes into a caller buffer. |
+| `0x378A50` | `FileSeek` | Seeks to a position and origin. |
+| `0x378A90` | `FileSize` | Returns the file size. |
 
 ## Asynchronous reader
 

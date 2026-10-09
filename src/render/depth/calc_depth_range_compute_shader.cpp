@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -55,7 +55,7 @@ void depth_range_shader_destruct(void* shader) {
 
 void depth_range_shader_delete(void* shader) {
     depth_range_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* depth_range_shader_source_identifier(void*) {

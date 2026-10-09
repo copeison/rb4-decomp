@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/textures/render_texture.h"
 #include "render/resources/audio/audio_analysis_texture_adapters.h"
 
@@ -59,7 +60,7 @@ void audio_analysis_texture_set_destruct(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(textures.samples_capacity) -
             reinterpret_cast<std::uint8_t*>(textures.samples_begin));
-        engine_deallocate_sized(textures.samples_begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(textures.samples_begin, byte_count);
     }
     textures.samples_begin = nullptr;
     textures.samples_end = nullptr;

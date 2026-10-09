@@ -1,6 +1,6 @@
 #include "render/core/synchronization/render_occlusion_query.h"
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -64,7 +64,7 @@ void render_occlusion_query_delete(RenderOcclusionQuery& query) {
 }
 
 void render_delete_occlusion_query_storage(RenderOcclusionQuery& query) {
-    render_release(&query);
+    MemFree(&query);
 }
 
 }  // namespace rb4

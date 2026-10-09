@@ -1,7 +1,8 @@
 #include "render/resources/shaders/shader_parameter_registry.h"
 
-#include "core/memory/engine_memory.h"
-#include "render/resources/names/render_resource_name.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Str.h"
 
 namespace rb4 {
 
@@ -15,13 +16,13 @@ RenderShaderParameterRecord& append_record(
             : static_cast<std::size_t>(registry.end - registry.begin);
         const auto new_count = old_count == 0 ? 1 : old_count * 2;
         auto* records = static_cast<RenderShaderParameterRecord*>(
-            engine_allocate_sized(
+            HmxAllocator::gStlAllocator.allocate(
                 new_count * sizeof(RenderShaderParameterRecord)));
 
         for (std::size_t index = 0; index < old_count; ++index) {
             const auto& source = registry.begin[index];
             auto& destination = records[index];
-            render_resource_name_construct(destination.name, source.name.text);
+            new (&destination.name) String(source.name.c_str());
             destination.first_value = source.first_value;
             destination.last_value_exclusive = source.last_value_exclusive;
             destination.shifted_mask = source.shifted_mask;
@@ -34,13 +35,13 @@ RenderShaderParameterRecord& append_record(
         for (auto* record = registry.begin;
              record != registry.end;
              ++record) {
-            render_resource_name_destruct(record->name);
+            (record->name).~String();
         }
         if (registry.begin != nullptr) {
             const auto byte_count = static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(registry.capacity) -
                 reinterpret_cast<std::uint8_t*>(registry.begin));
-            engine_deallocate_sized(registry.begin, byte_count);
+            HmxAllocator::gStlAllocator.deallocate(registry.begin, byte_count);
         }
 
         registry.begin = records;
@@ -73,9 +74,7 @@ void render_shader_parameter_registry_add(
     }
 
     auto& record = append_record(*registry);
-    render_resource_name_construct(
-        record.name,
-        static_cast<const char*>(parameter_name));
+    new (&record.name) String(static_cast<const char*>(parameter_name));
     record.first_value = first_value;
     record.last_value_exclusive = last_value_exclusive;
     record.shifted_mask = mask << registry->bit_count;

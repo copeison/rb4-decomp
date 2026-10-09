@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -69,7 +69,7 @@ void bloom_shader_destruct(void* shader) {
 // Reconstructed from eboot.elf at 0x6346C0.
 void bloom_shader_delete(void* shader) {
     bloom_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 // Reconstructed from eboot.elf at 0x634AB0.
@@ -94,12 +94,12 @@ void initialize_bloom_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         pixel_parameters,
-        sample_half_size.value());
+        sample_half_size.Str());
     const Symbol hue_preservation("HX_HUE_PRESERVATION");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 1),
         pixel_parameters,
-        hue_preservation.value());
+        hue_preservation.Str());
 
     shader_field(shader, 352) = render_shader_backend_add_texture_binding(
         *backend_state, "gSrcTex", "gSrcTexSampler", 1, 4, 12);

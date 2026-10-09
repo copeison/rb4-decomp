@@ -6,7 +6,7 @@
 #include <mutex>
 
 #include "audio/fmod/system/fmod_audio_system.h"
-#include "core/threading/engine_thread.h"
+#include "utl/threading/Thread.h"
 
 namespace rb4 {
 
@@ -49,7 +49,7 @@ private:
     FmodAudioState& audio_state_;
     float* mix_buffer_ = nullptr;
     std::uint32_t frames_per_buffer_ = 0;
-    EngineThread recording_thread_{};
+    NamedThread recording_thread_{};
     RecordingLoop recording_loop_;
     std::atomic_bool stop_requested_{false};
     std::recursive_mutex target_mutex_;

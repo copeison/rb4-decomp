@@ -1,57 +1,100 @@
-# Core binary I/O
+# Engine file and stream I/O
 
-Engine-wide binary I/O lives under `src/core/io`.
+The engine's binary I/O is split across the original modules:
 
-## Engine files
+- `src/os/files` holds `File` and `StreamChecksum`.
+- `src/utl/streams` holds `BinStream` and `FileStream`.
+- `src/math` holds the `Rand2` cipher and the `CSHA1` context.
 
-`engine_file.cpp` owns the thin public wrappers around the engine file
-interface. Each one forwards to a single virtual slot:
+Names follow the reference map; see [naming.md](naming.md).
+
+## File
+
+`File` is the platform file interface. The map's `File*` wrappers each
+forward to one virtual slot. They take the file as `void*`, as the map does.
 
 | Address | Wrapper | Slot |
 | ---: | --- | ---: |
-| `0x378940` | `engine_file_open` | forwards to `0x376D40` |
-| `0x378950` | `engine_file_failed` | `+0x58`; null files fail |
-| `0x378960` | `engine_file_close` | `+0x08`; null-safe |
-| `0x378A10` | `engine_file_read` | `+0x18` |
-| `0x378A40` | `engine_file_write` | `+0x28` |
-| `0x378A50` | `engine_file_seek` | `+0x38` |
-| `0x378A60` | `engine_file_tell` | `+0x48` |
-| `0x378A70` | `engine_file_flush` | `+0x40` |
-| `0x378A80` | `engine_file_eof` | `+0x50` |
-| `0x378A90` | `engine_file_get_size` | `+0x60` |
+| `0x378940` | `FileOpen` | forwards to `File::NewFile` (`0x376D40`) |
+| `0x378950` | `FileFail` | `Fail` (`+0x58`); null files fail |
+| `0x378960` | `FileClose` | deleting destructor (`+0x08`); null-safe |
+| `0x378A10` | `FileRead` | `Read` (`+0x18`) |
+| `0x378A40` | `FileWrite` | `Write` (`+0x28`) |
+| `0x378A50` | `FileSeek` | `Seek` (`+0x38`) |
+| `0x378A60` | `FileTell` | `Tell` (`+0x48`) |
+| `0x378A70` | `FileFlush` | `Flush` (`+0x40`) |
+| `0x378A80` | `FileEof` | `Eof` (`+0x50`) |
+| `0x378A90` | `FileSize` | `Size` (`+0x60`) |
 
-The file-system open routine at `0x376D40` remains an adapter boundary. FMOD's
-file callbacks share this header; their inline `+0x88` prepare-for-reading call
-is still declared beside them.
+`File::NewFile` (`0x376D40`) has not been reconstructed. FMOD's file callbacks
+also call an inline prepare-for-reading slot (`+0x88`), which is declared
+beside them.
 
 ## BinStream
 
-`BinStream` is the 40-byte common base: dispatch, two `-1` words, a byte flag,
-the byte-swap flag at `+0x14`, an owned cipher generator at `+0x18`, and a
-platform value at `+0x20`. The 15-slot base dispatch at `0x18EF020` leaves
-flush, tell, eof, fail, and the read/write/seek implementations pure.
+`BinStream` is the 40-byte common base. Its fields are:
 
-- `bin_stream_read` (`0x21A280`) queries `Fail` and ignores the result. It
-  then calls `ReadImpl` and XORs every byte with the next Park-Miller value
-  when a cipher is attached.
-- `bin_stream_read_endian` (`0x21ABF0`) adds an in-place 2/4/8-byte swap.
-- `bin_stream_write_endian` (`0x21ACB0`) stages swapped values in an
-  eight-byte temporary. Encrypted writes go through a 512-byte chunk buffer.
-- Slot 9 (`0x21AB60`) reads, then returns the size or zero after failure.
-- Slot 11 (`0x219C30`) patches a 64-bit size prefix at a saved position.
-- `random_generator_next` (`0x117B0E0`) is the minimal-standard Park-Miller
-  generator, using Schrage's decomposition.
+- the vtable pointer;
+- two `-1` words and a byte flag (`+0x08`, `+0x0C`, `+0x10`);
+- the byte-swap flag `mLittleEndian` at `+0x14`;
+- the owned `Rand2` cipher `mCrypto` at `+0x18`;
+- the platform value at `+0x20`.
+
+The base vtable (`0x18EF010`) has 15 slots. Flush, tell, eof, fail and the
+read, write and seek implementations are pure.
+
+- `Read` (`0x21A280`) calls `Fail` and ignores the result. It then calls
+  `ReadImpl`, and when a cipher is attached it XORs every byte with the next
+  `Rand2::Int` value.
+- `ReadEndian` (`0x21ABF0`) adds an in-place 2-, 4- or 8-byte swap.
+- `WriteEndian` (`0x21ACB0`) stages swapped values in an eight-byte temporary.
+  Encrypted writes go through a 512-byte chunk buffer.
+- `operator>>(Symbol&)` (`0x21A300`) reads a length-prefixed symbol, staged on
+  the stack or in a named heap block.
+- `ReadAsync` (slot 9, `0x21AB60`) reads, then returns the size, or zero after
+  a failure.
+- `PatchSize` (slot 11, `0x219C30`) patches a 64-bit size prefix at a saved
+  position. The map's nearest name is `WriteSkipMark`.
+- `Rand2::Int` (`0x117B0E0`) is the minimal-standard Park-Miller generator,
+  using Schrage's decomposition.
 
 ## FileStream
 
-`FileStream` is 592 bytes. It stores the engine file at `+0x28`, a 512-byte
-`strncpy` name at `+0x30`, a fail flag at `+0x230`, the size at `+0x238`, and an
-optional checksum with a running byte count at `+0x240`/`+0x248`.
+`FileStream` is 592 bytes. Its fields are:
+
+- the file handle at `+0x28`;
+- a 512-byte `strncpy` name at `+0x30`;
+- a fail flag at `+0x230`;
+- the size at `+0x238`;
+- an optional checksum at `+0x240`, with a running byte count at `+0x248`.
 
 Construction (`0x2443A0`) uses platform value 3 and records the open failure.
-It queries the size only after a successful open. Destruction (`0x2444A0`)
-closes only named, successfully opened files. It then releases the checksum:
-its name string at `+0xD8`, then its SHA-1 context reset at `+0x08`
-(`0x117B560`), then the allocation. Reads that return a short count set the
-fail flag. Successful reads update the checksum through `0x367C50`. Short
-writes and negative seek results also set the fail flag.
+It queries the size only after a successful open.
+
+Destruction (`0x2444A0`) closes only named files that opened successfully,
+then deletes the checksum. The checksum is deleted through its class
+`operator delete` (`MemFree`). Its members are destroyed in this order:
+
+1. The `String` at `+0xD8`.
+2. The `CSHA1` at `+0x08` (`~CSHA1`, `0x117B560`).
+
+A short read sets the fail flag, and a successful read updates the checksum
+(`StreamChecksum::Update`, `0x367C50`). Short writes and negative seek results
+also set the fail flag.
+
+## Memory
+
+`os/memory/MemMgr.h` declares the tracked heap:
+
+- `MemAlloc` (`0x37AE70`) and `MemFree` (`0x37B800`).
+- `MemOrPoolAlloc` and `MemOrPoolFree` (`0x37C020`, `0x37C040`), which send
+  requests of 128 bytes or less to the small-block pool.
+- The thread-local temporary-heap scope `MemPushTemp` and `MemPopTemp`
+  (`0x37AA30`, `0x37AAF0`).
+
+The global `operator new`/`new[]` (`0x37BF40`, `0x37BF60`) forward to
+`MemAlloc`, and `operator delete`/`delete[]` jump to `MemFree`. Classes whose
+deleting destructors call `MemFree` directly use Milo's `DELETE_OVERLOAD`.
+
+The EASTL allocator `HmxAllocator::allocator` (`0x252CF0`, `0x252D30`)
+ignores its object and labels allocations `"StlAlloc"`.

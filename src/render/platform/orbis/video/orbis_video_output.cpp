@@ -7,9 +7,9 @@
 #include <system_service.h>
 #include <video_out.h>
 
-#include "core/memory/engine_memory.h"
-#include "core/threading/engine_thread.h"
-#include "core/time/performance_counter.h"
+#include "os/memory/MemMgr.h"
+#include "utl/threading/Thread.h"
+#include "utl/time/Timer.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/synchronization/render_system_lock.h"
@@ -43,7 +43,7 @@ namespace {
 constexpr const char* kEventQueueName = "EOP QUEUE";
 constexpr const char* kSubmitThreadName = "SubmitDoneThread";
 constexpr std::uint32_t kGnmEventId = 64;
-constexpr std::uint32_t kSubmitThreadPriority = 699;
+constexpr auto kSubmitThreadPriority = static_cast<Thread::ThreadPriority>(699);
 constexpr float kSubmitDoneTimeoutMilliseconds = 1000.0F;
 constexpr std::size_t kBackBufferCount = 2;
 constexpr std::int64_t kInitialPreviousBuffer = 2;
@@ -180,7 +180,7 @@ void orbis_process_submit_timeout(
     OrbisSubmitWorkerState& state) {
     orbis_lock_submission(system);
     orbis_submit_scope_begin(system);
-    state.last_submit_check = performance_counter_read();
+    state.last_submit_check = Hmx::Timer::GetCycleCounter();
     sceGnmSubmitDone();
     state.pending_submit_ticks = 0;
     orbis_submit_scope_end(system);
@@ -215,17 +215,17 @@ void orbis_process_end_of_pipe(
     bool submit_done = orbis_render_context_frame_submissions_complete(
         context, state.next_buffer);
     if (!submit_done) {
-        const auto now = performance_counter_read();
+        const auto now = Hmx::Timer::GetCycleCounter();
         state.pending_submit_ticks += now - state.last_submit_check;
         state.last_submit_check = now;
         submit_done = static_cast<float>(
-            performance_counter_ticks_to_milliseconds(
+            Hmx::Timer::CyclesToMs(
                 state.pending_submit_ticks)) >=
             kSubmitDoneTimeoutMilliseconds;
     }
 
     if (submit_done) {
-        state.last_submit_check = performance_counter_read();
+        state.last_submit_check = Hmx::Timer::GetCycleCounter();
         sceGnmSubmitDone();
         state.pending_submit_ticks = 0;
     }
@@ -277,8 +277,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_create_render_context(system);
 
     orbis_initialize_submit_condition(system);
-    engine_thread_configure(
-        orbis_submit_thread_wrapper(system),
+    orbis_submit_thread_wrapper(system).Create(
         orbis_submit_done_thread_entry,
         &system,
         kSubmitThreadName,
@@ -288,7 +287,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
         0);
     orbis_set_submit_thread_running(system, true);
     orbis_consume_submit_token(system);
-    engine_thread_start(orbis_submit_thread(system));
+    orbis_submit_thread(system).Start();
     orbis_wait_for_submit_thread(system);
     orbis_hide_system_splash_screen();
 }
@@ -296,7 +295,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
 // Reconstructed from eboot.elf at 0x8D8040.
 void orbis_render_system_shutdown(OrbisRenderSystem& system) {
     orbis_set_submit_thread_running(system, false);
-    engine_thread_join(orbis_submit_thread(system));
+    orbis_submit_thread(system)._Join();
     orbis_destroy_submit_condition(system);
     auto& base = orbis_render_system_base(system);
     render_system_release_back_buffer(base);
@@ -346,7 +345,7 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
     orbis_signal_submit_condition(system);
 
     OrbisSubmitWorkerState state;
-    state.last_submit_check = performance_counter_read();
+    state.last_submit_check = Hmx::Timer::GetCycleCounter();
     std::array<OrbisSubmitEvent, 4> events{};
     while (orbis_submit_thread_running(system)) {
         std::size_t event_count = 0;
@@ -372,7 +371,7 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
 // Reconstructed from eboot.elf at 0x8D7B00.
 void orbis_render_system_delete(OrbisRenderSystem& system) {
     orbis_render_system_destruct(system);
-    render_free(&system);
+    operator delete(&system);
 }
 
 }  // namespace rb4

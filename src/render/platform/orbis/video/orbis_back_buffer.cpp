@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/targets/render_target.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
@@ -28,7 +28,7 @@ static_assert(sizeof(OrbisGpuRenderTarget) == 64,
               "unexpected Gnm render-target size");
 
 OrbisBackBuffer* orbis_back_buffer_create(OrbisRenderSystem& system) {
-    auto* storage = render_allocate(kBackBufferSize);
+    auto* storage = operator new(kBackBufferSize);
     auto* back_buffer = static_cast<OrbisBackBuffer*>(storage);
     orbis_back_buffer_construct(*back_buffer, system);
     render_system_set_back_buffer(system, *back_buffer);
@@ -73,7 +73,7 @@ void orbis_back_buffer_destruct(OrbisBackBuffer& back_buffer) {
 // Reconstructed from eboot.elf at 0x8E2870.
 void orbis_back_buffer_delete(OrbisBackBuffer& back_buffer) {
     orbis_back_buffer_destruct(back_buffer);
-    render_free(&back_buffer);
+    operator delete(&back_buffer);
 }
 
 // Reconstructed from eboot.elf at 0x8E2890.

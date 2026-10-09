@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_block.h"
@@ -65,7 +65,7 @@ static_assert(sizeof(RenderTargetResourcesDispatch) == 5 * sizeof(void*));
 
 void destroy_resources(RenderTargetResources& resources) {
     render_target_resources_destruct(resources);
-    render_release(&resources);
+    MemFree(&resources);
 }
 
 bool accept_2d_source_texture(
@@ -267,7 +267,7 @@ void render_target_resources_release(RenderTargetResources& resources) {
     for (std::size_t index = 0; index < block_count; ++index) {
         auto& block = resources.blocks_begin[index];
         if (block.partial_frame_state != nullptr) {
-            render_free(block.partial_frame_state);
+            operator delete(block.partial_frame_state);
             block.partial_frame_state = nullptr;
         }
         render_partial_light_accumulation_target_release(block);

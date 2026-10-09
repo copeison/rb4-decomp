@@ -3,13 +3,15 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct dof sprite draw` milestone, which added
-more pass draw functions on top of compiled-shader loading and binding. The working tree was clean when the
+`decomp: convert engine foundation to original classes` milestone. It
+adopted the reference map's original names and module layout (see
+[naming.md](naming.md) and [code-review.md](code-review.md)) and converted the
+engine foundation to real classes. The working tree was clean when the
 snapshot was taken.
 
 The current PS4 object build compiles **185 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 589 unique entries,
+executable. The latest unresolved-symbol report contains 586 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -196,7 +198,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | DOF sprite draw and per-stage binding |
+| (this) | Engine foundation converted to original classes |
+| `3797688` | DOF sprite draw and per-stage binding |
 | `45a942c` | Test-pattern and render-test-simple draws |
 | `9c93567` | Single-texture linearize-depth, refine-mask, sphere-map draws |
 | `2537e18` | Downsample draw |
@@ -409,17 +412,17 @@ the validation hashes, permutation enumeration, and the core binary and file
 streams. See [render-primary-shader.md](render-primary-shader.md) and
 [core-io.md](core-io.md).
 
-The remaining boundaries on this path are engine services, declared in
-`*_adapters.h` headers:
+The remaining boundaries on this path are engine services, declared in their
+original class headers:
 
 | Address | Adapter | Notes |
 | ---: | --- | --- |
-| `0x1AD8B0` | `engine_file_find_generated` | Generated-file timestamps and archive mode |
-| `0x1AF950` | `engine_file_resolve_path` | Path normalization into a symbol |
-| `0x376D40` | `engine_file_system_open` | File-system open |
-| `0x37AA30`, `0x37AAF0` | `engine_heap_scope_begin/end` | Thread-local heap mode |
-| `0x256410` | `engine_integer_text` | Interned small-integer text |
-| `0x367C50`, `0x117B560` | stream checksum and SHA-1 reset | `FileStream` checksums |
+| `0x1AD8B0` | `FileFindGenerated` | Generated-file timestamps and archive mode |
+| `0x1AF950` | `FileResolvePath` | Path normalization into a symbol |
+| `0x376D40` | `File::NewFile` | File-system open |
+| `0x37AA30`, `0x37AAF0` | `MemPushTemp`/`MemPopTemp` | Thread-local heap mode |
+| `0x256410` | `IntToStaticString` | Interned small-integer text |
+| `0x367C50`, `0x117B560` | `StreamChecksum::Update`, `CSHA1::~CSHA1` | `FileStream` checksums |
 
 The permutation bind (`0x638920`) is now source-owned too. The next rendering
 milestones are the per-pass draw functions that build program keys and call
@@ -440,7 +443,7 @@ The surrounding bloom pass (`0x6305A0`, now defined in IDA) is a 3.7 KB
 render-target and state function and a larger, separate milestone.
 
 The final executable link also depends on many engine functions and matching
-FMOD libraries. The 589-entry unresolved report is a work queue, not a list of
+FMOD libraries. The 586-entry unresolved report is a work queue, not a list of
 compile failures. Prioritize dependencies that sit on reconstructed runtime
 paths and collapse groups of related adapters rather than adding arbitrary
 stubs.

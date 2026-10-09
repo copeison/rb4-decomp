@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -67,7 +67,7 @@ void render_test_shader_destruct(void* shader) {
 
 void render_test_shader_delete(void* shader) {
     render_test_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 std::int32_t render_test_shader_mode(void*) {
@@ -129,12 +129,12 @@ void initialize_render_test_simple_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[0],
-        vertex_color.value());
+        vertex_color.Str());
     const Symbol constant_color("HX_USE_CBUFFER_COLOR");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 1),
         &parameters->registries[4],
-        constant_color.value());
+        constant_color.Str());
     shader_field(shader, 328) = render_shader_constant_block_add(
         *constant_block, RenderShaderConstantType::vector4, "gColor");
     shader_field(shader, 336) = static_cast<std::int64_t>(

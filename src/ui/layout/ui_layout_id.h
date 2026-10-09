@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "core/types/symbol.h"
+#include "utl/text/Symbol.h"
 
 namespace rb4 {
 

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/resources/names/render_resource_name.h"
+#include "utl/text/Str.h"
 
 namespace rb4 {
 
@@ -55,7 +55,7 @@ struct RenderShaderConstantDefinition {
     const char* name;
     std::int32_t value;
     std::uint32_t reserved_12;
-    RenderResourceName comment;
+    String comment;
 };
 
 struct RenderShaderConstantRegistry {

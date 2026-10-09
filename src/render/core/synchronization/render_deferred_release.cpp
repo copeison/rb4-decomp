@@ -5,7 +5,8 @@
 #include <cstring>
 #include <_pthread.h>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/system/render_system.h"
 #include "render/core/system/render_system_state.h"
 
@@ -70,7 +71,7 @@ void append_deferred_object(
         ? std::size_t{1}
         : current_size * 2;
     auto** new_begin = static_cast<void**>(
-        engine_allocate_sized(new_capacity * sizeof(void*)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(void*)));
 
     if (current_size != 0) {
         std::memmove(
@@ -81,7 +82,7 @@ void append_deferred_object(
     new_begin[current_size] = object;
 
     if (queue.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             queue.begin,
             static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(queue.capacity) -
@@ -123,7 +124,7 @@ void render_system_destroy_deferred_release_state(RenderSystem& system) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(state.capacity) -
             reinterpret_cast<std::uint8_t*>(state.begin));
-        engine_deallocate_sized(state.begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(state.begin, byte_count);
         state.begin = nullptr;
         state.end = nullptr;
         state.capacity = nullptr;

@@ -4,8 +4,9 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/shader_source_hash.h"
 
 namespace rb4 {
@@ -17,7 +18,7 @@ void release_binding_array(RenderShaderBackendBindingArray& array) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(array.capacity) -
             reinterpret_cast<std::uint8_t*>(array.begin));
-        engine_deallocate_sized(array.begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(array.begin, byte_count);
     }
     array = {};
 }
@@ -33,7 +34,7 @@ RenderShaderBackendBinding& append_binding(
     if (size == capacity) {
         const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
         auto* replacement = static_cast<RenderShaderBackendBinding*>(
-            engine_allocate_sized(
+            HmxAllocator::gStlAllocator.allocate(
                 new_capacity * sizeof(RenderShaderBackendBinding)));
         if (size != 0) {
             std::memmove(
@@ -42,7 +43,7 @@ RenderShaderBackendBinding& append_binding(
                 size * sizeof(RenderShaderBackendBinding));
         }
         if (array.begin != nullptr) {
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 array.begin,
                 capacity * sizeof(RenderShaderBackendBinding));
         }
@@ -319,7 +320,7 @@ std::uint64_t render_shader_backend_add_texture_binding(
             array.begin == nullptr ? 0 : array.end - array.begin);
     }
 
-    const auto array_offset = sampler_symbol.value() == empty_symbol.value()
+    const auto array_offset = sampler_symbol.Str() == empty_symbol.Str()
         ? 6U
         : 0U;
     auto& array = state.binding_arrays[stage + array_offset];
@@ -327,9 +328,9 @@ std::uint64_t render_shader_backend_add_texture_binding(
     binding.resource_dimension = resource_dimension;
     binding.element_type = element_type;
     binding.buffer_kind = -1;
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = sampler_symbol.value();
-    binding.structure_name = empty_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = sampler_symbol.Str();
+    binding.structure_name = empty_symbol.Str();
     binding.resource_index = resource_index;
     binding.stage_resource_count = state.stage_resource_counts[stage]++;
     return resource_index;
@@ -355,7 +356,7 @@ std::uint64_t render_shader_backend_add_graphics_texture_binding(
             array.begin == nullptr ? 0 : array.end - array.begin);
     }
 
-    const auto array_offset = sampler_symbol.value() == empty_symbol.value()
+    const auto array_offset = sampler_symbol.Str() == empty_symbol.Str()
         ? 6U
         : 0U;
     auto& binding = append_binding(
@@ -363,9 +364,9 @@ std::uint64_t render_shader_backend_add_graphics_texture_binding(
     binding.resource_dimension = resource_dimension;
     binding.element_type = element_type;
     binding.buffer_kind = -1;
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = sampler_symbol.value();
-    binding.structure_name = empty_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = sampler_symbol.Str();
+    binding.structure_name = empty_symbol.Str();
     binding.render_target_sliced = 1;
     binding.resource_index = resource_index;
     binding.stage_resource_count =
@@ -398,9 +399,9 @@ std::uint64_t render_shader_backend_add_output_binding(
     binding.resource_dimension = resource_dimension;
     binding.element_type = element_type;
     binding.buffer_kind = -1;
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = empty_symbol.value();
-    binding.structure_name = empty_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = empty_symbol.Str();
+    binding.structure_name = empty_symbol.Str();
     binding.resource_index = resource_index;
     binding.stage_resource_count = state.stage_resource_counts[stage]++;
     return resource_index;
@@ -436,9 +437,9 @@ std::uint64_t render_shader_backend_add_buffer_input(
     binding.resource_dimension = UINT32_MAX;
     binding.element_type = element_type;
     binding.buffer_kind = static_cast<std::int32_t>(buffer_kind);
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = empty_symbol.value();
-    binding.structure_name = empty_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = empty_symbol.Str();
+    binding.structure_name = empty_symbol.Str();
     binding.resource_index = resource_index;
     auto& buffer_count = state.stage_resource_counts[kStageCount + stage];
     binding.stage_resource_count = buffer_count++ + kBufferRegisterOffset;
@@ -472,9 +473,9 @@ std::uint64_t render_shader_backend_add_buffer_output(
     binding.resource_dimension = UINT32_MAX;
     binding.element_type = element_type;
     binding.buffer_kind = static_cast<std::int32_t>(buffer_kind);
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = empty_symbol.value();
-    binding.structure_name = empty_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = empty_symbol.Str();
+    binding.structure_name = empty_symbol.Str();
     binding.resource_index = resource_index;
     auto& buffer_count = state.stage_resource_counts[kStageCount + stage];
     binding.stage_resource_count = buffer_count++ + kBufferRegisterOffset;
@@ -509,9 +510,9 @@ std::uint64_t render_shader_backend_add_structured_buffer_output(
     binding.resource_dimension = UINT32_MAX;
     binding.element_type = UINT32_MAX;
     binding.buffer_kind = static_cast<std::int32_t>(buffer_kind);
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = empty_symbol.value();
-    binding.structure_name = structure_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = empty_symbol.Str();
+    binding.structure_name = structure_symbol.Str();
     binding.resource_index = resource_index;
     auto& buffer_count = state.stage_resource_counts[kStageCount + stage];
     binding.stage_resource_count = buffer_count++ + kBufferRegisterOffset;
@@ -549,9 +550,9 @@ std::uint64_t render_shader_backend_add_structured_buffer_input(
     binding.resource_dimension = UINT32_MAX;
     binding.element_type = UINT32_MAX;
     binding.buffer_kind = static_cast<std::int32_t>(buffer_kind);
-    binding.resource_name = resource_symbol.value();
-    binding.sampler_name = empty_symbol.value();
-    binding.structure_name = structure_symbol.value();
+    binding.resource_name = resource_symbol.Str();
+    binding.sampler_name = empty_symbol.Str();
+    binding.structure_name = structure_symbol.Str();
     binding.resource_index = resource_index;
     auto& buffer_count = state.stage_resource_counts[kStageCount + stage];
     binding.stage_resource_count = buffer_count++ + kBufferRegisterOffset;

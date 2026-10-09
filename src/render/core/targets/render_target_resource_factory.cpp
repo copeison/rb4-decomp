@@ -1,6 +1,7 @@
 #include "render/core/targets/render_target_resource_factory.h"
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resources.h"
@@ -99,7 +100,7 @@ RenderTexture* render_target_resources_create_texture_array_2d(
         target_flags);
 
     auto* mip_chains = static_cast<RenderTextureMipChainDescriptor*>(
-        engine_allocate_sized(
+        HmxAllocator::gStlAllocator.allocate(
             layer_count * sizeof(RenderTextureMipChainDescriptor)));
     for (std::size_t index = 0; index < layer_count; ++index) {
         initialize_mip_descriptor(
@@ -116,7 +117,7 @@ RenderTexture* render_target_resources_create_texture_array_2d(
         render_factory(), descriptor);
     render_texture_initialize_backend(*texture, reusable_texture);
     if (mip_chains != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             mip_chains,
             layer_count * sizeof(RenderTextureMipChainDescriptor));
     }

@@ -1,6 +1,6 @@
 #include "render/core/buffers/render_particle_buffer.h"
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -63,7 +63,7 @@ void render_particle_buffer_delete(RenderParticleBuffer& buffer) {
 }
 
 void render_delete_particle_buffer_storage(RenderParticleBuffer& buffer) {
-    render_release(&buffer);
+    MemFree(&buffer);
 }
 
 }  // namespace rb4

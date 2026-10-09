@@ -3,8 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
 #include "render/core/context/render_context.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -31,7 +32,7 @@ void release_array_storage(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
     begin = nullptr;
     end = nullptr;
@@ -51,7 +52,7 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& registry) {
     for (auto* parameter = registry.begin;
          parameter != registry.end;
          ++parameter) {
-        render_resource_name_destruct(parameter->name);
+        (parameter->name).~String();
     }
     release_array_storage(
         registry.begin,
@@ -65,7 +66,7 @@ namespace {
 
 void delete_primary_shader(RenderPrimaryShaderResource* shader) {
     render_primary_shader_destruct(*shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 std::int32_t primary_shader_mode(RenderPrimaryShaderResource*) {
@@ -149,7 +150,7 @@ void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
             destruct_parameter_registry(
                 shader.parameters->registries[index - 1]);
         }
-        render_release(shader.parameters);
+        MemFree(shader.parameters);
         shader.parameters = nullptr;
     }
     if (shader.constant_block != nullptr) {
@@ -157,7 +158,7 @@ void render_primary_shader_destruct(RenderPrimaryShaderResource& shader) {
     }
     if (shader.backend_state != nullptr) {
         render_shader_backend_state_destruct(*shader.backend_state);
-        render_release(shader.backend_state);
+        MemFree(shader.backend_state);
         shader.backend_state = nullptr;
     }
 
@@ -182,17 +183,17 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
     shader.variant = shader.dispatch->variant(&shader);
 
     auto* constants = static_cast<RenderShaderConstantRegistry*>(
-        render_allocate(sizeof(RenderShaderConstantRegistry)));
+        operator new(sizeof(RenderShaderConstantRegistry)));
     render_shader_constant_registry_construct(*constants);
     shader.constants = constants;
 
     auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
-        render_allocate(sizeof(RenderShaderParameterRegistrySet)));
+        operator new(sizeof(RenderShaderParameterRegistrySet)));
     render_shader_parameter_registry_set_construct(*parameters);
     shader.parameters = parameters;
 
     auto* constant_block = static_cast<RenderShaderConstantBlock*>(
-        render_allocate(sizeof(RenderShaderConstantBlock)));
+        operator new(sizeof(RenderShaderConstantBlock)));
     render_shader_constant_block_construct(
         *constant_block,
         static_cast<const char*>(
@@ -203,7 +204,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
     shader.constant_block = constant_block;
 
     auto* backend_state = static_cast<RenderShaderBackendState*>(
-        render_allocate(sizeof(RenderShaderBackendState)));
+        operator new(sizeof(RenderShaderBackendState)));
     render_shader_backend_state_construct(*backend_state);
     shader.backend_state = backend_state;
 
@@ -211,7 +212,7 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader) {
     render_shader_parameter_registry_add(
         &shader.render_target_slice_binding,
         &parameters->registries[0],
-        render_target_slices.value(),
+        render_target_slices.Str(),
         0,
         7);
 

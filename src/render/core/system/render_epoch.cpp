@@ -1,6 +1,6 @@
 #include "render/core/system/render_epoch.h"
 
-#include "core/time/performance_counter.h"
+#include "utl/time/Timer.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 
@@ -27,7 +27,7 @@ void render_system_begin_runtime_epoch(RenderSystem& system) {
 
     runtime.frame_timing_initialized = timing_state + 1;
     if (timing_state == 0) {
-        runtime.previous_frame_counter = performance_counter_read();
+        runtime.previous_frame_counter = Hmx::Timer::GetCycleCounter();
     }
 }
 

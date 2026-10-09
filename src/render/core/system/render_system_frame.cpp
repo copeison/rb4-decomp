@@ -4,8 +4,9 @@
 #include <array>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/time/performance_counter.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/time/Timer.h"
 #include "render/core/context/render_context.h"
 #include "render/core/context/render_context_adapters.h"
 #include "render/core/debug/render_gpu_stat_block.h"
@@ -52,7 +53,7 @@ void append_default_target_states(
     const auto new_capacity =
         std::max(doubled_capacity, current_size + count);
     auto** new_begin = static_cast<RenderTargetState**>(
-        engine_allocate_sized(
+        HmxAllocator::gStlAllocator.allocate(
             new_capacity * sizeof(RenderTargetState*)));
 
     if (current_size != 0) {
@@ -67,7 +68,7 @@ void append_default_target_states(
         count * sizeof(*new_begin));
 
     if (states.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             states.begin,
             static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(states.capacity) -
@@ -189,7 +190,7 @@ void render_system_prepare_frame(
             update_frame_phase_state(system);
         }
 
-        const auto current_counter = performance_counter_read();
+        const auto current_counter = Hmx::Timer::GetCycleCounter();
         const auto elapsed_ticks = runtime.frame_timing_initialized != 0
             ? current_counter - runtime.previous_frame_counter
             : runtime.initial_frame_tick_span;
@@ -198,7 +199,7 @@ void render_system_prepare_frame(
         runtime.frame_timing_initialized = 1;
 
         const auto elapsed_milliseconds =
-            performance_counter_ticks_to_milliseconds(elapsed_ticks);
+            Hmx::Timer::CyclesToMs(elapsed_ticks);
         runtime.instantaneous_frame_rate = static_cast<float>(
             1000.0 / elapsed_milliseconds);
         if (runtime.smoothed_frame_rate == 0.0F) {

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer.h"
 #include "render/platform/orbis/buffers/orbis_constant_buffer.h"
 #include "render/platform/orbis/buffers/orbis_particle_buffer.h"
@@ -77,7 +77,7 @@ static_assert(sizeof(OrbisRenderFactoryVtable) == 16 * sizeof(void*));
 void factory_destruct(OrbisRenderFactory&) {}
 
 void factory_destroy(OrbisRenderFactory& factory) {
-    render_free(&factory);
+    operator delete(&factory);
 }
 
 OrbisFence* factory_create_fence(OrbisRenderFactory&) {
@@ -188,7 +188,7 @@ const OrbisRenderFactoryVtable kOrbisRenderFactoryVtable = {
 }  // namespace
 
 OrbisRenderFactory* orbis_render_factory_create() {
-    auto* storage = render_allocate(sizeof(OrbisRenderFactory));
+    auto* storage = operator new(sizeof(OrbisRenderFactory));
     auto* factory = static_cast<OrbisRenderFactory*>(storage);
     factory->vtable = &kOrbisRenderFactoryVtable;
     return factory;

@@ -6,15 +6,16 @@
 #include <cmath>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_texture_array_1d.h"
 #include "render/core/textures/render_texture_mip_chain.h"
-#include "render/resources/names/render_resource_name.h"
+#include "utl/text/Str.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 
@@ -38,7 +39,7 @@ struct RenderManagedObject {
 
 RenderResourceListNode* create_list_sentinel() {
     auto* node = static_cast<RenderResourceListNode*>(
-        render_allocate(sizeof(RenderResourceListNode)));
+        operator new(sizeof(RenderResourceListNode)));
     node->next = node;
     node->previous = node;
     return node;
@@ -51,7 +52,7 @@ void release_list_sentinel(RenderResourceListNode*& node) {
 
     node->next->previous = node->previous;
     node->previous->next = node->next;
-    render_release(node);
+    MemFree(node);
     node = nullptr;
 }
 
@@ -67,13 +68,13 @@ void destruct_parameter_registry(RenderShaderParameterRegistry& parameters) {
     for (auto* parameter = parameters.begin;
          parameter != parameters.end;
          ++parameter) {
-        render_resource_name_destruct(parameter->name);
+        (parameter->name).~String();
     }
     if (parameters.begin != nullptr) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(parameters.capacity) -
             reinterpret_cast<std::uint8_t*>(parameters.begin));
-        engine_deallocate_sized(parameters.begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(parameters.begin, byte_count);
     }
 }
 
@@ -132,7 +133,7 @@ void add_shader_constant_group(
 void* create_builtin_shader(
     std::size_t size,
     void (*construct)(void*)) {
-    auto* storage = render_allocate(size);
+    auto* storage = operator new(size);
     construct(storage);
     render_primary_shader_register(
         *static_cast<RenderPrimaryShaderResource*>(storage));
@@ -169,7 +170,7 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
     manager.runtime = {};
 
     manager.shader_cache_defines = static_cast<RenderShaderCacheDefineArray*>(
-        render_allocate(sizeof(RenderShaderCacheDefineArray)));
+        operator new(sizeof(RenderShaderCacheDefineArray)));
     *manager.shader_cache_defines = {};
     manager.primary_list = create_list_sentinel();
     manager.secondary_list = create_list_sentinel();
@@ -179,7 +180,7 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
 void render_resource_manager_initialize_shader_parameters(
     RenderResourceManager& manager) {
     auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
-        render_allocate(sizeof(RenderShaderParameterRegistrySet)));
+        operator new(sizeof(RenderShaderParameterRegistrySet)));
     render_shader_parameter_registry_set_construct(*parameters);
     manager.runtime.shader_parameters = parameters;
 
@@ -202,7 +203,7 @@ void render_resource_manager_initialize_shader_parameters(
         render_shader_parameter_registry_add(
             &manager.shader_parameter_bindings[index],
             &parameters->registries[definition.registry_index],
-            name.value(),
+            name.Str(),
             definition.first_value,
             definition.last_value);
     }
@@ -212,7 +213,7 @@ void render_resource_manager_initialize_shader_parameters(
 void render_resource_manager_initialize_shader_constant_registry(
     RenderResourceManager& manager) {
     auto* registry = static_cast<RenderShaderConstantRegistry*>(
-        render_allocate(sizeof(RenderShaderConstantRegistry)));
+        operator new(sizeof(RenderShaderConstantRegistry)));
     render_shader_constant_registry_construct(*registry);
     manager.shader_constants.constant_registry = registry;
 
@@ -605,9 +606,9 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
             const auto byte_count = static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(array.capacity) -
                 reinterpret_cast<std::uint8_t*>(array.begin));
-            engine_deallocate_sized(array.begin, byte_count);
+            HmxAllocator::gStlAllocator.deallocate(array.begin, byte_count);
         }
-        render_release(manager.shader_cache_defines);
+        MemFree(manager.shader_cache_defines);
         manager.shader_cache_defines = nullptr;
     }
 }
@@ -716,7 +717,7 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
             destruct_parameter_registry(
                 parameters->registries[index - 1]);
         }
-        render_release(parameters);
+        MemFree(parameters);
         manager.runtime.shader_parameters = nullptr;
     }
 

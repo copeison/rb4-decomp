@@ -4,8 +4,7 @@
 
 #include "audio/core/runtime/audio_runtime_adapters.h"
 #include "audio/fmod/mixing/fmod_mix_callback.h"
-#include "core/threading/thread_affinity.h"
-#include "core/threading/thread_affinity_adapters.h"
+#include "utl/threading/Thread.h"
 
 namespace rb4 {
 
@@ -43,17 +42,16 @@ void FmodRecordingAudioRenderTarget::start_async_recording(
     stop_requested_.store(false, std::memory_order_release);
     recording_loop_ = std::move(recording_loop);
 
-    const auto& affinity = *thread_affinity_find_group(kAffinityGroupName);
-    engine_thread_configure(
-        recording_thread_,
+    const auto& affinity = *ThreadMap::GetTaskSettings(kAffinityGroupName);
+    recording_thread_.Create(
         recording_thread_entry,
         this,
         kThreadName,
-        affinity.primary_processor,
-        affinity.priority,
-        affinity.stack_size,
-        affinity.additional_processor_mask);
-    engine_thread_start(recording_thread_.runtime);
+        affinity.mProcessor,
+        affinity.mPriority,
+        affinity.mStackSize,
+        affinity.mAffinityMask);
+    recording_thread_.mThread.Start();
 }
 
 // Reconstructed from eboot.elf at 0x276110.
@@ -70,7 +68,7 @@ void FmodRecordingAudioRenderTarget::request_stop() {
 
 // Reconstructed from eboot.elf at 0x276120.
 void FmodRecordingAudioRenderTarget::wait_for_recording() {
-    engine_thread_join(recording_thread_.runtime);
+    recording_thread_.mThread._Join();
 }
 
 // Reconstructed from eboot.elf at 0x276130.

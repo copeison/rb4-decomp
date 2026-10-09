@@ -2,9 +2,10 @@
 
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
-#include "render/resources/names/render_resource_name.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
+#include "utl/text/Str.h"
 #include "render/resources/shaders/shader_source_hash.h"
 
 namespace rb4 {
@@ -112,14 +113,14 @@ RenderShaderConstantMember& append_member(RenderShaderConstantBlock& block) {
                 block.members_end - block.members_begin);
         const auto new_count = old_count == 0 ? 1 : old_count * 2;
         auto* new_members = static_cast<RenderShaderConstantMember*>(
-            engine_allocate_sized(
+            HmxAllocator::gStlAllocator.allocate(
                 new_count * sizeof(RenderShaderConstantMember)));
         if (old_count != 0) {
             std::memcpy(
                 new_members,
                 block.members_begin,
                 old_count * sizeof(RenderShaderConstantMember));
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 block.members_begin,
                 static_cast<std::size_t>(
                     reinterpret_cast<std::uint8_t*>(block.members_capacity) -
@@ -143,14 +144,15 @@ RenderShaderConstantDefinition& append_definition(
             : static_cast<std::size_t>(registry.end - registry.begin);
         const auto new_count = old_count == 0 ? 1 : old_count * 2;
         auto* new_definitions = static_cast<RenderShaderConstantDefinition*>(
-            engine_allocate_sized(
+            HmxAllocator::gStlAllocator.allocate(
                 new_count * sizeof(RenderShaderConstantDefinition)));
         if (old_count != 0) {
+            // Definitions are relocated bitwise, as in the binary.
             std::memcpy(
-                new_definitions,
-                registry.begin,
+                static_cast<void*>(new_definitions),
+                static_cast<const void*>(registry.begin),
                 old_count * sizeof(RenderShaderConstantDefinition));
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 registry.begin,
                 static_cast<std::size_t>(
                     reinterpret_cast<std::uint8_t*>(registry.capacity) -
@@ -228,7 +230,7 @@ RenderShaderConstantBlock* render_shader_constant_block_create(
     std::uint32_t stage_mask,
     std::uint64_t instance_limit) {
     auto* block = static_cast<RenderShaderConstantBlock*>(
-        render_allocate(sizeof(RenderShaderConstantBlock)));
+        operator new(sizeof(RenderShaderConstantBlock)));
     render_shader_constant_block_construct(
         *block, name, buffer_index, stage_mask, instance_limit);
     return block;
@@ -242,9 +244,9 @@ void render_shader_constant_block_release(RenderShaderConstantBlock*& block) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(block->members_capacity) -
             reinterpret_cast<std::uint8_t*>(block->members_begin));
-        engine_deallocate_sized(block->members_begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(block->members_begin, byte_count);
     }
-    render_release(block);
+    MemFree(block);
     block = nullptr;
 }
 
@@ -339,9 +341,9 @@ void render_shader_constant_registry_accumulate_source_hash(
     for (auto* definition = registry.begin;
          definition != registry.end;
          ++definition) {
-        if (definition->comment.text[0] != '\0') {
+        if (definition->comment.c_str()[0] != '\0') {
             append_hash(hash, "\n// ");
-            append_hash(hash, definition->comment.text);
+            append_hash(hash, definition->comment.c_str());
             append_hash(hash, "\n");
         }
         if (definition->name[0] != '\0') {
@@ -365,10 +367,10 @@ void render_shader_constant_registry_add_comment(
     const char* comment) {
     auto& definition = append_definition(registry);
     const Symbol empty_name("");
-    definition.name = static_cast<const char*>(empty_name.value());
+    definition.name = empty_name.Str();
     definition.value = 0;
     definition.reserved_12 = 0;
-    render_resource_name_construct(definition.comment, comment);
+    new (&definition.comment) String(comment);
 }
 
 // Reconstructed from eboot.elf at 0x63D520.
@@ -378,10 +380,10 @@ void render_shader_constant_registry_add_definition(
     std::int32_t value) {
     auto& definition = append_definition(registry);
     const Symbol symbol(name);
-    definition.name = static_cast<const char*>(symbol.value());
+    definition.name = symbol.Str();
     definition.value = value;
     definition.reserved_12 = 0;
-    render_resource_name_construct(definition.comment, "");
+    new (&definition.comment) String("");
 }
 
 void render_shader_constant_registry_release(
@@ -392,15 +394,15 @@ void render_shader_constant_registry_release(
     for (auto* definition = registry->begin;
          definition != registry->end;
          ++definition) {
-        render_resource_name_destruct(definition->comment);
+        (definition->comment).~String();
     }
     if (registry->begin != nullptr) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(registry->capacity) -
             reinterpret_cast<std::uint8_t*>(registry->begin));
-        engine_deallocate_sized(registry->begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(registry->begin, byte_count);
     }
-    render_release(registry);
+    MemFree(registry);
     registry = nullptr;
 }
 

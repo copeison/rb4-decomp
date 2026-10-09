@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/textures/orbis_texture_2d_adapters.h"
 
@@ -14,7 +14,7 @@ static_assert(
 // Reconstructed from eboot.elf at 0x8D89B0.
 OrbisTexture2D* orbis_create_texture_2d(
     const RenderTexture2DDescriptor& descriptor) {
-    auto* storage = render_allocate(sizeof(OrbisTexture2D));
+    auto* storage = operator new(sizeof(OrbisTexture2D));
     auto* texture = reinterpret_cast<OrbisTexture2D*>(storage);
     orbis_texture_2d_construct(*texture, descriptor);
     return texture;
@@ -47,26 +47,26 @@ void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
 
     for (auto*& target : texture.render_targets) {
         if (target != nullptr) {
-            render_release(target);
+            MemFree(target);
             target = nullptr;
         }
     }
     for (auto*& color_texture : texture.color_textures) {
         if (color_texture != nullptr) {
-            render_release(color_texture);
+            MemFree(color_texture);
             color_texture = nullptr;
         }
     }
     if (texture.plane_texture != nullptr) {
-        render_release(texture.plane_texture);
+        MemFree(texture.plane_texture);
         texture.plane_texture = nullptr;
     }
     if (texture.depth_target != nullptr) {
-        render_release(texture.depth_target);
+        MemFree(texture.depth_target);
         texture.depth_target = nullptr;
     }
     if (texture.pending_presentation_counts != nullptr) {
-        render_release(texture.pending_presentation_counts);
+        MemFree(texture.pending_presentation_counts);
         texture.pending_presentation_counts = nullptr;
     }
     orbis_texture_2d_release_allocation(texture.allocation_control);
@@ -78,7 +78,7 @@ void orbis_texture_2d_destruct(OrbisTexture2D& texture) {
 // Reconstructed from eboot.elf at 0x8D6440.
 void orbis_texture_2d_delete(OrbisTexture2D& texture) {
     orbis_texture_2d_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8D6460.

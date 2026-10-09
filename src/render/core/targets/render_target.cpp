@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/targets/render_target_resources.h"
 #include "render/core/targets/render_target_resources_lifecycle.h"
 
@@ -64,7 +64,7 @@ void construct_target_state(
 // Reconstructed from eboot.elf at 0x6B40E0.
 void delete_target_state(RenderTargetState& state) {
     render_target_resources_destruct(target_resources(state));
-    render_release(&state);
+    MemFree(&state);
 }
 
 }  // namespace
@@ -82,7 +82,7 @@ void render_target_construct(
 
     if (create_state) {
         auto* state = static_cast<RenderTargetState*>(
-            render_allocate(kRenderTargetStateSize));
+            operator new(kRenderTargetStateSize));
         construct_target_state(*state, state_flags, 0);
         target.owned_state = state;
         target.active_state = state;
@@ -104,7 +104,7 @@ void render_target_destruct(RenderTarget& target) {
 // Reconstructed from eboot.elf at 0x11B2D90.
 void render_target_delete(RenderTarget& target) {
     render_target_destruct(target);
-    render_release(&target);
+    MemFree(&target);
 }
 
 void render_target_release_dynamic(RenderTarget& target) {

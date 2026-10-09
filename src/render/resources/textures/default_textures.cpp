@@ -2,7 +2,8 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 
@@ -47,7 +48,7 @@ public:
 
     ~DefaultPixelBuffer() {
         if (pixels_ != nullptr) {
-            engine_deallocate_sized(pixels_, byte_count_);
+            HmxAllocator::gStlAllocator.deallocate(pixels_, byte_count_);
         }
     }
 
@@ -63,10 +64,10 @@ public:
         const auto byte_count = pixel_count * sizeof(RenderFloatPixel);
         if (byte_count != byte_count_) {
             if (pixels_ != nullptr) {
-                engine_deallocate_sized(pixels_, byte_count_);
+                HmxAllocator::gStlAllocator.deallocate(pixels_, byte_count_);
             }
             pixels_ = static_cast<RenderFloatPixel*>(
-                engine_allocate_sized(byte_count));
+                HmxAllocator::gStlAllocator.allocate(byte_count));
             byte_count_ = byte_count;
         }
 

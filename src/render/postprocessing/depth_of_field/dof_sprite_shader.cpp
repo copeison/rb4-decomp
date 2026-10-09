@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -53,7 +53,7 @@ void dof_sprite_shader_destruct(void* shader) {
 
 void dof_sprite_shader_delete(void* shader) {
     dof_sprite_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* dof_sprite_shader_source_identifier(void*) {

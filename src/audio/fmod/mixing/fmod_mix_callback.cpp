@@ -11,16 +11,16 @@ namespace rb4 {
 namespace {
 
 void begin_timing(AudioTimingAccumulator& timing) {
-    timing.start_ticks = performance_counter_read();
+    timing.start_ticks = Hmx::Timer::GetCycleCounter();
     timing.elapsed_ticks = 0;
     timing.active_depth = 1;
 }
 
 double finish_timing(AudioTimingAccumulator& timing) {
     if (timing.active_depth > 0 && --timing.active_depth == 0) {
-        timing.elapsed_ticks += performance_counter_read() - timing.start_ticks;
+        timing.elapsed_ticks += Hmx::Timer::GetCycleCounter() - timing.start_ticks;
     }
-    return performance_counter_ticks_to_milliseconds(timing.elapsed_ticks);
+    return Hmx::Timer::CyclesToMs(timing.elapsed_ticks);
 }
 
 void lock_statistics(AudioTimingAccumulator& timing) {

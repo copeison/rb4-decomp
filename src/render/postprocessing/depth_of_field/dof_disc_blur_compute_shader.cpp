@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
@@ -55,7 +55,7 @@ void dof_disc_blur_shader_destruct(void* shader) {
 
 void dof_disc_blur_shader_delete(void* shader) {
     dof_disc_blur_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* dof_disc_blur_source_identifier(void*) {

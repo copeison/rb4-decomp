@@ -2,7 +2,8 @@
 
 #include <array>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
@@ -156,7 +157,7 @@ RenderTexture3D* create_volumetric_texture(
             static_cast<std::size_t>(extent.width) * extent.height *
             extent.depth;
         mip.source_size = voxel_count * sizeof(std::uint64_t);
-        mip.source_data = engine_allocate_sized(mip.source_size);
+        mip.source_data = HmxAllocator::gStlAllocator.allocate(mip.source_size);
         auto* voxels = static_cast<std::uint64_t*>(mip.source_data);
         for (std::uint32_t z = 0; z < extent.depth; ++z) {
             for (std::uint32_t y = 0; y < extent.height; ++y) {
@@ -169,7 +170,7 @@ RenderTexture3D* create_volumetric_texture(
 
     auto* texture = render_create_texture_3d(descriptor, reusable_texture);
     if (mip.source_data != nullptr) {
-        engine_deallocate_sized(mip.source_data, mip.source_size);
+        HmxAllocator::gStlAllocator.deallocate(mip.source_data, mip.source_size);
     }
     return texture;
 }

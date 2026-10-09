@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -64,7 +64,7 @@ void buffer_shader_destruct(void* shader) {
 
 void buffer_shader_delete(void* shader) {
     buffer_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 void initialize_buffer_permutations(
@@ -75,7 +75,7 @@ void initialize_buffer_permutations(
     render_shader_parameter_registry_add(
         &numeric_type_binding(shader),
         &parameters.registries[5],
-        numeric_type.value(),
+        numeric_type.Str(),
         0,
         17);
 
@@ -83,7 +83,7 @@ void initialize_buffer_permutations(
     render_shader_parameter_registry_add(
         &texture_type_binding(shader),
         &parameters.registries[5],
-        texture_type.value(),
+        texture_type.Str(),
         UINT32_MAX,
         8);
 

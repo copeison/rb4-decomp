@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
@@ -148,7 +148,7 @@ void render_texture_2d_destruct(RenderTexture2D& texture) {
 // Reconstructed from eboot.elf at 0x690210.
 void render_texture_2d_delete(RenderTexture2D& texture) {
     render_texture_2d_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x690250.

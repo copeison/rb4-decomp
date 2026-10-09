@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "core/io/file_stream.h"
+#include "utl/streams/FileStream.h"
 #include "render/resources/shaders/shader_source_hash.h"
 
 namespace rb4 {
@@ -11,19 +11,17 @@ namespace rb4 {
 // byte by byte, ignoring carriage returns so line-ending conversions do not
 // invalidate compiled caches.
 std::uint32_t render_shader_hash_source_file(const char* path) {
-    FileStream stream;
-    file_stream_construct(stream, path, 0, 0);
-    auto remaining = file_stream_size(&stream);
+    FileStream stream(path, kRead, false);
+    auto remaining = stream.Size();
     auto hash = kShaderSourceHashBasis;
     for (; remaining != 0; --remaining) {
         char character = 0;
-        bin_stream_read(stream, &character, 1);
+        stream.Read(&character, 1);
         if (character != '\r') {
             render_shader_source_hash_append_byte(
                 hash, static_cast<std::uint8_t>(character));
         }
     }
-    file_stream_destruct(stream);
     return hash;
 }
 

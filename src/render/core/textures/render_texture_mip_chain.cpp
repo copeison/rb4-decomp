@@ -6,7 +6,8 @@
 #include <limits>
 #include <new>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/textures/render_data_format.h"
 
 namespace rb4 {
@@ -224,7 +225,7 @@ void destroy_mip_chain_fields(RenderTextureMipChainFields& fields) {
 
     release_child(fields.next_mip);
     if (fields.auxiliary_data != nullptr) {
-        render_release(fields.auxiliary_data);
+        MemFree(fields.auxiliary_data);
         fields.auxiliary_data = nullptr;
     }
 
@@ -273,7 +274,7 @@ void destroy_elements(
 
 void release_storage(RenderTextureMipChainArray& mip_chains) {
     if (mip_chains.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             mip_chains.begin,
             static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(mip_chains.capacity) -
@@ -409,7 +410,7 @@ void render_texture_mip_chain_array_reserve(
     }
 
     auto* replacement = static_cast<RenderTextureMipChainState*>(
-        engine_allocate_sized(capacity * sizeof(RenderTextureMipChainState)));
+        HmxAllocator::gStlAllocator.allocate(capacity * sizeof(RenderTextureMipChainState)));
     auto* output = replacement;
     for (auto* input = mip_chains.begin;
          input != mip_chains.end;

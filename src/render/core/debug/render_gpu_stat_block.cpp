@@ -7,12 +7,13 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/resources/names/render_resource_name.h"
+#include "utl/text/Str.h"
 
 namespace rb4 {
 
@@ -42,7 +43,7 @@ struct RenderQueryIdArray {
 struct RenderGpuStatisticBase {
     RenderGpuStatisticDispatch* dispatch;
     const void* name_key;
-    RenderResourceName resource_name;
+    String resource_name;
     RenderGpuStatisticBase* parent;
     std::uint8_t reserved_40;
     bool has_children;
@@ -161,7 +162,7 @@ void release_array(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
     begin = nullptr;
     end = nullptr;
@@ -174,7 +175,7 @@ void destruct_root_statistic(RenderGpuRootStatistic& statistic) {
         release_array(history.begin, history.end, history.capacity);
     }
 
-    render_resource_name_destruct(statistic.base.resource_name);
+    (statistic.base.resource_name).~String();
     release_array(
         statistic.children.begin,
         statistic.children.end,
@@ -195,7 +196,7 @@ void append_root_statistic(
               block.root_statistics_end - block.root_statistics_begin);
     const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
     auto** new_begin = static_cast<void**>(
-        engine_allocate_sized(new_capacity * sizeof(void*)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(void*)));
     if (size != 0) {
         std::memmove(
             new_begin,
@@ -210,7 +211,7 @@ void append_root_statistic(
                 block.root_statistics_capacity) -
             reinterpret_cast<std::uint8_t*>(
                 block.root_statistics_begin));
-        engine_deallocate_sized(block.root_statistics_begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(block.root_statistics_begin, byte_count);
     }
 
     block.root_statistics_begin = new_begin;
@@ -242,7 +243,7 @@ void insert_pointer(
         : static_cast<std::size_t>(position - begin);
     const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
     auto** new_begin = static_cast<void**>(
-        engine_allocate_sized(new_capacity * sizeof(void*)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(void*)));
 
     if (insertion_index != 0) {
         std::memmove(
@@ -262,7 +263,7 @@ void insert_pointer(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
 
     begin = new_begin;
@@ -309,8 +310,8 @@ void* find_or_create_gpu_statistic(
     void* parent) {
     const Symbol name_symbol{name};
     const Symbol full_name_symbol{full_name};
-    const auto name_key = name_symbol.value();
-    const auto full_name_key = full_name_symbol.value();
+    const auto name_key = name_symbol.Str();
+    const auto full_name_key = full_name_symbol.Str();
 
     scePthreadMutexLock(&block.mutex);
     ++block.lock_depth;
@@ -335,10 +336,10 @@ void* find_or_create_gpu_statistic(
         scePthreadMutexUnlock(&block.mutex);
         return statistic;
     } else {
-        statistic = render_allocate(sizeof(RenderGpuStatistic));
+        statistic = operator new(sizeof(RenderGpuStatistic));
         render_gpu_statistic_construct(
             statistic,
-            static_cast<const char*>(name_symbol.value()),
+            name_symbol.Str(),
             parent);
         insert_pointer(
             block.statistics_begin,
@@ -371,10 +372,10 @@ void* find_or_create_gpu_statistic(
         }
     } else {
         root = static_cast<RenderGpuRootStatistic*>(
-            render_allocate(sizeof(RenderGpuRootStatistic)));
+            operator new(sizeof(RenderGpuRootStatistic)));
         initialize_root_statistic(
             *root,
-            static_cast<const char*>(name_symbol.value()),
+            name_symbol.Str(),
             static_cast<RenderGpuRootStatistic*>(block.total_statistic));
         root_has_children(
             *static_cast<RenderGpuRootStatistic*>(block.total_statistic)) = true;
@@ -413,7 +414,7 @@ void append_query_id(
         : static_cast<std::size_t>(end - begin);
     const auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
     auto* new_begin = static_cast<std::uint64_t*>(
-        engine_allocate_sized(new_capacity * sizeof(std::uint64_t)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(std::uint64_t)));
     if (size != 0) {
         std::memmove(
             new_begin,
@@ -426,7 +427,7 @@ void append_query_id(
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
 
     begin = new_begin;
@@ -498,7 +499,7 @@ void build_gpu_remainder(RenderGpuStatBlock& block) {
 
     scePthreadMutexLock(&block.mutex);
     ++block.lock_depth;
-    auto* total = find_gpu_statistic(block, total_name.value());
+    auto* total = find_gpu_statistic(block, total_name.Str());
     --block.lock_depth;
     scePthreadMutexUnlock(&block.mutex);
     if (total == nullptr) {
@@ -662,7 +663,7 @@ void render_gpu_stat_block_construct(RenderGpuStatBlock& block) {
 // Reconstructed from eboot.elf at 0x62ACB0.
 void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
     auto* total = static_cast<RenderGpuRootStatistic*>(
-        render_allocate(sizeof(RenderGpuRootStatistic)));
+        operator new(sizeof(RenderGpuRootStatistic)));
     initialize_root_statistic(*total, "GPU Total", nullptr);
     block.total_statistic = total;
     append_root_statistic(block, total);
@@ -670,7 +671,7 @@ void render_gpu_stat_block_initialize(RenderGpuStatBlock& block) {
     const auto counter_count = render_gpu_counter_count();
     for (std::size_t index = 0; index < counter_count; ++index) {
         auto* counter = static_cast<RenderGpuRootStatistic*>(
-            render_allocate(sizeof(RenderGpuRootStatistic)));
+            operator new(sizeof(RenderGpuRootStatistic)));
         initialize_root_statistic(
             *counter,
             render_gpu_counter_name(static_cast<std::uint32_t>(index)),
@@ -705,7 +706,7 @@ void render_gpu_stat_block_destruct(RenderGpuStatBlock& block) {
         if (*item != nullptr) {
             destruct_root_statistic(
                 *static_cast<RenderGpuRootStatistic*>(*item));
-            render_release(*item);
+            MemFree(*item);
         }
     }
     block.root_statistics_end = block.root_statistics_begin;

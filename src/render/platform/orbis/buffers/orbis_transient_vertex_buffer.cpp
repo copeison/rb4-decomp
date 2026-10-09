@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -27,7 +27,7 @@ void orbis_transient_vertex_buffer_construct(
 // Reconstructed from eboot.elf at 0x8EC7D0.
 void orbis_transient_vertex_buffer_destruct(
     OrbisTransientVertexBuffer& buffer) {
-    render_release(buffer.data);
+    MemFree(buffer.data);
 }
 
 // Reconstructed from eboot.elf at 0x8EC7E0.
@@ -36,7 +36,7 @@ void orbis_transient_vertex_buffer_initialize(
     RenderMeshFormat format,
     std::size_t vertex_capacity) {
     const auto* descriptor = render_mesh_format_descriptor(format);
-    buffer.data = static_cast<std::uint8_t*>(render_allocate_named(
+    buffer.data = static_cast<std::uint8_t*>(MemAlloc(
         vertex_capacity * descriptor->vertex_stride,
         kAllocationName,
         4));

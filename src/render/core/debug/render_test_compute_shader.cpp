@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -62,7 +62,7 @@ void render_test_compute_shader_destruct(void* shader) {
 
 void render_test_compute_shader_delete(void* shader) {
     render_test_compute_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* render_test_compute_shader_source_identifier(void*) {
@@ -84,7 +84,7 @@ void initialize_render_test_compute_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &output_type_binding(shader),
         &parameters->registries[5],
-        write_to_buffer.value());
+        write_to_buffer.Str());
     shader_field(shader, 312) = render_shader_backend_add_output_binding(
         *backend_state, "gDstTexture", 1, 5, 12);
     shader_field(shader, 320) = render_shader_backend_add_buffer_output(

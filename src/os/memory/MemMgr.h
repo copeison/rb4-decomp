@@ -1,0 +1,33 @@
+#pragma once
+
+#include <new>
+
+// Tracked heap allocation at 0x37AE70. The global operator new (0x37BF40)
+// and operator new[] (0x37BF60) forward here with the labels "new" and
+// "new[]"; operator delete and delete[] (0x37BF50, 0x37BF70) jump to MemFree.
+// The last argument is passed as zero by every recovered caller; the map
+// gives only its type.
+void* MemAlloc(unsigned long size, const char* name, int unknown);
+
+// Tracked heap release at 0x37B800. Null is ignored.
+void MemFree(void* allocation);
+
+// Pool-or-heap pair at 0x37C020 and 0x37C040: requests of at most 128 bytes
+// use the small-block pool, larger ones the tracked heap.
+void* MemOrPoolAlloc(unsigned long size, const char* name, int unknown);
+void MemOrPoolFree(unsigned long size, void* allocation, const char* name);
+
+// Thread-local temporary-heap scope at 0x37AA30 and 0x37AAF0. The map has
+// MemPushTemp() and MemPopTemp() in this position; this build saves the
+// calling thread's mode word (+0x84 in its heap state) into `saved` and, when
+// `apply` is set, enables or clears it; MemPopTemp restores the saved word.
+void MemPushTemp(unsigned int& saved, bool enable, bool apply);
+void MemPopTemp(const unsigned int& saved);
+
+// Milo's per-class delete overload. Classes whose deleting destructors call
+// MemFree directly in the binary declare it instead of using the global
+// operator delete.
+#define DELETE_OVERLOAD                     \
+    static void operator delete(void* v) {  \
+        MemFree(v);                         \
+    }

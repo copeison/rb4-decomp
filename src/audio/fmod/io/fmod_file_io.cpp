@@ -7,24 +7,22 @@
 #include <string>
 #include <vector>
 
-#include "core/io/engine_file.h"
-#include "core/threading/engine_thread.h"
-#include "core/threading/thread_affinity.h"
-#include "core/threading/thread_affinity_adapters.h"
+#include "os/files/File.h"
+#include "utl/threading/Thread.h"
 
 namespace rb4 {
 
-void engine_file_prepare_for_reading(EngineFile* file);
+// Read preparation at an address not yet recorded.
+void engine_file_prepare_for_reading(void* file);
 
 namespace {
 
-constexpr std::uint32_t kEngineFileReadMode = 2;
-constexpr std::int32_t kSeekFromStart = 0;
+constexpr FileMode kEngineFileReadMode = static_cast<FileMode>(2);
 
 struct FmodFileHandle {
     std::string path;
     std::recursive_mutex mutex;
-    EngineFile* file = nullptr;
+    void* file = nullptr;
 };
 
 std::mutex g_async_mutex;
@@ -32,7 +30,7 @@ std::condition_variable g_async_changed;
 std::vector<FMOD_ASYNCREADINFO*> g_async_requests;
 FMOD_ASYNCREADINFO* g_active_request = nullptr;
 bool g_async_stopping = false;
-EngineThread g_async_thread{};
+NamedThread g_async_thread{};
 
 FmodFileHandle* as_file_handle(void* handle) {
     return static_cast<FmodFileHandle*>(handle);
@@ -93,11 +91,11 @@ FMOD_RESULT fmod_file_open(
 
     {
         const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
-        file_handle->file = engine_file_open(name, kEngineFileReadMode);
+        file_handle->file = FileOpen(name, kEngineFileReadMode);
         if (file_handle->file != nullptr) {
             engine_file_prepare_for_reading(file_handle->file);
             *file_size = static_cast<unsigned int>(
-                engine_file_get_size(file_handle->file));
+                FileSize(file_handle->file));
         }
     }
 
@@ -120,7 +118,7 @@ FMOD_RESULT fmod_file_close(void* handle, void* user_data) {
 
     {
         const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
-        engine_file_close(file_handle->file);
+        FileClose(file_handle->file);
         file_handle->file = nullptr;
     }
     delete file_handle;
@@ -142,7 +140,7 @@ FMOD_RESULT fmod_file_read(
 
     const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
     *bytes_read = static_cast<unsigned int>(
-        engine_file_read(file_handle->file, buffer, size));
+        FileRead(file_handle->file, buffer, size));
     return *bytes_read < size ? FMOD_ERR_FILE_EOF : FMOD_OK;
 }
 
@@ -158,7 +156,7 @@ FMOD_RESULT fmod_file_seek(
     }
 
     const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
-    engine_file_seek(file_handle->file, position, kSeekFromStart);
+    FileSeek(file_handle->file, position, kSeekBegin);
     return FMOD_OK;
 }
 
@@ -208,17 +206,16 @@ void fmod_async_file_reader_initialize() {
     constexpr const char* kThreadName = "FmodFileWrapper";
 
     g_async_stopping = false;
-    const auto& affinity = *thread_affinity_find_group(kAffinityGroupName);
-    engine_thread_configure(
-        g_async_thread,
+    const auto& affinity = *ThreadMap::GetTaskSettings(kAffinityGroupName);
+    g_async_thread.Create(
         fmod_async_file_reader_thread,
         nullptr,
         kThreadName,
-        affinity.primary_processor,
-        affinity.priority,
-        affinity.stack_size,
-        affinity.additional_processor_mask);
-    engine_thread_start(g_async_thread.runtime);
+        affinity.mProcessor,
+        affinity.mPriority,
+        affinity.mStackSize,
+        affinity.mAffinityMask);
+    g_async_thread.mThread.Start();
 }
 
 // Reconstructed from eboot.elf at 0x27A460.
@@ -228,7 +225,7 @@ void fmod_async_file_reader_shutdown() {
         g_async_stopping = true;
     }
     g_async_changed.notify_one();
-    engine_thread_join(g_async_thread.runtime);
+    g_async_thread.mThread._Join();
 }
 
 }  // namespace rb4

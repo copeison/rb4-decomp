@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/platform/orbis/meshes/orbis_color_mesh.h"
 #include "render/platform/orbis/meshes/orbis_color_texture_mesh.h"
 #include "render/platform/orbis/meshes/orbis_mesh_draw.h"
@@ -89,7 +90,7 @@ struct MeshOperations {
         layout.index_buffer = nullptr;
 
         if (layout.vertices_begin != nullptr) {
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 layout.vertices_begin,
                 static_cast<std::size_t>(
                     reinterpret_cast<std::uint8_t*>(
@@ -104,7 +105,7 @@ struct MeshOperations {
 
     static void delete_mesh(RenderMesh& mesh) {
         destruct(mesh);
-        render_release(&mesh);
+        MemFree(&mesh);
     }
 
     static void destruct_secondary(RenderMeshUpdateLink& link) {
@@ -374,7 +375,7 @@ OrbisMesh* orbis_create_mesh(RenderMeshFormat format, const char* name) {
         return nullptr;
     }
 
-    auto* storage = render_allocate(kOrbisMeshSize);
+    auto* storage = operator new(kOrbisMeshSize);
     auto* mesh = reinterpret_cast<OrbisMesh*>(storage);
     render_mesh_construct(*mesh, name);
     orbis_mesh_set_format_backend_defaults(*mesh, format);

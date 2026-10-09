@@ -50,6 +50,7 @@ $commonFlags = @(
     "-Wextra",
     "-Wno-missing-braces",
     "-Wno-unused-private-field",
+    "-Wno-invalid-offsetof",
     "-I$($repositoryRoot)\src"
 )
 if ($Configuration -eq "Release") {

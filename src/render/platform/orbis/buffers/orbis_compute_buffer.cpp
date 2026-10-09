@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_adapters.h"
 
 namespace rb4 {
@@ -17,7 +17,7 @@ constexpr std::size_t kOrbisComputeBufferSize = 136;
 // Reconstructed from eboot.elf at 0x8D8BC0.
 OrbisComputeBuffer* orbis_create_compute_buffer(
     const RenderComputeBufferDescriptor& descriptor) {
-    auto* storage = render_allocate(kOrbisComputeBufferSize);
+    auto* storage = operator new(kOrbisComputeBufferSize);
     auto* buffer = reinterpret_cast<OrbisComputeBuffer*>(storage);
     orbis_compute_buffer_construct(*buffer, descriptor);
     return buffer;

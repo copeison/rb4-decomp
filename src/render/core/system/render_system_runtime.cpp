@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/buffers/render_constant_buffer.h"
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block.h"
@@ -107,13 +107,13 @@ void initialize_runtime_resources(RenderSystem& system) {
 
     auto*& primitive_meshes =
         runtime_pointer_at(system, kPrimitiveMeshSetOffset);
-    primitive_meshes = render_allocate(sizeof(RenderPrimitiveMeshSet));
+    primitive_meshes = operator new(sizeof(RenderPrimitiveMeshSet));
     render_primitive_mesh_set_construct(
         *static_cast<RenderPrimitiveMeshSet*>(primitive_meshes));
 
     auto*& audio_textures =
         runtime_pointer_at(system, kAudioAnalysisTextureSetOffset);
-    audio_textures = render_allocate(sizeof(AudioAnalysisTextureSet));
+    audio_textures = operator new(sizeof(AudioAnalysisTextureSet));
     audio_analysis_texture_set_construct(
         *static_cast<AudioAnalysisTextureSet*>(audio_textures));
 
@@ -134,7 +134,7 @@ void shutdown_runtime_resources(RenderSystem& system) {
     if (primitive_meshes != nullptr) {
         render_primitive_mesh_set_destruct(
             *static_cast<RenderPrimitiveMeshSet*>(primitive_meshes));
-        render_release(primitive_meshes);
+        MemFree(primitive_meshes);
         primitive_meshes = nullptr;
     }
 
@@ -143,7 +143,7 @@ void shutdown_runtime_resources(RenderSystem& system) {
     if (audio_textures != nullptr) {
         audio_analysis_texture_set_destruct(
             *static_cast<AudioAnalysisTextureSet*>(audio_textures));
-        render_release(audio_textures);
+        MemFree(audio_textures);
         audio_textures = nullptr;
     }
 }

@@ -6,7 +6,8 @@
 
 #include <pthread.h>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
@@ -52,7 +53,7 @@ void update_link_destruct(RenderMeshUpdateLink& link);
 
 void update_link_delete(RenderMeshUpdateLink& link) {
     update_link_destruct(link);
-    render_release(&link);
+    MemFree(&link);
 }
 
 RenderMeshUpdateLinkDispatch kBaseUpdateLinkDispatch{
@@ -136,7 +137,7 @@ void update_link_destruct(RenderMeshUpdateLink& link) {
 
 void destroy_triangles(RenderMeshTriangleArray& triangles) {
     if (triangles.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             triangles.begin,
             static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(triangles.capacity) -
@@ -188,7 +189,7 @@ void render_mesh_destruct(RenderMesh& mesh) {
 // Reconstructed from eboot.elf at 0x5C2870.
 void render_mesh_delete(RenderMesh& mesh) {
     render_mesh_destruct(mesh);
-    render_release(&mesh);
+    MemFree(&mesh);
 }
 
 void render_mesh_release_dynamic(RenderMesh& mesh) {
@@ -296,7 +297,7 @@ void render_mesh_resize_triangles(
         : static_cast<std::size_t>(triangles.end - triangles.begin);
     const auto new_capacity = std::max(triangle_count, capacity * 2);
     auto* replacement = static_cast<RenderMeshTriangle*>(
-        engine_allocate_sized(new_capacity * sizeof(RenderMeshTriangle)));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(RenderMeshTriangle)));
     if (current_count != 0) {
         std::memcpy(
             replacement,

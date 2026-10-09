@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
@@ -155,7 +155,7 @@ void render_texture_array_1d_destruct(RenderTextureArray1D& texture) {
 // Reconstructed from eboot.elf at 0x6970A0.
 void render_texture_array_1d_delete(RenderTextureArray1D& texture) {
     render_texture_array_1d_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 }  // namespace rb4

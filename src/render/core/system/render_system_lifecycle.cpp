@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <_pthread.h>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
@@ -40,7 +41,7 @@ void release_array(T*& begin, T*& end, T*& capacity) {
         const auto byte_count = static_cast<std::size_t>(
             reinterpret_cast<std::uint8_t*>(capacity) -
             reinterpret_cast<std::uint8_t*>(begin));
-        engine_deallocate_sized(begin, byte_count);
+        HmxAllocator::gStlAllocator.deallocate(begin, byte_count);
     }
     begin = nullptr;
     end = nullptr;

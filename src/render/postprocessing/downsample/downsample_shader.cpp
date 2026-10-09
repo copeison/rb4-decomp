@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <immintrin.h>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/core/buffers/render_constant_buffer.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -71,7 +71,7 @@ void downsample_shader_destruct(void* shader) {
 
 void downsample_shader_delete(void* shader) {
     downsample_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* downsample_shader_source_identifier(void*) {
@@ -103,19 +103,19 @@ void initialize_downsample_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         pixel_parameters,
-        color_space.value());
+        color_space.Str());
     const Symbol downsample_type("HX_DOWNSAMPLE_TYPE");
     render_shader_parameter_registry_add(
         &parameter_binding(shader, 1),
         pixel_parameters,
-        downsample_type.value(),
+        downsample_type.Str(),
         0,
         4);
     const Symbol value_based_bloom("HX_BLOOM_VALUE_BASED");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 2),
         pixel_parameters,
-        value_based_bloom.value());
+        value_based_bloom.Str());
 
     shader_field(shader, 352) = render_shader_constant_block_add(
         *constant_block, RenderShaderConstantType::vector4, "gTexelOffset");

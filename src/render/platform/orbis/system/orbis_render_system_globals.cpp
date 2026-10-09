@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
-#include "core/threading/engine_thread.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/threading/Thread.h"
 #include "render/core/system/render_epoch.h"
 #include "render/core/system/render_system_state.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
@@ -39,7 +40,7 @@ struct OrbisRenderSystemRuntimePrefix {
     void* default_vertex_buffer;
     OrbisBufferDescriptor identity_instance_descriptors[9];
     void* identity_instance_buffer;
-    EngineThread submit_thread;
+    NamedThread submit_thread;
     std::int32_t submission_lock_depth;
     std::uint8_t reserved_4284[4];
     ScePthreadMutex submission_mutex;
@@ -80,7 +81,7 @@ static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) == 4144);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submit_thread) +
-        offsetof(EngineThread, runtime) == 4152);
+        offsetof(NamedThread, mThread) == 4152);
 static_assert(
     offsetof(OrbisRenderSystemRuntimePrefix, submission_lock_depth) == 4280);
 static_assert(
@@ -133,7 +134,7 @@ void erase_retired_allocation(
     RetiredAllocationNode& node) {
     node.next->previous = node.previous;
     node.previous->next = node.next;
-    engine_deallocate_sized(&node, sizeof(node));
+    HmxAllocator::gStlAllocator.deallocate(&node, sizeof(node));
     --runtime.retired_allocation_count;
 }
 
@@ -213,7 +214,7 @@ void orbis_render_system_destroy_command_list(OrbisRenderSystem& system) {
     auto* node = runtime->retired_allocations_head;
     while (node != sentinel) {
         auto* next = node->next;
-        engine_deallocate_sized(node, sizeof(*node));
+        HmxAllocator::gStlAllocator.deallocate(node, sizeof(*node));
         node = next;
     }
 }
@@ -292,7 +293,7 @@ void orbis_enqueue_retired_allocation(
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     auto* sentinel = retired_allocation_sentinel(*runtime);
     auto* node = static_cast<RetiredAllocationNode*>(
-        engine_allocate_sized(sizeof(RetiredAllocationNode)));
+        HmxAllocator::gStlAllocator.allocate(sizeof(RetiredAllocationNode)));
     node->allocation = allocation;
     node->frame = frame;
     node->next = sentinel;
@@ -311,7 +312,7 @@ void orbis_release_retired_allocations_through(
     while (node != sentinel) {
         auto* next = node->next;
         if (node->frame <= completed_frame) {
-            render_release(node->allocation);
+            MemFree(node->allocation);
             erase_retired_allocation(*runtime, *node);
         }
         node = next;
@@ -325,7 +326,7 @@ void orbis_release_all_retired_allocations_locked(
     auto* node = runtime->retired_allocations_head;
     while (node != sentinel) {
         auto* next = node->next;
-        render_release(node->allocation);
+        MemFree(node->allocation);
         erase_retired_allocation(*runtime, *node);
         node = next;
     }
@@ -398,12 +399,12 @@ void orbis_set_cached_flip_rate(
     runtime->cached_flip_rate = rate;
 }
 
-EngineThreadRuntime& orbis_submit_thread(OrbisRenderSystem& system) {
+Thread& orbis_submit_thread(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    return runtime->submit_thread.runtime;
+    return runtime->submit_thread.mThread;
 }
 
-EngineThread& orbis_submit_thread_wrapper(OrbisRenderSystem& system) {
+NamedThread& orbis_submit_thread_wrapper(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     return runtime->submit_thread;
 }

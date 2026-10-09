@@ -1,6 +1,6 @@
 #include "render/core/buffers/render_compute_buffer.h"
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -54,7 +54,7 @@ RenderComputeBuffer* render_create_compute_buffer(
     auto* buffer = render_factory_create_compute_buffer(factory, descriptor);
     const auto staging_size =
         buffer->element_count * buffer->element_stride;
-    buffer->staging_data = render_allocate(staging_size);
+    buffer->staging_data = operator new(staging_size);
     render_compute_buffer_initialize_backend(*buffer);
     return buffer;
 }
@@ -79,7 +79,7 @@ void render_compute_buffer_construct(
 void render_compute_buffer_destruct(RenderComputeBuffer& buffer) {
     set_base_dispatch(buffer);
     if (buffer.staging_data != nullptr) {
-        render_release(buffer.staging_data);
+        MemFree(buffer.staging_data);
     }
 }
 
@@ -90,7 +90,7 @@ void render_compute_buffer_delete(RenderComputeBuffer& buffer) {
 }
 
 void render_delete_compute_buffer_storage(RenderComputeBuffer& buffer) {
-    render_release(&buffer);
+    MemFree(&buffer);
 }
 
 void render_compute_buffer_release_dynamic(RenderComputeBuffer& buffer) {

@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
@@ -76,7 +76,7 @@ void volumetric_shader_destruct(void* shader) {
 
 void volumetric_shader_delete(void* shader) {
     volumetric_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 std::int32_t volumetric_shader_mode(void*) {
@@ -111,17 +111,17 @@ void initialize_accumulation_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[5],
-        use_scene_mask.value());
+        use_scene_mask.Str());
     const Symbol is_stereo("HX_IS_STEREO");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 1),
         &parameters->registries[5],
-        is_stereo.value());
+        is_stereo.Str());
     const Symbol stereo_eye("HX_STEREO_EYE");
     render_shader_parameter_registry_add(
         &parameter_binding(shader, 2),
         &parameters->registries[5],
-        stereo_eye.value(),
+        stereo_eye.Str(),
         0,
         2);
 
@@ -194,7 +194,7 @@ void initialize_density_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[5],
-        color_space.value());
+        color_space.Str());
 
     shader_field(shader, 312) = render_shader_backend_add_output_binding(
         *backend_state, "gOutputTex", 2, 5, 12);
@@ -310,7 +310,7 @@ void initialize_deferred_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[5],
-        use_scene_mask.value());
+        use_scene_mask.Str());
 
     shader_field(shader, 312) = render_shader_backend_add_texture_binding(
         *backend_state,

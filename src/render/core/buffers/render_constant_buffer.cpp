@@ -1,6 +1,6 @@
 #include "render/core/buffers/render_constant_buffer.h"
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 
@@ -71,7 +71,7 @@ void render_constant_buffer_delete(RenderConstantBuffer& buffer) {
 }
 
 void render_delete_constant_buffer_storage(RenderConstantBuffer& buffer) {
-    render_release(&buffer);
+    MemFree(&buffer);
 }
 
 void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer) {
@@ -80,7 +80,7 @@ void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer) {
 
 void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer) {
     buffer.dispatch->destruct(buffer);
-    render_release(&buffer);
+    MemFree(&buffer);
 }
 
 void render_constant_buffer_update_range(

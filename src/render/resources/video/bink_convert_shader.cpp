@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -66,7 +66,7 @@ void bink_convert_shader_destruct(void* shader) {
 // Reconstructed from eboot.elf at 0x5F49F0.
 void bink_convert_shader_delete(void* shader) {
     bink_convert_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 // Reconstructed from eboot.elf at 0x5F4E70.
@@ -90,7 +90,7 @@ void initialize_bink_convert_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[4],
-        alpha_plane.value());
+        alpha_plane.Str());
 
     shader_field(shader, 312) = render_shader_backend_add_texture_binding(
         *backend_state, "gYPlane", "gYPlaneSampler", 1, 4, 12);

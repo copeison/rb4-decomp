@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/shaders/orbis_shader_adapters.h"
 
 namespace rb4 {
@@ -15,7 +15,7 @@ constexpr std::size_t kOrbisPixelShaderSize = 64;
 constexpr std::size_t kOrbisComputeShaderSize = 64;
 
 OrbisShader* allocate_shader(std::size_t size) {
-    return reinterpret_cast<OrbisShader*>(render_allocate(size));
+    return reinterpret_cast<OrbisShader*>(operator new(size));
 }
 
 }  // namespace

@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/meshes/orbis_skinned_mesh.h"
@@ -50,7 +50,7 @@ SkinnedMeshVertex default_skinned_vertex() {
 void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
     const auto* format =
         render_mesh_format_descriptor(RenderMeshFormat::kSkinned);
-    auto* buffer = render_allocate_named(
+    auto* buffer = MemAlloc(
         format->vertex_stride, kDefaultVertexBufferName, 4);
     orbis_set_default_vertex_buffer(system, buffer);
 
@@ -67,7 +67,7 @@ void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D7EB0.
 void orbis_create_identity_instance_buffer(OrbisRenderSystem& system) {
-    auto* buffer = render_allocate_named(
+    auto* buffer = MemAlloc(
         sizeof(OrbisMeshInstanceData),
         kIdentityInstanceBufferName,
         4);

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/textures/orbis_texture_array_cube_adapters.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D8AA0.
 OrbisTextureArrayCube* orbis_create_texture_array_cube(
     const RenderTextureArrayCubeDescriptor& descriptor) {
-    auto* storage = render_allocate(sizeof(OrbisTextureArrayCube));
+    auto* storage = operator new(sizeof(OrbisTextureArrayCube));
     auto* texture = reinterpret_cast<OrbisTextureArrayCube*>(storage);
     orbis_texture_array_cube_construct(*texture, descriptor);
     return texture;
@@ -48,7 +48,7 @@ void orbis_texture_array_cube_destruct(OrbisTextureArrayCube& texture) {
     orbis_texture_array_cube_install_vtable(texture);
     orbis_defer_texture_allocation(texture.allocation);
     if (auto* descriptor = texture.gpu_texture) {
-        render_release(descriptor);
+        MemFree(descriptor);
     }
     texture.gpu_texture = nullptr;
     render_texture_array_cube_destruct(texture);
@@ -57,7 +57,7 @@ void orbis_texture_array_cube_destruct(OrbisTextureArrayCube& texture) {
 // Reconstructed from eboot.elf at 0x8E66D0.
 void orbis_texture_array_cube_delete(OrbisTextureArrayCube& texture) {
     orbis_texture_array_cube_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E6730.

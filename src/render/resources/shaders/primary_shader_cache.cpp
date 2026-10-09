@@ -5,15 +5,15 @@
 #include <cstring>
 #include <_pthread.h>
 
-#include "core/io/bin_stream.h"
-#include "core/io/file_stream.h"
-#include "core/io/generated_file_adapters.h"
-#include "core/memory/engine_memory.h"
-#include "core/memory/heap_scope_adapters.h"
-#include "core/types/symbol.h"
+#include "utl/streams/BinStream.h"
+#include "utl/streams/FileStream.h"
+#include "os/files/File.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
+#include "utl/text/Symbol.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
-#include "render/resources/names/render_resource_name.h"
+#include "utl/text/Str.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_cache_validation.h"
@@ -120,7 +120,7 @@ ShaderCriticalSection g_shader_critical_section;
 
 std::uint32_t read_word(BinStream& stream) {
     std::uint32_t value = 0;
-    bin_stream_read_endian(stream, &value, sizeof(value));
+    stream.ReadEndian(&value, sizeof(value));
     return value;
 }
 
@@ -140,12 +140,12 @@ void resize_defines(RenderShaderCacheDefineArray& defines, std::size_t count) {
             new_capacity = count;
         }
         auto* storage = static_cast<RenderShaderCacheDefine*>(
-            engine_allocate_sized(new_capacity * sizeof(RenderShaderCacheDefine)));
+            HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(RenderShaderCacheDefine)));
         if (size != 0) {
             std::memcpy(storage, defines.begin, size * sizeof(*storage));
         }
         if (defines.begin != nullptr) {
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 defines.begin, capacity * sizeof(RenderShaderCacheDefine));
         }
         defines.begin = storage;
@@ -154,7 +154,7 @@ void resize_defines(RenderShaderCacheDefineArray& defines, std::size_t count) {
     }
     const Symbol empty_name("");
     for (auto* define = defines.end; define != defines.begin + count; ++define) {
-        define->name = static_cast<const char*>(empty_name.value());
+        define->name = empty_name.Str();
         define->value = 0;
     }
     defines.end = defines.begin + count;
@@ -162,7 +162,7 @@ void resize_defines(RenderShaderCacheDefineArray& defines, std::size_t count) {
 
 void release_defines(RenderShaderCacheDefineArray& defines) {
     if (defines.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             defines.begin,
             static_cast<std::size_t>(defines.capacity - defines.begin) *
                 sizeof(RenderShaderCacheDefine));
@@ -182,10 +182,9 @@ bool load_cache(
     RenderPrimaryShaderResource& shader,
     const char* path,
     bool validate) {
-    FileStream stream;
-    file_stream_construct(stream, path, 0, 0);
+    FileStream stream(path, kRead, false);
     bool loaded = false;
-    if (!file_stream_fail(&stream)) {
+    if (!stream.Fail()) {
         const auto marker = read_word(stream);
         if (marker != 0 &&
             static_cast<std::int32_t>(read_word(stream)) ==
@@ -197,16 +196,15 @@ bool load_cache(
 
             RenderShaderCacheDefineArray defines{};
             std::uint32_t heap_mode = 0;
-            engine_heap_scope_begin(heap_mode, true, true);
+            MemPushTemp(heap_mode, true, true);
             resize_defines(defines, read_word(stream));
             for (auto* define = defines.begin; define != defines.end; ++define) {
                 Symbol name(define->name);
-                bin_stream_read_symbol(stream, name);
-                define->name = static_cast<const char*>(name.value());
-                bin_stream_read_endian(
-                    stream, &define->value, sizeof(define->value));
+                stream >> name;
+                define->name = name.Str();
+                stream.ReadEndian(&define->value, sizeof(define->value));
             }
-            engine_heap_scope_end(heap_mode);
+            MemPopTemp(heap_mode);
 
             bool valid = true;
             if (validate) {
@@ -236,7 +234,6 @@ bool load_cache(
             release_defines(defines);
         }
     }
-    file_stream_destruct(stream);
     return loaded;
 }
 
@@ -257,7 +254,7 @@ std::uint32_t render_primary_shader_layout_hash(
         append_word(
             hash, static_cast<std::uint32_t>(registry.end - registry.begin));
         for (auto* record = registry.begin; record != registry.end; ++record) {
-            render_shader_source_hash_append(hash, record->name.text);
+            render_shader_source_hash_append(hash, record->name.c_str());
             append_word(hash, record->first_value);
             append_word(hash, record->last_value_exclusive);
         }
@@ -291,25 +288,25 @@ void render_primary_shader_initialize_backend(
         shader.backend_name = path;
 
         bool rebuild_needed = false;
-        RenderResourceName generated_path;
-        render_resource_name_construct(generated_path, "");
-        EngineFileTimestamp timestamp{};
+        String generated_path;
+        new (&generated_path) String("");
+        FileStat timestamp{};
         Symbol source("");
-        engine_file_resolve_path(source, static_cast<const char*>(path));
-        if (engine_file_find_generated(
+        FileResolvePath(source, static_cast<const char*>(path));
+        if (FileFindGenerated(
                 source, "", generated_path, rebuild_needed, timestamp)) {
-            const bool archive_mode = g_engine_file_archive_mode != 0;
+            const bool archive_mode = gFileArchiveMode != 0;
             bool failed = true;
             if (!rebuild_needed || archive_mode) {
                 failed = !load_cache(
-                    shader, generated_path.text, !archive_mode);
+                    shader, generated_path.c_str(), !archive_mode);
             }
             if (failed && !archive_mode) {
-                load_cache(shader, generated_path.text, false);
+                load_cache(shader, generated_path.c_str(), false);
             }
         }
         shader.compiled = true;
-        render_resource_name_destruct(generated_path);
+        (generated_path).~String();
     }
     --section.depth;
     scePthreadMutexUnlock(&section.mutex);

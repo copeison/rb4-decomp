@@ -3,8 +3,8 @@
 #include <cctype>
 #include <cstdlib>
 
-#include "core/command_line/command_line.h"
-#include "core/memory/engine_memory.h"
+#include "utl/options/Option.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings_adapters.h"
 #include "render/core/system/render_system_globals.h"
@@ -167,12 +167,12 @@ void apply_platform_limits(RenderSettings& settings) {
 }  // namespace
 
 RenderSettings* render_settings_allocate() {
-    return static_cast<RenderSettings*>(render_allocate(sizeof(RenderSettings)));
+    return static_cast<RenderSettings*>(operator new(sizeof(RenderSettings)));
 }
 
 void render_settings_release(RenderSettings* settings) {
     if (settings != nullptr) {
-        render_release(settings);
+        MemFree(settings);
     }
 }
 
@@ -250,7 +250,7 @@ void render_settings_initialize(RenderSettings& settings) {
 
     settings.output_resolution = platform_default_resolution();
     if (const auto* override_text =
-            command_line_switch_value(arguments, "resolution", nullptr)) {
+            OptionStr(gOptionArgs, "resolution", nullptr)) {
         RenderExtent override_resolution{};
         if (render_parse_resolution(override_text, override_resolution) &&
             platform_supports_resolution(settings.output_resolution)) {

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/textures/orbis_texture_array_2d_adapters.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D8A70.
 OrbisTextureArray2D* orbis_create_texture_array_2d(
     const RenderTextureArray2DDescriptor& descriptor) {
-    auto* storage = render_allocate(sizeof(OrbisTextureArray2D));
+    auto* storage = operator new(sizeof(OrbisTextureArray2D));
     auto* texture = reinterpret_cast<OrbisTextureArray2D*>(storage);
     orbis_texture_array_2d_construct(*texture, descriptor);
     return texture;
@@ -56,15 +56,15 @@ void orbis_texture_array_2d_destruct(OrbisTextureArray2D& texture) {
     if (texture.color_target != nullptr) {
         orbis_defer_texture_allocation(
             orbis_color_target_metadata_allocation(texture.color_target));
-        render_release(texture.color_target);
+        MemFree(texture.color_target);
         texture.color_target = nullptr;
     }
     if (texture.gpu_texture != nullptr) {
-        render_release(texture.gpu_texture);
+        MemFree(texture.gpu_texture);
         texture.gpu_texture = nullptr;
     }
     if (texture.depth_target != nullptr) {
-        render_release(texture.depth_target);
+        MemFree(texture.depth_target);
         texture.depth_target = nullptr;
     }
     render_texture_array_2d_destruct(texture);
@@ -73,7 +73,7 @@ void orbis_texture_array_2d_destruct(OrbisTextureArray2D& texture) {
 // Reconstructed from eboot.elf at 0x8E5E50.
 void orbis_texture_array_2d_delete(OrbisTextureArray2D& texture) {
     orbis_texture_array_2d_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E5E70.

@@ -22,7 +22,6 @@ const std::array<Symbol, kUiLayoutCount>& ui_layout_symbols() {
 const std::array<const char*, kUiLayoutCount>& ui_layout_paths() {
     static const std::array<const char*, kUiLayoutCount> paths{
 #define RB4_UI_LAYOUT(name, path) path,
-#include "ui/layout/ui_layout_list.inc"
 #undef RB4_UI_LAYOUT
     };
     return paths;

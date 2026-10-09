@@ -5,7 +5,8 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/platform/orbis/meshes/orbis_mesh_draw.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
@@ -32,7 +33,7 @@ void orbis_mesh_grow_vertex_storage(
             required_count,
             std::max<std::size_t>(1, current_count * 2));
         auto* replacement = static_cast<Vertex*>(
-            engine_allocate_sized(new_capacity * sizeof(Vertex)));
+            HmxAllocator::gStlAllocator.allocate(new_capacity * sizeof(Vertex)));
         if (current_count != 0) {
             std::memcpy(
                 replacement,
@@ -40,7 +41,7 @@ void orbis_mesh_grow_vertex_storage(
                 current_count * sizeof(Vertex));
         }
         if (layout.vertices_begin != nullptr) {
-            engine_deallocate_sized(
+            HmxAllocator::gStlAllocator.deallocate(
                 layout.vertices_begin,
                 capacity * sizeof(Vertex));
         }
@@ -59,7 +60,7 @@ template <typename Vertex>
 void orbis_mesh_release_vertex_storage(OrbisMesh& mesh) {
     auto& layout = mesh_layout<Vertex>(mesh);
     if (layout.vertices_begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             layout.vertices_begin,
             static_cast<std::size_t>(
                 layout.vertices_capacity_end - layout.vertices_begin) *
@@ -91,11 +92,11 @@ void orbis_mesh_rebuild_vertex_buffers(
                 *g_orbis_render_system, layout.vertex_buffers[1]);
         }
         layout.vertex_buffers[0] = static_cast<Vertex*>(
-            render_allocate_named(byte_count, kAllocationName, 4));
+            MemAlloc(byte_count, kAllocationName, 4));
         layout.vertex_buffers[1] =
             (layout.base.vertex_usage_flags & 1U) != 0
             ? static_cast<Vertex*>(
-                  render_allocate_named(byte_count, kAllocationName, 4))
+                  MemAlloc(byte_count, kAllocationName, 4))
             : nullptr;
         layout.vertex_buffer_capacity = vertex_count;
     }
@@ -148,7 +149,7 @@ void orbis_mesh_rebuild_index_buffer(OrbisMesh& mesh) {
             orbis_defer_allocation_release(
                 *g_orbis_render_system, layout.index_buffer);
         }
-        layout.index_buffer = render_allocate_named(
+        layout.index_buffer = MemAlloc(
             byte_count, kAllocationName, 4);
         layout.index_buffer_capacity = index_count;
         layout.index_format = static_cast<std::uint32_t>(index_format);

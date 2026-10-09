@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/threading/engine_thread.h"
+#include "os/memory/MemMgr.h"
+#include "utl/threading/Thread.h"
 #include "render/core/system/render_system_lifecycle.h"
 #include "render/platform/orbis/synchronization/orbis_frame_submit.h"
 #include "render/platform/orbis/synchronization/orbis_gpu_sync.h"
@@ -78,7 +78,7 @@ void orbis_render_system_install_vtable(OrbisRenderSystem& system) {
 
 // Reconstructed from eboot.elf at 0x8D5DF0.
 OrbisRenderSystem* orbis_render_system_create() {
-    auto* storage = render_allocate(kOrbisRenderSystemSize);
+    auto* storage = operator new(kOrbisRenderSystemSize);
     auto* system = reinterpret_cast<OrbisRenderSystem*>(storage);
     orbis_render_system_construct(*system);
     return system;
@@ -89,8 +89,7 @@ void orbis_render_system_construct(OrbisRenderSystem& system) {
     render_system_construct(orbis_render_system_base(system));
     orbis_render_system_install_vtable(system);
     orbis_render_system_initialize_video_state(system);
-    engine_thread_initialize(
-        orbis_submit_thread_wrapper(system), kUnknownWorkerName);
+    orbis_submit_thread_wrapper(system).Init(kUnknownWorkerName);
     orbis_render_system_initialize_submission_state(system);
     orbis_render_system_initialize_command_list(system);
     orbis_set_cached_flip_rate(system, -1);
@@ -102,7 +101,7 @@ void orbis_render_system_destruct(OrbisRenderSystem& system) {
     orbis_render_system_clear_instance();
     orbis_render_system_destroy_command_list(system);
     orbis_render_system_destroy_submission_state(system);
-    engine_thread_cancel(orbis_submit_thread(system));
+    orbis_submit_thread(system)._ForceKillThread();
     orbis_destroy_submit_condition(system);
     render_system_destruct(orbis_render_system_base(system));
 }

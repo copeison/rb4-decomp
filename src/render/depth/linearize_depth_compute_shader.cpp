@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -69,7 +69,7 @@ void linearize_depth_shader_destruct(void* shader) {
 
 void linearize_depth_shader_delete(void* shader) {
     linearize_depth_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* linearize_depth_shader_source_identifier(void*) {
@@ -98,7 +98,7 @@ void initialize_linearize_depth_support_objects(
     render_shader_parameter_registry_add_ternary(
         &tail.orthographic_binding,
         &parameters->registries[5],
-        is_orthographic.value());
+        is_orthographic.Str());
 
     tail.depth_texture = render_shader_backend_add_texture_binding(
         *backend_state, "gDepth", "", 1, 5, 9);

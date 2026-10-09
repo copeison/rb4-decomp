@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -65,7 +65,7 @@ void display_shader_destruct(void* shader) {
 
 void display_shader_delete(void* shader) {
     display_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 std::int32_t display_shader_mode(void*) {
@@ -138,17 +138,17 @@ void initialize_texture_cube(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         pixel_parameters,
-        use_mip_level.value());
+        use_mip_level.Str());
     const Symbol blend_textures("HX_BLEND_TEXTURES");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 1),
         pixel_parameters,
-        blend_textures.value());
+        blend_textures.Str());
     const Symbol use_texture_array("HX_USE_TEXARRAY");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 2),
         pixel_parameters,
-        use_texture_array.value());
+        use_texture_array.Str());
 
     shader_field(shader, 352) = render_shader_constant_block_add(
         *constant_block, RenderShaderConstantType::vector4, "gColor");

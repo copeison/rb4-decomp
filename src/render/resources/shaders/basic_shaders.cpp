@@ -3,10 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/core/context/render_context.h"
-#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -50,7 +49,7 @@ std::int64_t& field(void* shader, std::size_t offset) {
 void shader_destruct(void* shader) {
     render_primary_shader_destruct(primary_shader(shader));
 }
-void shader_delete(void* shader) { shader_destruct(shader); render_release(shader); }
+void shader_delete(void* shader) { shader_destruct(shader); MemFree(shader); }
 std::int32_t shader_mode(void*) { return 0; }
 std::int32_t shader_variant(void*) { return 13; }
 
@@ -64,11 +63,11 @@ void initialize_error(void* shader, RenderShaderConstantRegistry*,
     const Symbol geometry_type("HX_GEO_TYPE");
     render_shader_parameter_registry_add(
         &binding(shader, 0), &parameters->registries[1],
-        geometry_type.value(), 0, 2);
+        geometry_type.Str(), 0, 2);
     const Symbol shading_mode("HX_SHADING_MODE");
     render_shader_parameter_registry_add(
         &binding(shader, 1), &parameters->registries[4],
-        shading_mode.value(), 0, 19);
+        shading_mode.Str(), 0, 19);
 }
 
 const void* basic_identifier(void*) { return "RndShaderBasic"; }
@@ -82,16 +81,16 @@ void initialize_basic(void* shader, RenderShaderConstantRegistry* constants,
     auto* pixel = &parameters->registries[4];
     const Symbol shading_mode("HX_SHADING_MODE");
     render_shader_parameter_registry_add(
-        &binding(shader, 0), pixel, shading_mode.value(), 0, 19);
+        &binding(shader, 0), pixel, shading_mode.Str(), 0, 19);
     const Symbol texture_mode("HX_TEXTURE_MODE");
     render_shader_parameter_registry_add(
-        &binding(shader, 1), pixel, texture_mode.value(), 0, 3);
+        &binding(shader, 1), pixel, texture_mode.Str(), 0, 3);
     const Symbol alpha_cut("HX_ALPHA_CUT");
     render_shader_parameter_registry_add_ternary(
-        &binding(shader, 2), pixel, alpha_cut.value());
+        &binding(shader, 2), pixel, alpha_cut.Str());
     const Symbol red_as_alpha("HX_USE_TEX_RED_AS_ALPHA");
     render_shader_parameter_registry_add_ternary(
-        &binding(shader, 3), pixel, red_as_alpha.value());
+        &binding(shader, 3), pixel, red_as_alpha.Str());
     render_shader_constant_registry_add_definition(
         *constants, "HX_TEXTURE_MODE_NONE", 0);
     render_shader_constant_registry_add_definition(

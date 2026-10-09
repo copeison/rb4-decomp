@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
@@ -53,7 +53,7 @@ static_assert(
 
 OrbisRenderContext* orbis_render_context_create(
     OrbisRenderSystem& system) {
-    auto* storage = render_allocate(kOrbisRenderContextSize);
+    auto* storage = operator new(kOrbisRenderContextSize);
     auto* context = static_cast<OrbisRenderContext*>(storage);
     orbis_render_context_construct(*context);
     render_system_set_render_context(system, *context);
@@ -234,7 +234,7 @@ void orbis_render_context_destruct(OrbisRenderContext& context) {
 // Reconstructed from eboot.elf at 0x8E82B0.
 void orbis_render_context_delete(OrbisRenderContext& context) {
     orbis_render_context_destruct(context);
-    render_free(&context);
+    operator delete(&context);
 }
 
 // Reconstructed from eboot.elf at 0x8E82D0.

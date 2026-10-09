@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -53,7 +53,7 @@ void cmaa_shader_destruct(void* shader) {
 
 void cmaa_shader_delete(void* shader) {
     cmaa_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 std::int32_t cmaa_shader_mode(void*) {

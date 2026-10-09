@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/textures/orbis_texture_cube_adapters.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D8A10.
 OrbisTextureCube* orbis_create_texture_cube(
     const RenderTextureCubeDescriptor& descriptor) {
-    auto* storage = render_allocate(sizeof(OrbisTextureCube));
+    auto* storage = operator new(sizeof(OrbisTextureCube));
     auto* texture = reinterpret_cast<OrbisTextureCube*>(storage);
     orbis_texture_cube_construct(*texture, descriptor);
     return texture;
@@ -54,7 +54,7 @@ void orbis_texture_cube_destruct(OrbisTextureCube& texture) {
             orbis_render_target_metadata_allocation(*target));
         orbis_defer_texture_allocation(
             orbis_render_target_surface_allocation(*target));
-        render_release(target);
+        MemFree(target);
         texture.render_target = nullptr;
     }
 
@@ -62,12 +62,12 @@ void orbis_texture_cube_destruct(OrbisTextureCube& texture) {
     orbis_defer_texture_allocation(texture.secondary_allocation);
 
     if (auto* descriptor = texture.gpu_texture) {
-        render_release(descriptor);
+        MemFree(descriptor);
     }
     texture.gpu_texture = nullptr;
 
     if (auto* target = texture.depth_target) {
-        render_release(target);
+        MemFree(target);
     }
     texture.depth_target = nullptr;
     render_texture_cube_destruct(texture);
@@ -76,7 +76,7 @@ void orbis_texture_cube_destruct(OrbisTextureCube& texture) {
 // Reconstructed from eboot.elf at 0x8E6CC0.
 void orbis_texture_cube_delete(OrbisTextureCube& texture) {
     orbis_texture_cube_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E6CE0.

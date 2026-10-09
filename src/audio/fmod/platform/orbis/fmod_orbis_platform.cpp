@@ -3,8 +3,7 @@
 #include <kernel.h>
 
 #include "audio/fmod/api/fmod_api.h"
-#include "core/threading/thread_affinity.h"
-#include "core/threading/thread_affinity_adapters.h"
+#include "utl/threading/Thread.h"
 
 namespace rb4 {
 
@@ -24,10 +23,9 @@ void load_module(const char* path) {
         &start_result);
 }
 
-std::uint32_t affinity_mask(const ThreadAffinityGroup& group) {
-    return static_cast<std::uint32_t>(thread_affinity_build_cpu_mask(
-        group.primary_processor,
-        group.additional_processor_mask));
+std::uint32_t affinity_mask(const ThreadMap::TaskDesc& group) {
+    return static_cast<std::uint32_t>(ThreadMap::BuildAffinityMask(
+        group.mProcessor, group.mAffinityMask));
 }
 
 }  // namespace
@@ -37,8 +35,8 @@ void fmod_load_modules_and_set_thread_affinity() {
     load_module("/app0/libfmod.prx");
     load_module("/app0/libfmodstudio.prx");
 
-    const auto* audio_render = thread_affinity_find_group("audio_render");
-    const auto* mic_reader = thread_affinity_find_group("mic_reader");
+    const auto* audio_render = ThreadMap::GetTaskSettings("audio_render");
+    const auto* mic_reader = ThreadMap::GetTaskSettings("mic_reader");
     const auto audio_render_mask = affinity_mask(*audio_render);
 
     FMOD_ORBIS_THREAD_AFFINITY affinity{};

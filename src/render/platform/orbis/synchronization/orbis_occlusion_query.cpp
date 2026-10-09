@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/synchronization/orbis_occlusion_query_adapters.h"
 
 namespace rb4 {
@@ -16,7 +16,7 @@ constexpr std::size_t kOcclusionQueryResultAlignment = 16;
 
 // Reconstructed from eboot.elf at 0x8D8C30.
 OrbisOcclusionQuery* orbis_create_occlusion_query(void* owner) {
-    auto* storage = render_allocate(sizeof(OrbisOcclusionQuery));
+    auto* storage = operator new(sizeof(OrbisOcclusionQuery));
     auto* query = reinterpret_cast<OrbisOcclusionQuery*>(storage);
     orbis_occlusion_query_construct(*query, owner);
     return query;

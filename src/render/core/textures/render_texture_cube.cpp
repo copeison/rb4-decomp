@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
@@ -213,7 +213,7 @@ void render_texture_cube_destruct(RenderTextureCube& texture) {
 // Reconstructed from eboot.elf at 0x6A0F10.
 void render_texture_cube_delete(RenderTextureCube& texture) {
     render_texture_cube_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 }  // namespace rb4

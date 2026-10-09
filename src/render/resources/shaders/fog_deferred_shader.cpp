@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -74,7 +74,7 @@ void fog_deferred_shader_destruct(FogDeferredShaderResource* shader) {
 
 void fog_deferred_shader_delete(FogDeferredShaderResource* shader) {
     fog_deferred_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 const void* fog_deferred_shader_source_identifier(
@@ -98,7 +98,7 @@ void fog_deferred_shader_initialize_support_objects(
     render_shader_parameter_registry_add_ternary(
         &tail.color_space_binding,
         &parameters->registries[4],
-        color_space.value());
+        color_space.Str());
 
     tail.falloff_parameters = render_shader_constant_block_add(
         *constant_block,
@@ -176,7 +176,7 @@ FogDeferredShaderResource*& render_system_fog_deferred_shader(
 // Reconstructed from eboot.elf at 0x451C90.
 void fog_deferred_shader_create(FogDeferredShaderResource*& shader) {
     auto* created = static_cast<FogDeferredShaderResource*>(
-        render_allocate(sizeof(FogDeferredShaderResource)));
+        operator new(sizeof(FogDeferredShaderResource)));
     fog_deferred_shader_construct(*created);
     shader = created;
 }

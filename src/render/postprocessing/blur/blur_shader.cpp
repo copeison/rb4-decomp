@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
@@ -68,7 +68,7 @@ void blur_shader_destruct(void* shader) {
 // Reconstructed from eboot.elf at 0x634B90.
 void blur_shader_delete(void* shader) {
     blur_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 // Reconstructed from eboot.elf at 0x635FB0.
@@ -93,38 +93,38 @@ void initialize_blur_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         pixel_parameters,
-        texture_array.value());
+        texture_array.Str());
     const Symbol sample_count("HX_NUM_BLUR_SAMPLES");
     render_shader_parameter_registry_add(
         &parameter_binding(shader, 1),
         pixel_parameters,
-        sample_count.value(),
+        sample_count.Str(),
         0,
         33);
     const Symbol blur_type("HX_BLUR_TYPE");
     render_shader_parameter_registry_add(
         &parameter_binding(shader, 2),
         pixel_parameters,
-        blur_type.value(),
+        blur_type.Str(),
         0,
         2);
     const Symbol blur_direction("HX_BLUR_DIRECTION");
     render_shader_parameter_registry_add(
         &parameter_binding(shader, 3),
         pixel_parameters,
-        blur_direction.value(),
+        blur_direction.Str(),
         0,
         2);
     const Symbol scene_mask("HX_USE_SCENE_MASK");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 4),
         pixel_parameters,
-        scene_mask.value());
+        scene_mask.Str());
     const Symbol classification("HX_USE_CLASSIFICATION_BUFFER");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 5),
         pixel_parameters,
-        classification.value());
+        classification.Str());
 
     render_shader_constant_registry_add_definition(
         *constants, "HX_BLUR_TYPE_GAUSSIAN", 0);

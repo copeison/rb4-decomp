@@ -3,12 +3,12 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/resources/names/render_resource_name.h"
+#include "utl/text/Str.h"
 
 namespace rb4 {
 
 struct RenderShaderParameterRecord {
-    RenderResourceName name;
+    String name;
     std::uint32_t first_value;
     std::uint32_t last_value_exclusive;
     std::uint32_t shifted_mask;

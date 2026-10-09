@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/textures/orbis_texture_3d_adapters.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void bind_texture_stage(
 // Reconstructed from eboot.elf at 0x8D89E0.
 OrbisTexture3D* orbis_create_texture_3d(
     const RenderTexture3DDescriptor& descriptor) {
-    auto* storage = render_allocate(sizeof(OrbisTexture3D));
+    auto* storage = operator new(sizeof(OrbisTexture3D));
     auto* texture = reinterpret_cast<OrbisTexture3D*>(storage);
     orbis_texture_3d_construct(*texture, descriptor);
     return texture;
@@ -48,7 +48,7 @@ void orbis_texture_3d_destruct(OrbisTexture3D& texture) {
     orbis_texture_3d_install_vtable(texture);
     orbis_defer_texture_allocation(texture.allocation);
     if (auto* descriptor = texture.gpu_texture) {
-        render_release(descriptor);
+        MemFree(descriptor);
     }
     texture.gpu_texture = nullptr;
     render_texture_3d_destruct(texture);
@@ -57,7 +57,7 @@ void orbis_texture_3d_destruct(OrbisTexture3D& texture) {
 // Reconstructed from eboot.elf at 0x8E5450.
 void orbis_texture_3d_delete(OrbisTexture3D& texture) {
     orbis_texture_3d_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 // Reconstructed from eboot.elf at 0x8E54B0.

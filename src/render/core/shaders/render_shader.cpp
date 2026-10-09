@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/context/render_context.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
@@ -66,7 +66,7 @@ void render_shader_destruct(RenderShader&) {
 
 // Reconstructed from eboot.elf at 0x6422B0.
 void render_shader_delete(RenderShader& shader) {
-    render_release(&shader);
+    MemFree(&shader);
 }
 
 // Reconstructed from eboot.elf at 0x6422C0.

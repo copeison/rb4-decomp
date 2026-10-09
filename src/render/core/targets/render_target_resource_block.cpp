@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/core/textures/render_texture.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
@@ -72,7 +72,7 @@ RenderTexture* tiled_light_reuse_target(
 
 RenderPartialFrameState* create_partial_frame_state() {
     auto* state = static_cast<RenderPartialFrameState*>(
-        render_allocate(sizeof(RenderPartialFrameState)));
+        operator new(sizeof(RenderPartialFrameState)));
     *state = {};
     for (auto& value : state->values_00) {
         value = -1;

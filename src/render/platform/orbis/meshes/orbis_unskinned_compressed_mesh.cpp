@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
 #include "render/platform/orbis/meshes/orbis_mesh_storage.h"
 
@@ -85,7 +85,7 @@ UnskinnedCompressedMeshVertex* orbis_unskinned_compressed_mesh_copy_vertices(
 
     const auto byte_count = sizeof(UnskinnedCompressedMeshVertex) * vertex_count;
     auto* copy = static_cast<UnskinnedCompressedMeshVertex*>(
-        render_allocate_named(byte_count, kVertexCopyAllocationName, 4));
+        MemAlloc(byte_count, kVertexCopyAllocationName, 4));
     std::memcpy(copy, layout.vertices_begin, byte_count);
     return copy;
 }

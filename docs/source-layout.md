@@ -1,28 +1,35 @@
 # Source layout
 
-The reconstruction tree groups code first by engine subsystem and then by a
-coherent responsibility. This is a project-wide rule. Broad subsystem and layer
-folders contain domain folders rather than accumulating implementation files,
-including game, input, UI, rendering, audio, and future reconstructed systems.
+The tree follows the original codebase's modules, taken from the object paths
+in the reference linker map. Inside each module, code is grouped by a coherent
+responsibility. Broad module folders contain domain folders rather than
+accumulating implementation files. Names and classes follow
+[naming.md](naming.md).
 
-Engine-wide utilities live under narrow domains in `src/core`. Shared allocator
-declarations live under `src/core/memory`, thread runtime code lives under
-`src/core/threading`, and performance-counter declarations shared by audio and
-rendering live under `src/core/time`.
+| Module | Contents | Domains so far |
+|---|---|---|
+| `src/math` | Math types | `color`, `hash`, `random` |
+| `src/utl` | Engine utilities | `containers`, `options`, `streams`, `text`, `threading`, `time` |
+| `src/os` | Platform services | `files`, `memory` |
+| `src/render` | Platform-neutral renderer (`Rnd*`) | see below |
+| `src/renderps4` | PS4 backend (`PS4*`) | planned; currently `src/render/platform/orbis` |
+| `src/audio` | Audio engine and FMOD integration | `core`, `fmod` |
+| `src/rockband`, `src/rb_*` | Game | planned; currently `src/game` |
+| `src/ui` | UI system | `layout` |
 
-Shared renderer code is divided under `src/render/core` into buffers, capture,
-context, debug, frame, meshes, platform, settings, shaders, synchronization, system,
-targets, and textures. Default resources are divided under
-`src/render/resources` into camera, lighting, materials, system, and textures.
-The PS4 backend is rooted at
-`src/render/platform/orbis` and split into buffers, context, meshes, shaders,
-synchronization, system, textures, and video.
+The renderer is being converted to the original class names. Until each part
+is converted, shared renderer code stays where it is now:
 
-Platform-neutral audio utilities are divided under `src/audio/core` into
-format, output, and runtime. FMOD integration is rooted at `src/audio/fmod` and
-divided into its API surface, system state, I/O, mixing, playback, resources,
-input, and platform integration.
+- Domains under `src/render/core`: buffers, capture, context, debug, frame,
+  meshes, platform, settings, shaders, synchronization, system, targets and
+  textures.
+- Default resources under `src/render/resources`.
+- Pass-specific folders such as `lighting`, `postprocessing`, `depth` and
+  `masking`.
 
-New work in every subsystem should enter the narrowest existing domain folder.
-Create a clearly named domain folder when no suitable one exists, and use
-source-root-qualified includes when code crosses folder boundaries.
+The PS4 backend is under `src/render/platform/orbis`. Audio utilities are under
+`src/audio/core`, and FMOD integration is under `src/audio/fmod`.
+
+New work should enter the narrowest fitting domain in its original module.
+Create a clearly named domain folder when none fits, and use
+source-root-qualified includes when code crosses folders.

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "core/types/integer_text_adapters.h"
+#include "utl/text/Str.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -43,7 +43,7 @@ void enumerate(Enumeration& enumeration, std::size_t depth, std::uint64_t key) {
          value < static_cast<std::int32_t>(record.last_value_exclusive);
          ++value) {
         enumeration.defines.push_back(
-            {record.name.text, engine_integer_text(value)});
+            {record.name.c_str(), IntToStaticString(value)});
         // The shifted 32-bit field is sign-extended before placement.
         const auto shifted = static_cast<std::int32_t>(
             static_cast<std::uint32_t>(

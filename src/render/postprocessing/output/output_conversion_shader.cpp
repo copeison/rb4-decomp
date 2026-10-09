@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/color/color_space.h"
-#include "core/memory/engine_memory.h"
-#include "core/types/symbol.h"
+#include "math/color/Color.h"
+#include "os/memory/MemMgr.h"
+#include "utl/text/Symbol.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -70,7 +70,7 @@ void output_conversion_shader_destruct(void* shader) {
 // Reconstructed from eboot.elf at 0x636820.
 void output_conversion_shader_delete(void* shader) {
     output_conversion_shader_destruct(shader);
-    render_release(shader);
+    MemFree(shader);
 }
 
 // Reconstructed from eboot.elf at 0x636C40.
@@ -97,18 +97,18 @@ void initialize_output_conversion_shader_support_objects(
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 0),
         &parameters->registries[0],
-        hmd_mask.value());
+        hmd_mask.Str());
     auto* pixel_parameters = &parameters->registries[4];
     const Symbol color_space("HX_USE_BT709_TO_BT2020");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 1),
         pixel_parameters,
-        color_space.value());
+        color_space.Str());
     const Symbol perceptual_quantizer("HX_USE_PERCEPTUAL_QUANTIZER");
     render_shader_parameter_registry_add_ternary(
         &parameter_binding(shader, 2),
         pixel_parameters,
-        perceptual_quantizer.value());
+        perceptual_quantizer.Str());
 
     shader_field(shader, 352) = render_shader_constant_block_add(
         *constant_block, RenderShaderConstantType::scalar, "gMinIntensity");
@@ -181,18 +181,17 @@ void render_output_conversion_shader_draw(
 
     const auto extent = static_cast<std::uint64_t>(shader_field(shader, 360));
     auto& buffer = render_shader_select_constant_buffer(context, extent);
-    const float intensity[4] = {
+    const Hmx::Color intensity(
         parameters.minimum_intensity,
         parameters.minimum_intensity,
         parameters.minimum_intensity,
-        1.0F,
-    };
-    float linear[4] = {0.0F, 0.0F, 0.0F, 1.0F};
-    color_srgb_to_linear(intensity, linear);
+        1.0F);
+    Hmx::Color linear(0.0F, 0.0F, 0.0F, 1.0F);
+    GammaToLinear_sRGB(intensity, linear);
     std::memcpy(
         render_shader_constant_member(buffer, shader_field(shader, 352)),
-        &linear[0],
-        sizeof(linear[0]));
+        &linear.red,
+        sizeof(linear.red));
     render_shader_commit_constant_buffer(buffer, context, extent);
 
     render_shader_bind_pixel_texture(

@@ -2,8 +2,9 @@
 
 #include <cstring>
 
-#include "core/io/bin_stream.h"
-#include "core/memory/engine_memory.h"
+#include "utl/streams/BinStream.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/platform/render_platform.h"
 #include "render/core/shaders/render_shader.h"
 
@@ -16,7 +17,7 @@ constexpr std::uint32_t kMinimumStageCount = 4;
 
 std::uint32_t read_u32(BinStream& stream) {
     std::uint32_t value = 0;
-    bin_stream_read_endian(stream, &value, sizeof(value));
+    stream.ReadEndian(&value, sizeof(value));
     return value;
 }
 
@@ -24,9 +25,9 @@ std::uint32_t read_u32(BinStream& stream) {
 // starts with a discarded 32-bit field followed by its 64-bit permutation key.
 std::uint64_t read_permutation_key(BinStream& stream) {
     std::uint32_t discarded = 0;
-    bin_stream_read_endian(stream, &discarded, sizeof(discarded));
+    stream.ReadEndian(&discarded, sizeof(discarded));
     std::uint64_t key = 0;
-    bin_stream_read_endian(stream, &key, sizeof(key));
+    stream.ReadEndian(&key, sizeof(key));
     return key;
 }
 
@@ -70,13 +71,13 @@ void render_compiled_shader_objects_resize(
     }
     constexpr auto kEntrySize = sizeof(RenderManagedObject*);
     auto** storage = static_cast<RenderManagedObject**>(
-        engine_allocate_sized(new_capacity * kEntrySize));
+        HmxAllocator::gStlAllocator.allocate(new_capacity * kEntrySize));
     if (size != 0) {
         std::memmove(storage, objects.begin, size * kEntrySize);
     }
     std::memset(storage + size, 0, added * kEntrySize);
     if (objects.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             objects.begin,
             static_cast<std::size_t>(objects.capacity - objects.begin) *
                 kEntrySize);
@@ -117,8 +118,7 @@ bool render_compiled_shader_objects_load(
             // The original compares the active render API with itself; the
             // cache never records a foreign platform on this build.
             if (orbis_render_api() != orbis_render_api()) {
-                bin_stream_seek(
-                    stream, binary_size, BinStreamSeek::kCurrent);
+                stream.Seek(binary_size, kSeekCur);
                 continue;
             }
 
@@ -127,7 +127,7 @@ bool render_compiled_shader_objects_load(
                 : reinterpret_cast<const RenderShaderBinary*>(&stream);
             auto* shader =
                 render_create_shader(static_cast<RenderShaderStage>(stage));
-            bin_stream_tell(stream);
+            stream.Tell();
             auto* object = reinterpret_cast<RenderManagedObject*>(shader);
             if (!render_shader_initialize(*shader, key, binary, metadata)) {
                 if (object != nullptr) {
@@ -135,7 +135,7 @@ bool render_compiled_shader_objects_load(
                 }
                 return false;
             }
-            bin_stream_tell(stream);
+            stream.Tell();
             stage_objects.begin[index] = object;
         }
     }

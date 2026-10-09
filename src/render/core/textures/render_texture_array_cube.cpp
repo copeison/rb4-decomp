@@ -2,7 +2,8 @@
 
 #include <cstddef>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
+#include "utl/containers/Std.h"
 #include "render/core/system/render_factory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
@@ -111,7 +112,7 @@ void destroy_cubes(RenderTextureCubeState* begin, RenderTextureCubeState* end) {
 
 void release_cube_storage(RenderTextureCubeArray& cubes) {
     if (cubes.begin != nullptr) {
-        engine_deallocate_sized(
+        HmxAllocator::gStlAllocator.deallocate(
             cubes.begin,
             static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(cubes.capacity) -
@@ -124,7 +125,7 @@ void reserve_cubes(RenderTextureCubeArray& cubes, std::size_t capacity) {
         return;
     }
     auto* replacement = static_cast<RenderTextureCubeState*>(
-        engine_allocate_sized(capacity * sizeof(RenderTextureCubeState)));
+        HmxAllocator::gStlAllocator.allocate(capacity * sizeof(RenderTextureCubeState)));
     auto* output = replacement;
     for (auto* input = cubes.begin; input != cubes.end; ++input, ++output) {
         render_texture_cube_state_construct(
@@ -276,7 +277,7 @@ void render_texture_array_cube_destruct(RenderTextureArrayCube& texture) {
 // Reconstructed from eboot.elf at 0x69AD10.
 void render_texture_array_cube_delete(RenderTextureArrayCube& texture) {
     render_texture_array_cube_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 }  // namespace rb4

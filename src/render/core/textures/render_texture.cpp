@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
-#include "core/resources/resource_mode.h"
+#include "os/memory/MemMgr.h"
+#include "os/files/File.h"
 
 namespace rb4 {
 
@@ -209,7 +209,7 @@ void render_texture_destruct(RenderTexture&) {
 // Reconstructed from eboot.elf at 0x69B780.
 void render_texture_delete(RenderTexture& texture) {
     render_texture_destruct(texture);
-    render_release(&texture);
+    MemFree(&texture);
 }
 
 void render_texture_release_dynamic(RenderTexture& texture) {
@@ -220,7 +220,7 @@ void render_texture_release_dynamic(RenderTexture& texture) {
 void render_texture_initialize_backend(
     RenderTexture& texture,
     const RenderTexture* reusable_texture) {
-    if (g_resource_precache_mode) {
+    if (gResourcePrecacheMode) {
         return;
     }
 

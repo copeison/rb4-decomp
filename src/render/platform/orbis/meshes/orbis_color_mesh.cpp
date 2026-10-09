@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/memory/engine_memory.h"
+#include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_mesh_layout.h"
 #include "render/platform/orbis/meshes/orbis_mesh_storage.h"
 
@@ -85,7 +85,7 @@ ColorMeshVertex* orbis_color_mesh_copy_vertices(const OrbisMesh& mesh) {
 
     const auto byte_count = sizeof(ColorMeshVertex) * vertex_count;
     auto* copy = static_cast<ColorMeshVertex*>(
-        render_allocate_named(byte_count, kVertexCopyAllocationName, 4));
+        MemAlloc(byte_count, kVertexCopyAllocationName, 4));
     std::memcpy(copy, layout.vertices_begin, byte_count);
     return copy;
 }
