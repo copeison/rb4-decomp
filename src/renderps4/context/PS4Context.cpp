@@ -4,6 +4,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <gnm/platform.h>
 
 #include "os/memory/MemMgr.h"
 #include "render/context/RndResourceBarrier.h"
@@ -29,14 +31,40 @@ namespace {
 
 constexpr std::size_t kTransientVertexCapacity = 0x40000;
 constexpr std::size_t kCueSlotCount = 64;
-constexpr std::size_t kCueHeapBytesPerSlot = 39872;
-constexpr std::size_t kDrawCommandBufferSize = 32 * 1024 * 1024;
-constexpr std::size_t kResourceBufferSize = 2 * 1024 * 1024;
-constexpr std::size_t kConstantUpdateBufferSize = 4 * 1024 * 1024;
-constexpr std::size_t kScratchBufferSize = 4 * 1024 * 1024;
-constexpr std::size_t kComputeCommandBufferSize = 0x3FFFFC;
+constexpr std::uint32_t kDrawCommandBufferSize = 32 * 1024 * 1024;
+constexpr std::uint32_t kConstantCommandBufferSize = 2 * 1024 * 1024;
+constexpr std::size_t kGlobalResourceTableSize = 192;
+constexpr std::uint32_t kGsRingSize = 4 * 1024 * 1024;
+constexpr std::uint32_t kMaxGsVertexSizeInDwords = 100;
+constexpr std::uint32_t kMaxGsOutputVertexCount = 0x100000;
+// CUE slots per graphics context: resources, read-write resources,
+// samplers and vertex buffers.
+constexpr sce::Gnmx::ConstantUpdateEngine::RingSetup kCueRingSetup = {128, 16, 16, 32};
+constexpr std::uint32_t kComputeCommandBufferSize = 0x3FFFFC;
 constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
+
+// Maps a compute queue with a 4 KiB ring, as SDK 2.500's inline
+// ComputeQueue::map did with a priority. Name not in the reference map.
+void MapComputeQueue(
+    sce::Gnmx::ComputeQueue& queue,
+    std::uint32_t pipe,
+    sce::Gnm::PipePriority priority) {
+    void* ring = MemAlloc(kComputeQueueRingSize, "ComputeQueue", kComputeQueueRingAlignment);
+    std::memset(ring, 0, kComputeQueueRingSize);
+    auto* readPtr = static_cast<std::uint32_t*>(MemAlloc(sizeof(std::uint32_t), "ComputeQueue", 16));
+    queue.initialize(pipe, 0);
+    sce::Gnm::mapComputeQueueWithPriority(
+        &queue.m_vqueueId,
+        queue.m_pipeId,
+        queue.m_queueId,
+        ring,
+        kComputeQueueRingSize / sizeof(std::uint32_t),
+        readPtr,
+        priority);
+    queue.m_dcbRoot.init(ring, kComputeQueueRingSize, nullptr, nullptr);
+    queue.m_readPtrAddr = readPtr;
+}
 constexpr unsigned int kNumShaderStages = 6;
 constexpr unsigned int kAllShaderStages = (1U << kNumShaderStages) - 1;
 // The Gnm stage of each engine stage (vertex, hull, domain, geometry,
@@ -112,10 +140,7 @@ PS4Context* PS4Context::_CreateImmediate(PS4Device& device) {
     return context;
 }
 
-// Reconstructed from eboot.elf at 0x8E72B0. The binary constructs the
-// transient buffers (0x8EC7C0) after the state defaults; here the compiler
-// constructs them as members before the body, since the earlier members are
-// not yet modeled.
+// Reconstructed from eboot.elf at 0x8E72B0.
 PS4Context::PS4Context()
     : RndContext(false),
       mLabels(nullptr),
@@ -123,6 +148,7 @@ PS4Context::PS4Context()
       mLabelFrame(0),
       mNextLabel(0),
       mLabelCapacity(0),
+      mActiveFrame(0),
       mDepthMode(0),
       mStencilMode(0),
       mFrontFace(1),
@@ -139,9 +165,6 @@ PS4Context::PS4Context()
       mCachedPrimitiveType(static_cast<sce::Gnm::PrimitiveType>(-1)),
       mGsModeEnabled(false),
       mCbEnabled(true) {
-    _InitCommandState();
-
-    _InitStateDefaults();
     _CreateGfxContext();
     _CreateGpuTimestampPool();
 
@@ -156,29 +179,74 @@ PS4Context::PS4Context()
         return;
     }
 
-    _InitComputeQueue(
-        0, 1, 1, kComputeQueueRingSize, kComputeQueueRingAlignment);
-    _InitComputeQueue(
-        1, 0, 0, kComputeQueueRingSize, kComputeQueueRingAlignment);
-    for (std::size_t slot = 0; slot < kComputeContextCount; ++slot) {
-        _InitComputeContext(slot, kCueSlotCount, kComputeCommandBufferSize);
+    MapComputeQueue(mComputeQueues[0], 1, sce::Gnm::kPipePriorityMedium);
+    MapComputeQueue(mComputeQueues[1], 0, sce::Gnm::kPipePriorityLow);
+    for (auto& frame : mComputeContexts) {
+        for (auto& compute : frame) {
+            const auto cueHeapSize = sce::Gnmx::ConstantUpdateEngine::computeHeapSize(kCueSlotCount);
+            static long sGpuHeap = MemFindHeap("gpu");
+            MemPushHeap(sGpuHeap);
+            void* resourceBuffer = MemAlloc(cueHeapSize, "GfxContext", 4);
+            MemPopHeap();
+            void* commandBuffer = MemAlloc(kComputeCommandBufferSize, "ComputeContext", 4);
+            compute.init(
+                commandBuffer, kComputeCommandBufferSize, resourceBuffer, cueHeapSize, nullptr);
+        }
     }
     mResourceSignals.reserve(kInitialLabelCapacity);
     mLabelCapacity = kInitialLabelCapacity;
     _AllocateResourceLabel();
 }
 
-// Reconstructed from eboot.elf at 0x8E7AF0.
+// Reconstructed from eboot.elf at 0x8E7AF0. The global resource table and
+// the GS rings are reallocated for each slot; only the last allocations are
+// kept.
 void PS4Context::_CreateGfxContext() {
-    const auto cueHeapSize = kCueSlotCount * kCueHeapBytesPerSlot;
     for (std::size_t slot = 0; slot < kFrameSlotCount; ++slot) {
-        _InitGfxSlot(
-            slot,
-            cueHeapSize,
+        {
+            static long sGpuHeap = MemFindHeap("gpu");
+            MemPushHeap(sGpuHeap);
+            mCueHeaps[slot] = MemAlloc(
+                sce::Gnmx::ConstantUpdateEngine::computeHeapSize(kCueSlotCount), "GfxContext", 4);
+            MemPopHeap();
+        }
+        mDrawCommandBuffers[slot] = MemAlloc(kDrawCommandBufferSize, "GfxContext", 4);
+        mConstantCommandBuffers[slot] = MemAlloc(kConstantCommandBufferSize, "GfxContext", 4);
+        for (auto& pending : mSubmissionPending[slot]) {
+            pending = 0;
+        }
+
+        auto& gfx = mGfxContexts[slot];
+        gfx.init(
+            mCueHeaps[slot],
+            kCueSlotCount,
+            kCueRingSetup,
+            mDrawCommandBuffers[slot],
             kDrawCommandBufferSize,
-            kResourceBufferSize,
-            kConstantUpdateBufferSize,
-            kScratchBufferSize);
+            mConstantCommandBuffers[slot],
+            kConstantCommandBufferSize);
+        {
+            static long sGpuHeap = MemFindHeap("gpu");
+            MemPushHeap(sGpuHeap);
+            mGlobalResourceTable = MemAlloc(kGlobalResourceTableSize, "GfxContext", 4);
+            MemPopHeap();
+        }
+        gfx.setGlobalResourceTableAddr(mGlobalResourceTable);
+        {
+            static long sGpuHeap = MemFindHeap("gpu");
+            MemPushHeap(sGpuHeap);
+            mEsGsRing = MemAlloc(kGsRingSize, "GfxContext", 4);
+            mGsVsRing = MemAlloc(kGsRingSize, "GfxContext", 4);
+            MemPopHeap();
+        }
+        gfx.setEsGsRingBuffer(mEsGsRing, kGsRingSize, kMaxGsVertexSizeInDwords);
+        const std::uint32_t vertexSizes[4] = {
+            kMaxGsVertexSizeInDwords,
+            kMaxGsVertexSizeInDwords,
+            kMaxGsVertexSizeInDwords,
+            kMaxGsVertexSizeInDwords,
+        };
+        gfx.setGsVsRingBuffers(mGsVsRing, kGsRingSize, vertexSizes, kMaxGsOutputVertexCount);
     }
 }
 
@@ -198,14 +266,10 @@ void PS4Context::_CreateGpuTimestampPool() {
     }
 }
 
-// Reconstructed from eboot.elf at 0x8E8070. The binary destroys the
-// transient buffers (0x8EC7D0) after releasing the timestamp pool; here the
-// compiler destroys them as members after the body, since the members around
-// them are not yet modeled.
+// Reconstructed from eboot.elf at 0x8E8070.
 PS4Context::~PS4Context() {
     MemFree(mGpuTimestamps);
     MemFree(mLabels);
-    _DestructCommandState();
 }
 
 bool PS4Context::_RecordingGraphics() const {
@@ -237,43 +301,72 @@ bool PS4Context::_FrameSubmissionsComplete(std::size_t frame) const {
     return true;
 }
 
-// Reconstructed from eboot.elf at 0x8E82D0.
+// Reconstructed from eboot.elf at 0x8E82D0. Each submission clears its
+// pending flag when the GPU finishes it, the graphics one with an interrupt;
+// the first three compute contexts go to the medium-priority queue.
 void PS4Context::SubmitFrame() {
-    const auto frame = mActiveFrame;
-    _EmitEndOfFrameEvent(frame);
-
+    _ActiveGfxContext().triggerEvent(sce::Gnm::kEventTypeCacheFlushAndInvEvent);
     for (std::size_t slot = 0; slot < kComputeContextsPerFrame; ++slot) {
-        mSubmissionPending[frame][slot + 1] = 1;
-        _EmitComputeCompletion(frame, slot);
-
-        const auto queue = slot < kHighPriorityComputeContextCount ? 0U : 1U;
-        _SubmitCompute(frame, slot, queue);
+        auto& compute = mComputeContexts[mActiveFrame][slot];
+        auto& pending = mSubmissionPending[mActiveFrame][slot + 1];
+        pending = 1;
+        compute.m_dcb.writeReleaseMemEvent(
+            sce::Gnm::kReleaseMemEventCsDone,
+            sce::Gnm::kEventWriteDestMemory,
+            const_cast<std::int32_t*>(&pending),
+            sce::Gnm::kEventWriteSource32BitsImmediate,
+            0,
+            sce::Gnm::kCacheActionNone,
+            sce::Gnm::kCachePolicyLru);
+        mComputeQueues[slot < kHighPriorityComputeContextCount ? 0 : 1].submit(&compute);
     }
 
-    mSubmissionPending[frame][0] = 1;
-    _EmitGfxCompletion(frame);
-    _SubmitGfx(frame);
-    mActiveFrame = (frame + 1) % kFrameSlotCount;
+    auto& pending = mSubmissionPending[mActiveFrame][0];
+    pending = 1;
+    auto& gfx = _ActiveGfxContext();
+    gfx.writeAtEndOfPipeWithInterrupt(
+        sce::Gnm::kEopFlushCbDbCaches,
+        sce::Gnm::kEventWriteDestMemory,
+        const_cast<std::int32_t*>(&pending),
+        sce::Gnm::kEventWriteSource32BitsImmediate,
+        0,
+        sce::Gnm::kCacheActionNone,
+        sce::Gnm::kCachePolicyLru);
+    gfx.submit();
+    mActiveFrame = (mActiveFrame & 1) == 0 ? 1 : 0;
 }
 
 // Reconstructed from eboot.elf at 0x8E8450.
 void PS4Context::_ResetFrame() {
-    const auto frame = mActiveFrame;
-    _ResetGfxSlot(frame);
-    _InitGfxHardwareState(frame);
-    _ClearFrameDrawCount(frame);
-
+    auto& gfx = _ActiveGfxContext();
+    gfx.reset();
+    gfx.initializeDefaultHardwareState();
     if (!mDisableComputeQueues) {
-        for (std::size_t slot = 0; slot < kComputeContextsPerFrame; ++slot) {
-            _ResetComputeSlot(frame, slot);
+        for (auto& compute : mComputeContexts[mActiveFrame]) {
+            compute.reset();
+            compute.m_dcb.initializeDefaultHardwareState();
         }
     }
 
-    _InitFrameCommandState(frame);
-    for (std::size_t format = 0; format < kTransientFormatCount; ++format) {
-        mTransientBuffers[frame][format].Reset();
+    _ResetDrawState();
+    for (auto& buffer : mTransientBuffers[mActiveFrame]) {
+        buffer.Reset();
     }
-    _EmitDefaultControlState(frame);
+    sce::Gnm::ClipControl clip;
+    clip.init();
+    clip.setClipSpace(sce::Gnm::kClipControlClipSpaceDX);
+    _ActiveGfxContext().setClipControl(clip);
+}
+
+// Inlined into _BeginFrameImpl and _ResetFrame.
+void PS4Context::_ResetDrawState() {
+    mCachedShaderStages = static_cast<sce::Gnm::ActiveShaderStages>(-1);
+    mCachedPrimitiveType = static_cast<sce::Gnm::PrimitiveType>(-1);
+    auto& gfx = _ActiveGfxContext();
+    gfx.setGsModeOff();
+    mGsModeEnabled = false;
+    gfx.setCbControl(sce::Gnm::kCbModeNormal, sce::Gnm::kRasterOpCopy);
+    mCbEnabled = true;
 }
 
 // Pipeline state -------------------------------------------------------------
@@ -283,13 +376,7 @@ void PS4Context::_ResetFrame() {
 // blending, depth-stencil, raster and color-write state and the shader
 // resources to their defaults.
 void PS4Context::_BeginFrameImpl() {
-    mCachedShaderStages = static_cast<sce::Gnm::ActiveShaderStages>(-1);
-    mCachedPrimitiveType = static_cast<sce::Gnm::PrimitiveType>(-1);
-    auto& gfx = _ActiveGfxContext();
-    gfx.setGsModeOff();
-    mGsModeEnabled = false;
-    gfx.setCbControl(sce::Gnm::kCbModeNormal, sce::Gnm::kRasterOpCopy);
-    mCbEnabled = true;
+    _ResetDrawState();
 
     RenderTargetParams params;
     PS4Context::_SetRenderTargetsImpl(kTargetModeNone, params);

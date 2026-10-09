@@ -9,6 +9,7 @@
 #include <gnm/sampler.h>
 #include <gnm/texture.h>
 #include <gnmx/computecontext.h>
+#include <gnmx/computequeue.h>
 #include <gnmx/gfxcontext.h>
 
 #include "render/context/RndContext.h"
@@ -142,49 +143,15 @@ public:
     void _FlushClear();          // 0x8EBDA0
 
 private:
-    // Construction and teardown. Names not in the reference map; they are
-    // not yet reconstructed unless an address is given. The graphics
-    // and compute contexts are members, so the compiler constructs and
-    // destroys them as the binary does; _InitCommandState and
-    // _DestructCommandState stand for the rest of the command state.
-    void _InitCommandState();
-    void _InitStateDefaults();
+    // Allocates each frame's graphics-context buffers and initializes the
+    // context with its CUE ring setup, global resource table and GS rings.
     void _CreateGfxContext();  // 0x8E7AF0
-    void _InitGfxSlot(
-        std::size_t slot,
-        std::size_t cueHeapSize,
-        std::size_t drawCommandBufferSize,
-        std::size_t resourceBufferSize,
-        std::size_t constantUpdateSize,
-        std::size_t scratchBufferSize);
     void _CreateGpuTimestampPool();  // 0x8E7DF0
-    void _InitComputeQueue(
-        std::size_t queue,
-        std::uint32_t pipe,
-        std::uint32_t priority,
-        std::size_t ringSize,
-        std::size_t ringAlignment);
-    void _InitComputeContext(
-        std::size_t slot,
-        std::size_t cueSlotCount,
-        std::size_t commandBufferSize);
-    void _DestructCommandState();
 
-    // Frame submission and reset. Names not in the reference map; not yet
-    // reconstructed.
-    void _EmitEndOfFrameEvent(std::size_t frame);
-    void _EmitComputeCompletion(std::size_t frame, std::size_t slot);
-    void _SubmitCompute(std::size_t frame, std::size_t slot, std::size_t queue);
-    void _EmitGfxCompletion(std::size_t frame);
-    void _SubmitGfx(std::size_t frame);
-    void _ResetGfxSlot(std::size_t frame);
-    void _InitGfxHardwareState(std::size_t frame);
-    void _ClearFrameDrawCount(std::size_t frame);
-    void _ResetComputeSlot(std::size_t frame, std::size_t slot);
-    void _InitFrameCommandState(std::size_t frame);
-    void _EmitDefaultControlState(std::size_t frame);
-
-    // Pipeline state.
+    // Forgets SetupDraw's state, turns the GS mode off and enables color
+    // writes. Inlined into _BeginFrameImpl and _ResetFrame; name not in the
+    // reference map.
+    void _ResetDrawState();
     // Rebuild and set the Gnm depth-stencil and primitive-setup state from
     // the cache. Map names; inlined into the setters in this build.
     void _SyncDepthStencilControl();
@@ -240,7 +207,15 @@ public:
     unsigned char mUnknown22305[7];
     // One Gnmx graphics context per frame slot.
     sce::Gnmx::GfxContext mGfxContexts[kFrameSlotCount];
-    unsigned char mUnknown141368[0x48];
+    // Per frame slot: the CUE heap, the draw command buffer and the constant
+    // command buffer. Then the global resource table and the ES-GS and GS-VS
+    // rings, which each slot reallocates and the last one keeps.
+    void* mCueHeaps[kFrameSlotCount];
+    void* mDrawCommandBuffers[kFrameSlotCount];
+    void* mConstantCommandBuffers[kFrameSlotCount];
+    void* mGlobalResourceTable;
+    void* mEsGsRing;
+    void* mGsVsRing;
     // Nonzero while a frame's graphics (0) or compute (1-9) submission is
     // in flight.
     volatile std::int32_t mSubmissionPending[kFrameSlotCount][10];
@@ -254,8 +229,9 @@ public:
     unsigned long mLabelFrame;
     unsigned long mNextLabel;
     unsigned long mLabelCapacity;
-    // The two compute queues. Not yet modeled.
-    unsigned char mUnknown141600[0xB0];
+    // The medium-priority queue on pipe 1, for the first three compute
+    // contexts of a frame, and the low-priority queue on pipe 0.
+    sce::Gnmx::ComputeQueue mComputeQueues[2];
     // Nine compute contexts per frame slot.
     sce::Gnmx::ComputeContext mComputeContexts[kFrameSlotCount][kComputeContextsPerFrame];
     std::size_t mActiveFrame;
@@ -296,13 +272,16 @@ static_assert(sizeof(PS4Context::GpuStatBlock) == 24);
 static_assert(sizeof(PS4Context::ResourceSignal) == 24);
 static_assert(offsetof(PS4Context, mUnknown22305) == 0x5721);
 static_assert(offsetof(PS4Context, mGfxContexts) == 0x5728);
-static_assert(offsetof(PS4Context, mUnknown141368) == 0x22838);
+static_assert(offsetof(PS4Context, mCueHeaps) == 0x22838);
+static_assert(offsetof(PS4Context, mGlobalResourceTable) == 0x22868);
+static_assert(offsetof(PS4Context, mGsVsRing) == 0x22878);
 static_assert(offsetof(PS4Context, mSubmissionPending) == 0x22880);
 static_assert(sizeof(std::vector<PS4Context::ResourceSignal>) == 32);
 static_assert(offsetof(PS4Context, mResourceSignals) == 0x228D0);
 static_assert(offsetof(PS4Context, mLabels) == 0x228F0);
 static_assert(offsetof(PS4Context, mLabelCapacity) == 0x22918);
-static_assert(offsetof(PS4Context, mUnknown141600) == 0x22920);
+static_assert(sizeof(sce::Gnmx::ComputeQueue) == 88);
+static_assert(offsetof(PS4Context, mComputeQueues) == 0x22920);
 static_assert(sizeof(sce::Gnmx::ComputeContext) == 0x1AE0);
 static_assert(offsetof(PS4Context, mComputeContexts) == 0x229D0);
 static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);

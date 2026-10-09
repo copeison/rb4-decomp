@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the `PS4Context` constructor, `_CreateGfxContext`, the
+  compute-queue mapping, `SubmitFrame` and `_ResetFrame` on the Gnm SDK.
 - [x] Reconstruct `PS4Context::_ClearDepthStencil` and `_FlushClear`, with
   `RndDrawUtl::DrawQuad2D`, `RndShaderBasic::Select`, `RndShadingMode` and the
   `RndContext` shading-mode and identity view-projection setters.

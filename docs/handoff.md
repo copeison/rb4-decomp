@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 642 entries, most of the
+executable. The latest unresolved-symbol report contains 644 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `PS4Context::_ClearDepthStencil` and `_FlushClear`, `RndDrawUtl::DrawQuad2D`, `RndShaderBasic::Select` |
+| (this) | `PS4Context` construction, `_CreateGfxContext`, compute queues, `SubmitFrame` and `_ResetFrame` on the Gnm SDK |
+| `7a81c30` | `PS4Context::_ClearDepthStencil` and `_FlushClear`, `RndDrawUtl::DrawQuad2D`, `RndShaderBasic::Select` |
 | `7dcec20` | `PS4Context::_BeginFrameImpl` and `_SetRenderTargetsImpl` with `RndContext::RenderTargetParams` |
 | `273c2ab` | `RndCShaderClearBuffer::Select` and `Dispatch` |
 | `591894c` | `PS4Context` resource signals, waits and label ring |
