@@ -78,3 +78,33 @@ static_assert(offsetof(PerfTimerBase, mIsolated) == 43);
 static_assert(offsetof(PerfTimerBase, mBudget) == 44);
 static_assert(offsetof(PerfTimerBase, mBudgetCategory) == 48);
 static_assert(sizeof(PerfTimerBase) == 56);
+
+// A CPU timer (constructor 0x24A730, vtable 0x18EF3D8). The map's
+// os/PerfTimer.o has a PerfTimer that keeps the same per-frame history.
+// Only the history is declared; its accessors (slots 2-6 at 0x24B190,
+// 0x24B1A0, 0x24B1B0, 0x24AD90 and 0x24ADA0) read these fields, and the
+// number of history frames is not recovered.
+class PerfTimer : public PerfTimerBase {
+public:
+    // One frame of history. Name not in the reference map; the field names
+    // are not either.
+    struct Frame {
+        float mMs;
+        float mWorstMs;
+        float mAverageMs;
+        unsigned char mUnknown12[12];
+        int mCount;
+        float mAverageCount;
+        unsigned char mUnknown32[40];
+    };
+
+    // Field names are not in the reference map. The first field reuses the
+    // base's tail padding.
+    unsigned char mUnknown52[28];
+    Frame mFrames[2];
+};
+
+static_assert(sizeof(PerfTimer::Frame) == 72);
+static_assert(offsetof(PerfTimer::Frame, mAverageMs) == 8);
+static_assert(offsetof(PerfTimer::Frame, mCount) == 24);
+static_assert(offsetof(PerfTimer, mFrames) == 80);

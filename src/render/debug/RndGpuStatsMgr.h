@@ -118,9 +118,15 @@ public:
     void EndStatBlock(RndContext& context, long key);  // 0x62B5B0
     void EndFrame();                                    // 0x62B960
 
+    // The average milliseconds of the named statistic's total in a history
+    // frame; -1 selects the last resolved frame. Unknown names give the
+    // timings of an empty frame.
+    float GetAverageMs(Symbol name, unsigned long frame);  // 0x62C710
+    // Returns zero in this build; the GPU timer graph uses it as its
+    // budget. Name not in the reference map.
+    float GetBudget(Symbol name);  // 0x62C610
     // Not located in this build.
     float GetMs(Symbol name);
-    float GetAverageMs(Symbol name, unsigned long frames);
     float GetWorstMs(Symbol name, unsigned long frames);
     void ResetTimers();
     void PrintCSV(TextStream& stream);
@@ -153,7 +159,9 @@ public:
     unsigned long mFrameSlot;       // Frame slot receiving new queries.
     unsigned char mUnknown88[8];
     unsigned long mResolvedFrame;   // Index into Stat::mFrames.
-    void* mBackend;                 // Statistics are recorded when set.
+    // Statistics are recorded while nonzero. The overlays that show GPU
+    // timings count themselves in while they are shown.
+    unsigned long mEnableCount;
     CritSec mCritSec;
 };
 
@@ -171,6 +179,6 @@ static_assert(offsetof(RndGpuStatsMgr, mStatBlocks) == 40);
 static_assert(offsetof(RndGpuStatsMgr, mNextKey) == 72);
 static_assert(offsetof(RndGpuStatsMgr, mFrameSlot) == 80);
 static_assert(offsetof(RndGpuStatsMgr, mResolvedFrame) == 96);
-static_assert(offsetof(RndGpuStatsMgr, mBackend) == 104);
+static_assert(offsetof(RndGpuStatsMgr, mEnableCount) == 104);
 static_assert(offsetof(RndGpuStatsMgr, mCritSec) == 112);
 static_assert(sizeof(RndGpuStatsMgr) == 128);

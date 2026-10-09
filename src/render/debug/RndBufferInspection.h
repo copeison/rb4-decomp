@@ -30,6 +30,7 @@ public:
     // Creates and registers the inspection shader.
     static void Init();       // 0x6B54A0
     static void Terminate();  // 0x6B54E0
+    // Inlined in this build: _DrawOneBuffer reads the shader directly.
     static RndShader* GetShader();
     static void Draw(RndContext& context, RndBufferInspectionMode mode);
 
@@ -38,6 +39,9 @@ public:
     static RndBufferInspectionMode FromString(const char* name);  // 0x6B5510
 
 private:
+    // This build's version (0x6B43B0, called from 0x6B4EF0 and 0x6B5560)
+    // takes more parameters than the map's signature below; it fills the
+    // inspection shader's parameters for the mode and calls its Select.
     static void _DrawOneBuffer(
         RndContext& context,
         RndBufferInspectionMode mode,

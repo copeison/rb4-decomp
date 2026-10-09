@@ -11,6 +11,7 @@
 class AudioEmitterCom;
 class AudioGeneratorManager;
 class AudioRenderTarget;
+class TextStream;
 class Transform;
 
 // Playback request shared by every generator manager. Only the fields read
@@ -383,6 +384,10 @@ public:
     AudioEmitterCom* GetDefault2DEmitter() const;
     // Updates the FMOD systems, emitters and registered sounds once per frame.
     void Poll();  // 0x7560
+    // Prints the FMOD state and each generator manager's pool usage. The
+    // map's signature is DumpGeneratorStats(); the identification rests on
+    // the pool counts printed.
+    void DumpGeneratorStats(TextStream& stream);  // 0x8A30
 };
 
 extern SoundManager theSoundManager;

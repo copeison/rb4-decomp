@@ -1,6 +1,9 @@
 #include "render/debug/RndOverlayMgr.h"
 
+#include "os/joypads/Keyboard.h"
+#include "render/context/RndContext.h"
 #include "render/debug/RndOverlayOptionsCom.h"
+#include "render/drawing/RndDrawUtl.h"
 #include "render/debug/overlays/RndAudioOverlay.h"
 #include "render/debug/overlays/RndCheatsOverlay.h"
 #include "render/debug/overlays/RndConsoleOverlay.h"
@@ -23,6 +26,9 @@ void MarkOverlaysChanged() {
 
 // Static initializer at 0x5F9810; the destructor is at 0x5F9120.
 RndOverlayMgr::OverlayList RndOverlayMgr::gOverlays;
+bool RndOverlayMgr::gKeyboardFocus = false;
+// Constructed by the same static initializer.
+RndOverlayMgr::OverlayKeyboardOverride RndOverlayMgr::gKeyboardOverride;
 
 // Reconstructed from eboot.elf at 0x5F9150. The overlays register
 // themselves on construction and live for the rest of the program; the
@@ -38,6 +44,61 @@ void RndOverlayMgr::Init() {
     new RndMemOverlay;
     new RndCheatsOverlay;
     new RndAudioOverlay;
+}
+
+// Reconstructed from eboot.elf at 0x5F9230. The override's previous sink
+// is restored when the last keyboard overlay is hidden.
+void RndOverlayMgr::Poll() {
+    bool keyboard = false;
+    for (auto it = gOverlays.begin(); it != gOverlays.end(); ++it) {
+        if (it->IsShowing()) {
+            if ((it->GetFlags() & RndOverlay::kFlagKeyboard) != 0) {
+                keyboard = true;
+            }
+            it->Update();
+        }
+    }
+    if (keyboard != gKeyboardFocus) {
+        gKeyboardFocus = keyboard;
+        if (keyboard) {
+            gKeyboardOverride.mPrevious = KeyboardOverride(&gKeyboardOverride);
+        } else {
+            KeyboardOverride(gKeyboardOverride.mPrevious);
+            gKeyboardOverride.mPrevious = nullptr;
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x5F92D0. Each overlay returns the line
+// above itself.
+void RndOverlayMgr::DrawAll(RndContext& context) {
+    static Symbol sStatName;
+    if (sStatName == Symbol()) {
+        sStatName = Symbol("Overlay Mgr");
+    }
+    RndScopedGpuStatBlock statBlock(context, sStatName.Str());
+    const bool identity = context.mUsingIdentityViewProjection;
+    context.SetUsingIdentityViewProjection(true);
+
+    int y = static_cast<int>(context.mViewportSize.y) - GetMarginInPixels();
+    bool first = true;
+    for (auto it = gOverlays.begin(); it != gOverlays.end(); ++it) {
+        if (!it->IsShowing()) {
+            continue;
+        }
+        if (!first) {
+            RndDrawUtl::Line2DParams params;
+            params.mCoordinateMode = RndDrawUtl::kCoordinatePixels;
+            const float lineY = static_cast<float>(y);
+            const Segment2D separator = {{0.0F, lineY}, {context.mViewportSize.x, lineY}};
+            RndDrawUtl::DrawLine2D(context, separator, params);
+            --y;
+        }
+        first = false;
+        y = it->Draw(context, y);
+    }
+
+    context.SetUsingIdentityViewProjection(identity);
 }
 
 // Reconstructed from eboot.elf at 0x5F9210.
@@ -90,4 +151,29 @@ RndOverlayMgr::OverlayList::iterator RndOverlayMgr::Begin() {
 // Reconstructed from eboot.elf at 0x5F9630.
 RndOverlayMgr::OverlayList::iterator RndOverlayMgr::End() {
     return gOverlays.end();
+}
+
+// Reconstructed from eboot.elf at 0x5F9640.
+RndOverlayMgr::OverlayKeyboardOverride::OverlayKeyboardOverride() : mPrevious(nullptr) {}
+
+// Reconstructed from eboot.elf at 0x5F9660. The previous override is read
+// through gKeyboardOverride rather than this object, as the binary does.
+DataNode RndOverlayMgr::OverlayKeyboardOverride::Handle(DataArray* msg, bool warn) {
+    static_cast<void>(warn);
+    if (msg->Sym(1) == KeyboardKeyMsg::Event()) {
+        for (auto it = gOverlays.begin(); it != gOverlays.end(); ++it) {
+            if (it->IsShowing() && (it->GetFlags() & RndOverlay::kFlagKeyboard) != 0) {
+                KeyboardKeyMsg keyMsg(msg);
+                const bool handled = it->HandleKeyboardMsg(keyMsg);
+                if (handled) {
+                    return DataNode(0);
+                }
+            }
+        }
+    }
+    if (gKeyboardOverride.mPrevious == nullptr) {
+        KeyboardSendMsgBypassOverride(msg);
+        return DataNode(0);
+    }
+    return gKeyboardOverride.mPrevious->Handle(msg, true);
 }

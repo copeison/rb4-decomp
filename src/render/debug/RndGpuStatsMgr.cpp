@@ -138,7 +138,7 @@ RndGpuStatsMgr::RndGpuStatsMgr()
       mFrameSlot(0),
       mUnknown88{},
       mResolvedFrame(0),
-      mBackend(nullptr) {}
+      mEnableCount(0) {}
 
 // Reconstructed from eboot.elf at 0x62ABA0. The CritSec and the two vectors
 // are destroyed after the body.
@@ -181,7 +181,7 @@ void RndGpuStatsMgr::Init() {
 
 // Reconstructed from eboot.elf at 0x62AF80.
 long RndGpuStatsMgr::BeginStatBlock(RndContext& context, const char* name) {
-    if (mBackend == nullptr) {
+    if (mEnableCount == 0) {
         return -1;
     }
 
@@ -273,7 +273,7 @@ RndGpuStatsMgr::Stat* RndGpuStatsMgr::_FindStat(Symbol fullName) {
 
 // Reconstructed from eboot.elf at 0x62B5B0.
 void RndGpuStatsMgr::EndStatBlock(RndContext& context, long key) {
-    if (key < 0 || mBackend == nullptr) {
+    if (key < 0 || mEnableCount == 0) {
         return;
     }
 
@@ -327,7 +327,7 @@ void RndGpuStatsMgr::_GatherStats() {
         }
     }
 
-    if (mBackend != nullptr) {
+    if (mEnableCount != 0) {
         static const Symbol totalName("GPU Total");
 
         mCritSec.Enter();

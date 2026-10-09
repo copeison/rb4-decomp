@@ -29,6 +29,34 @@ public:
         static const Color sOrange(1.0F, 0.5F, 0.0F, 1.0F);
         return sOrange;
     }
+    static const Color& GetRed() {
+        static const Color sRed(1.0F, 0.0F, 0.0F, 1.0F);
+        return sRed;
+    }
+    static const Color& GetGreen() {
+        static const Color sGreen(0.0F, 1.0F, 0.0F, 1.0F);
+        return sGreen;
+    }
+    static const Color& GetBlue() {
+        static const Color sBlue(0.0F, 0.0F, 1.0F, 1.0F);
+        return sBlue;
+    }
+    static const Color& GetYellow() {
+        static const Color sYellow(1.0F, 1.0F, 0.0F, 1.0F);
+        return sYellow;
+    }
+    static const Color& GetMagenta() {
+        static const Color sMagenta(1.0F, 0.0F, 1.0F, 1.0F);
+        return sMagenta;
+    }
+    static const Color& GetViolet() {
+        static const Color sViolet(0.5F, 0.0F, 1.0F, 1.0F);
+        return sViolet;
+    }
+    static const Color& GetGrey() {
+        static const Color sGrey(0.5F, 0.5F, 0.5F, 1.0F);
+        return sGrey;
+    }
 
     float red;
     float green;

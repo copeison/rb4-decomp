@@ -32,13 +32,32 @@ These names are not in the map:
 - the extended-font functions;
 - the bounce-plane editor helpers;
 - `RndShaderOcclusionQuery`;
-- most overlay classes and their bases. These are declared with their sizes,
-  but their constructors are not reconstructed.
+- most overlay classes and their bases. `RndOverlayGraphBase` may be
+  misnamed: by link order its object file probably starts with `RndGraph`;
+- `RndOverlayMgr::Poll` (0x5F9230).
+
+## Debug overlays
+
+The overlay classes live in `render/debug/overlays`, one file per class, in
+link order. Text overlays derive from `RndOverlayTextBase` (0x6E5B00) and
+graph overlays from `RndOverlayGraphBase` (0x6E32E0). The timer overlays share
+`RndTimersOverlay` (0x6E7850) and `RndTimerGraphOverlay` (0x6E6280), and the
+CPU and GPU variants only pick the timer source.
+
+`RndOverlayMgr::Poll` gives the keyboard to the overlays when one wants it.
+It installs `gKeyboardOverride` as the keyboard sink and saves the previous
+sink, then restores it when focus is released. `DrawAll` (0x5F92D0) stacks the
+overlays down the screen, with each one returning the line it ended on.
+
+`RndBufferInspectionShader`'s constructor (0x6B5FA0) and `_InitConfigImpl`
+(0x6B6860) are reconstructed too.
 
 ## Not yet reconstructed
 
 These are declared only:
-- the overlay constructors.
+- the overlays' `Draw`, `_Print` and `_Update` methods;
+- `RndDrawUtl::DrawLine2D` and `DrawText2D`;
+- `RndBufferInspectionShader::Select`.
 
 ## Fonts
 

@@ -22,8 +22,15 @@ public:
         kFlagKeyboard = 1,
         // PrintHelp prints something; overlay_help skips the others.
         kFlagHasHelp = 2,
+        // Set by the framerate overlay. Name not in the reference map.
+        kFlagUnknown4 = 4,
         // Read by the options component at 0x5F9AD0.
         kFlagUnknown8 = 8,
+        // Text overlays wrap their lines at the viewport's width less the
+        // margins.
+        kFlagWrapText = 0x10,
+        // Text overlays shade every other line darker.
+        kFlagStripedLines = 0x20,
     };
 
     // Reaches the link of an overlay in the overlay list.
@@ -43,9 +50,10 @@ public:
     RndOverlay(const char* name, unsigned int flags);  // 0x6E5860
 
     virtual ~RndOverlay();  // slots 0-1: 0x6E58C0, 0x6E5910
-    // Slot 2: pure. The map's subclasses implement it as
+    // Slot 2: pure. Draws the overlay upwards from the line `y` and
+    // returns the line above it. The map's subclasses implement it as
     // Draw(RndContext&, int).
-    virtual void Draw(RndContext& context, int y) = 0;
+    virtual int Draw(RndContext& context, int y) = 0;
     // Slot 3 at 0x6D16D0: returns whether the overlay consumed the key.
     virtual bool HandleKeyboardMsg(const KeyboardKeyMsg& msg) {
         static_cast<void>(msg);
@@ -62,9 +70,13 @@ public:
     virtual void _HandleShowingChanged(bool showing) {
         static_cast<void>(showing);
     }
-    // Slot 7 at 0x6D1710; no override in this build. Name not in the
-    // reference map.
-    virtual void _Unknown7() {}
+    // Slot 7 at 0x6D1710. RndOverlayOptionsCom's _Init (0x5F9AD0) calls it
+    // with an object of its own at offset 0x6A0, to which the framerate
+    // overlay adds its "show_cpu_average" and "show_gpu_average" options.
+    // The parameter's type is not recovered. Name not in the reference map.
+    virtual void _Unknown7(void* options) {
+        static_cast<void>(options);
+    }
 
     // Shows or hides the overlay, notifying _HandleShowingChanged on a
     // change. Name not in the reference map.

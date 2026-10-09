@@ -720,6 +720,9 @@
   classes (`FModSystem`, the FMOD generators and managers, `FmodFileWrapper`,
   `MicHwManager_FMOD`, `Mic_FMOD`, the DSP plug-ins) and move `Vector3`,
   `Hmx::Matrix3`, and `Transform` into `src/math`.
+- [x] Reconstruct the debug overlay constructors, `RndOverlayMgr::Poll` and
+  `DrawAll`, and the buffer inspection shader's constructor and config (see
+  [render-subsystems.md](render-subsystems.md)).
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

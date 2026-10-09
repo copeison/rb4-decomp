@@ -19,8 +19,26 @@ public:
         static_cast<void>(capacity);
     }
 
+    // Replaces the text through reserve, truncating to the capacity.
+    // Out of line in the map's build; inlined into every caller in this
+    // one (for example RndMemOverlay's constructor at 0x6E54A0).
+    FixedString& operator=(const char* str) {
+        if (str != mStr) {
+            unsigned long length = __builtin_strlen(str);
+            reserve(length);
+            if (capacity() < length) {
+                length = capacity();
+            }
+            __builtin_memcpy(mStr, str, length);
+            mStr[length] = '\0';
+        }
+        return *this;
+    }
     // Appends through reserve, truncating to the capacity.
     FixedString& operator+=(const char* str);  // 0x2542E0
+    // Appends one character through reserve; a full string is left
+    // unchanged.
+    FixedString& operator+=(char c);  // 0x254280
     // Empties the text, keeping the storage.
     void erase();  // 0x254FA0
 
@@ -46,6 +64,8 @@ public:
     // Copies the text. Its address in this build has not been located.
     String(const String& other);
     ~String() override;                // slots 0-1: 0x255550, 0x255580
+
+    using FixedString::operator=;
 
     // Slot 3 at 0x2553B0.
     void reserve(unsigned long capacity) override;
