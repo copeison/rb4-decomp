@@ -6,7 +6,7 @@
 #include <limits>
 
 #include "os/memory/MemMgr.h"
-#include "render/textures/render_data_format.h"
+#include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndPixelCanvas.h"
 
 namespace {
@@ -109,14 +109,14 @@ std::uint32_t PackUNorm(float value, std::uint32_t maximum) {
 bool WriteUNormPixel(
     std::uint8_t*& destination,
     const Hmx::Color& pixel,
-    const rb4::RenderDataFormatDescriptor& format) {
+    const RndDataFormatInfo& format) {
     ChannelOrder order{};
-    if (!GetChannelOrder(format.channel_layout, order) ||
-        format.bit_width % order.count != 0) {
+    if (!GetChannelOrder(format.mOrder, order) ||
+        format.mBitsPerPixel % order.count != 0) {
         return false;
     }
 
-    const auto component_width = format.bit_width / order.count;
+    const auto component_width = format.mBitsPerPixel / order.count;
     if (component_width != 8 && component_width != 16) {
         return false;
     }
@@ -142,14 +142,14 @@ bool WriteUNormPixel(
 bool WriteFloatPixel(
     std::uint8_t*& destination,
     const Hmx::Color& pixel,
-    const rb4::RenderDataFormatDescriptor& format) {
+    const RndDataFormatInfo& format) {
     ChannelOrder order{};
-    if (!GetChannelOrder(format.channel_layout, order) ||
-        format.bit_width % order.count != 0) {
+    if (!GetChannelOrder(format.mOrder, order) ||
+        format.mBitsPerPixel % order.count != 0) {
         return false;
     }
 
-    const auto component_width = format.bit_width / order.count;
+    const auto component_width = format.mBitsPerPixel / order.count;
     if (component_width != 16 && component_width != 32) {
         return false;
     }
@@ -254,10 +254,10 @@ void RndPixelData::CreateEmpty(int width, int height, int depth, int format) {
 void RndPixelData::Create(const Vector3i& size, int format, const void* pixels) {
     mSize = size;
     mFormat = format;
-    const auto info = rb4::render_data_format_describe(format);
+    const auto info = RndGetDataFormatInfo(format);
     const auto bytes = static_cast<unsigned long>(
         static_cast<long>(mSize.x) * mSize.y * mSize.z *
-        static_cast<long>(static_cast<int>(info.bit_width))) >> 3;
+        static_cast<long>(static_cast<int>(info.mBitsPerPixel))) >> 3;
     delete mMip;
     mMip = nullptr;
     const auto oldSize = mBufferSize;
@@ -281,8 +281,8 @@ bool RndPixelData::ConvertFrom(const RndPixelCanvas& canvas) {
     const Vector3i size{canvas.mWidth, canvas.mHeight, canvas.mDepth};
     Create(size, mFormat, nullptr);
 
-    const auto format = rb4::render_data_format_describe(mFormat);
-    if (format.variant != 0) {
+    const auto format = RndGetDataFormatInfo(mFormat);
+    if (format.mCompression != 0) {
         return false;
     }
 
@@ -295,10 +295,10 @@ bool RndPixelData::ConvertFrom(const RndPixelCanvas& canvas) {
 
     auto* destination = static_cast<std::uint8_t*>(mBuffer);
     for (unsigned long index = 0; index < count; ++index) {
-        const auto pixel = format.layout == 2
+        const auto pixel = format.mGamma == 2
             ? LinearToGamma(canvas.mPixels[index])
             : canvas.mPixels[index];
-        const auto converted = format.numeric_type == 0
+        const auto converted = format.mStorage == 0
             ? WriteUNormPixel(destination, pixel, format)
             : WriteFloatPixel(destination, pixel, format);
         if (!converted) {

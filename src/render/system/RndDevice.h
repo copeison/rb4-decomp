@@ -20,11 +20,8 @@ class RndShaderCBuffer;
 class RndShaderFogDeferred;
 
 class RndWindow;
-
-namespace rb4 {
-struct AudioAnalysisTextureSet;
-struct RenderPrimitiveMeshSet;
-}  // namespace rb4
+class RndAudioTextures;
+class RndPrimitiveMeshes;
 
 // Startup options copied into the device by Init. The game builds them in
 // its startup code. Field names are not in the reference map.
@@ -153,8 +150,8 @@ public:
     RndShaderMgr mShaderMgr;
     RndLightGlobals mLighting;
     RndShaderFogDeferred* mFogDeferred;
-    rb4::RenderPrimitiveMeshSet* mPrimitiveMeshes;
-    rb4::AudioAnalysisTextureSet* mAudioTextures;
+    RndPrimitiveMeshes* mPrimitiveMeshes;
+    RndAudioTextures* mAudioTextures;
     RndGpuStatsMgr mGpuStats;
     RndShaderCBuffer* mBuiltinCBuffers[4];
     CritSec mPendingFreeCritSec;

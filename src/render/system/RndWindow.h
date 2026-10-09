@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/frame/render_extent.h"
+#include "math/vector/Vector2i.h"
 
 class RndBufferCollection;
 
@@ -30,7 +30,7 @@ public:
 
     // The first collection's size, or zero without one. Names not in the
     // reference map.
-    rb4::RenderExtent GetSize() const;                    // 0x448730
+    Vector2i GetSize() const;                    // 0x448730
     unsigned int GetShadingMode() const;                  // 0x448760
     void SetShadingMode(unsigned int mode);               // 0x448780
     unsigned int GetBufferInspectionMode() const;         // 0x4487C0

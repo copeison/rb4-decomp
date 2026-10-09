@@ -4,8 +4,6 @@
 
 #include "render/targets/RndBufferCollection.h"
 
-using namespace rb4;
-
 // Reconstructed from eboot.elf at 0x4486F0.
 RndWindow::RndWindow() : mUnknown8(-1) {}
 
@@ -24,16 +22,13 @@ bool RndWindow::_UnknownSlot6() {
 }
 
 // Reconstructed from eboot.elf at 0x448730.
-RenderExtent RndWindow::GetSize() const {
+Vector2i RndWindow::GetSize() const {
     const auto buffers = GetBufferCollections();
     if (buffers.mCount == 0) {
         return {};
     }
     const auto& size = buffers.mCollections[0]->mSize;
-    return {
-        static_cast<unsigned int>(size.x),
-        static_cast<unsigned int>(size.y),
-    };
+    return {size.x, size.y};
 }
 
 // Reconstructed from eboot.elf at 0x448760.

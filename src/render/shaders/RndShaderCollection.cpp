@@ -1,7 +1,7 @@
 #include "render/shaders/RndShaderCollection.h"
 
 #include "render/context/RndContext.h"
-#include "render/system/render_platform.h"
+#include "render/system/RndInit.h"
 #include "render/shaders/RndShaderProgram.h"
 #include "render/system/RndDevice.h"
 #include "utl/streams/BinStream.h"
@@ -75,7 +75,7 @@ bool RndShaderCollection::Load(BinStream& stream, const char* path) {
 
             // The original compares the active render API with itself; this
             // build's caches never hold another platform's programs.
-            if (orbis_render_api() != orbis_render_api()) {
+            if (Rnd::PlatformGfxApi() != Rnd::PlatformGfxApi()) {
                 stream.Seek(size, kSeekCur);
                 continue;
             }

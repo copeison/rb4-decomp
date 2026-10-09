@@ -10,11 +10,10 @@
 #include "render/system/RndWindow.h"
 #include "render/system/render_system_frame_adapters.h"
 #include "render/targets/RndBufferCollection.h"
-#include "render/audio/audio_analysis_textures.h"
-#include "render/meshes/primitive_mesh_set.h"
+#include "render/audio/RndAudioTextures.h"
+#include "render/meshes/RndPrimitiveMeshes.h"
 #include "render/lighting/fog/RndShaderFogDeferred.h"
-#include "render/video/bink_render_manager.h"
-#include "render/video/bink_render_manager_adapters.h"
+#include "render/video/BinkRenderMgr.h"
 #include "utl/time/Timer.h"
 
 using namespace rb4;
@@ -59,7 +58,8 @@ void TransitionWindowTargets(RndDevice& device, RndContext& context) {
     const auto& windows = device.mFrameWindows;
     for (unsigned long i = 0; i < windows.mSize; ++i) {
         const auto& window = *windows.mData[i];
-        if (window.GetSize().empty()) {
+        const auto size = window.GetSize();
+        if (size.x == 0 || size.y == 0) {
             continue;
         }
 
@@ -109,7 +109,7 @@ RndDevice::RndDevice()
       mConsoleState() {
     gRndDevice = this;
 
-    for (const auto platform : render_supported_platform_ids()) {
+    for (const auto platform : GetSupportedPlatforms()) {
         if (platform < kPlatformConfigCount) {
             mCapabilities[platform].InitForPlatform(
                 static_cast<HxPlatform>(platform));
@@ -153,12 +153,8 @@ void RndDevice::Init(const RndInitParams& params) {
 
     mLighting.Init();
     mFogDeferred = new RndShaderFogDeferred;  // 0x451C90
-    mPrimitiveMeshes = static_cast<RenderPrimitiveMeshSet*>(
-        operator new(sizeof(RenderPrimitiveMeshSet)));
-    render_primitive_mesh_set_construct(*mPrimitiveMeshes);
-    mAudioTextures = static_cast<AudioAnalysisTextureSet*>(
-        operator new(sizeof(AudioAnalysisTextureSet)));
-    audio_analysis_texture_set_construct(*mAudioTextures);
+    mPrimitiveMeshes = new RndPrimitiveMeshes;
+    mAudioTextures = new RndAudioTextures;
     mGpuStats.Init();
     _InitBuiltinCBuffers();
 
@@ -221,16 +217,10 @@ void RndDevice::Terminate() {
     mLighting.Terminate();
     mShaderMgr.Terminate();
 
-    if (mPrimitiveMeshes != nullptr) {
-        render_primitive_mesh_set_destruct(*mPrimitiveMeshes);
-        operator delete(mPrimitiveMeshes);
-        mPrimitiveMeshes = nullptr;
-    }
-    if (mAudioTextures != nullptr) {
-        audio_analysis_texture_set_destruct(*mAudioTextures);
-        operator delete(mAudioTextures);
-        mAudioTextures = nullptr;
-    }
+    delete mPrimitiveMeshes;
+    mPrimitiveMeshes = nullptr;
+    delete mAudioTextures;
+    mAudioTextures = nullptr;
     for (auto*& buffer : mBuiltinCBuffers) {
         RndShaderCBuffer::SafeDelete(buffer);
     }
@@ -314,9 +304,8 @@ void RndDevice::_DoBeginFrame(bool offscreen) {
         _FlushPendingBeginFrame();
     }
     mGpuTotalStat = mGpuStats.BeginStatBlock(*mImmediateContext, "GPU Total");
-    audio_analysis_textures_prepare_frame(*mAudioTextures, *mImmediateContext);
-    bink_render_manager_prepare_frame(
-        bink_render_manager_instance(), *mImmediateContext);
+    mAudioTextures->PrepareFrame(*mImmediateContext);
+    BinkRenderMgr::Instance().PrepareFrame(*mImmediateContext);
 }
 
 // Reconstructed from eboot.elf at 0x3DE3A0.
@@ -325,7 +314,8 @@ bool RndDevice::_DoBeginDrawingWindow(RndWindow& window) {
     mCurrentWindow = &window;
     window.CheckForResize();
 
-    if (window.GetSize().empty()) {
+    const auto size = window.GetSize();
+    if (size.x == 0 || size.y == 0) {
         static_cast<void>(scePthreadSelf());
         mCurrentTargets.clear();
         mCurrentWindow = nullptr;

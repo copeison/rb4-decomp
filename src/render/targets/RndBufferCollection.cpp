@@ -6,7 +6,7 @@
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/system/RndCapabilities.h"
 #include "render/system/RndConfig.h"
-#include "render/textures/render_data_format.h"
+#include "render/textures/RndPixelFormat.h"
 #include "render/meshes/RndMesh.h"
 #include "render/system/RndDevice.h"
 #include "render/textures/RndTexture3D.h"
@@ -19,7 +19,6 @@ namespace {
 constexpr unsigned long kBufferCapacity = 38;
 constexpr unsigned long kFrameIntervalCapacity = 4;
 constexpr std::size_t kCurrentPlatformConfig = 7;
-constexpr unsigned int kRenderTargetFormatClass = 7;
 constexpr int kNoAttachment = -1;
 constexpr int kStereoTargetMode = 3;
 
@@ -27,8 +26,8 @@ const RndConfig& Settings() {
     return *TheRndDevice()->mSettings;
 }
 
-int ResolveFormat(const RenderDataFormatDescriptor& descriptor) {
-    return render_data_format_resolve(descriptor, kRenderTargetFormatClass);
+int ResolveFormat(const RndDataFormatInfo& descriptor) {
+    return RndFindSupportedDataFormat(descriptor, kPlatformPS4);
 }
 
 // Format request shared by the render targets: wrap and filter modes over

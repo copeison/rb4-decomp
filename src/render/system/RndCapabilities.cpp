@@ -2,20 +2,23 @@
 
 #include <algorithm>
 
-#include "render/system/render_platform_adapters.h"
+#include "os/platform/platform_adapters.h"
 #include "render/system/RndConfig.h"
 
 using namespace rb4;
 
 namespace {
 
-constexpr RenderExtent kFallbackResolution{1920, 1080};
+constexpr Vector2i kFallbackResolution{1920, 1080};
 
-bool ExtentLess(RenderExtent left, RenderExtent right) {
-    if (left.width != right.width) {
-        return left.width < right.width;
+// The binary compares the components unsigned.
+bool ExtentLess(Vector2i left, Vector2i right) {
+    if (left.x != right.x) {
+        return static_cast<unsigned int>(left.x) <
+            static_cast<unsigned int>(right.x);
     }
-    return left.height < right.height;
+    return static_cast<unsigned int>(left.y) <
+        static_cast<unsigned int>(right.y);
 }
 
 void SetUniformCapabilities(
@@ -50,26 +53,26 @@ void SetRestrictedCapabilities(
 }
 
 void ApplyPlatformCapabilities(RndCapabilities& caps, HxPlatform platform) {
-    switch (static_cast<std::uint32_t>(platform)) {
-    case 3:
+    switch (platform) {
+    case kPlatformPC:
         SetUniformCapabilities(caps, 8, 31, 0x1A01FFFFFF7FCC3ULL);
         break;
-    case 5:
-    case 7:
+    case kPlatformXB1:
+    case kPlatformPS4:
         SetUniformCapabilities(caps, 8, 31, 0x1601FFFFFF7FCC3ULL);
         break;
-    case 8:
+    case kPlatformAndroid:
         SetUniformCapabilities(caps, 8, 9, 0xFFBFE00007E57FC3ULL);
         caps.mCapabilityMask[1] = 0x1FFFFFULL;
         break;
-    case 9:
-    case 11:
+    case kPlatformIOS:
+    case kPlatformTVOS:
         SetRestrictedCapabilities(caps, 4, 0x11FE00007F79CC3ULL);
         break;
-    case 10:
+    case kPlatformOSX:
         SetRestrictedCapabilities(caps, 8, 0x1201FFFFFF7FCC3ULL);
         break;
-    case 12:
+    case kPlatformNX:
         SetUniformCapabilities(caps, 8, 9, 0x1A01FFFFFF7FFC3ULL);
         break;
     default:
@@ -103,11 +106,11 @@ void RndCapabilities::InitForPlatform(HxPlatform platform) {
     ApplyPlatformCapabilities(*this, platform);
 
     const auto configured_resolutions = render_configured_resolutions(
-        render_platform_name(platform));
-    std::vector<RenderExtent> resolutions;
+        PlatformSymbol(platform));
+    std::vector<Vector2i> resolutions;
     resolutions.reserve(configured_resolutions.size());
     for (const auto* text : configured_resolutions) {
-        RenderExtent extent{};
+        Vector2i extent{};
         if (ParseResolution(text, extent)) {
             resolutions.push_back(extent);
         }
