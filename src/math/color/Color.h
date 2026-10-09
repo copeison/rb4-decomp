@@ -17,6 +17,18 @@ public:
         static const Color sWhite(1.0F, 1.0F, 1.0F, 1.0F);
         return sWhite;
     }
+    static const Color& GetBlack() {
+        static const Color sBlack(0.0F, 0.0F, 0.0F, 1.0F);
+        return sBlack;
+    }
+    static const Color& GetCyan() {
+        static const Color sCyan(0.0F, 1.0F, 1.0F, 1.0F);
+        return sCyan;
+    }
+    static const Color& GetOrange() {
+        static const Color sOrange(1.0F, 0.5F, 0.0F, 1.0F);
+        return sOrange;
+    }
 
     float red;
     float green;

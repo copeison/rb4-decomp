@@ -9,19 +9,12 @@
 // The base vtable is not referenced by a recovered constructor.
 class RndTextureArray2D : public RndTextureBase {
 public:
-    // The caller's element list. Name not in the reference map.
-    template <typename T>
-    struct Range {
-        const T* mBegin;
-        const T* mEnd;
-        const T* mCapacity;
-    };
-
     class Description : public RndTextureBase::Description {
     public:
         Description();  // 0x698770
 
-        Range<RndPixelData> mPixels;
+        // Owned by the description and copied by the texture.
+        eastl::vector<RndPixelData> mPixels;
     };
 
     // Reconstructed from eboot.elf at 0x698100. Resolves the description,

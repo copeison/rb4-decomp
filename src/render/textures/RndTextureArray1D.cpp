@@ -20,11 +20,9 @@ RndTextureArray1D* RndTextureArray1D::New(Description& desc, const RndTextureArr
 // mip level are recorded.
 RndTextureArray1D::RndTextureArray1D(const Description& desc)
     : mDesc(desc) {
-    const auto count =
-        static_cast<unsigned long>(desc.mPixels.mEnd - desc.mPixels.mBegin);
-    mPixels.reserve(count);
-    for (auto* pixels = desc.mPixels.mBegin; pixels != desc.mPixels.mEnd; ++pixels) {
-        mPixels.emplace_back(*pixels, desc.ShouldKeepPixelData());
+    mPixels.reserve(desc.mPixels.size());
+    for (const RndPixelData& pixels : desc.mPixels) {
+        mPixels.emplace_back(pixels, desc.ShouldKeepPixelData());
     }
     ValidateElements();
     const auto& first = mPixels.front();

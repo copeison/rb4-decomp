@@ -53,3 +53,30 @@ The descriptor type values are corroborated by the resource-class switch at
 `render_get_default_texture` at `0x6C00F0` indexes these tables by the raw shape
 values `0` through `5` and `7`, returning the common `RenderTexture` base or
 null for unsupported values.
+
+## Table layout
+
+The default textures are stored by shape first: one array of seven pointers
+per texture shape, indexed by default type. The address is
+`this + 8 + 56*shape + 8*default`.
+
+| Array | Offset |
+| --- | --- |
+| `mTextures1D` | `+8` |
+| `mTextures2D` | `+64` |
+| `mTextures3D` | `+120` |
+| `mTexturesCube` | `+176` |
+| `mTexturesArray1D` | `+232` |
+| `mTexturesArray2D` | `+288` |
+| `mTexturesArrayCube` | `+344` |
+
+`_CreateTextures` (`0x6BDE60`) fills a pixel canvas with each default's
+colour, overlays an 8-texel checkerboard for the error textures
+(`RndTextureUtl::FillCheckerboard`), and builds every shape in turn.
+
+The checkerboard's row loop is bounded by the height rather than the width,
+so wide one-row textures get only their first texel patterned. This is kept
+from the binary.
+
+The direct default binding in the tiled-light dispatches is the zero 2D
+texture.

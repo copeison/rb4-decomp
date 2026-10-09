@@ -87,19 +87,13 @@ RndTextureBase* RndBufferCollection2D::_AllocBufferArrayImpl(
         attachment,
         targetFlags);
 
-    auto* layers = static_cast<RndPixelData*>(
-        HmxAllocator::gStlAllocator.allocate(count * sizeof(RndPixelData)));
+    desc.mPixels.resize(count);
     for (unsigned long i = 0; i < count; ++i) {
-        DescribePixels(*new (&layers[i]) RndPixelData, size, dataFormat);
+        DescribePixels(desc.mPixels[i], size, dataFormat);
     }
-    desc.mPixels = {layers, layers + count, layers + count};
     desc.ResolveFormat(RndTextureBase::kTextureArray2D, -1);
 
     auto* texture = TheRndDevice()->mFactory->CreateTextureArray2D(desc);
     texture->SyncStatic(reuse);
-    for (unsigned long i = 0; i < count; ++i) {
-        layers[i].~RndPixelData();
-    }
-    HmxAllocator::gStlAllocator.deallocate(layers, count * sizeof(RndPixelData));
     return texture;
 }

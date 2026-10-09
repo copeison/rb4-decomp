@@ -108,19 +108,13 @@ void RndLightMgrCom::_SyncSpotShadowDepthTexArray() {
     desc.mName = "Spot Shadow Depth TexArray";
 
     const auto numLayers = static_cast<unsigned long>(config.mNumLayers);
-    auto* mipChains = new RndPixelData[numLayers];
+    desc.mPixels.resize(numLayers);
     const auto size = static_cast<int>(resolution);
     for (unsigned long index = 0; index < numLayers; ++index) {
-        mipChains[index].CreateEmpty(size, size, 1, dataFormat);
+        desc.mPixels[index].CreateEmpty(size, size, 1, dataFormat);
     }
-    desc.mPixels = {
-        mipChains,
-        mipChains + numLayers,
-        mipChains + numLayers,
-    };
 
     mSpotShadowDepthTexArray = RndTextureArray2D::New(desc);
-    delete[] mipChains;
 }
 
 // Reconstructed from the tiled-light portion of eboot.elf at 0x480AD0.

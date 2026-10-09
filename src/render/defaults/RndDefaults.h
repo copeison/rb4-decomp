@@ -27,6 +27,7 @@ class RndTextureArray2D;
 class RndTextureArrayCube;
 class RndTextureCube;
 struct RndInitParams;
+enum RndTargetMode : int;
 
 // The built-in textures. Enumerator names are not in the reference map.
 enum RndDefaultTextureType : int {
@@ -54,20 +55,7 @@ enum RndDefaultLightingType : int {
 // cannot be loaded. Embedded in RndDevice.
 class RndDefaults {
 public:
-    // One texture of each shape for a single RndDefaultTextureType. Name not
-    // in the reference map.
-    struct TextureFamily {
-        RndTexture1D* mTexture1D;
-        RndTexture2D* mTexture2D;
-        RndTexture3D* mTexture3D;
-        RndTextureCube* mTextureCube;
-        RndTextureArray1D* mTextureArray1D;
-        RndTextureArray2D* mTextureArray2D;
-        RndTextureArrayCube* mTextureArrayCube;
-    };
-
-    // Inlined into RndDevice's constructor at 0x6BDB30 in this build.
-    RndDefaults();
+    RndDefaults();  // 0x6BDB30
     ~RndDefaults();  // 0x6BDC20
 
     // The map's signature is Init(); this build reads
@@ -81,26 +69,21 @@ public:
     RndTextureBase* GetTexture(
         RndTextureBase::Type textureType,
         RndDefaultTextureType defaultType) const;  // 0x6C00F0
-    // Not reconstructed yet. The map's parameter is RndTargetMode.
+    // The default texture a render target of this mode is sliced from.
     RndTextureBase* GetRTSlicedTexture(
-        int targetMode,
-        RndDefaultTextureType defaultType);
+        RndTargetMode targetMode,
+        RndDefaultTextureType defaultType);  // 0x6C0050
 
-    float GetLightingShadowOffset() const;  // 0x6BFEA0
-    // Not reconstructed yet.
-    void SetLightingShadowOffset(float offset);
-    // Not reconstructed yet.
-    void SetLightingScale(float scale);
-    // Not reconstructed yet.
-    void SetLightingType(RndDefaultLightingType type);
-    // Not reconstructed yet.
-    bool IsLightProbeEnabled() const;
-    // Not reconstructed yet.
-    void SetLightProbeEnabled(bool enabled);
+    float GetLightingShadowOffset() const;       // 0x6BFEA0
+    void SetLightingShadowOffset(float offset);  // 0x6BFF70
+    void SetLightingScale(float scale);          // 0x6BFBF0
+    void SetLightingType(RndDefaultLightingType type);  // 0x6BFA40
+    bool IsLightProbeEnabled() const;            // 0x6BFBB0
+    void SetLightProbeEnabled(bool enabled);     // 0x6BFBD0
 
     void _CreateTextures();  // 0x6BDE60
-    // Inlined into Init at 0x6BDCA0 in this build.
-    void _CreateComputeBuffers();
+    // Init carries an inlined copy.
+    void _CreateComputeBuffers();  // 0x6BEAF0
     // Init carries an inlined copy. Name not in the reference map.
     void _CreateCamera(Entity* entity);  // 0x6BEBC0
     // The map's parameter is EntityPtr const&; this build passes the entity.
@@ -110,19 +93,28 @@ public:
     // Returns false when default_lighting.scene is unusable.
     bool _LoadLighting();       // 0x6BEF40
     void _SyncEnabledLights();  // 0x6BFA60
-    // Not reconstructed yet.
-    void _SyncLightProbe();
+    // SetLightingScale carries an inlined copy.
+    void _SyncLightProbe();  // 0x6BFCF0
     // The map's parameter is ObjPtr const&; this build passes the object.
     void _SyncSpotlight(GameObject* object);  // 0x6BFD40
-    // Inlined into _CreateTextures in this build.
+    // Not in this build: _CreateTextures calls
+    // RndTextureUtl::FillCheckerboard (0x6AED00) with an eight-texel cell.
     static void _FillTextureCanvasCheckerboard(
         RndPixelCanvas& canvas,
         const Hmx::Color& primary,
         const Hmx::Color& secondary);
 
-    // Field names are not in the reference map.
+    // Field names are not in the reference map. The default textures are
+    // stored shape first: one array per texture shape, each indexed by
+    // RndDefaultTextureType.
     ResourcePtr<RndSceneResource> mSceneResource;
-    TextureFamily mTextures[kNumDefaultTextureTypes];
+    RndTexture1D* mTextures1D[kNumDefaultTextureTypes];
+    RndTexture2D* mTextures2D[kNumDefaultTextureTypes];
+    RndTexture3D* mTextures3D[kNumDefaultTextureTypes];
+    RndTextureCube* mTexturesCube[kNumDefaultTextureTypes];
+    RndTextureArray1D* mTexturesArray1D[kNumDefaultTextureTypes];
+    RndTextureArray2D* mTexturesArray2D[kNumDefaultTextureTypes];
+    RndTextureArrayCube* mTexturesArrayCube[kNumDefaultTextureTypes];
     RndComputeBuffer* mComputeBuffers[2];
     RndCameraCom* mCamera;
     RndMaterialCom* mUnlitMaterial;
@@ -140,8 +132,13 @@ public:
     float mLightingScale;
 };
 
-static_assert(sizeof(RndDefaults::TextureFamily) == 56);
-static_assert(offsetof(RndDefaults, mTextures) == 8);
+static_assert(offsetof(RndDefaults, mTextures1D) == 8);
+static_assert(offsetof(RndDefaults, mTextures2D) == 64);
+static_assert(offsetof(RndDefaults, mTextures3D) == 120);
+static_assert(offsetof(RndDefaults, mTexturesCube) == 176);
+static_assert(offsetof(RndDefaults, mTexturesArray1D) == 232);
+static_assert(offsetof(RndDefaults, mTexturesArray2D) == 288);
+static_assert(offsetof(RndDefaults, mTexturesArrayCube) == 344);
 static_assert(offsetof(RndDefaults, mComputeBuffers) == 400);
 static_assert(offsetof(RndDefaults, mCamera) == 416);
 static_assert(offsetof(RndDefaults, mUnlitMaterial) == 424);

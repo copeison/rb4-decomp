@@ -9,19 +9,12 @@
 // The base vtable is at 0x19355C0.
 class RndTextureArrayCube : public RndTextureBase {
 public:
-    // The caller's element list. Name not in the reference map.
-    template <typename T>
-    struct Range {
-        const T* mBegin;
-        const T* mEnd;
-        const T* mCapacity;
-    };
-
     class Description : public RndTextureBase::Description {
     public:
         Description();  // 0x69AF00
 
-        Range<RndPixelDataCube> mCubes;
+        // Owned by the description and copied by the texture.
+        eastl::vector<RndPixelDataCube> mCubes;
     };
 
     // Reconstructed from eboot.elf at 0x69AA60. Resolves the description,

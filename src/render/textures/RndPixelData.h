@@ -22,6 +22,11 @@ public:
     // Reconstructed from eboot.elf at 0x6829A0. The map has
     // CopyFrom(RndPixelData const&).
     void CopyFrom(const RndPixelData& other, bool keepPixels);
+    // Not reconstructed yet. Tail-calls TryCopyFrom.
+    void CopyFrom(const RndPixelData& other);  // 0x6836B0
+    // Not reconstructed yet. Copies the pixels of this level and its mips
+    // when the sizes, buffer sizes and data formats match.
+    bool TryCopyFrom(const RndPixelData& other);  // 0x6836C0
     // Reconstructed from eboot.elf at 0x6830D0. Frees the level and records
     // its size and format without pixels. The map's format parameter is an
     // RndPixelFormat.

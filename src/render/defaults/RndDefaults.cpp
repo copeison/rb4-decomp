@@ -1,8 +1,6 @@
 #include "render/defaults/RndDefaults.h"
 
-#include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 
 #include "entity/core/Entity.h"
@@ -16,6 +14,7 @@
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/context/RndCameraCom.h"
+#include "render/context/RndCameraContext.h"
 #include "render/lighting/lights/RndLightCom.h"
 #include "render/lighting/lights/RndLightDirectionalCom.h"
 #include "render/lighting/lights/RndLightProbeCom.h"
@@ -33,7 +32,7 @@
 #include "render/textures/RndTextureArray2D.h"
 #include "render/textures/RndTextureArrayCube.h"
 #include "render/textures/RndTextureCube.h"
-#include "utl/containers/Std.h"
+#include "render/textures/RndTextureUtl.h"
 
 namespace {
 
@@ -56,195 +55,6 @@ constexpr const char* kDefaultParticleShader =
     "../../system/data/shared/shadergraph/default_particle.sgraph";
 constexpr const char* kDefaultDecalShader =
     "../../system/data/shared/shadergraph/default_decal_lit.sgraph";
-
-// Describes one RndDefaultTextureType.
-struct DefaultTextureSpec {
-    const char* mName;
-    std::uint32_t mExtent;
-    std::uint32_t mUsage;
-    Hmx::Color mPrimary;
-    Hmx::Color mSecondary;
-    bool mCheckerboard;
-};
-
-constexpr Hmx::Color kTransparentBlack{0.0F, 0.0F, 0.0F, 0.0F};
-
-constexpr std::array<DefaultTextureSpec, kNumDefaultTextureTypes>
-    kDefaultTextureSpecs{{
-        {"White", 8, 0, {1.0F, 1.0F, 1.0F, 1.0F}, kTransparentBlack, false},
-        {"Black", 8, 0, {0.0F, 0.0F, 0.0F, 1.0F}, kTransparentBlack, false},
-        {"Zero", 8, 0, kTransparentBlack, kTransparentBlack, false},
-        {"Flat Normal", 8, 3, {0.5F, 0.5F, 1.0F, 1.0F}, kTransparentBlack, false},
-        {"Error", 64, 0, {1.0F, 0.5F, 0.0F, 1.0F}, {0.0F, 1.0F, 1.0F, 1.0F}, true},
-        {"Error Greyscale", 64, 0, {0.25F, 0.25F, 0.25F, 1.0F}, {0.75F, 0.75F, 0.75F, 1.0F}, true},
-        {"Error Normal", 64, 3, {1.0F, 0.0F, 0.0F, 1.0F}, {0.0F, 1.0F, 0.0F, 1.0F}, true},
-    }};
-
-constexpr RndDataFormatInfo kDefaultTextureFormat{
-    32,
-    4,
-    0,
-    2,
-    -1,
-};
-
-// Pixel storage reused across the shapes of one texture family.
-class DefaultPixelBuffer {
-public:
-    explicit DefaultPixelBuffer(const DefaultTextureSpec& spec)
-        : mSpec(spec) {
-    }
-
-    ~DefaultPixelBuffer() {
-        if (mPixels != nullptr) {
-            HmxAllocator::gStlAllocator.deallocate(mPixels, mByteCount);
-        }
-    }
-
-    DefaultPixelBuffer(const DefaultPixelBuffer&) = delete;
-    DefaultPixelBuffer& operator=(const DefaultPixelBuffer&) = delete;
-
-    RndPixelCanvas Reshape(
-        std::uint32_t width,
-        std::uint32_t height,
-        std::uint32_t depth) {
-        const auto pixelCount =
-            static_cast<std::size_t>(width) * height * depth;
-        const auto byteCount = pixelCount * sizeof(Hmx::Color);
-        if (byteCount != mByteCount) {
-            if (mPixels != nullptr) {
-                HmxAllocator::gStlAllocator.deallocate(mPixels, mByteCount);
-            }
-            mPixels = static_cast<Hmx::Color*>(
-                HmxAllocator::gStlAllocator.allocate(byteCount));
-            mByteCount = byteCount;
-        }
-
-        RndPixelCanvas canvas{
-            nullptr,
-            static_cast<int>(width),
-            static_cast<int>(height),
-            static_cast<int>(depth),
-            0,
-            mPixels,
-            nullptr,
-        };
-        RndDefaults::_FillTextureCanvasCheckerboard(
-            canvas,
-            mSpec.mPrimary,
-            mSpec.mCheckerboard ? mSpec.mSecondary : mSpec.mPrimary);
-        return canvas;
-    }
-
-private:
-    const DefaultTextureSpec& mSpec;
-    Hmx::Color* mPixels = nullptr;
-    std::size_t mByteCount = 0;
-};
-
-void ConfigureTextureDescription(
-    RndTextureBase::Description& description,
-    const DefaultTextureSpec& spec) {
-    description.mRequestedFormat.mUsage = static_cast<int>(spec.mUsage);
-    description.mRequestedFormat.mWrapMode = 2;
-    description.mRequestedFormat.mFilterMode = 1;
-    description.mName = spec.mName;
-}
-
-void PopulateMip(
-    RndPixelData& mip,
-    const RndPixelCanvas& image,
-    std::int32_t dataFormat) {
-    const Vector3i extent{image.mWidth, image.mHeight, image.mDepth};
-    mip.Create(extent, dataFormat, nullptr);
-    mip.ConvertFrom(image);
-}
-
-void PopulateCubeMips(
-    RndPixelDataCube& cube,
-    const RndPixelCanvas& image,
-    std::int32_t dataFormat) {
-    for (auto& face : cube.mFaces) {
-        PopulateMip(face, image, dataFormat);
-    }
-}
-
-void CreateTextureFamily(
-    RndDefaults::TextureFamily& family,
-    const DefaultTextureSpec& spec,
-    std::int32_t dataFormat) {
-    DefaultPixelBuffer pixels(spec);
-
-    auto image = pixels.Reshape(spec.mExtent, 1, 1);
-    RndTexture1D::Description texture1D;
-    ConfigureTextureDescription(texture1D, spec);
-    PopulateMip(texture1D.mPixels, image, dataFormat);
-    family.mTexture1D = RndTexture1D::New(texture1D, nullptr);
-
-    RndTextureArray1D::Description array1D;
-    ConfigureTextureDescription(array1D, spec);
-    array1D.mPixels = {
-        &texture1D.mPixels,
-        &texture1D.mPixels + 1,
-        &texture1D.mPixels + 1,
-    };
-    family.mTextureArray1D = RndTextureArray1D::New(array1D, nullptr);
-
-    image = pixels.Reshape(spec.mExtent, spec.mExtent, 1);
-    RndTexture2D::Description texture2D;
-    ConfigureTextureDescription(texture2D, spec);
-    PopulateMip(texture2D.mPixels, image, dataFormat);
-    family.mTexture2D = RndTexture2D::New(texture2D);
-
-    RndTextureArray2D::Description array2D;
-    ConfigureTextureDescription(array2D, spec);
-    array2D.mPixels = {
-        &texture2D.mPixels,
-        &texture2D.mPixels + 1,
-        &texture2D.mPixels + 1,
-    };
-    family.mTextureArray2D = RndTextureArray2D::New(array2D);
-
-    RndTextureCube::Description cube;
-    ConfigureTextureDescription(cube, spec);
-    PopulateCubeMips(cube.mCube, image, dataFormat);
-    family.mTextureCube = RndTextureCube::New(cube, nullptr);
-
-    RndPixelDataCube arrayCubeState;
-    PopulateCubeMips(arrayCubeState, image, dataFormat);
-    RndTextureArrayCube::Description arrayCube;
-    ConfigureTextureDescription(arrayCube, spec);
-    arrayCube.mCubes = {
-        &arrayCubeState,
-        &arrayCubeState + 1,
-        &arrayCubeState + 1,
-    };
-    family.mTextureArrayCube = RndTextureArrayCube::New(arrayCube, nullptr);
-
-    image = pixels.Reshape(spec.mExtent, spec.mExtent, spec.mExtent);
-    RndTexture3D::Description texture3D;
-    ConfigureTextureDescription(texture3D, spec);
-    PopulateMip(texture3D.mPixels, image, dataFormat);
-    family.mTexture3D = RndTexture3D::New(texture3D, nullptr);
-}
-
-template <typename Texture>
-void ReleaseTexture(Texture*& texture) {
-    if (texture != nullptr) {
-        delete texture;
-        texture = nullptr;
-    }
-}
-
-void ReleaseTextureFamily(RndDefaults::TextureFamily& family) {
-    ReleaseTexture(family.mTexture1D);
-    ReleaseTexture(family.mTexture2D);
-    ReleaseTexture(family.mTexture3D);
-    ReleaseTexture(family.mTextureCube);
-    ReleaseTexture(family.mTextureArray1D);
-    ReleaseTexture(family.mTextureArray2D);
-    ReleaseTexture(family.mTextureArrayCube);
-}
 
 Vector3 Cross(const Vector3& a, const Vector3& b) {
     return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
@@ -276,10 +86,16 @@ RndMaterialCom* CreateMaterialObject(Entity* entity, const char* name) {
 // the reference map.
 static Vector3 sBackupLightDirection;  // 0x1AB007C
 
-// Inlined into RndDevice's constructor at 0x6BDB30 in this build.
+// Reconstructed from eboot.elf at 0x6BDB30.
 RndDefaults::RndDefaults()
     : mSceneResource(),
-      mTextures(),
+      mTextures1D(),
+      mTextures2D(),
+      mTextures3D(),
+      mTexturesCube(),
+      mTexturesArray1D(),
+      mTexturesArray2D(),
+      mTexturesArrayCube(),
       mComputeBuffers(),
       mCamera(nullptr),
       mUnlitMaterial(nullptr),
@@ -323,17 +139,133 @@ void RndDefaults::Init(const RndInitParams& params) {
     }
 }
 
-// Reconstructed from eboot.elf at 0x6BDE60.
+// Reconstructed from eboot.elf at 0x6BDE60. Every default type is made in
+// every shape. The 1D, 2D and 3D textures convert a canvas filled with the
+// type's colours; the array and cube textures copy the 1D or 2D pixels.
 void RndDefaults::_CreateTextures() {
-    const auto dataFormat =
-        RndFindSupportedDataFormat(kDefaultTextureFormat, kPlatformPS4);
-    for (std::size_t index = 0; index < kDefaultTextureSpecs.size(); ++index) {
-        CreateTextureFamily(
-            mTextures[index], kDefaultTextureSpecs[index], dataFormat);
+    for (int i = 0; i < kNumDefaultTextureTypes; ++i) {
+        const auto type = static_cast<RndDefaultTextureType>(i);
+        const RndDataFormatInfo info{32, 4, 0, 2, -1};
+        const int dataFormat = RndFindSupportedDataFormat(info, kPlatformPS4);
+
+        RndPixelFormat format{};
+        Hmx::Color primary(0.0F, 0.0F, 0.0F, 1.0F);
+        Hmx::Color secondary(0.0F, 0.0F, 0.0F, 1.0F);
+        bool checkerboard = false;
+        switch (type) {
+        case kDefaultTextureWhite:
+            primary = Hmx::Color::GetWhite();
+            break;
+        case kDefaultTextureBlack:
+            primary = Hmx::Color::GetBlack();
+            break;
+        case kDefaultTextureZero:
+            primary = Hmx::Color::GetZero();
+            break;
+        case kDefaultTextureFlatNormal:
+            primary = Hmx::Color(0.5F, 0.5F, 1.0F, 1.0F);
+            format.mUsage = 3;
+            break;
+        case kDefaultTextureError:
+            primary = Hmx::Color::GetOrange();
+            secondary = Hmx::Color::GetCyan();
+            checkerboard = true;
+            break;
+        case kDefaultTextureErrorGreyscale:
+            primary = Hmx::Color(0.25F, 0.25F, 0.25F, 1.0F);
+            secondary = Hmx::Color(0.75F, 0.75F, 0.75F, 1.0F);
+            checkerboard = true;
+            break;
+        case kDefaultTextureErrorNormal:
+            primary = Hmx::Color(1.0F, 0.0F, 0.0F, 1.0F);
+            secondary = Hmx::Color(0.0F, 1.0F, 0.0F, 1.0F);
+            checkerboard = true;
+            format.mUsage = 3;
+            break;
+        default:
+            break;
+        }
+        format.mWrapMode = 2;
+        format.mFilterMode = 1;
+
+        const int size = checkerboard ? 64 : 8;
+        const char* name = RndTextureUtl::GetDefaultTextureName(type);
+
+        RndPixelCanvas canvas;
+        canvas.CreateWithColor(size, 1, 1, primary);
+        if (checkerboard) {
+            RndTextureUtl::FillCheckerboard(canvas, primary, secondary, 8);
+        }
+
+        RndTexture1D::Description desc1D;
+        desc1D.mRequestedFormat = format;
+        desc1D.mName = name;
+        desc1D.mPixels.CreateEmpty(size, 1, 1, dataFormat);
+        desc1D.mPixels.ConvertFrom(canvas);
+        mTextures1D[i] = RndTexture1D::New(desc1D, nullptr);
+
+        RndTextureArray1D::Description descArray1D;
+        descArray1D.mRequestedFormat = format;
+        descArray1D.mName = name;
+        descArray1D.mPixels.resize(1);
+        descArray1D.mPixels[0].Create(size, 1, 1, dataFormat, nullptr);
+        descArray1D.mPixels[0].CopyFrom(desc1D.mPixels);
+        mTexturesArray1D[i] = RndTextureArray1D::New(descArray1D, nullptr);
+
+        canvas.CreateWithColor(size, size, 1, primary);
+        if (checkerboard) {
+            RndTextureUtl::FillCheckerboard(canvas, primary, secondary, 8);
+        }
+
+        RndTexture2D::Description desc2D;
+        desc2D.mRequestedFormat = format;
+        desc2D.mName = name;
+        desc2D.mPixels.CreateEmpty(size, size, 1, dataFormat);
+        desc2D.mPixels.ConvertFrom(canvas);
+        mTextures2D[i] = RndTexture2D::New(desc2D);
+
+        RndTextureArray2D::Description descArray2D;
+        descArray2D.mRequestedFormat = format;
+        descArray2D.mName = name;
+        descArray2D.mPixels.resize(1);
+        descArray2D.mPixels[0].Create(size, size, 1, dataFormat, nullptr);
+        descArray2D.mPixels[0].CopyFrom(desc2D.mPixels);
+        mTexturesArray2D[i] = RndTextureArray2D::New(descArray2D);
+
+        RndTextureCube::Description descCube;
+        descCube.mRequestedFormat = format;
+        descCube.mName = name;
+        for (RndPixelData& face : descCube.mCube.mFaces) {
+            face.Create(size, size, 1, dataFormat, nullptr);
+            face.CopyFrom(desc2D.mPixels);
+        }
+        mTexturesCube[i] = RndTextureCube::New(descCube, nullptr);
+
+        RndTextureArrayCube::Description descArrayCube;
+        descArrayCube.mRequestedFormat = format;
+        descArrayCube.mName = name;
+        descArrayCube.mCubes.resize(1);
+        for (RndPixelData& face : descArrayCube.mCubes[0].mFaces) {
+            face.Create(size, size, 1, dataFormat, nullptr);
+            face.CopyFrom(desc2D.mPixels);
+        }
+        mTexturesArrayCube[i] = RndTextureArrayCube::New(descArrayCube, nullptr);
+
+        canvas.CreateWithColor(size, size, size, primary);
+        if (checkerboard) {
+            RndTextureUtl::FillCheckerboard(canvas, primary, secondary, 8);
+        }
+
+        RndTexture3D::Description desc3D;
+        desc3D.mRequestedFormat = format;
+        desc3D.mName = name;
+        desc3D.mPixels.CreateEmpty(size, size, size, dataFormat);
+        desc3D.mPixels.ConvertFrom(canvas);
+        mTextures3D[i] = RndTexture3D::New(desc3D, nullptr);
     }
 }
 
-// Reconstructed from the inlined sequence in Init at 0x6BDCA0.
+// Reconstructed from eboot.elf at 0x6BEAF0. Init carries an inlined copy.
 void RndDefaults::_CreateComputeBuffers() {
     for (std::uint32_t index = 0; index < 2; ++index) {
         const RndComputeBuffer::Description descriptor{
@@ -477,8 +409,21 @@ void RndDefaults::Terminate() {
     mDirectionalLights.clear();
     mShadowedSpotLights.clear();
 
-    for (auto& family : mTextures) {
-        ReleaseTextureFamily(family);
+    for (int i = 0; i < kNumDefaultTextureTypes; ++i) {
+        delete mTextures1D[i];
+        mTextures1D[i] = nullptr;
+        delete mTextures2D[i];
+        mTextures2D[i] = nullptr;
+        delete mTextures3D[i];
+        mTextures3D[i] = nullptr;
+        delete mTexturesCube[i];
+        mTexturesCube[i] = nullptr;
+        delete mTexturesArray1D[i];
+        mTexturesArray1D[i] = nullptr;
+        delete mTexturesArray2D[i];
+        mTexturesArray2D[i] = nullptr;
+        delete mTexturesArrayCube[i];
+        mTexturesArrayCube[i] = nullptr;
     }
     for (auto*& buffer : mComputeBuffers) {
         if (buffer != nullptr) {
@@ -498,6 +443,15 @@ void RndDefaults::Poll() {
     }
 }
 
+// Reconstructed from eboot.elf at 0x6BFA40.
+void RndDefaults::SetLightingType(RndDefaultLightingType type) {
+    if (mLightingType == type) {
+        return;
+    }
+    mLightingType = type;
+    _SyncEnabledLights();
+}
+
 // Reconstructed from eboot.elf at 0x6BFA60.
 void RndDefaults::_SyncEnabledLights() {
     const ResourcePtr<RndSceneResource> scene =
@@ -511,6 +465,42 @@ void RndDefaults::_SyncEnabledLights() {
         Entity* entity = scene->mEntity;
         entity->GetObject(id)->GetExistingBaseCom<RndLightCom>()->mEnabled =
             mLightingType == kDefaultLightingShadowedSpot;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BFBB0.
+bool RndDefaults::IsLightProbeEnabled() const {
+    return mLightProbe != nullptr && mLightProbe->mEnabled;
+}
+
+// Reconstructed from eboot.elf at 0x6BFBD0.
+void RndDefaults::SetLightProbeEnabled(bool enabled) {
+    if (mLightProbe != nullptr) {
+        mLightProbe->mEnabled = enabled;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BFBF0. The shadowed spots are re-placed
+// at the new scale.
+void RndDefaults::SetLightingScale(float scale) {
+    if (scale == mLightingScale) {
+        return;
+    }
+    mLightingScale = scale;
+    _SyncLightProbe();
+
+    const ResourcePtr<RndSceneResource> scene =
+        mLightingResource ? mLightingResource : mSceneResource;
+    for (const GameObjectId& id : mShadowedSpotLights) {
+        _SyncSpotlight(scene->mEntity->GetObject(id));
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BFCF0.
+void RndDefaults::_SyncLightProbe() {
+    if (mLightProbe != nullptr) {
+        mLightProbe->SetFalloffStart(mLightingScale + mLightingScale);
+        mLightProbe->SetFalloffEnd(mLightingScale * 3.0f);
     }
 }
 
@@ -542,54 +532,60 @@ float RndDefaults::GetLightingShadowOffset() const {
         ->mShadowOffset;
 }
 
-// Reconstructed from eboot.elf at 0x6C00F0.
-RndTextureBase* RndDefaults::GetTexture(
-    RndTextureBase::Type textureType,
-    RndDefaultTextureType defaultType) const {
-    const auto index = static_cast<std::size_t>(defaultType);
-    if (index >= kNumDefaultTextureTypes) {
-        return nullptr;
+// Reconstructed from eboot.elf at 0x6BFF70.
+void RndDefaults::SetLightingShadowOffset(float offset) {
+    const ResourcePtr<RndSceneResource> scene =
+        mLightingResource ? mLightingResource : mSceneResource;
+    for (const GameObjectId& id : mShadowedSpotLights) {
+        scene->mEntity->GetObject(id)
+            ->GetExistingCom<RndLightSpotCom>()
+            ->mShadowOffset = offset;
     }
+}
 
-    const auto& family = mTextures[index];
-    switch (textureType) {
-    case RndTextureBase::kTexture1D:
-        return family.mTexture1D;
-    case RndTextureBase::kTexture2D:
-        return family.mTexture2D;
-    case RndTextureBase::kTexture3D:
-        return family.mTexture3D;
-    case RndTextureBase::kTextureCube:
-        return family.mTextureCube;
-    case RndTextureBase::kTextureArray1D:
-        return family.mTextureArray1D;
-    case RndTextureBase::kTextureArray2D:
-        return family.mTextureArray2D;
-    case RndTextureBase::kTextureArrayCube:
-        return family.mTextureArrayCube;
+// Reconstructed from eboot.elf at 0x6C0050. GetTexture is inlined. Stereo
+// targets have no sliced default.
+RndTextureBase* RndDefaults::GetRTSlicedTexture(
+    RndTargetMode targetMode,
+    RndDefaultTextureType defaultType) {
+    switch (static_cast<int>(targetMode)) {
+    case kTargetModeCube:
+        return GetTexture(RndTextureBase::kTextureCube, defaultType);
+    case kTargetMode2D:
+    case kTargetModeLeftEye:
+    case kTargetModeRightEye:
+    case kTargetModeCubeFace:
+    case kTargetModeCubeFace + 1:
+    case kTargetModeCubeFace + 2:
+    case kTargetModeCubeFace + 3:
+    case kTargetModeCubeFace + 4:
+    case kTargetModeCubeFace + 5:
+        return GetTexture(RndTextureBase::kTexture2D, defaultType);
     default:
         return nullptr;
     }
 }
 
-// Inlined into _CreateTextures in this build. Pixels in alternating 8x8x8
-// cells take the primary and secondary colours; the cell at the origin is
-// secondary.
-void RndDefaults::_FillTextureCanvasCheckerboard(
-    RndPixelCanvas& canvas,
-    const Hmx::Color& primary,
-    const Hmx::Color& secondary) {
-    auto* pixels = const_cast<Hmx::Color*>(canvas.mPixels);
-    const auto width = static_cast<std::uint32_t>(canvas.mWidth);
-    const auto height = static_cast<std::uint32_t>(canvas.mHeight);
-    const auto depth = static_cast<std::uint32_t>(canvas.mDepth);
-    for (std::uint32_t z = 0; z < depth; ++z) {
-        for (std::uint32_t y = 0; y < height; ++y) {
-            for (std::uint32_t x = 0; x < width; ++x) {
-                const auto cell = (x / 8U) ^ (y / 8U) ^ (z / 8U);
-                pixels[x + width * (y + height * z)] =
-                    (cell & 1U) != 0 ? primary : secondary;
-            }
-        }
+// Reconstructed from eboot.elf at 0x6C00F0.
+RndTextureBase* RndDefaults::GetTexture(
+    RndTextureBase::Type textureType,
+    RndDefaultTextureType defaultType) const {
+    switch (textureType) {
+    case RndTextureBase::kTexture1D:
+        return mTextures1D[defaultType];
+    case RndTextureBase::kTexture2D:
+        return mTextures2D[defaultType];
+    case RndTextureBase::kTexture3D:
+        return mTextures3D[defaultType];
+    case RndTextureBase::kTextureCube:
+        return mTexturesCube[defaultType];
+    case RndTextureBase::kTextureArray1D:
+        return mTexturesArray1D[defaultType];
+    case RndTextureBase::kTextureArray2D:
+        return mTexturesArray2D[defaultType];
+    case RndTextureBase::kTextureArrayCube:
+        return mTexturesArrayCube[defaultType];
+    default:
+        return nullptr;
     }
 }

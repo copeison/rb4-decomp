@@ -613,22 +613,17 @@ void RndShaderMgr::Init() {
 
     RndTextureArray1D::Description descriptor;
     descriptor.mName = "function_table";
+    descriptor.mPixels.resize(kFunctionCount);
+    RndPixelCanvas image;
+    image.CreateUninitialized(static_cast<int>(kSampleCount), 1, 1);
     descriptor.mFormat.mWrapMode = static_cast<std::uint32_t>(
         TextureDefaultWrapMode(6));
     descriptor.mFormat.mFilterMode = static_cast<std::uint32_t>(
         TextureDefaultFilterMode(6));
 
-    std::array<RndPixelData, kFunctionCount> mip_chains;
-    descriptor.mPixels = {
-        mip_chains.data(),
-        mip_chains.data() + mip_chains.size(),
-        mip_chains.data() + mip_chains.size(),
-    };
-
     const auto data_format =
         RndFindSupportedDataFormat(kFunctionTableFormat, kPlatformPS4);
     const Vector3i extent{static_cast<int>(kSampleCount), 1, 1};
-    std::array<Hmx::Color, kSampleCount> pixels;
     for (std::uint32_t function_index = 0;
          function_index < kFunctionCount;
          ++function_index) {
@@ -638,20 +633,11 @@ void RndShaderMgr::Init() {
             const auto sample = sample_function_table(
                 function_index,
                 static_cast<float>(sample_index) * kSampleStep);
-            pixels[sample_index] = {sample, sample, sample, sample};
+            image.mPixels[sample_index] = {sample, sample, sample, sample};
         }
 
-        auto& mip = mip_chains[function_index];
+        auto& mip = descriptor.mPixels[function_index];
         mip.Create(extent, data_format, nullptr);
-        const RndPixelCanvas image{
-            nullptr,
-            static_cast<int>(kSampleCount),
-            1,
-            1,
-            0,
-            pixels.data(),
-            nullptr,
-        };
         mip.ConvertFrom(image);
     }
 

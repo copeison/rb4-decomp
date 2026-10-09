@@ -14,7 +14,7 @@
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
-#include "render/textures/RndTexture3D.h"
+#include "render/textures/RndTexture2D.h"
 #include "render/textures/RndTextureBase.h"
 #include "utl/text/Symbol.h"
 
@@ -155,10 +155,10 @@ void RndCShaderTiledLightsCull::Dispatch(RndContext& context, Params& params) {
             mRightEyeTiledDepthRangeBuffer);
     }
     // Without the scene mask the binary binds the device field at +0x808,
-    // the black 3D default texture.
+    // the zero 2D default texture.
     RndTextureBase* sceneMask = params.mUseSceneMask
         ? buffers.mTiledSceneMask[1]
-        : device->mDefaults.mTextures[kDefaultTextureBlack].mTexture3D;
+        : device->mDefaults.mTextures2D[kDefaultTextureZero];
     SelectCompute(context, *sceneMask, mSceneMask, kNoSampler);
     SelectCompute(context, *device->mLighting.mTiledLightIdsCount, mLightIdsCount, kReadWrite);
     if (stereo) {

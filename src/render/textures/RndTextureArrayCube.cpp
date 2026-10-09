@@ -56,11 +56,9 @@ void RndTextureArrayCube::_FreePixelDataImpl() {
 
 void RndTextureArrayCube::InitDescription(const Description& desc, bool keepPixels) {
     mDesc = desc;
-    const auto count =
-        static_cast<unsigned long>(desc.mCubes.mEnd - desc.mCubes.mBegin);
-    mCubes.reserve(count);
-    for (auto* cube = desc.mCubes.mBegin; cube != desc.mCubes.mEnd; ++cube) {
-        mCubes.emplace_back(*cube, keepPixels);
+    mCubes.reserve(desc.mCubes.size());
+    for (const RndPixelDataCube& cube : desc.mCubes) {
+        mCubes.emplace_back(cube, keepPixels);
     }
 }
 

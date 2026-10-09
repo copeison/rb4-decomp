@@ -9,19 +9,12 @@
 // The base vtable is at 0x19350E0.
 class RndTextureArray1D : public RndTextureBase {
 public:
-    // The caller's element list. Name not in the reference map.
-    template <typename T>
-    struct Range {
-        const T* mBegin;
-        const T* mEnd;
-        const T* mCapacity;
-    };
-
     class Description : public RndTextureBase::Description {
     public:
         Description();  // 0x6972D0
 
-        Range<RndPixelData> mPixels;
+        // Owned by the description and copied by the texture.
+        eastl::vector<RndPixelData> mPixels;
     };
 
     // Reconstructed from eboot.elf at 0x696BA0. Resolves the description,

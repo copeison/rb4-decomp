@@ -94,6 +94,6 @@ the second for component creation and base-class lookups; the source calls it
 renderer's subsystems in binary order. The terminating flag is a static local
 in `Terminate`.
 
-The default-texture table is still laid out per default type in the source.
-`GetTexture` and `Terminate` show it is stored by shape first, so that layout
-needs correcting.
+The lighting setters are reconstructed too: `SetLightingType`,
+`SetLightProbeEnabled`, `SetLightingScale` (which syncs the probe and every
+shadowed spot) and `SetLightingShadowOffset`.
