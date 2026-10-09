@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-switch of the PS4 backend to the Gnm SDK types, the twenty-first step
-of the conversion to the reference map's original names, classes, and module
+retirement of the `rb4` namespace, the twenty-second step of the
+conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | PS4 backend switched to the Gnm SDK types; `PS4Context::SetupDraw` reconstructed; screenshot callback is a `std::function` |
+| (this) | Last `rb4` code moved to the global namespace with SDK render-target types; `PS4ParticleBuffer` draw and creation reconstructed |
+| `c2913b0` | PS4 backend switched to the Gnm SDK types; `PS4Context::SetupDraw` reconstructed; screenshot callback is a `std::function` |
 | `66ad08a` | Remaining render helpers converted (`PlatformMgr`, `RndPixelFormat`, `RndPrimitiveMeshes`, `RndAudioTextures`, `BinkRenderMgr`, `RndLightMgrCom`); main-loop calls named from the map |
 | `072eb2a` | Render debug and shader helpers converted to `RndBufferInspection`, `RndShaderIncludeChecksums`, `RndShaderUtl`, `RndShaderDrawUtl` |
 | `cd781a8` | Game, input and UI code moved to `App`/`main`, `StagePresence`, `PembrokeGuitarController`, `UILayoutId` |

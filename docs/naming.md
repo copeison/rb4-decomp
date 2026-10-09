@@ -20,6 +20,10 @@ supplies only names and module placement.
   - the member is a data field.
 - When a signature in the binary differs from the map, follow the binary and
   add a comment giving the map's signature.
+- Code from the PS4 SDK and its standard library is used through the SDK
+  headers, not modelled: `sce::Gnm::Buffer`, `sce::Gnmx::GfxContext`,
+  `<pad.h>`'s `ScePadData`, `std::function`. Statically linked SDK functions
+  in the binary are named with their SDK symbols in IDA.
 
 ## Classes and vtables
 

@@ -575,6 +575,12 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Move the last `rb4` code into the global namespace: SDK
+  `sce::Gnm::RenderTarget`, `DepthRenderTarget`, `DataFormat` and `SizeAlign`
+  replace the Orbis stand-ins, and the blend-mode enum takes the map's name
+  `RndBlendMode`.
+- [x] Reconstruct `PS4ParticleBuffer::_DrawBatchImpl` and the particle buffer
+  creation (`MemFindHeap`, `MemPushHeap`, `MemPopHeap`).
 - [x] Use the SDK's `sce::Gnm` and `sce::Gnmx::GfxContext` types in the PS4
   backend, and reconstruct `PS4Context::SetupDraw` and
   `PS4RenderUtl::GetPrimitiveType`.
