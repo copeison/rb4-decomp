@@ -191,6 +191,14 @@ PS4Context::~PS4Context() {
     _DestructCommandState();
 }
 
+bool PS4Context::_RecordingGraphics() const {
+    return mActivePipe == 0;
+}
+
+bool PS4Context::_RecordingCompute() const {
+    return mActivePipe == 1;
+}
+
 sce::Gnmx::ComputeContext& PS4Context::_ActiveComputeContext() {
     return mComputeContexts[mActiveFrame][mActiveComputeSlot];
 }
@@ -750,54 +758,67 @@ void PS4Context::_WaitForResource(const void* resource) {
 // Reconstructed from eboot.elf at 0x8EB730.
 void PS4Context::_SignalFenceImpl(RndFence& fence) {
     auto& ps4Fence = static_cast<PS4Fence&>(fence);
-    auto* address = ps4Fence.mLabel;
-    const auto value = ps4Fence.NextValue();
-    if (_RecordingGraphics()) {
-        _EmitGraphicsFenceSignal(address, value);
-    } else if (_RecordingCompute()) {
-        _EmitComputeFenceSignal(address, value);
+    if (mActivePipe == 1) {
+        auto* address = ps4Fence.mLabel;
+        _ActiveComputeContext().writeReleaseMemEvent(
+            sce::Gnm::kReleaseMemEventCsDone,
+            sce::Gnm::kEventWriteDestMemory,
+            const_cast<std::uint32_t*>(address),
+            sce::Gnm::kEventWriteSource32BitsImmediate,
+            ps4Fence.NextValue(),
+            sce::Gnm::kCacheActionNone,
+            sce::Gnm::kCachePolicyLru);
+    } else if (mActivePipe == 0) {
+        auto* address = ps4Fence.mLabel;
+        _ActiveGfxContext().writeAtEndOfPipe(
+            sce::Gnm::kEopCbDbReadsDone,
+            sce::Gnm::kEventWriteDestMemory,
+            const_cast<std::uint32_t*>(address),
+            sce::Gnm::kEventWriteSource32BitsImmediate,
+            ps4Fence.NextValue(),
+            sce::Gnm::kCacheActionNone,
+            sce::Gnm::kCachePolicyLru);
     }
 }
 
 // Reconstructed from eboot.elf at 0x8EB7F0.
 void PS4Context::_WaitFenceImpl(const RndFence& fence) {
     const auto& ps4Fence = static_cast<const PS4Fence&>(fence);
-    const auto* address = ps4Fence.mLabel;
-    const auto value = ps4Fence.mSequence;
-    if (_RecordingGraphics()) {
-        _EmitGraphicsFenceWait(address, value);
-    } else if (_RecordingCompute()) {
-        _EmitComputeFenceWait(address, value);
+    auto* address = const_cast<std::uint32_t*>(ps4Fence.mLabel);
+    if (mActivePipe == 1) {
+        _ActiveComputeContext().waitOnAddress(
+            address, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncGreaterEqual, ps4Fence.mSequence);
+    } else if (mActivePipe == 0) {
+        _ActiveGfxContext().waitOnAddress(
+            address, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncGreaterEqual, ps4Fence.mSequence);
     }
 }
 
-// Reconstructed from eboot.elf at 0x8EB870.
+// Reconstructed from eboot.elf at 0x8EB870. The SDK's inline dispatch
+// prepares and finishes the CUE state around the packet.
 void PS4Context::_DispatchComputeImpl(unsigned int x, unsigned int y, unsigned int z) {
-    if (_RecordingGraphics()) {
-        _PrepareGraphicsDispatch();
-        _DispatchGraphics(x, y, z);
-        _FinishGraphicsDispatch();
-    } else if (_RecordingCompute()) {
-        _PrepareComputeDispatch();
-        _DispatchCompute(x, y, z);
+    if (mActivePipe == 1) {
+        _ActiveComputeContext().dispatch(x, y, z);
+    } else if (mActivePipe == 0) {
+        _ActiveGfxContext().dispatch(x, y, z);
     }
 }
 
 // Reconstructed from eboot.elf at 0x8EB970.
 void PS4Context::_PushMarkerImpl(const char* name) {
-    if (_RecordingGraphics()) {
-        _PushGraphicsMarker(name, kDebugMarkerColor);
-    } else if (_RecordingCompute()) {
-        _PushComputeMarker(name, kDebugMarkerColor);
+    if (mActivePipe == 1) {
+        _ActiveComputeContext().pushMarker(name, kDebugMarkerColor);
+    } else if (mActivePipe == 0) {
+        _ActiveGfxContext().pushMarker(name, kDebugMarkerColor);
     }
 }
 
 // Reconstructed from eboot.elf at 0x8EB9D0.
 void PS4Context::_PopMarkerImpl() {
-    if (_RecordingGraphics()) {
-        _PopGraphicsMarker();
-    } else if (_RecordingCompute()) {
-        _PopComputeMarker();
+    if (mActivePipe == 1) {
+        _ActiveComputeContext().popMarker();
+    } else if (mActivePipe == 0) {
+        _ActiveGfxContext().popMarker();
     }
 }
 

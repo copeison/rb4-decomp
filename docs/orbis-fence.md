@@ -33,11 +33,17 @@ allocates and zeroes a replacement, and restarts at one. Replacing the label
 avoids making an in-flight wrap indistinguishable from an already completed
 fence value.
 
-The render-context methods at `0x8EB730` and `0x8EB7F0` signal and wait for the
-current sequence. Graphics recording uses a release-memory packet and a
-`WAIT_REG_MEM` address comparison. Standalone compute recording emits the
-corresponding compute release-memory packet and `sceGnmComputeWaitOnAddress`.
-Both waits compare all 32 bits and use the equality comparison mode.
+The render-context methods at `0x8EB730` and `0x8EB7F0`
+(`PS4Context::_SignalFenceImpl` and `_WaitFenceImpl`) signal and wait for the
+current sequence on the active pipe:
+- **Graphics** signals with `GfxContext::writeAtEndOfPipe(kEopCbDbReadsDone,
+  ...)`, writing the next value as a 32-bit immediate.
+- **Compute** signals with `ComputeContext::writeReleaseMemEvent(
+  kReleaseMemEventCsDone, ...)`.
+
+Both waits use `waitOnAddress` with a full 32-bit mask and
+`kWaitCompareFuncGreaterEqual`, so they wait until the label reaches the
+fence's sequence.
 
 Combined IDA evidence is preserved in `analysis/exports/orbis-fence.asm` and
 `analysis/exports/orbis-fence.c`.

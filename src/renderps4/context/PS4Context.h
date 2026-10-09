@@ -232,19 +232,10 @@ private:
     void _SetGnmRenderTargetMask(std::uint32_t writeMask);
     void _CacheColorWriteMask(std::uint8_t targetMask, RndWriteMaskChannelSet writeMode);
 
-    // Command recording. Names not in the reference map; not yet
-    // reconstructed.
+    // Whether commands go to the graphics or a compute context. Names not
+    // in the reference map.
     bool _RecordingGraphics() const;
     bool _RecordingCompute() const;
-    void _PrepareGraphicsDispatch();
-    void _DispatchGraphics(std::uint32_t x, std::uint32_t y, std::uint32_t z);
-    void _FinishGraphicsDispatch();
-    void _PrepareComputeDispatch();
-    void _DispatchCompute(std::uint32_t x, std::uint32_t y, std::uint32_t z);
-    void _PushGraphicsMarker(const char* name, std::uint32_t color);
-    void _PushComputeMarker(const char* name, std::uint32_t color);
-    void _PopGraphicsMarker();
-    void _PopComputeMarker();
 
     // Depth clears. Names not in the reference map; not yet reconstructed.
     void _FlushDepthMetadata();
@@ -255,12 +246,6 @@ private:
     void _SetDepthClearDrawState(bool enabled);
     void _UnbindPixelShader();
     void _SubmitDepthClearDraw();
-
-    // Fences. Names not in the reference map; not yet reconstructed.
-    void _EmitGraphicsFenceSignal(std::uint32_t* address, std::uint32_t value);
-    void _EmitComputeFenceSignal(std::uint32_t* address, std::uint32_t value);
-    void _EmitGraphicsFenceWait(const std::uint32_t* address, std::uint32_t value);
-    void _EmitComputeFenceWait(const std::uint32_t* address, std::uint32_t value);
 
     // GPU statistics. Names not in the reference map; not yet reconstructed.
     // _EmitGpuTimestamp may be the map's _WriteGpuTimestamp(void*).

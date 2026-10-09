@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the `PS4Context` fences, compute dispatch and debug markers
+  on the Gnm SDK.
 - [x] Bind textures and samplers in the `PS4RenderUtl` stage selects through
   the Gnm SDK, removing the `PS4Context` texture-bind stand-ins.
 - [x] Reconstruct `RndCShaderCopyBuffer::Dispatch`, the texture GPU copies and
