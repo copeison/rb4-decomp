@@ -109,7 +109,6 @@ RndDevice::RndDevice()
       mUnknown3792(nullptr),
       mConsoleState() {
     render_lighting_resources_construct(mLighting);
-    render_gpu_stat_block_construct(mGpuStats);
     gRndDevice = this;
 
     for (const auto platform : render_supported_platform_ids()) {
@@ -135,7 +134,6 @@ RndDevice::~RndDevice() {
     render_settings_release(mSettings);
     mSettings = nullptr;
 
-    render_gpu_stat_block_destruct(mGpuStats);
     render_lighting_resources_destruct(mLighting);
 }
 
@@ -166,7 +164,7 @@ void RndDevice::Init(const RndInitParams& params) {
     mAudioTextures = static_cast<AudioAnalysisTextureSet*>(
         operator new(sizeof(AudioAnalysisTextureSet)));
     audio_analysis_texture_set_construct(*mAudioTextures);
-    render_gpu_stat_block_initialize(mGpuStats);
+    mGpuStats.Init();
     _InitBuiltinCBuffers();
 
     mImmediateContext->Init();
@@ -320,8 +318,7 @@ void RndDevice::_DoBeginFrame(bool offscreen) {
     if (mBeginFramePending) {
         _FlushPendingBeginFrame();
     }
-    mGpuTotalStat =
-        render_gpu_stat_block_begin(mGpuStats, *mImmediateContext, "GPU Total");
+    mGpuTotalStat = mGpuStats.BeginStatBlock(*mImmediateContext, "GPU Total");
     audio_analysis_textures_prepare_frame(*mAudioTextures, *mImmediateContext);
     bink_render_manager_prepare_frame(
         bink_render_manager_instance(), *mImmediateContext);
@@ -355,13 +352,13 @@ void RndDevice::_DoEndFrame(bool offscreen) {
     if (mBeginFramePending) {
         _FlushPendingBeginFrame();
     }
-    render_gpu_stat_block_end(mGpuStats, *mImmediateContext, mGpuTotalStat);
+    mGpuStats.EndStatBlock(*mImmediateContext, mGpuTotalStat);
 
     if (offscreen) {
         _EndFrameImpl(mFrameWindows, true);
         ++mOffscreenFrameCount;
     } else {
-        render_gpu_stat_block_finish_frame(mGpuStats);
+        mGpuStats.EndFrame();
         TransitionWindowTargets(*this, *mImmediateContext);
         _EndFrameImpl(mFrameWindows, false);
         if (_GetGpuBlockingBehaviorImpl() == 1) {

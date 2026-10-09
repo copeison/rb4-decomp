@@ -4,8 +4,8 @@
 #include <_pthread.h>
 
 #include "os/threading/CritSec.h"
-#include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/platform/render_platform_config.h"
+#include "render/debug/RndGpuStatsMgr.h"
 #include "render/resources/lighting/render_lighting_resources.h"
 #include "render/resources/system/default_render_resources.h"
 #include "render/shaders/RndShaderMgr.h"
@@ -155,7 +155,7 @@ public:
     RndShaderFogDeferred* mFogDeferred;
     rb4::RenderPrimitiveMeshSet* mPrimitiveMeshes;
     rb4::AudioAnalysisTextureSet* mAudioTextures;
-    rb4::RenderGpuStatBlock mGpuStats;
+    RndGpuStatsMgr mGpuStats;
     RndShaderCBuffer* mBuiltinCBuffers[4];
     CritSec mPendingFreeCritSec;
     eastl::vector<RndMaterialRuntimeData*> mPendingFrees;

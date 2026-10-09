@@ -1,0 +1,353 @@
+#include "render/debug/RndGpuStatsMgr.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <iterator>
+
+#include "render/context/RndContext.h"
+#include "render/system/RndDevice.h"
+
+namespace {
+
+using Stat = RndGpuStatsMgr::Stat;
+using StatBlock = RndGpuStatsMgr::StatBlock;
+
+// The sorted vectors compare Symbols by the address of their text.
+bool FullNameLess(const Stat* stat, const char* key) {
+    return stat->mFullNameSym.Str() < key;
+}
+
+bool NameLess(const StatBlock* block, const char* key) {
+    return block->mTotal.mName.Str() < key;
+}
+
+}  // namespace
+
+template <typename T>
+void RndGpuStatsMgr::Array<T>::Insert(T* position, T value) {
+    if (mEnd != mCapacity) {
+        std::memmove(
+            position + 1,
+            position,
+            static_cast<std::size_t>(mEnd - position) * sizeof(T));
+        *position = value;
+        ++mEnd;
+        return;
+    }
+
+    const auto size = mBegin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(mEnd - mBegin);
+    const auto index = mBegin == nullptr
+        ? std::size_t{0}
+        : static_cast<std::size_t>(position - mBegin);
+    const auto capacity = size == 0 ? std::size_t{1} : size * 2;
+    auto* storage = static_cast<T*>(
+        HmxAllocator::gStlAllocator.allocate(capacity * sizeof(T)));
+
+    if (index != 0) {
+        std::memmove(storage, mBegin, index * sizeof(T));
+    }
+    storage[index] = value;
+    if (index != size) {
+        std::memmove(
+            storage + index + 1,
+            position,
+            (size - index) * sizeof(T));
+    }
+
+    if (mBegin != nullptr) {
+        Free();
+    }
+
+    mBegin = storage;
+    mEnd = storage + size + 1;
+    mCapacity = storage + capacity;
+}
+
+void RndGpuStatsMgr::Frame::Reset() {
+    mQueryCount = 0;
+    mSeconds = 0.0F;
+    std::fill(std::begin(mCounters), std::end(mCounters), 0UL);
+}
+
+// Inlined into the manager destructor at 0x62ABA0, which destroys each
+// StatBlock total in place.
+RndGpuStatsMgr::Stat::~Stat() {}
+
+// Inlined into Init and _FindOrCreateStat.
+RndGpuStatsMgr::StatBlock::StatBlock(const char* name, Stat* parent)
+    : mChildren{}, mTotal(name, parent) {}
+
+// Reconstructed from eboot.elf at 0x62AAE0.
+RndGpuStatsMgr::RndGpuStatsMgr()
+    : mStats{},
+      mTotalBlock(nullptr),
+      mStatBlocks{},
+      mNextKey(0),
+      mFrameSlot(0),
+      mUnknown88{},
+      mResolvedFrame(0),
+      mBackend(nullptr) {}
+
+// Reconstructed from eboot.elf at 0x62ABA0. The CritSec and the two vectors
+// are destroyed after the body.
+RndGpuStatsMgr::~RndGpuStatsMgr() {
+    for (auto** stat = mStats.mBegin; stat != mStats.mEnd; ++stat) {
+        delete *stat;
+    }
+    mStats.mEnd = mStats.mBegin;
+
+    for (auto** block = mStatBlocks.mBegin; block != mStatBlocks.mEnd;
+         ++block) {
+        delete *block;
+    }
+    mStatBlocks.mEnd = mStatBlocks.mBegin;
+}
+
+// Reconstructed from eboot.elf at 0x62ACB0.
+void RndGpuStatsMgr::Init() {
+    auto* total = new StatBlock("GPU Total", nullptr);
+    mTotalBlock = total;
+    mStatBlocks.PushBack(total);
+
+    const auto count = _NumCounters();
+    for (unsigned long index = 0; index < count; ++index) {
+        const auto counter = static_cast<unsigned int>(index);
+        auto* block = new StatBlock(_CounterName(counter), &total->mTotal);
+        total->mTotal.mHasChildren = true;
+        block->mTotal.mCounterScale = _CounterScale(counter);
+        block->mTotal.mCounterIndex = counter;
+        mStatBlocks.PushBack(block);
+    }
+
+    std::sort(
+        mStatBlocks.mBegin,
+        mStatBlocks.mEnd,
+        [](const StatBlock* left, const StatBlock* right) {
+            return left->mTotal.mName.Str() < right->mTotal.mName.Str();
+        });
+}
+
+// Reconstructed from eboot.elf at 0x62AF80.
+long RndGpuStatsMgr::BeginStatBlock(RndContext& context, const char* name) {
+    if (mBackend == nullptr) {
+        return -1;
+    }
+
+    auto* scope = context.LastGpuStatScope();
+    auto* parent = scope == nullptr ? nullptr : static_cast<Stat*>(scope->mStat);
+    const char* fullName = name;
+    char nestedName[4096]{};
+    if (parent != nullptr) {
+        parent->mHasChildren = true;
+        std::snprintf(
+            nestedName,
+            sizeof(nestedName),
+            "%s %s",
+            parent->mFullName.c_str(),
+            name);
+        fullName = nestedName;
+    }
+
+    mCritSec.Enter();
+    auto* stat = _FindOrCreateStat(name, fullName, parent);
+    const auto key = mNextKey++;
+    stat->mQueryKeys[mFrameSlot].PushBack(key);
+    mCritSec.Exit();
+
+    context._BeginGpuStatsImpl(key);
+    context.PushGpuStatScope({stat, key});
+    return static_cast<long>(key);
+}
+
+// Reconstructed from eboot.elf at 0x62B2C0.
+RndGpuStatsMgr::Stat* RndGpuStatsMgr::_FindOrCreateStat(
+    const char* name,
+    const char* fullName,
+    Stat* parent) {
+    const Symbol nameSym{name};
+    const Symbol fullNameSym{fullName};
+
+    mCritSec.Enter();
+
+    auto** statPos = mStats.mBegin;
+    if (mStats.mBegin != mStats.mEnd) {
+        statPos = std::lower_bound(
+            mStats.mBegin, mStats.mEnd, fullNameSym.Str(), FullNameLess);
+    }
+
+    if (statPos != mStats.mEnd && (*statPos)->mFullNameSym == fullNameSym) {
+        auto* stat = *statPos;
+        mCritSec.Exit();
+        return stat;
+    }
+
+    auto* stat = new Stat(nameSym.Str(), parent);
+    mStats.Insert(statPos, stat);
+
+    auto** blockPos = mStatBlocks.mBegin;
+    if (mStatBlocks.mBegin != mStatBlocks.mEnd) {
+        blockPos = std::lower_bound(
+            mStatBlocks.mBegin, mStatBlocks.mEnd, nameSym.Str(), NameLess);
+    }
+
+    StatBlock* block = nullptr;
+    if (blockPos != mStatBlocks.mEnd && (*blockPos)->mTotal.mName == nameSym) {
+        block = *blockPos;
+        if (block->mTotal.mCounterIndex != ~0U && stat->mCounterScale == 0.0F) {
+            stat->mCounterScale = block->mTotal.mCounterScale;
+            stat->mCounterIndex = block->mTotal.mCounterIndex;
+        }
+    } else {
+        block = new StatBlock(nameSym.Str(), &mTotalBlock->mTotal);
+        mTotalBlock->mTotal.mHasChildren = true;
+        mStatBlocks.Insert(blockPos, block);
+    }
+
+    block->mChildren.PushBack(stat);
+
+    mCritSec.Exit();
+    return stat;
+}
+
+// Name not in the reference map.
+RndGpuStatsMgr::Stat* RndGpuStatsMgr::_FindStat(Symbol fullName) {
+    auto** pos = std::lower_bound(
+        mStats.mBegin, mStats.mEnd, fullName.Str(), FullNameLess);
+    if (pos == mStats.mEnd || (*pos)->mFullNameSym != fullName) {
+        return nullptr;
+    }
+    return *pos;
+}
+
+// Reconstructed from eboot.elf at 0x62B5B0.
+void RndGpuStatsMgr::EndStatBlock(RndContext& context, long key) {
+    if (key < 0 || mBackend == nullptr) {
+        return;
+    }
+
+    context.PopGpuStatScope();
+    context._EndGpuStatsImpl(static_cast<unsigned long>(key));
+}
+
+// Reconstructed from eboot.elf at 0x62B960.
+void RndGpuStatsMgr::EndFrame() {
+    _GatherStats();
+    _NextFrame();
+}
+
+// Inlined into EndFrame at 0x62B960. Advances to the next frame slot and
+// clears the query keys recorded there four frames ago.
+void RndGpuStatsMgr::_NextFrame() {
+    mCritSec.Enter();
+    mFrameSlot = (static_cast<unsigned char>(mFrameSlot) + 1U) & 3U;
+    for (auto** stat = mStats.mBegin; stat != mStats.mEnd; ++stat) {
+        auto& keys = (*stat)->mQueryKeys[mFrameSlot];
+        keys.mEnd = keys.mBegin;
+    }
+    mCritSec.Exit();
+}
+
+// Reconstructed from eboot.elf at 0x62B9E0. Resolves the oldest frame slot's
+// queries, derives the "GPU Total {Remainder}" statistic, smooths every
+// statistic over at most 50 frames, and sums each StatBlock's statistics.
+void RndGpuStatsMgr::_GatherStats() {
+    auto& device = *TheRndDevice();
+    if (device.mBeginFramePending) {
+        device._FlushPendingBeginFrame();
+    }
+    auto& context = *device.mImmediateContext;
+    const auto frame = static_cast<std::size_t>(mResolvedFrame);
+
+    const auto oldestSlot = static_cast<std::size_t>(
+        (static_cast<unsigned char>(mFrameSlot) + 1U) & 3U);
+    for (auto** item = mStats.mBegin; item != mStats.mEnd; ++item) {
+        auto& stat = **item;
+        auto& timing = stat.mFrames[frame];
+        timing.Reset();
+        const auto& keys = stat.mQueryKeys[oldestSlot];
+        for (auto* key = keys.mBegin; key != keys.mEnd; ++key) {
+            const auto sample = context._EvalAndRetireGpuStatsImpl(*key);
+            ++timing.mQueryCount;
+            timing.mSeconds += sample.mSeconds;
+            for (std::size_t i = 0; i < 6; ++i) {
+                timing.mCounters[i] += sample.mCounters[i];
+            }
+        }
+    }
+
+    if (mBackend != nullptr) {
+        static const Symbol totalName("GPU Total");
+
+        mCritSec.Enter();
+        auto* total = _FindStat(totalName);
+        mCritSec.Exit();
+        if (total != nullptr) {
+            auto* remainder = _FindOrCreateStat(
+                "{Remainder}", "GPU Total {Remainder}", total);
+            const auto& totalTiming = total->mFrames[frame];
+            auto& timing = remainder->mFrames[frame];
+            timing.mQueryCount = 1;
+            timing.mSeconds = totalTiming.mSeconds;
+            std::copy(
+                std::begin(totalTiming.mCounters),
+                std::end(totalTiming.mCounters),
+                timing.mCounters);
+
+            for (auto** item = mStats.mBegin; item != mStats.mEnd; ++item) {
+                auto& child = **item;
+                if (&child == remainder || child.mParent != total) {
+                    continue;
+                }
+                const auto& childTiming = child.mFrames[frame];
+                timing.mSeconds -= childTiming.mSeconds;
+                for (std::size_t i = 0; i < 6; ++i) {
+                    timing.mCounters[i] -= childTiming.mCounters[i];
+                }
+            }
+        }
+    }
+
+    constexpr int kMaxWindow = 50;
+    for (auto** item = mStats.mBegin; item != mStats.mEnd; ++item) {
+        auto& timing = (*item)->mFrames[frame];
+        ++timing.mSampleCount;
+        const auto window = std::min(timing.mSampleCount, kMaxWindow);
+        const auto previousWeight = static_cast<float>(window - 1);
+        const auto reciprocal = 1.0F / static_cast<float>(window);
+        timing.mAverageSeconds =
+            (previousWeight * timing.mAverageSeconds + timing.mSeconds) *
+            reciprocal;
+        timing.mAverageQueryCount =
+            (previousWeight * timing.mAverageQueryCount +
+             static_cast<float>(timing.mQueryCount)) *
+            reciprocal;
+        timing.mWorstSeconds = std::max(timing.mSeconds, timing.mWorstSeconds);
+        timing.mLastSeconds = timing.mSeconds;
+    }
+
+    for (auto** item = mStatBlocks.mBegin; item != mStatBlocks.mEnd; ++item) {
+        auto& block = **item;
+        auto& timing = block.mTotal.mFrames[frame];
+        timing.Reset();
+        timing.mAverageSeconds = 0.0F;
+        timing.mSampleCount = 0;
+        for (auto** child = block.mChildren.mBegin;
+             child != block.mChildren.mEnd;
+             ++child) {
+            const auto& childTiming = (*child)->mFrames[frame];
+            timing.mQueryCount += childTiming.mQueryCount;
+            timing.mSeconds += childTiming.mSeconds;
+            timing.mAverageSeconds += childTiming.mAverageSeconds;
+            timing.mSampleCount =
+                std::max(timing.mSampleCount, childTiming.mSampleCount);
+            for (std::size_t i = 0; i < 6; ++i) {
+                timing.mCounters[i] += childTiming.mCounters[i];
+            }
+        }
+        timing.mAverageQueryCount = timing.mSeconds;
+        timing.mWorstSeconds = std::max(timing.mSeconds, timing.mWorstSeconds);
+    }
+}
