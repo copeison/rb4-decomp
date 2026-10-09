@@ -18,14 +18,27 @@ value for `B8G8R8A8Srgb`. Each texture receives a GPU allocation named
 `BackBuffer`; the allocation alignment is the larger of the Gnm requirement
 and 64 KiB. Their unused CMASK/FMASK auxiliary addresses are cleared.
 
-`orbis_wrap_back_buffer_textures` at `0x8D5E30` creates one 520-byte engine
-`OrbisTexture2D` around both Gnm render targets. It publishes both base addresses
-and allocation sizes through the texture's two-image backing object, then the
-back-buffer constructor attaches that texture to its render target.
+`PS4Texture2D::CreateAsBackBuffer` at `0x8D5E30` (the map's name) creates one
+520-byte `PS4Texture2D` around both render targets:
+- The texture's description is a 1×1 `BackBuffer` render target in data
+  format 12, `BGRA_UNorm8_sRGB`, sized to the targets.
+- A new shared `PS4Texture2D::Storage` records each target's base address and
+  color size.
+- Each buffer's texture views its target through
+  `Texture::initFromRenderTarget`.
+- The pending-presentation counters start at zero.
+
+The window constructor (`PS4Window::PS4Window`, `0x8E24A0`) heap-allocates
+the two `RenderTarget`s from one `RenderTargetSpec`, allocates their memory
+from the `"gpu"` heap with the CMASK and FMASK addresses cleared, and installs
+the wrapping texture as its buffer collection's back buffer. Unless the
+configuration overrides the resolution, the output resolution becomes the PS4
+capability list's last (largest) entry on PS4 Pro and its first otherwise.
 
 Video-output registration derives width, height, and pitch from the first
-Gnm descriptor and passes both 256-byte-scaled base addresses to
-`sceVideoOutRegisterBuffers` in one two-buffer set. The helper at `0x8E2890`
+target (`sceVideoOutSetBufferAttribute` with the sRGB BGRA pixel format,
+tiled mode and 16:9 aspect, plus `OPTION_STRICT_COLORIMETRY`) and passes both
+base addresses to `sceVideoOutRegisterBuffers` in one two-buffer set. The helper at `0x8E2890`
 toggles the active index between zero and one after frame submission.
 
 The destructor thunk at `0x8E2860` delegates to the render-target base. The

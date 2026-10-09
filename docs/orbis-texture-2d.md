@@ -67,3 +67,26 @@ Color textures otherwise select the active storage bank; render-target-backed
 textures use the active frame index and fall back to bank zero when that frame
 has no target. Each wrapper forwards the selected view, address mode, filter,
 flags, and border color to the shared Orbis texture-binding layer.
+
+## Reconstruction
+
+`PS4Texture2D` (`src/renderps4/textures/PS4Texture2D.cpp`) holds its GPU memory
+in a `std::shared_ptr<PS4Texture2D::Storage>`, built with `make_shared`. The
+storage has two surfaces with their sizes, plus the stencil and HTILE
+surfaces. Its destructor at `0x8D7260` frees them through
+`PS4Device::DeferredDelete`, or through `MemFree` once the device is gone.
+The binary's SDK 2.500 `shared_ptr` is 16 bytes and leaves `+480` unused;
+SDK 5.500's is 24 bytes and covers it.
+
+`_SyncStaticImpl` (`0x8D6460`) inlines two paths:
+- **Depth path.** Builds an HTILE-accelerated `DepthRenderTarget` with fresh
+  storage, and views it through a depth texture (`mGpuTextures[0]`) and a
+  stencil-plane texture (`initFromStencilTarget` with
+  `kTextureChannelTypeUInt`).
+- **Color path.** Creates one texture per buffer, or two when format flag 1
+  marks the texture dynamic. It borrows a reused texture's storage when every
+  buffer fits, tiles the mips, and adds a render target per buffer when the
+  format is a render target that is not GPU-writable.
+
+`_SyncDynamicImpl` (`0x8D6D10`) flips the active buffer and re-tiles the
+pixels into it.

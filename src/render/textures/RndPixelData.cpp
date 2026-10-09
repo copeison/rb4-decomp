@@ -192,6 +192,7 @@ RndPixelData::~RndPixelData() {
     Free();
 }
 
+// Reconstructed from eboot.elf at 0x682C40.
 void RndPixelData::Free() {
     delete[] static_cast<std::uint8_t*>(mBuffer);
     mBuffer = nullptr;

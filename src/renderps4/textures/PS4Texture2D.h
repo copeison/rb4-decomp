@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <gnm/texture.h>
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
@@ -13,6 +14,10 @@ class RndContext;
 class PS4Texture2D : public RndTexture2D {
 public:
     explicit PS4Texture2D(const Description& desc);  // 0x8D62C0
+
+    // Wraps the two video-out back buffers in one double-buffered texture.
+    // Name from the map; this build returns the new texture.
+    static PS4Texture2D* CreateAsBackBuffer(sce::Gnm::RenderTarget** targets);  // 0x8D5E30
     ~PS4Texture2D() override;                         // 0x8D6310, 0x8D6440
 
     void _SelectForVSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8D6E40
@@ -43,39 +48,52 @@ public:
         --mPendingPresentations[buffer];
     }
 
-    // GPU memory size and alignment. Name not in the reference map.
-    struct SurfaceSize {
-        unsigned int mSize;
-        unsigned int mAlign;
+    // The GPU memory of the texture: one surface per buffer, or the depth,
+    // stencil and HTILE surfaces of a depth texture. Shared between textures
+    // that reuse each other's memory. Names not in the reference map.
+    struct Storage {
+        ~Storage();  // 0x8D7260
+
+        void* mSurfaces[2];
+        unsigned long mSurfaceSizes[2];
+        void* mStencil;
+        unsigned long mStencilSize;
+        void* mHtile;
+        unsigned long mHtileSize;
     };
 
-    // Field names are not in the reference map.
+    // Field names are not in the reference map. A depth texture keeps its
+    // depth view in mGpuTextures[0] and its stencil view in mPlaneTexture;
+    // the three size fields then describe the depth, stencil and HTILE
+    // surfaces.
     sce::Gnm::Texture* mGpuTextures[2];
-    // View of a depth target's stencil plane. Name not in the reference map.
     sce::Gnm::Texture* mPlaneTexture;
-    SurfaceSize mDepthSize;
-    SurfaceSize mStencilSize;
-    SurfaceSize mHtileSize;
+    sce::Gnm::SizeAlign mSizeAlign;
+    sce::Gnm::SizeAlign mStencilSizeAlign;
+    sce::Gnm::SizeAlign mHtileSizeAlign;
     unsigned long mActiveStorage;
-    void* mStorageRegions;
-    void* mStorageControl;
-    unsigned char mUnknown480[8];
+    // The binary's SDK 2.500 shared_ptr is 16 bytes and leaves +480 unused;
+    // SDK 5.500's is 24 bytes and covers it.
+    std::shared_ptr<Storage> mStorage;
     sce::Gnm::RenderTarget* mRenderTargets[2];
     sce::Gnm::DepthRenderTarget* mDepthTarget;
     int* mPendingPresentations;
 
 private:
-    // Map names; this build's signatures differ. Not yet reconstructed.
-    void _SyncDepthStencil();                             // 0x8D6480
-    void _SyncRegular(const RndTextureBase* reuse);       // 0x8D6850
-    // Stand-ins for code inlined into the destructor and the dynamic sync;
-    // not yet reconstructed. Names not in the reference map.
-    static void ReleaseStorage(void* control);
-    void FlipStorage();
-    void UploadMips();
+    // Inlined into _SyncStaticImpl at 0x8D6460. The map has
+    // _SyncDepthStencil(RndPixelData const&, RndPixelFormat const&) and
+    // _SyncRegular(RndPixelData const&, RndPixelFormat const&).
+    void _SyncDepthStencil();
+    void _SyncRegular(const RndTextureBase* reuse);
     // Inlined into the stage selects. Name not in the reference map.
     sce::Gnm::Texture* SelectView(unsigned int flags) const;
 };
 
+static_assert(sizeof(PS4Texture2D::Storage) == 64);
+static_assert(offsetof(PS4Texture2D, mSizeAlign) == 432);
+static_assert(offsetof(PS4Texture2D, mActiveStorage) == 456);
+static_assert(offsetof(PS4Texture2D, mStorage) == 464);
+static_assert(offsetof(PS4Texture2D, mRenderTargets) == 488);
+static_assert(offsetof(PS4Texture2D, mPendingPresentations) == 512);
 static_assert(offsetof(PS4Texture2D, mGpuTextures) == 408);
 static_assert(sizeof(PS4Texture2D) == 520);

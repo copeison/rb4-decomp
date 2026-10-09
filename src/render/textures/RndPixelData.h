@@ -50,8 +50,9 @@ public:
     unsigned int mUnknown48[6];
     void* mUnknown72;
 
-private:
-    void Free();  // Shared destructor body. Name from the map's Free().
+    // Releases the pixels and mips and resets the size and format. Also the
+    // destructor's body.
+    void Free();  // 0x682C40
 };
 
 static_assert(offsetof(RndPixelData, mSize) == 8);
