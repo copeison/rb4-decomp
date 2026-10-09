@@ -1,5 +1,7 @@
 #pragma once
 
+class Symbol;
+
 // Formats into the per-thread MakeString ring buffer; the result stays valid
 // after the formatter is destroyed. Not reconstructed yet; the declarations
 // follow the map's utl/MakeString.o.
@@ -8,7 +10,10 @@ public:
     explicit FormatString(const char* fmt);  // 0x2472C0
     ~FormatString();                         // 0x247510
 
-    FormatString& operator<<(int value);     // 0x247890
+    // 0x247890 takes a 64-bit integer.
+    FormatString& operator<<(int value);            // 0x247CD0
+    FormatString& operator<<(float value);          // 0x2480A0
+    FormatString& operator<<(const Symbol& value);  // 0x2483D0
     const char* Str();                       // 0x2484E0
 
 private:

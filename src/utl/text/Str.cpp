@@ -15,6 +15,11 @@ EmptyStringStorage gEmptyString{};  // Name not in the reference map.
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x254FA0.
+void FixedString::erase() {
+    mStr[0] = '\0';
+}
+
 // Reconstructed from eboot.elf at 0x2542E0.
 FixedString& FixedString::operator+=(const char* str) {
     if (str != nullptr && str[0] != '\0') {

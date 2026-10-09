@@ -9,6 +9,7 @@
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace {
 
@@ -326,6 +327,126 @@ void RndContext::_SyncClipPlanes(unsigned int mask) {
         cbuffer->_SelectImpl(*this);
     } else {
         device->mBuiltinCBuffers[1]->_SelectImpl(*this);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BC730. Each texture may stand in for a
+// linked texture and slice, and is stamped with the frame. The first color
+// target, or the depth target, gives the target mode and, unless the binding
+// sets one, the viewport.
+void RndContext::SetRenderTargets(const RenderTargetParams& params) {
+    RenderTargetParams targets(params);
+    for (auto& target : targets.mTargets) {
+        target.mTexture = target.mTexture->_GetLinkedTextureImpl(target.mSlice);
+        target.mTexture->mFrameStamp = static_cast<long>(TheRndDevice()->mFrameCount);
+    }
+    if (targets.mDepthTexture != nullptr) {
+        targets.mDepthTexture = targets.mDepthTexture->_GetLinkedTextureImpl(targets.mDepthSlice);
+        targets.mDepthTexture->mFrameStamp = static_cast<long>(TheRndDevice()->mFrameCount);
+    }
+
+    // The texture's mode is kept in mResourceIndex.
+    const RndTextureBase* first = targets.mTargets.mSize != 0
+        ? targets.mTargets.mData[0].mTexture
+        : targets.mDepthTexture;
+    mTargetMode = first != nullptr ? static_cast<RndTargetMode>(first->mResourceIndex)
+                                   : kTargetModeNone;
+    if (!targets.mViewportSet) {
+        targets.mViewportSet = true;
+        float width;
+        float height;
+        if (first != nullptr) {
+            width = static_cast<float>(static_cast<int>(first->mBaseDesc.mWidth));
+            height = static_cast<float>(static_cast<int>(first->mBaseDesc.mHeight));
+        } else {
+            width = 1.0F;
+            height = 1.0F;
+        }
+        targets.mViewportX = 0.0F;
+        targets.mViewportY = 0.0F;
+        targets.mViewportWidth = width;
+        targets.mViewportHeight = height;
+    }
+
+    if (mColorTargets.mSize != targets.mTargets.mSize) {
+        mColorTargets.mSize = targets.mTargets.mSize;
+    }
+    for (unsigned long i = 0; i < targets.mTargets.mSize; ++i) {
+        mColorTargets.mData[i] = targets.mTargets.mData[i].mTexture;
+    }
+    mDepthTarget = targets.mDepthTexture;
+    mViewportOrigin = Vector2{targets.mViewportX, targets.mViewportY};
+    mViewportSize = Vector2{targets.mViewportWidth, targets.mViewportHeight};
+    mDepthRange = Vector2{targets.mMinDepth, targets.mMaxDepth};
+    _SetRenderTargetsImpl(mTargetMode, targets);
+
+    if (mCameras[0].SetRenderTargetInfo(mTargetMode, Vector2(mViewportSize), mDepthRange)) {
+        mCameras[1] = mCameras[0];
+        if (mTargetMode == kTargetModeStereo || mTargetMode == kTargetModeLeftEye ||
+            mTargetMode == kTargetModeRightEye) {
+            mCameras[1].SetRenderTargetInfo(
+                kTargetModeStereo, mCameras[1].mViewportSize, mCameras[1].mDepthRange);
+        }
+        if (mCameraCBufferOverride == nullptr) {
+            _SyncCameraCBuffer();
+        }
+    }
+
+    if (first != nullptr) {
+        _SyncRenderTargetCBuffer(
+            static_cast<int>(first->mBaseDesc.mWidth),
+            static_cast<int>(first->mBaseDesc.mHeight));
+    } else {
+        _SyncRenderTargetCBuffer(0, 0);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BC730, where it is inlined. A
+// zero-sized target selects the device's default constants.
+void RndContext::_SyncRenderTargetCBuffer(int width, int height) {
+    auto* device = TheRndDevice();
+    auto& cbuffer = *mCBuffers[0];
+    auto* dimensions = static_cast<float*>(
+        RndShaderDrawUtl::GetCBufferMember(cbuffer, device->mShaderMgr.mTargetDimensions));
+    dimensions[0] = static_cast<float>(width);
+    dimensions[1] = static_cast<float>(height);
+    cbuffer.mSyncPending = true;
+    if (width != 0 || height != 0) {
+        auto* buffer = mCBuffers[0];
+        if (buffer->mSyncPending) {
+            buffer->_SyncImpl(*this, 0, buffer->mNumElements);
+            buffer->mSyncPending = false;
+        }
+        buffer->_SelectImpl(*this);
+    } else {
+        device->mBuiltinCBuffers[0]->_SelectImpl(*this);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BCF10. The map has
+// SetRenderTargets(VectorAdapter<RndTextureBase*> const&, RndTextureBase*).
+void RndContext::SetRenderTargets(
+    const VectorAdapter<RndTextureBase*>& colors,
+    RndTextureBase* depth) {
+    RenderTargetParams params;
+    if (colors.mSize != 0) {
+        params.mTargets.resize(colors.mSize);
+        for (unsigned long i = 0; i < colors.mSize; ++i) {
+            params.mTargets.mData[i].mTexture = colors.mData[i];
+        }
+    }
+    params.mDepthTexture = depth;
+    SetRenderTargets(params);
+}
+
+// Reconstructed from eboot.elf at 0x6BD0D0.
+void RndContext::SetRenderTargets(RndTextureBase* color, RndTextureBase* depth) {
+    if (color != nullptr) {
+        SetRenderTargets(VectorAdapter<RndTextureBase*>{&color, 1}, depth);
+    } else if (depth != nullptr) {
+        SetRenderTargets(VectorAdapter<RndTextureBase*>{nullptr, 0}, depth);
+    } else {
+        SetRenderTargets(RenderTargetParams());
     }
 }
 

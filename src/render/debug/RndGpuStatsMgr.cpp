@@ -6,7 +6,10 @@
 #include <iterator>
 
 #include "render/context/RndContext.h"
+#include "os/system/System.h"
 #include "render/system/RndDevice.h"
+#include "utl/data/DataArray.h"
+#include "utl/profiling/BudgetCategories.h"
 
 namespace {
 
@@ -72,12 +75,58 @@ void RndGpuStatsMgr::Frame::Reset() {
     std::fill(std::begin(mCounters), std::end(mCounters), 0UL);
 }
 
-// Inlined into the manager destructor at 0x62ABA0, which destroys each
-// StatBlock total in place.
+namespace {
+
+// The accessors report milliseconds.
+constexpr float kMsPerSecond = 1000.0F;
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x6F2930.
+RndGpuStatsMgr::Stat::Stat(Symbol name, Stat* parent)
+    : PerfTimerBase(name), mQueryKeys{}, mFrames{}, mFullNameSym() {
+    mParent = parent;
+    mUnknown40 = false;
+    UpdateFullName(kSortName);
+    mFullNameSym = Symbol(mFullName.c_str());
+    const DataArray* config = SystemConfig(Symbol("gpu_timer"))->FindArray(name, false);
+    if (config != nullptr) {
+        LoadConfig(config);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x62D270; the deleting destructor is at
+// 0x62D320. Also inlined into the manager destructor at 0x62ABA0, which
+// destroys each StatBlock total in place.
 RndGpuStatsMgr::Stat::~Stat() {}
 
+// Reconstructed from eboot.elf at 0x62D3D0.
+int RndGpuStatsMgr::Stat::_GetCount(unsigned long frame) const {
+    return mFrames[frame].mQueryCount;
+}
+
+// Reconstructed from eboot.elf at 0x62D3E0.
+float RndGpuStatsMgr::Stat::_GetAverageCount(unsigned long frame) const {
+    return mFrames[frame].mLastSeconds;
+}
+
+// Reconstructed from eboot.elf at 0x62D400.
+float RndGpuStatsMgr::Stat::_GetMs(unsigned long frame) const {
+    return mFrames[frame].mAverageQueryCount * kMsPerSecond;
+}
+
+// Reconstructed from eboot.elf at 0x62D420.
+float RndGpuStatsMgr::Stat::_GetAverageMs(unsigned long frame) const {
+    return mFrames[frame].mAverageSeconds * kMsPerSecond;
+}
+
+// Reconstructed from eboot.elf at 0x62D440.
+float RndGpuStatsMgr::Stat::_GetWorstMs(unsigned long frame) const {
+    return mFrames[frame].mWorstSeconds * kMsPerSecond;
+}
+
 // Inlined into Init and _FindOrCreateStat.
-RndGpuStatsMgr::StatBlock::StatBlock(const char* name, Stat* parent)
+RndGpuStatsMgr::StatBlock::StatBlock(Symbol name, Stat* parent)
     : mChildren{}, mTotal(name, parent) {}
 
 // Reconstructed from eboot.elf at 0x62AAE0.
@@ -108,17 +157,17 @@ RndGpuStatsMgr::~RndGpuStatsMgr() {
 
 // Reconstructed from eboot.elf at 0x62ACB0.
 void RndGpuStatsMgr::Init() {
-    auto* total = new StatBlock("GPU Total", nullptr);
+    auto* total = new StatBlock(Symbol("GPU Total"), nullptr);
     mTotalBlock = total;
     mStatBlocks.PushBack(total);
 
-    const auto count = _NumCounters();
+    const auto count = NumBudgetCategories();
     for (unsigned long index = 0; index < count; ++index) {
-        const auto counter = static_cast<unsigned int>(index);
-        auto* block = new StatBlock(_CounterName(counter), &total->mTotal);
+        const auto category = static_cast<int>(index);
+        auto* block = new StatBlock(BudgetCategoryName(category), &total->mTotal);
         total->mTotal.mHasChildren = true;
-        block->mTotal.mCounterScale = _CounterScale(counter);
-        block->mTotal.mCounterIndex = counter;
+        block->mTotal.mBudget = BudgetCategoryGpuBudget(category);
+        block->mTotal.mBudgetCategory = static_cast<unsigned int>(category);
         mStatBlocks.PushBack(block);
     }
 
@@ -184,7 +233,7 @@ RndGpuStatsMgr::Stat* RndGpuStatsMgr::_FindOrCreateStat(
         return stat;
     }
 
-    auto* stat = new Stat(nameSym.Str(), parent);
+    auto* stat = new Stat(nameSym, parent);
     mStats.Insert(statPos, stat);
 
     auto** blockPos = mStatBlocks.mBegin;
@@ -196,12 +245,12 @@ RndGpuStatsMgr::Stat* RndGpuStatsMgr::_FindOrCreateStat(
     StatBlock* block = nullptr;
     if (blockPos != mStatBlocks.mEnd && (*blockPos)->mTotal.mName == nameSym) {
         block = *blockPos;
-        if (block->mTotal.mCounterIndex != ~0U && stat->mCounterScale == 0.0F) {
-            stat->mCounterScale = block->mTotal.mCounterScale;
-            stat->mCounterIndex = block->mTotal.mCounterIndex;
+        if (block->mTotal.mBudgetCategory != ~0U && stat->mBudget == 0.0F) {
+            stat->mBudget = block->mTotal.mBudget;
+            stat->mBudgetCategory = block->mTotal.mBudgetCategory;
         }
     } else {
-        block = new StatBlock(nameSym.Str(), &mTotalBlock->mTotal);
+        block = new StatBlock(nameSym, &mTotalBlock->mTotal);
         mTotalBlock->mTotal.mHasChildren = true;
         mStatBlocks.Insert(blockPos, block);
     }

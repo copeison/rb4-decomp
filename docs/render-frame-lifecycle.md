@@ -88,3 +88,18 @@ buffer; otherwise it selects the device's default.
 
 The four 20-byte slots at `+18888`, previously read as light slots, are these
 clip planes.
+
+## Binding render targets
+
+`RndContext::SetRenderTargets(const RenderTargetParams&)` (`0x6BC730`) records
+the colour and depth targets, stamping each with the frame count. It takes
+the target mode from the textures, and sets the viewport. The viewport is the
+first target's size, or 1 x 1, unless the parameters set it
+(`mViewportSet` at `+21`). The function then:
+1. updates the cameras' target info;
+2. writes the target size to the render-target constants
+   (`_SyncRenderTargetCBuffer`, inlined);
+3. calls the platform `_SetRenderTargetsImpl`.
+
+The overloads at `0x6BCF10` and `0x6BD0D0` build the parameters from a texture
+list or a single texture.

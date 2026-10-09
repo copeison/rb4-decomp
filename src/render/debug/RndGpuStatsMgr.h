@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
+#include "os/profiling/PerfTimer.h"
 #include "os/threading/CritSec.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Str.h"
@@ -68,25 +69,24 @@ public:
     };
 
     // One timed scope. Its name is the scope name; its full name prefixes
-    // the names of the enclosing scopes. Name not in the reference map; the
-    // field names are not either.
-    class Stat {
+    // the names of the enclosing scopes. The vtable is at 0x192E120. Name
+    // not in the reference map; the field names are not either.
+    class Stat : public PerfTimerBase {
     public:
-        // Address not located; the map's build has no equivalent.
-        Stat(const char* name, Stat* parent);
-        // Slots 0 and 1. The manager's destructor releases each statistic
-        // through the deleting destructor; the complete destructor is
-        // inlined into it for the StatBlock totals.
-        virtual ~Stat();
+        // Reads the statistic's settings from the "gpu_timer" system
+        // configuration.
+        Stat(Symbol name, Stat* parent);  // 0x6F2930
+        // Slots 0 and 1 at 0x62D270 and 0x62D320. The manager's destructor
+        // releases each statistic through the deleting destructor; the
+        // complete destructor is inlined into it for the StatBlock totals.
+        ~Stat() override;
 
-        Symbol mName;
-        String mFullName;
-        Stat* mParent;
-        unsigned char mUnknown40;
-        bool mHasChildren;
-        unsigned char mUnknown42[2];
-        float mCounterScale;
-        unsigned int mCounterIndex;  // ~0 when the statistic is not a counter.
+        int _GetCount(unsigned long frame) const override;           // 0x62D3D0
+        float _GetAverageCount(unsigned long frame) const override;  // 0x62D3E0
+        float _GetMs(unsigned long frame) const override;            // 0x62D400
+        float _GetAverageMs(unsigned long frame) const override;     // 0x62D420
+        float _GetWorstMs(unsigned long frame) const override;       // 0x62D440
+
         unsigned int mUnknown52;
         Array<unsigned long> mQueryKeys[4];  // One per frame slot.
         Frame mFrames[2];
@@ -98,7 +98,7 @@ public:
     struct StatBlock {
         DELETE_OVERLOAD
 
-        StatBlock(const char* name, Stat* parent);
+        StatBlock(Symbol name, Stat* parent);
 
         Array<Stat*> mChildren;  // Name not in the reference map.
         Stat mTotal;             // Name not in the reference map.
@@ -107,7 +107,7 @@ public:
     RndGpuStatsMgr();   // 0x62AAE0
     ~RndGpuStatsMgr();  // 0x62ABA0
 
-    // Creates the "GPU Total" block and one block per hardware counter.
+    // Creates the "GPU Total" block and one block per budget category.
     // Name not in the reference map.
     void Init();  // 0x62ACB0
     // Returns the query key, or -1 when no GPU statistics backend is
@@ -145,12 +145,6 @@ public:
     // Name not in the reference map.
     Stat* _FindStat(Symbol fullName);
 
-    // The hardware counter table. Not located in this build; names not in
-    // the reference map.
-    static unsigned long _NumCounters();
-    static const char* _CounterName(unsigned int index);
-    static float _CounterScale(unsigned int index);
-
     // Field names are not in the reference map.
     Array<Stat*> mStats;            // Sorted by full-name Symbol address.
     StatBlock* mTotalBlock;         // "GPU Total".
@@ -165,10 +159,7 @@ public:
 
 static_assert(sizeof(RndGpuStatsMgr::Array<void*>) == 32);
 static_assert(sizeof(RndGpuStatsMgr::Frame) == 80);
-static_assert(offsetof(RndGpuStatsMgr::Stat, mFullName) == 16);
-static_assert(offsetof(RndGpuStatsMgr::Stat, mParent) == 32);
-static_assert(offsetof(RndGpuStatsMgr::Stat, mHasChildren) == 41);
-static_assert(offsetof(RndGpuStatsMgr::Stat, mCounterScale) == 44);
+static_assert(offsetof(RndGpuStatsMgr::Stat, mUnknown52) == 52);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mQueryKeys) == 56);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mFrames) == 184);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mFullNameSym) == 344);

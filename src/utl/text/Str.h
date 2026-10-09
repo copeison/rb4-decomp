@@ -21,6 +21,8 @@ public:
 
     // Appends through reserve, truncating to the capacity.
     FixedString& operator+=(const char* str);  // 0x2542E0
+    // Empties the text, keeping the storage.
+    void erase();  // 0x254FA0
 
     const char* c_str() const {
         return mStr;

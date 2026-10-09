@@ -46,6 +46,7 @@ public:
     // unchanged when the key is missing. Returns whether it was found.
     bool FindData(Symbol key, Symbol& value, bool fail) const;  // 0x21CFC0
     bool FindData(Symbol key, int& value, bool fail) const;     // 0x21D060
+    bool FindData(Symbol key, float& value, bool fail) const;   // 0x21D1B0
     bool FindData(Symbol key, bool& value, bool fail) const;    // 0x21D260
 
     void AddRef() {

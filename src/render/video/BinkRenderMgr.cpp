@@ -45,7 +45,7 @@ void BinkRenderMgr::ConvertFrame(RndContext& context, BinkRenderVideo& video) {
 
     RndContext::RenderTargetParams targets;
     // Clear mode 2 keeps the target's contents.
-    targets.mTargets.push_back({video.mOutput, 2, ~0UL});
+    targets.mTargets.push_back({video.mOutput, 2, -1});
     context.SetRenderTargets(targets);
 
     RndShaderBinkConvert::Params params = {};

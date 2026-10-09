@@ -10,6 +10,7 @@
 #include "render/shaders/RndShaderEnums.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
+#include "utl/containers/VectorAdapter.h"
 
 class GameObject;
 class RndComputeBuffer;
@@ -73,15 +74,16 @@ public:
     // Name from the map; field names are not in the reference map.
     struct RenderTargetParams {
         struct Target {
-            RndTextureBase* mTexture;
-            int mClearMode;        // 1 clears the target.
-            unsigned long mSlice;  // Array slice, or -1.
+            RndTextureBase* mTexture = nullptr;
+            int mClearMode = 0;  // 1 clears the target.
+            long mSlice = -1;    // Array slice, or -1.
         };
 
         RenderTargetParams()
             : mClearColor(Hmx::Color::GetZero()),
               mDepthClear(0.0F),
               mStencilClear(0),
+              mViewportSet(false),
               mViewportX(0.0F),
               mViewportY(0.0F),
               mViewportWidth(0.0F),
@@ -90,11 +92,13 @@ public:
               mMaxDepth(1.0F),
               mDepthTexture(nullptr),
               mDepthClearMode(0),
-              mDepthSlice(static_cast<unsigned long>(-1)) {}
+              mDepthSlice(-1) {}
 
         Hmx::Color mClearColor;
         float mDepthClear;
         unsigned char mStencilClear;
+        // False makes SetRenderTargets cover the first target.
+        bool mViewportSet;
         float mViewportX;
         float mViewportY;
         float mViewportWidth;
@@ -104,7 +108,7 @@ public:
         FixedVector<Target, 8> mTargets;
         RndTextureBase* mDepthTexture;
         int mDepthClearMode;  // 1 clears depth and stencil.
-        unsigned long mDepthSlice;
+        long mDepthSlice;
     };
 
     explicit RndContext(bool disableComputeQueues);  // 0x6BBDE0
@@ -193,8 +197,16 @@ public:
     // stereo target modes then refresh its target info.
     void SetCamera(const GameObject* camera);  // 0x6BD220
     // Binds the color and depth targets, clearing those that ask, and sets
-    // the viewport and the cameras' target info. Not reconstructed.
+    // the viewport and the cameras' target info.
     void SetRenderTargets(const RenderTargetParams& params);  // 0x6BC730
+    // Binds the textures without clearing them, over their full size.
+    void SetRenderTargets(
+        const VectorAdapter<RndTextureBase*>& colors,
+        RndTextureBase* depth);  // 0x6BCF10
+    void SetRenderTargets(RndTextureBase* color, RndTextureBase* depth);  // 0x6BD0D0
+    // Writes the target size to the render-target constants and selects
+    // them, or the device's default without a target.
+    void _SyncRenderTargetCBuffer(int width, int height);  // Inlined in 0x6BC730.
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
@@ -310,5 +322,7 @@ public:
 static_assert(sizeof(RndScopedGpuStatBlock) == 16);
 
 static_assert(sizeof(RndContext::RenderTargetParams) == 288);
+static_assert(offsetof(RndContext::RenderTargetParams, mViewportSet) == 21);
+static_assert(offsetof(RndContext::RenderTargetParams, mViewportX) == 24);
 static_assert(offsetof(RndContext::RenderTargetParams, mTargets) == 48);
 static_assert(offsetof(RndContext::RenderTargetParams, mDepthTexture) == 264);
