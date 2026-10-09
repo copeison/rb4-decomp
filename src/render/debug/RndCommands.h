@@ -1,69 +1,69 @@
 #pragma once
 
-// Console commands of the renderer. The map's build registers each handler as
-// a script function taking the command's DataArray*; this build's handlers
-// take no arguments.
+#include "utl/data/DataFunc.h"
+
+class RndWindow;
+
+// Console commands of the renderer, registered as script functions. Each
+// takes the command's arguments and returns 0.
 class RndCommands {
 public:
-    // Name not in the reference map.
-    using Handler = void (*)();
-
     // Registers every render command.
     static void Init();  // 0x6BB0E0
 
-    // Not reconstructed yet. The map's signature is
-    // _OnToggleOverlay(DataArray*).
-    static void _OnToggleOverlay();
-    // Not reconstructed yet. The map's signature is
-    // _OnPrintOverlayHelp(DataArray*).
-    static void _OnPrintOverlayHelp();
-    // The map's signature is _OnReloadShaders(DataArray*).
-    static void _OnReloadShaders();  // 0x6BA590
-    // Not reconstructed yet. Name not in the reference map.
-    static void _OnSetResolution();
-    // Not reconstructed yet. Name not in the reference map.
-    static void _OnSetQualityLevel();
-    // The map's signature is _OnToggleVSync(DataArray*).
-    static void _OnToggleVSync();  // 0x6BA880
-    // The map's signature is _OnToggleSceneMask(DataArray*).
-    static void _OnToggleSceneMask();  // 0x6BA8B0
+    // Not reconstructed yet; needs RndOverlay.
+    static DataNode _OnToggleOverlay(DataArray* args);
+    // Not reconstructed yet; needs RndOverlay.
+    static DataNode _OnPrintOverlayHelp(DataArray* args);
+    static DataNode _OnReloadShaders(DataArray* args);  // 0x6BA590
+    // Overrides the output resolution with a supported one: a width and a
+    // height, a "WxH" string, or a 16:9 height. No argument clears the
+    // override. Name not in the reference map.
+    static DataNode _OnSetResolution(DataArray* args);
+    // Not reconstructed yet; it formats the quality level names into a
+    // discarded string. Name not in the reference map.
+    static DataNode _OnSetQualityLevel(DataArray* args);
+    static DataNode _OnToggleVSync(DataArray* args);  // 0x6BA880
+    static DataNode _OnToggleSceneMask(DataArray* args);  // 0x6BA8B0
     // Name not in the reference map.
-    static void _OnToggleShadows();  // 0x6BA8E0
+    static DataNode _OnToggleShadows(DataArray* args);  // 0x6BA8E0
     // Name not in the reference map.
-    static void _OnTogglePostProc();  // 0x6BA910
+    static DataNode _OnTogglePostProc(DataArray* args);  // 0x6BA910
     // Name not in the reference map.
-    static void _OnToggleToneMapping();  // 0x6BA940
+    static DataNode _OnToggleToneMapping(DataArray* args);  // 0x6BA940
     // Name not in the reference map.
-    static void _OnToggleVScat();  // 0x6BA970
-    // Not reconstructed yet. Name not in the reference map.
-    static void _OnSetDrawnSceneRange();
+    static DataNode _OnToggleVScat(DataArray* args);  // 0x6BA970
+    // Limits drawing to a range of scenes; no argument draws them all.
     // Name not in the reference map.
-    static void _OnToggleMultithreadedRendering();  // 0x6BAA40
-    // The map's signature is _OnToggleAsyncCompute(DataArray*).
-    static void _OnToggleAsyncCompute();  // 0x6BAA70
+    static DataNode _OnSetDrawnSceneRange(DataArray* args);
     // Name not in the reference map.
-    static void _OnToggleAsyncCopy();  // 0x6BAAA0
+    static DataNode _OnToggleMultithreadedRendering(DataArray* args);  // 0x6BAA40
+    static DataNode _OnToggleAsyncCompute(DataArray* args);  // 0x6BAA70
     // Name not in the reference map.
-    static void _OnToggleTiledLightInterpolation();  // 0x6BAAD0
+    static DataNode _OnToggleAsyncCopy(DataArray* args);  // 0x6BAAA0
     // Name not in the reference map.
-    static void _OnTogglePartialFramerate();  // 0x6BAB00
+    static DataNode _OnToggleTiledLightInterpolation(DataArray* args);  // 0x6BAAD0
     // Name not in the reference map.
-    static void _OnToggleStereoOptimizations();  // 0x6BAB40
+    static DataNode _OnTogglePartialFramerate(DataArray* args);  // 0x6BAB00
     // Name not in the reference map.
-    static void _OnToggle64BitLightAccum();  // 0x6BAB70
+    static DataNode _OnToggleStereoOptimizations(DataArray* args);  // 0x6BAB40
     // Name not in the reference map.
-    static void _OnToggleHdr();  // 0x6BABA0
+    static DataNode _OnToggle64BitLightAccum(DataArray* args);  // 0x6BAB70
     // Name not in the reference map.
-    static void _OnTakeScreenshot();  // 0x6BABD0
+    static DataNode _OnToggleHdr(DataArray* args);  // 0x6BABA0
     // Name not in the reference map.
-    static void _OnCycleScreenshotResolution();  // 0x6BAC00
-    // Not reconstructed yet. Name not in the reference map.
-    static void _OnSetShadingMode();
-    // Not reconstructed yet. The map's signature is
-    // _OnSetBufferInspectionMode(DataArray*).
-    static void _OnSetBufferInspectionMode();
-};
+    static DataNode _OnTakeScreenshot(DataArray* args);  // 0x6BABD0
+    // Name not in the reference map.
+    static DataNode _OnCycleScreenshotResolution(DataArray* args);  // 0x6BAC00
+    // Set the main window's mode by name or number; "help" lists the
+    // names. Name of the first not in the reference map.
+    static DataNode _OnSetShadingMode(DataArray* args);  // 0x6BAC70
+    static DataNode _OnSetBufferInspectionMode(DataArray* args);  // 0x6BAF40
 
-// Registers a console command handler. Not reconstructed yet. Name not in the
-// reference map.
-void register_debug_command(const char* name, RndCommands::Handler handler);
+private:
+    // Apply a mode argument to a window, returning false for an unknown
+    // name. Inlined into the handlers in the map's build; names not in the
+    // reference map.
+    static bool _SetShadingMode(RndWindow& window, DataArray* args);  // 0x6BACB0
+    static bool _SetBufferInspectionMode(RndWindow& window, DataArray* args);  // 0x6BAF80
+};

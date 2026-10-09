@@ -1,7 +1,8 @@
 # Render debug commands
 
-`RndCommands::Init` at `0x6BB0E0` registers 24 console commands.
-The clean reconstruction preserves their exact spelling and registration order:
+`RndCommands::Init` at `0x6BB0E0` registers 24 console commands with
+`DataRegisterFunc`, in this order. Each handler is a script function,
+`DataNode (DataArray*)`, and returns the integer 0.
 
 | Command | Purpose |
 | --- | --- |
@@ -35,7 +36,24 @@ target plus the five fixed dimensions documented in `docs/screenshot-capture.md`
 The final two commands accept a mode name, and accept `help` to enumerate their
 respective name tables.
 
-Sixteen handlers are now source-owned. Twelve directly toggle their typed
+Twenty-one handlers are source-owned. The two overlay commands need
+`RndOverlay`, and `set_quality_level` formats the quality-level names into a
+string this build discards; those three are not reconstructed yet.
+
+- **`set_resolution`** takes a width and a height, a `WxH` string
+  (`ParseResolution`), or a height with a 16:9 width. It overrides the
+  output resolution only when the PS4 capabilities list it. Without an
+  argument it clears the override.
+- **`set_drawn_scene_range`** resets the range to 0 through -1, then takes the
+  first and last scene from its arguments.
+- **`set_shading_mode` and `set_buffer_inspection_mode`** apply to the main
+  window through `_SetShadingMode` (`0x6BACB0`) and
+  `_SetBufferInspectionMode` (`0x6BAF80`). These evaluate the argument and
+  accept a string or symbol name, or an integer. `help` walks the name table,
+  which this build does not print, and an unknown name leaves the mode
+  unchanged.
+
+The other handlers: Twelve directly toggle their typed
 `RndConfig` byte, partial-framerate toggling also enforces the nonzero
 scene-limit gate, the screenshot handlers publish the pending request and
 advance the six-mode setting, and HDR normalizes the render-system mode at

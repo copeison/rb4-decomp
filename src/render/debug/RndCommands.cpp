@@ -1,12 +1,17 @@
 #include "render/debug/RndCommands.h"
 
-#include <array>
 #include <cstdint>
+#include <cstring>
 
+#include "os/platform/PlatformMgr.h"
+#include "render/debug/RndBufferInspection.h"
 #include "render/debug/screenshot_capture.h"
+#include "render/shaders/RndShaderEnums.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/shaders/RndShaderMgr.h"
+#include "render/system/RndWindow.h"
+#include "utl/data/DataArray.h"
 
 namespace {
 
@@ -25,152 +30,265 @@ void toggle(bool& value) {
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6BA880.
-void RndCommands::_OnToggleVSync() {
+DataNode RndCommands::_OnToggleVSync(DataArray*) {
     toggle(render_settings().mVSyncEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA8B0.
-void RndCommands::_OnToggleSceneMask() {
+DataNode RndCommands::_OnToggleSceneMask(DataArray*) {
     toggle(render_settings().mSceneMaskEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA8E0.
-void RndCommands::_OnToggleShadows() {
+DataNode RndCommands::_OnToggleShadows(DataArray*) {
     toggle(render_settings().mShadowsEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA910.
-void RndCommands::_OnTogglePostProc() {
+DataNode RndCommands::_OnTogglePostProc(DataArray*) {
     toggle(render_settings().mPostProcEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA940.
-void RndCommands::_OnToggleToneMapping() {
+DataNode RndCommands::_OnToggleToneMapping(DataArray*) {
     toggle(render_settings().mTonemappingEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA970.
-void RndCommands::_OnToggleVScat() {
+DataNode RndCommands::_OnToggleVScat(DataArray*) {
     toggle(render_settings().mVolumetricScatteringEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BA590.
-void RndCommands::_OnReloadShaders() {
+DataNode RndCommands::_OnReloadShaders(DataArray*) {
     render_system().mShaderMgr.ReloadAll();
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAA40.
-void RndCommands::_OnToggleMultithreadedRendering() {
+DataNode RndCommands::_OnToggleMultithreadedRendering(DataArray*) {
     toggle(render_settings().mMultithreadedRenderingEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAA70.
-void RndCommands::_OnToggleAsyncCompute() {
+DataNode RndCommands::_OnToggleAsyncCompute(DataArray*) {
     toggle(render_settings().mAsyncComputeEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAAA0.
-void RndCommands::_OnToggleAsyncCopy() {
+DataNode RndCommands::_OnToggleAsyncCopy(DataArray*) {
     toggle(render_settings().mAsyncCopyEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAAD0.
-void RndCommands::_OnToggleTiledLightInterpolation() {
+DataNode RndCommands::_OnToggleTiledLightInterpolation(DataArray*) {
     toggle(render_settings().mTiledLightInterpolationEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAB00.
-void RndCommands::_OnTogglePartialFramerate() {
+DataNode RndCommands::_OnTogglePartialFramerate(DataArray*) {
     auto& settings = render_settings();
     settings.mPartialFramerateEnabled =
         settings.mMaxPartialFramerateScenes != 0 &&
         !settings.mPartialFramerateEnabled;
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAB40.
-void RndCommands::_OnToggleStereoOptimizations() {
+DataNode RndCommands::_OnToggleStereoOptimizations(DataArray*) {
     toggle(render_settings().mStereoOptimizationsEnabled);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAB70.
-void RndCommands::_OnToggle64BitLightAccum() {
+DataNode RndCommands::_OnToggle64BitLightAccum(DataArray*) {
     toggle(render_settings().mUse64BitLightAccum);
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BABA0.
-void RndCommands::_OnToggleHdr() {
+DataNode RndCommands::_OnToggleHdr(DataArray*) {
     auto& mode = render_system().mHdrOutputMode;
     mode = mode == 1 ? 0 : 1;
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BABD0.
-void RndCommands::_OnTakeScreenshot() {
+DataNode RndCommands::_OnTakeScreenshot(DataArray*) {
     screenshot_request();
+    return DataNode(0);
 }
 
 // Reconstructed from eboot.elf at 0x6BAC00.
-void RndCommands::_OnCycleScreenshotResolution() {
+DataNode RndCommands::_OnCycleScreenshotResolution(DataArray*) {
     auto& resolution = render_settings().mScreenshotResolution;
     const auto next =
         (static_cast<std::uint32_t>(resolution) + 1) % 6;
     resolution = static_cast<ScreenshotResolution>(next);
     static_cast<void>(screenshot_resolution_name(resolution));
+    return DataNode(0);
 }
 
-namespace {
+// Reconstructed from eboot.elf at 0x6BA5D0.
+DataNode RndCommands::_OnSetResolution(DataArray* args) {
+    auto& device = render_system();
+    auto& settings = *device.mSettings;
+    Vector2i resolution{0, 0};
+    if (args->Size() >= 3) {
+        resolution.x = args->Node(1).Int(args);
+        resolution.y = args->Node(2).Int(args);
+    } else if (args->Size() == 2) {
+        if (args->Node(1).Type() != kDataInt) {
+            if (!ParseResolution(args->Node(1).Str(args), resolution)) {
+                return DataNode(0);
+            }
+        } else {
+            resolution.y = args->Node(1).Int(args);
+            resolution.x = 16 * resolution.y / 9;
+        }
+    } else {
+        settings.mResolutionOverridden = false;
+        return DataNode(0);
+    }
 
-struct RndCommandDefinition {
-    const char* name;
-    RndCommands::Handler handler;
-};
+    for (const auto& supported : device.mCapabilities[kPlatformPS4].mResolutions) {
+        if (supported.x == resolution.x && supported.y == resolution.y) {
+            settings.mOutputResolution = resolution;
+            settings.mResolutionOverridden = true;
+            break;
+        }
+    }
+    return DataNode(0);
+}
 
-constexpr std::array<RndCommandDefinition, 24> kRndCommands = {{
-    {"toggle_overlay", &RndCommands::_OnToggleOverlay},
-    {"overlay_help", &RndCommands::_OnPrintOverlayHelp},
-    {"reload_shaders", &RndCommands::_OnReloadShaders},
-    {"set_resolution", &RndCommands::_OnSetResolution},
-    {"set_quality_level", &RndCommands::_OnSetQualityLevel},
-    {"toggle_vsync", &RndCommands::_OnToggleVSync},
-    {"toggle_scene_mask", &RndCommands::_OnToggleSceneMask},
-    {"toggle_shadows", &RndCommands::_OnToggleShadows},
-    {"toggle_postproc", &RndCommands::_OnTogglePostProc},
-    {"toggle_tonemapping", &RndCommands::_OnToggleToneMapping},
-    {"toggle_vscat", &RndCommands::_OnToggleVScat},
-    {"set_drawn_scene_range", &RndCommands::_OnSetDrawnSceneRange},
-    {
-        "toggle_multithreaded_rendering",
-        &RndCommands::_OnToggleMultithreadedRendering,
-    },
-    {"toggle_async_compute", &RndCommands::_OnToggleAsyncCompute},
-    {"toggle_async_copy", &RndCommands::_OnToggleAsyncCopy},
-    {
-        "toggle_tiled_light_interpolation",
-        &RndCommands::_OnToggleTiledLightInterpolation,
-    },
-    {"toggle_partial_framerate", &RndCommands::_OnTogglePartialFramerate},
-    {
-        "toggle_stereo_optimizations",
-        &RndCommands::_OnToggleStereoOptimizations,
-    },
-    {"toggle_64_bit_light_accum", &RndCommands::_OnToggle64BitLightAccum},
-    {"toggle_hdr", &RndCommands::_OnToggleHdr},
-    {"take_screenshot", &RndCommands::_OnTakeScreenshot},
-    {
-        "cycle_screenshot_resolution",
-        &RndCommands::_OnCycleScreenshotResolution,
-    },
-    {"set_shading_mode", &RndCommands::_OnSetShadingMode},
-    {
-        "set_buffer_inspection_mode",
-        &RndCommands::_OnSetBufferInspectionMode,
-    },
-}};
+// Reconstructed from eboot.elf at 0x6BA9A0.
+DataNode RndCommands::_OnSetDrawnSceneRange(DataArray* args) {
+    auto& settings = render_settings();
+    settings.mFirstDrawnScene = 0;
+    settings.mLastDrawnScene = -1;
+    if (args->Size() >= 2) {
+        settings.mFirstDrawnScene = args->Node(1).Int(args);
+        if (args->Size() >= 3) {
+            settings.mLastDrawnScene = args->Node(2).Int(args);
+        }
+    }
+    return DataNode(0);
+}
 
-}  // namespace
+// Reconstructed from eboot.elf at 0x6BAC70.
+DataNode RndCommands::_OnSetShadingMode(DataArray* args) {
+    if (auto* window = render_system().mMainWindow) {
+        _SetShadingMode(*window, args);
+    }
+    return DataNode(0);
+}
+
+// Reconstructed from eboot.elf at 0x6BACB0. The listed names are not
+// printed in this build.
+bool RndCommands::_SetShadingMode(RndWindow& window, DataArray* args) {
+    unsigned int mode = 0;
+    if (args->Size() == 2) {
+        const DataNode node = args->Evaluate(1);
+        const char* name = nullptr;
+        if (node.Type() == kDataString) {
+            name = reinterpret_cast<const char*>(node.mValue.array->mNodes);
+        } else if (node.Type() == kDataSymbol) {
+            name = node.mValue.symbol;
+        } else {
+            mode = node.Type() == kDataInt ? static_cast<unsigned int>(node.mValue.integer) : 0;
+        }
+        if (name != nullptr) {
+            if (strcasecmp(name, "help") == 0) {
+                for (unsigned int index = 0; index < kNumUserShadingModes; ++index) {
+                    static_cast<void>(ToString(static_cast<RndUserShadingMode>(index)));
+                }
+                return true;
+            }
+            mode = UserShadingModeFromString(name);
+            if (mode == static_cast<unsigned int>(-1)) {
+                return false;
+            }
+        }
+    }
+    static_cast<void>(ToString(static_cast<RndUserShadingMode>(mode)));
+    window.SetShadingMode(mode);
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x6BAF40.
+DataNode RndCommands::_OnSetBufferInspectionMode(DataArray* args) {
+    if (auto* window = render_system().mMainWindow) {
+        _SetBufferInspectionMode(*window, args);
+    }
+    return DataNode(0);
+}
+
+// Reconstructed from eboot.elf at 0x6BAF80.
+bool RndCommands::_SetBufferInspectionMode(RndWindow& window, DataArray* args) {
+    unsigned int mode = 0;
+    if (args->Size() == 2) {
+        const DataNode node = args->Evaluate(1);
+        const char* name = nullptr;
+        if (node.Type() == kDataString) {
+            name = reinterpret_cast<const char*>(node.mValue.array->mNodes);
+        } else if (node.Type() == kDataSymbol) {
+            name = node.mValue.symbol;
+        } else {
+            mode = node.Type() == kDataInt ? static_cast<unsigned int>(node.mValue.integer) : 0;
+        }
+        if (name != nullptr) {
+            if (strcasecmp(name, "help") == 0) {
+                for (unsigned int index = 0; index < RndBufferInspection::kNumModes; ++index) {
+                    static_cast<void>(
+                        RndBufferInspection::ToString(static_cast<RndBufferInspectionMode>(index)));
+                }
+                return true;
+            }
+            mode = RndBufferInspection::FromString(name);
+            if (mode == static_cast<unsigned int>(-1)) {
+                return false;
+            }
+        }
+    }
+    static_cast<void>(RndBufferInspection::ToString(static_cast<RndBufferInspectionMode>(mode)));
+    window.SetBufferInspectionMode(mode);
+    return true;
+}
 
 // Reconstructed from eboot.elf at 0x6BB0E0.
 void RndCommands::Init() {
-    for (const auto& command : kRndCommands) {
-        register_debug_command(command.name, command.handler);
-    }
+    DataRegisterFunc(Symbol("toggle_overlay"), _OnToggleOverlay);
+    DataRegisterFunc(Symbol("overlay_help"), _OnPrintOverlayHelp);
+    DataRegisterFunc(Symbol("reload_shaders"), _OnReloadShaders);
+    DataRegisterFunc(Symbol("set_resolution"), _OnSetResolution);
+    DataRegisterFunc(Symbol("set_quality_level"), _OnSetQualityLevel);
+    DataRegisterFunc(Symbol("toggle_vsync"), _OnToggleVSync);
+    DataRegisterFunc(Symbol("toggle_scene_mask"), _OnToggleSceneMask);
+    DataRegisterFunc(Symbol("toggle_shadows"), _OnToggleShadows);
+    DataRegisterFunc(Symbol("toggle_postproc"), _OnTogglePostProc);
+    DataRegisterFunc(Symbol("toggle_tonemapping"), _OnToggleToneMapping);
+    DataRegisterFunc(Symbol("toggle_vscat"), _OnToggleVScat);
+    DataRegisterFunc(Symbol("set_drawn_scene_range"), _OnSetDrawnSceneRange);
+    DataRegisterFunc(Symbol("toggle_multithreaded_rendering"), _OnToggleMultithreadedRendering);
+    DataRegisterFunc(Symbol("toggle_async_compute"), _OnToggleAsyncCompute);
+    DataRegisterFunc(Symbol("toggle_async_copy"), _OnToggleAsyncCopy);
+    DataRegisterFunc(Symbol("toggle_tiled_light_interpolation"), _OnToggleTiledLightInterpolation);
+    DataRegisterFunc(Symbol("toggle_partial_framerate"), _OnTogglePartialFramerate);
+    DataRegisterFunc(Symbol("toggle_stereo_optimizations"), _OnToggleStereoOptimizations);
+    DataRegisterFunc(Symbol("toggle_64_bit_light_accum"), _OnToggle64BitLightAccum);
+    DataRegisterFunc(Symbol("toggle_hdr"), _OnToggleHdr);
+    DataRegisterFunc(Symbol("take_screenshot"), _OnTakeScreenshot);
+    DataRegisterFunc(Symbol("cycle_screenshot_resolution"), _OnCycleScreenshotResolution);
+    DataRegisterFunc(Symbol("set_shading_mode"), _OnSetShadingMode);
+    DataRegisterFunc(Symbol("set_buffer_inspection_mode"), _OnSetBufferInspectionMode);
 }

@@ -17,7 +17,6 @@ the requested clear values, disables color writes, and submits a built-in
 depth-clear draw. The helper then restores the cached render-context state and
 returns `false` because this path does not need the accelerated-clear barrier.
 
-The draw helper binds the renderer's depth-clear shader, temporarily selects
-its draw state, unbinds the pixel shader, submits the clear geometry, and
-restores the normal draw state. Concrete shader objects and Gnm packets remain
-behind adapters until their owning render-system structures are reconstructed.
+`PS4Context::_FlushClear` draws the clear: it selects `RndShaderBasic`,
+disables color writes, unbinds the pixel shader, and draws a full-target quad
+with `RndDrawUtl::DrawQuad2D`. See `docs/orbis-render-context-state.md`.
