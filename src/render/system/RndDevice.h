@@ -8,7 +8,7 @@
 #include "render/core/platform/render_platform_config.h"
 #include "render/resources/lighting/render_lighting_resources.h"
 #include "render/resources/system/default_render_resources.h"
-#include "render/resources/system/render_resource_manager.h"
+#include "render/shaders/RndShaderMgr.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
 
@@ -150,7 +150,7 @@ public:
     RndFactory* mFactory;
     rb4::RenderPlatformConfig mPlatformConfigs[13];
     rb4::DefaultRenderResources mDefaults;
-    rb4::RenderResourceManager mResourceMgr;
+    RndShaderMgr mShaderMgr;
     rb4::RenderLightingResources mLighting;
     RndShaderFogDeferred* mFogDeferred;
     rb4::RenderPrimitiveMeshSet* mPrimitiveMeshes;
@@ -188,7 +188,7 @@ static_assert(offsetof(RndDevice, mSettings) == 296);
 static_assert(offsetof(RndDevice, mFactory) == 304);
 static_assert(offsetof(RndDevice, mPlatformConfigs) == 312);
 static_assert(offsetof(RndDevice, mDefaults) == 1976);
-static_assert(offsetof(RndDevice, mResourceMgr) == 2544);
+static_assert(offsetof(RndDevice, mShaderMgr) == 2544);
 static_assert(offsetof(RndDevice, mLighting) == 3256);
 static_assert(offsetof(RndDevice, mFogDeferred) == 3560);
 static_assert(offsetof(RndDevice, mPrimitiveMeshes) == 3568);

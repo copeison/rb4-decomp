@@ -7,7 +7,7 @@
 #include "render/core/platform/render_platform_config.h"
 #include "render/resources/shaders/shader_cache_validation.h"
 #include "render/resources/shaders/shader_source_hash.h"
-#include "render/resources/system/render_resource_manager.h"
+#include "render/shaders/RndShaderMgr.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderError.h"
 #include "render/shaders/RndShaderResourceConfig.h"
@@ -33,8 +33,8 @@ CritSec gShaderLoadCritSec;
 // Render-target slices per context slice mode, from the table at 0x12A99A0.
 constexpr unsigned int kSliceCounts[] = {1, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1};
 
-RenderResourceManager& ShaderMgr() {
-    return TheRndDevice()->mResourceMgr;
+RndShaderMgr& ShaderMgr() {
+    return TheRndDevice()->mShaderMgr;
 }
 
 unsigned int ReadWord(BinStream& stream) {
@@ -199,7 +199,7 @@ bool RndShader::_UsesShaderKeyImpl(RndShaderProgramType, RndShaderKey) const {
 
 // Reconstructed from eboot.elf at 0x638900.
 void RndShader::_SelectErrorShader(RndContext& context) const {
-    ShaderMgr().runtime.resources.error_shader
+    ShaderMgr().mErrorShader
         ->Select(context, kShaderGeoTypeDefault);
 }
 
@@ -259,13 +259,13 @@ void RndShader::Reload() {
 // Reconstructed from eboot.elf at 0x638A20.
 void RndShader::_Register() {
     auto& mgr = ShaderMgr();
-    auto* anchor = reinterpret_cast<RndShaderLink*>(mgr.primary_list);
+    auto* anchor = mgr.mShaders;
     auto* last = anchor->mPrev;
     mLink.mNext = anchor;
     mLink.mPrev = last;
     last->mNext = &mLink;
     anchor->mPrev = &mLink;
-    if (mgr.shader_constants.initialization_phases[1] != 0) {
+    if (mgr.mInitialized != 0) {
         Init();
     }
 }
@@ -332,7 +332,7 @@ bool RndShader::_LoadCached(const char* path, bool validate) {
     if (validate) {
         auto& mgr = ShaderMgr();
         valid = fixedChecksum ==
-                static_cast<unsigned int>(mgr.runtime.constant_source_hash) &&
+                static_cast<unsigned int>(mgr.mFixedDefinesChecksum) &&
             definesChecksum == _ChecksumDefines();
         if (valid) {
             auto hash = kShaderSourceHashBasis;
@@ -342,7 +342,7 @@ bool RndShader::_LoadCached(const char* path, bool validate) {
                 sourceChecksum ==
                     render_shader_hash_source_file(_GetShaderFilePath()) &&
                 render_shader_cache_defines_match(
-                    *mgr.shader_cache_defines, includes);
+                    *mgr.mIncludeChecksums, includes);
         }
     }
     bool loaded = false;

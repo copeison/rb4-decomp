@@ -4,7 +4,7 @@
 
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/system/RndDevice.h"
-#include "render/resources/system/render_resource_manager.h"
+#include "render/shaders/RndShaderMgr.h"
 
 namespace {
 
@@ -58,18 +58,16 @@ RndContext::~RndContext() {}
 // Reconstructed from eboot.elf at 0x6BC200. Creates the context's global
 // constant buffers from the shader manager's configurations.
 void RndContext::Init() {
-    const auto& constants =
-        TheRndDevice()->mResourceMgr
-            .shader_constants;
-    mCBuffers[0] = RndShaderCBuffer::New(*constants.render_target_block, 0);
-    mCBuffers[1] = RndShaderCBuffer::New(*constants.camera_block, 0);
-    mCBuffers[2] = RndShaderCBuffer::New(*constants.clip_planes_block, 0);
-    mCBuffers[3] = RndShaderCBuffer::New(*constants.misc_draw_state_block, 0);
-    mCBuffers[4] = RndShaderCBuffer::New(*constants.occlusion_query_block, 0);
-    mCBuffers[5] = RndShaderCBuffer::New(*constants.debug_block, 0);
-    mCBuffers[6] = RndShaderCBuffer::New(*constants.transient_blocks[0], 0);
-    mCBuffers[7] = RndShaderCBuffer::New(*constants.transient_blocks[1], 0);
-    mCBuffers[8] = RndShaderCBuffer::New(*constants.transient_blocks[2], 0);
+    const auto& constants = TheRndDevice()->mShaderMgr;
+    mCBuffers[0] = RndShaderCBuffer::New(*constants.mRenderTargetCBuffer, 0);
+    mCBuffers[1] = RndShaderCBuffer::New(*constants.mCameraCBuffer, 0);
+    mCBuffers[2] = RndShaderCBuffer::New(*constants.mClipPlanesCBuffer, 0);
+    mCBuffers[3] = RndShaderCBuffer::New(*constants.mMiscDrawStateCBuffer, 0);
+    mCBuffers[4] = RndShaderCBuffer::New(*constants.mOcclusionQueryCBuffer, 0);
+    mCBuffers[5] = RndShaderCBuffer::New(*constants.mDebugCBuffer, 0);
+    mCBuffers[6] = RndShaderCBuffer::New(*constants.mTransientCBuffers[0], 0);
+    mCBuffers[7] = RndShaderCBuffer::New(*constants.mTransientCBuffers[1], 0);
+    mCBuffers[8] = RndShaderCBuffer::New(*constants.mTransientCBuffers[2], 0);
 }
 
 // Reconstructed from eboot.elf at 0x6BC330.

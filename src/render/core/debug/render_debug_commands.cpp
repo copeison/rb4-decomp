@@ -6,7 +6,7 @@
 #include "render/core/debug/render_debug_command_adapters.h"
 #include "render/core/settings/render_settings.h"
 #include "render/system/RndDevice.h"
-#include "render/resources/system/render_resource_manager.h"
+#include "render/shaders/RndShaderMgr.h"
 
 namespace rb4 {
 
@@ -58,8 +58,7 @@ void render_command_toggle_vscat() {
 
 // Reconstructed from eboot.elf at 0x6BA590.
 void render_command_reload_shaders() {
-    render_resource_manager_reload_shaders(
-        render_system().mResourceMgr);
+    render_system().mShaderMgr.ReloadAll();
 }
 
 // Reconstructed from eboot.elf at 0x6BAA40.

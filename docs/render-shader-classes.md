@@ -68,6 +68,23 @@ The `PrintCode` methods write into the engine's hashing text stream. That
 stream is modeled by its running FNV-1a hash, which the cache checksums
 compare.
 
+## Shader manager
+
+`RndShaderMgr` (`src/render/shaders/RndShaderMgr.{h,cpp}`, embedded in
+`RndDevice` at 2544) owns the configuration all shaders share and the 35
+built-in shaders.
+
+| Address | Method | Role |
+| --- | --- | --- |
+| 0x63F180, 0x63F350 | constructor, destructor | |
+| 0x63F400 | `PreInit` | Builds the fixed defines, the global defines, and the engine constant buffers, then creates the built-in shaders |
+| 0x63F920 | `_InitFixedDefines` | The engine `#define` groups |
+| 0x640BF0 | `_InitDefinesGroups` | `HX_BT709_TO_BT2020`, `HX_NUM_RT_SLICES`, `HX_SHADING_MODE`, `HX_GEO_TYPE` |
+| 0x640D60 | `_CreateCBufferConfigs` | Scene, render-target, camera, clip-plane, skeleton, misc, occlusion-query, debug, and three transient buffers; checksums the fixed defines |
+| 0x641370 | `Init` | Initializes every registered shader and builds the 4x128 function-table texture |
+| 0x641740 | `Terminate` | |
+| 0x641F30 | `ReloadAll` | |
+
 ## Earlier names
 
 | Earlier reconstruction | Original |
@@ -87,3 +104,4 @@ compare.
 | `RenderManagedObjectArray[6]` | `RndShaderCollection` |
 | program key arrays | `RndShaderKeyGroup` |
 | `FogDeferredShaderResource` | `RndShaderFogDeferred` |
+| `RenderResourceManager`, `render_resource_manager_*` | `RndShaderMgr` |

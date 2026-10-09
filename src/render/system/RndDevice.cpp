@@ -108,7 +108,6 @@ RndDevice::RndDevice()
       mBuiltinCBuffers{},
       mUnknown3792(nullptr),
       mConsoleState() {
-    render_resource_manager_construct(mResourceMgr);
     render_lighting_resources_construct(mLighting);
     render_gpu_stat_block_construct(mGpuStats);
     gRndDevice = this;
@@ -138,7 +137,6 @@ RndDevice::~RndDevice() {
 
     render_gpu_stat_block_destruct(mGpuStats);
     render_lighting_resources_destruct(mLighting);
-    render_resource_manager_destruct(mResourceMgr);
 }
 
 void RndDevice::_ProcessDeferredDeletion() {}
@@ -156,9 +154,9 @@ void RndDevice::_UnknownSlot16Impl() {}
 void RndDevice::Init(const RndInitParams& params) {
     mInitialized = true;
     mInitParams = params;
-    render_resource_manager_initialize(mResourceMgr);
+    mShaderMgr.PreInit();
     _InitImpl(&params);
-    render_resource_manager_finalize(mResourceMgr);
+    mShaderMgr.Init();
 
     render_lighting_resources_initialize(mLighting);
     mFogDeferred = new RndShaderFogDeferred;  // 0x451C90
@@ -189,32 +187,32 @@ void RndDevice::Init(const RndInitParams& params) {
 
 // Reconstructed from eboot.elf at 0x3DDC20.
 void RndDevice::_InitBuiltinCBuffers() {
-    const auto& constants = mResourceMgr.shader_constants;
+    const auto& constants = mShaderMgr;
 
-    mBuiltinCBuffers[0] = NewBuiltinCBuffer(*constants.render_target_block);
+    mBuiltinCBuffers[0] = NewBuiltinCBuffer(*constants.mRenderTargetCBuffer);
     auto* dimensions = CBufferElement(
-        *mBuiltinCBuffers[0], constants.target_dimensions);
+        *mBuiltinCBuffers[0], constants.mTargetDimensions);
     dimensions[0] = 0.0F;
     dimensions[1] = 0.0F;
     FinishBuiltinCBuffer(*mBuiltinCBuffers[0]);
 
-    mBuiltinCBuffers[1] = NewBuiltinCBuffer(*constants.clip_planes_block);
+    mBuiltinCBuffers[1] = NewBuiltinCBuffer(*constants.mClipPlanesCBuffer);
     std::fill_n(
-        CBufferElement(*mBuiltinCBuffers[1], constants.clip_planes), 16, 0.0F);
+        CBufferElement(*mBuiltinCBuffers[1], constants.mClipPlanes), 16, 0.0F);
     FinishBuiltinCBuffer(*mBuiltinCBuffers[1]);
 
-    mBuiltinCBuffers[2] = NewBuiltinCBuffer(*constants.misc_draw_state_block);
-    CBufferElement(*mBuiltinCBuffers[2], constants.environment_index)[0] =
+    mBuiltinCBuffers[2] = NewBuiltinCBuffer(*constants.mMiscDrawStateCBuffer);
+    CBufferElement(*mBuiltinCBuffers[2], constants.mEnvironIndex)[0] =
         -1.0F;
     std::fill_n(
-        CBufferElement(*mBuiltinCBuffers[2], constants.solid_color),
+        CBufferElement(*mBuiltinCBuffers[2], constants.mSolidColor),
         kFloatsPerCBufferElement,
         0.0F);
     FinishBuiltinCBuffer(*mBuiltinCBuffers[2]);
 
-    mBuiltinCBuffers[3] = NewBuiltinCBuffer(*constants.occlusion_query_block);
+    mBuiltinCBuffers[3] = NewBuiltinCBuffer(*constants.mOcclusionQueryCBuffer);
     auto* coverage = CBufferElement(
-        *mBuiltinCBuffers[3], constants.occlusion_query_coverage);
+        *mBuiltinCBuffers[3], constants.mOcclusionQueryCoverageParams);
     coverage[0] = 0.0F;
     coverage[1] = 1.0F;
     FinishBuiltinCBuffer(*mBuiltinCBuffers[3]);
@@ -228,7 +226,7 @@ void RndDevice::Terminate() {
     delete mFogDeferred;  // 0x451CC0
     mFogDeferred = nullptr;
     render_lighting_resources_shutdown(mLighting);
-    render_resource_manager_shutdown(mResourceMgr);
+    mShaderMgr.Terminate();
 
     if (mPrimitiveMeshes != nullptr) {
         render_primitive_mesh_set_destruct(*mPrimitiveMeshes);
