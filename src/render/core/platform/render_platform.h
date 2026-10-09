@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace rb4 {
 
@@ -34,5 +35,6 @@ const char* render_platform_name(RenderPlatform platform);
 const char* render_api_name(RenderApi api);
 RenderApi render_api_for_platform(RenderPlatform platform);
 RenderApi orbis_render_api();
+std::vector<std::uint32_t> render_supported_platform_ids();
 
 }  // namespace rb4

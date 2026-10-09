@@ -4,7 +4,7 @@
 #include "os/memory/MemMgr.h"
 #include "os/threading/CritSec.h"
 #include "render/context/RndContext.h"
-#include "render/core/platform/render_platform_config.h"
+#include "render/system/RndCapabilities.h"
 #include "render/resources/shaders/shader_cache_validation.h"
 #include "render/resources/shaders/shader_source_hash.h"
 #include "render/shaders/RndShaderMgr.h"
@@ -84,8 +84,8 @@ void ChecksumPermutation(
             return;
         }
         const auto& platform =
-            TheRndDevice()->mPlatformConfigs[kActivePlatformConfig];
-        if ((platform.feature_flags & kSixSliceFeature) == 0) {
+            TheRndDevice()->mCapabilities[kActivePlatformConfig];
+        if ((platform.mFeatureFlags & kSixSliceFeature) == 0) {
             return;
         }
     } else if (visit.mType == kShaderProgramGeometry &&

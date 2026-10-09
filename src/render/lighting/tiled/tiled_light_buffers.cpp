@@ -6,7 +6,7 @@
 #include <limits>
 
 #include "render/buffers/RndComputeBuffer.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureArray2D.h"
@@ -117,40 +117,40 @@ void render_tiled_light_buffers_initialize(RenderLightingSystem& system) {
     const auto& settings =
         *TheRndDevice()->mSettings;
 
-    if (settings.use_tiled_lighting) {
+    if (settings.mUseTiledLighting) {
         set_tiled_light_buffer(
             system,
             TiledLightBufferKind::kPointLights,
             create_tiled_light_buffer(
                 208,
-                static_cast<std::size_t>(settings.max_point_lights),
+                static_cast<std::size_t>(settings.mMaxPointLights),
                 "Point Lights"));
         set_tiled_light_buffer(
             system,
             TiledLightBufferKind::kSpotLights,
             create_tiled_light_buffer(
                 352,
-                static_cast<std::size_t>(settings.max_spot_lights),
+                static_cast<std::size_t>(settings.mMaxSpotLights),
                 "Spotlights"));
         set_tiled_light_buffer(
             system,
             TiledLightBufferKind::kDirectionalLights,
             create_tiled_light_buffer(
                 112,
-                static_cast<std::size_t>(settings.max_directional_lights),
+                static_cast<std::size_t>(settings.mMaxDirectionalLights),
                 "Directional Lights"));
         set_tiled_light_buffer(
             system,
             TiledLightBufferKind::kLightProbes,
             create_tiled_light_buffer(
                 96,
-                static_cast<std::size_t>(settings.max_light_probes),
+                static_cast<std::size_t>(settings.mMaxLightProbes),
                 "Light Probes"));
 
         const auto slice_zero_capacity =
-            settings.max_point_lights +
-            settings.max_spot_lights +
-            settings.max_light_probes;
+            settings.mMaxPointLights +
+            settings.mMaxSpotLights +
+            settings.mMaxLightProbes;
         set_tiled_light_buffer(
             system,
             TiledLightBufferKind::kSliceZeroLightIds,

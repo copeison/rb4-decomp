@@ -1,6 +1,6 @@
 #include "render/depth/RndCShaderCalcDepthRange.h"
 
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -31,7 +31,7 @@ void RndCShaderCalcDepthRange::_InitConfigImpl(
     RndShaderResourceConfig& resources) {
     const auto& settings = *TheRndDevice()->mSettings;
     fixedDefines.Add(
-        Symbol("HX_TILE_SIZE"), static_cast<int>(settings.light_tile_size));
+        Symbol("HX_TILE_SIZE"), static_cast<int>(settings.mLightTileSize));
 
     mLinearDepthBuffer = resources.AddTexture(
         "gLinearDepthBuffer",

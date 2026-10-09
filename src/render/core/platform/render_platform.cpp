@@ -53,4 +53,10 @@ RenderApi orbis_render_api() {
     return RenderApi::kPlayStation4;
 }
 
+// Reconstructed from eboot.elf at 0x3641B0.
+std::vector<std::uint32_t> render_supported_platform_ids() {
+    return render_configured_supported_platform_ids(
+        "platform_mgr", "supported_platforms");
+}
+
 }  // namespace rb4

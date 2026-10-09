@@ -4,8 +4,8 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
-#include "render/core/platform/render_platform_config.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndCapabilities.h"
+#include "render/system/RndConfig.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/meshes/RndMesh.h"
 #include "render/system/RndDevice.h"
@@ -23,7 +23,7 @@ constexpr unsigned int kRenderTargetFormatClass = 7;
 constexpr int kNoAttachment = -1;
 constexpr int kStereoTargetMode = 3;
 
-const RenderSettings& Settings() {
+const RndConfig& Settings() {
     return *TheRndDevice()->mSettings;
 }
 
@@ -370,7 +370,7 @@ void RndBufferCollection::InstallBackBuffer(
 
     if ((mFlags & kBufferPartialFramerate) != 0) {
         const auto scenes =
-            static_cast<unsigned long>(Settings().max_partial_framerate_scenes);
+            static_cast<unsigned long>(Settings().mMaxPartialFramerateScenes);
         ResizeFrameIntervals(mFrameIntervals, scenes + 1);
         for (unsigned long i = 1; i <= scenes; ++i) {
             _AllocFrameIntervalBuffers(
@@ -408,7 +408,7 @@ void RndBufferCollection::_AllocLightAccumBuffers(
 // Reconstructed from the light-probe branch of eboot.elf at 0x6B0760.
 void RndBufferCollection::_AllocLightProbeAccumBuffer(
     const RndBufferCollection* reuse) {
-    if (Settings().use_tiled_lighting) {
+    if (Settings().mUseTiledLighting) {
         return;
     }
     mLightProbeAccum = _AllocBufferImpl(
@@ -453,7 +453,7 @@ void RndBufferCollection::_AllocDownsampleBuffers(
         "Quarter-Size Buffer",
         "Eighth-Size Buffer",
     };
-    const bool wide = Settings().use_64_bit_light_accum;
+    const bool wide = Settings().mUse64BitLightAccum;
     const auto dataFormat =
         ResolveFormat({wide ? 64U : 32U, wide ? 4U : 2U, 2, 1, -1});
     const auto format = TargetFormat(1, 2);
@@ -503,7 +503,7 @@ void RndBufferCollection::_AllocSceneMaskBuffer(
         "Mask Tile Buffer",
         format,
         dataFormat,
-        TileCount(mSize, static_cast<int>(Settings().mask_tile_size)),
+        TileCount(mSize, static_cast<int>(Settings().mMaskTileSize)),
         kNoAttachment,
         0,
         Reused(reuse, &RndBufferCollection::mSceneMaskTile));
@@ -515,7 +515,7 @@ void RndBufferCollection::_AllocSceneMaskBuffer(
 void RndBufferCollection::_AllocShadowBlurBuffers(
     const RndBufferCollection* reuse) {
     const auto& settings = Settings();
-    if (settings.max_shadow_contrib_buffers == 0) {
+    if (settings.mMaxShadowContribBuffers == 0) {
         return;
     }
 
@@ -528,7 +528,7 @@ void RndBufferCollection::_AllocShadowBlurBuffers(
         format,
         ResolveFormat({8, 10, 0, 1, -1}),
         size,
-        static_cast<unsigned long>(settings.max_shadow_contrib_buffers),
+        static_cast<unsigned long>(settings.mMaxShadowContribBuffers),
         kNoAttachment,
         0,
         Reused(reuse, &RndBufferCollection::mShadowContribArray));
@@ -564,7 +564,7 @@ void RndBufferCollection::_AllocShadowBlurBuffers(
     }
 
     const auto tiles =
-        TileCount(size, static_cast<int>(settings.shadow_soften_tile_size));
+        TileCount(size, static_cast<int>(settings.mShadowSoftenTileSize));
     const auto tileFormat = ResolveFormat({8, 10, 0, 1, -1});
     for (int i = 0; i < 2; ++i) {
         mShadowSoftenTiles[i] = _AllocBufferImpl(
@@ -582,13 +582,13 @@ void RndBufferCollection::_AllocShadowBlurBuffers(
 // Reconstructed from eboot.elf at 0x6B1E60. The color buffer is created only
 // when the previous collection had one.
 void RndBufferCollection::_AllocCMAABuffers(const RndBufferCollection* reuse) {
-    if ((TheRndDevice()->mPlatformConfigs[kCurrentPlatformConfig].feature_flags &
+    if ((TheRndDevice()->mCapabilities[kCurrentPlatformConfig].mFeatureFlags &
          0x10U) == 0) {
         return;
     }
 
     auto format = TargetFormat(1, 2);
-    const bool wide = Settings().use_64_bit_light_accum;
+    const bool wide = Settings().mUse64BitLightAccum;
     if (reuse != nullptr && reuse->mCMAAColor != nullptr) {
         mCMAAColor = _AllocBufferImpl(
             "CMAA Color Buffer",
@@ -635,7 +635,7 @@ void RndBufferCollection::_AllocCMAABuffers(const RndBufferCollection* reuse) {
 // space.
 void RndBufferCollection::_AllocSceneMaskTileBuffers(
     const RndBufferCollection* reuse) {
-    const auto tileSize = static_cast<int>(Settings().light_tile_size);
+    const auto tileSize = static_cast<int>(Settings().mLightTileSize);
     const auto tiles = TileCount(mSize, tileSize);
     const auto format = TargetFormat(1, 1);
     const auto dataFormat = ResolveFormat({8, 10, 0, 1, -1});
@@ -779,7 +779,7 @@ void RndBufferCollection::_AllocDepthStencilBuffer(
         }
     }
 
-    const bool wide = Settings().use_40_bit_depth_stencil;
+    const bool wide = Settings().mUse40BitDepthStencil;
     auto format = TargetFormat(1, 1, 2);
     format.mUsage = kTextureUsageDepth;
     auto* buffer = _AllocBufferImpl(
@@ -820,14 +820,14 @@ void RndBufferCollection::_AllocLinearDepthBuffer(
     }
 
     const auto& settings = Settings();
-    if (!settings.use_tiled_lighting) {
+    if (!settings.mUseTiledLighting) {
         return;
     }
     buffers.mTiledDepthRange = _AllocBufferImpl(
         "Tiled Depth Range",
         format,
         ResolveFormat({32, 0, 0, 1, -1}),
-        TileCount(mSize, static_cast<int>(settings.light_tile_size)),
+        TileCount(mSize, static_cast<int>(settings.mLightTileSize)),
         kNoAttachment,
         0,
         reuse != nullptr ? reuse->mTiledDepthRange : nullptr);
@@ -845,7 +845,7 @@ RndTextureBase* RndBufferCollection::_AllocOneLightAccumBuffer(
     RndTextureBase* reuse,
     unsigned int targetFlags) {
     const bool wide = (mFlags & kBufferForce64BitLightAccum) != 0 ||
-        Settings().use_64_bit_light_accum;
+        Settings().mUse64BitLightAccum;
     auto size = mSize;
     for (; halvings > 0; --halvings) {
         size.x = size.x / 2 > 0 ? size.x / 2 : 1;
@@ -899,7 +899,7 @@ void RndBufferCollection::_AllocGBuffer(
         _RegisterBuffer(buffers.mGBufferPixelNormals);
     }
 
-    if (!Settings().use_gbuffer_vertex_normals) {
+    if (!Settings().mUseGBufferVertexNormals) {
         buffers.mGBufferVertexNormals = nullptr;
         return;
     }
@@ -942,15 +942,15 @@ void RndBufferCollection::_AllocTiledLightingBuffers(
     bool stereo,
     RndTextureBase* reuseInterp) {
     const auto& settings = Settings();
-    if (!settings.use_tiled_lighting) {
+    if (!settings.mUseTiledLighting) {
         return;
     }
 
-    const auto tileSize = static_cast<int>(settings.light_tile_size);
+    const auto tileSize = static_cast<int>(settings.mLightTileSize);
     const auto tiles = static_cast<unsigned long>(DivideRoundUp(mSize.x, tileSize)) *
         static_cast<unsigned long>(DivideRoundUp(mSize.y, tileSize)) *
-        static_cast<unsigned long>(settings.light_tile_depth_slices);
-    const auto maxLights = static_cast<unsigned long>(settings.max_lights_per_tile);
+        static_cast<unsigned long>(settings.mLightTileDepthSlices);
+    const auto maxLights = static_cast<unsigned long>(settings.mMaxLightsPerTile);
 
     AllocTiledLightIds(
         buffers.mTiledLightIds,
@@ -989,12 +989,12 @@ void RndBufferCollection::_AllocVolumetricScatteringBuffers(
     FrameIntervalBuffers& buffers,
     const FrameIntervalBuffers* reuse) {
     const auto& settings = Settings();
-    if (!settings.volumetric_scattering_enabled) {
+    if (!settings.mVolumetricScatteringEnabled) {
         return;
     }
 
     const auto tileSize =
-        static_cast<int>(settings.volumetric_scattering_tile_size);
+        static_cast<int>(settings.mVolumetricScatteringTileSize);
     const Vector2i size{
         DivideRoundUp(DivideRoundUp(mSize.x, tileSize), 8) * 8,
         DivideRoundUp(DivideRoundUp(mSize.y, tileSize), 8) * 8,

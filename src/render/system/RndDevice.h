@@ -4,17 +4,18 @@
 #include <_pthread.h>
 
 #include "os/threading/CritSec.h"
-#include "render/core/platform/render_platform_config.h"
 #include "render/debug/RndGpuStatsMgr.h"
 #include "render/lighting/RndLightGlobals.h"
 #include "render/defaults/RndDefaults.h"
 #include "render/shaders/RndShaderMgr.h"
+#include "render/system/RndCapabilities.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
 
 class RndContext;
 class RndFactory;
 class RndBufferCollection;
+class RndConfig;
 class RndShaderCBuffer;
 class RndShaderFogDeferred;
 
@@ -23,7 +24,6 @@ class RndWindow;
 namespace rb4 {
 struct AudioAnalysisTextureSet;
 struct RenderPrimitiveMeshSet;
-struct RenderSettings;
 }  // namespace rb4
 
 // Startup options copied into the device by Init. The game builds them in
@@ -146,9 +146,9 @@ public:
     long mGpuTotalStat;
     float mFrameRate;
     float mSmoothedFrameRate;
-    rb4::RenderSettings* mSettings;
+    RndConfig* mSettings;
     RndFactory* mFactory;
-    rb4::RenderPlatformConfig mPlatformConfigs[13];
+    RndCapabilities mCapabilities[13];
     RndDefaults mDefaults;
     RndShaderMgr mShaderMgr;
     RndLightGlobals mLighting;
@@ -186,7 +186,7 @@ static_assert(offsetof(RndDevice, mGpuTotalStat) == 280);
 static_assert(offsetof(RndDevice, mFrameRate) == 288);
 static_assert(offsetof(RndDevice, mSettings) == 296);
 static_assert(offsetof(RndDevice, mFactory) == 304);
-static_assert(offsetof(RndDevice, mPlatformConfigs) == 312);
+static_assert(offsetof(RndDevice, mCapabilities) == 312);
 static_assert(offsetof(RndDevice, mDefaults) == 1976);
 static_assert(offsetof(RndDevice, mShaderMgr) == 2544);
 static_assert(offsetof(RndDevice, mLighting) == 3256);

@@ -1,7 +1,7 @@
 #include "render/core/capture/screenshot_capture.h"
 
 #include "render/core/capture/screenshot_capture_adapters.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 
 namespace rb4 {
@@ -115,7 +115,7 @@ void screenshot_capture_current_frame() {
     if (owner != nullptr) {
         screenshot_capture_frame(
             *owner,
-            system->mSettings->screenshot_resolution);
+            system->mSettings->mScreenshotResolution);
     }
 }
 

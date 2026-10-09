@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "render/core/capture/screenshot_capture.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/shaders/RndShaderMgr.h"
 
@@ -14,7 +14,7 @@ RndDevice& render_system() {
     return *TheRndDevice();
 }
 
-rb4::RenderSettings& render_settings() {
+RndConfig& render_settings() {
     return *render_system().mSettings;
 }
 
@@ -26,32 +26,32 @@ void toggle(bool& value) {
 
 // Reconstructed from eboot.elf at 0x6BA880.
 void RndCommands::_OnToggleVSync() {
-    toggle(render_settings().vsync_enabled);
+    toggle(render_settings().mVSyncEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA8B0.
 void RndCommands::_OnToggleSceneMask() {
-    toggle(render_settings().scene_mask_enabled);
+    toggle(render_settings().mSceneMaskEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA8E0.
 void RndCommands::_OnToggleShadows() {
-    toggle(render_settings().shadows_enabled);
+    toggle(render_settings().mShadowsEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA910.
 void RndCommands::_OnTogglePostProc() {
-    toggle(render_settings().postproc_enabled);
+    toggle(render_settings().mPostProcEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA940.
 void RndCommands::_OnToggleToneMapping() {
-    toggle(render_settings().tonemapping_enabled);
+    toggle(render_settings().mTonemappingEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA970.
 void RndCommands::_OnToggleVScat() {
-    toggle(render_settings().volumetric_scattering_enabled);
+    toggle(render_settings().mVolumetricScatteringEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BA590.
@@ -61,40 +61,40 @@ void RndCommands::_OnReloadShaders() {
 
 // Reconstructed from eboot.elf at 0x6BAA40.
 void RndCommands::_OnToggleMultithreadedRendering() {
-    toggle(render_settings().multithreaded_rendering_enabled);
+    toggle(render_settings().mMultithreadedRenderingEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BAA70.
 void RndCommands::_OnToggleAsyncCompute() {
-    toggle(render_settings().async_compute_enabled);
+    toggle(render_settings().mAsyncComputeEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BAAA0.
 void RndCommands::_OnToggleAsyncCopy() {
-    toggle(render_settings().async_copy_enabled);
+    toggle(render_settings().mAsyncCopyEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BAAD0.
 void RndCommands::_OnToggleTiledLightInterpolation() {
-    toggle(render_settings().tiled_light_interpolation_enabled);
+    toggle(render_settings().mTiledLightInterpolationEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BAB00.
 void RndCommands::_OnTogglePartialFramerate() {
     auto& settings = render_settings();
-    settings.partial_framerate_enabled =
-        settings.max_partial_framerate_scenes != 0 &&
-        !settings.partial_framerate_enabled;
+    settings.mPartialFramerateEnabled =
+        settings.mMaxPartialFramerateScenes != 0 &&
+        !settings.mPartialFramerateEnabled;
 }
 
 // Reconstructed from eboot.elf at 0x6BAB40.
 void RndCommands::_OnToggleStereoOptimizations() {
-    toggle(render_settings().stereo_optimizations_enabled);
+    toggle(render_settings().mStereoOptimizationsEnabled);
 }
 
 // Reconstructed from eboot.elf at 0x6BAB70.
 void RndCommands::_OnToggle64BitLightAccum() {
-    toggle(render_settings().use_64_bit_light_accum);
+    toggle(render_settings().mUse64BitLightAccum);
 }
 
 // Reconstructed from eboot.elf at 0x6BABA0.
@@ -110,7 +110,7 @@ void RndCommands::_OnTakeScreenshot() {
 
 // Reconstructed from eboot.elf at 0x6BAC00.
 void RndCommands::_OnCycleScreenshotResolution() {
-    auto& resolution = render_settings().screenshot_resolution;
+    auto& resolution = render_settings().mScreenshotResolution;
     const auto next =
         (static_cast<std::uint32_t>(resolution) + 1) % 6;
     resolution = static_cast<rb4::ScreenshotResolution>(next);

@@ -11,8 +11,8 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
-#include "render/core/settings/render_settings.h"
-#include "render/core/platform/render_platform_config.h"
+#include "render/system/RndConfig.h"
+#include "render/system/RndCapabilities.h"
 #include "render/system/RndDevice.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureArray1D.h"
@@ -166,8 +166,8 @@ void Release(T*& object) {
 }
 
 bool supports_async_compute() {
-    const auto& platform = TheRndDevice()->mPlatformConfigs[kCurrentPlatformConfigIndex];
-    return (platform.feature_flags & kAsyncComputeFeature) != 0;
+    const auto& platform = TheRndDevice()->mCapabilities[kCurrentPlatformConfigIndex];
+    return (platform.mFeatureFlags & kAsyncComputeFeature) != 0;
 }
 
 }  // namespace
@@ -730,7 +730,7 @@ void RndShaderMgr::ReloadAll() {
     }
 
     const auto& settings = *TheRndDevice()->mSettings;
-    if (settings.max_partial_framerate_scenes != 0) {
+    if (settings.mMaxPartialFramerateScenes != 0) {
         return;
     }
 

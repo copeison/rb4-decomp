@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/settings/render_settings.h"
+#include "render/core/frame/render_extent.h"
 
 namespace rb4 {
 

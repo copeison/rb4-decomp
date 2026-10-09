@@ -11,7 +11,7 @@
 #include "utl/threading/Thread.h"
 #include "utl/time/Timer.h"
 #include "render/system/RndWindow.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
@@ -238,8 +238,7 @@ void orbis_process_end_of_pipe(
     scePthreadMutexUnlock(&system.mSubmitCritSec.mCritSec);
     system.mSubmitCondition.Signal();
 
-    const auto rate = render_settings_active_vsync_mode(
-        *system.mSettings);
+    const auto rate = system.mSettings->ActiveVSyncMode();
     if (rate != system.mFlipRate) {
         system.mFlipRate = rate;
         orbis_video_output_set_flip_rate(system, rate == 2);

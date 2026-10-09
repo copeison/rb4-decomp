@@ -1,6 +1,6 @@
 #include "render/postprocessing/blur/RndShaderBlur.h"
 
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -56,13 +56,13 @@ void RndShaderBlur::_InitConfigImpl(
     fixedDefines.Add(Symbol("HX_BLUR_TYPE_DEPTH_AWARE"), 1);
     fixedDefines.Add(Symbol("HX_BLUR_DIRECTION_HORIZONTAL"), 0);
     fixedDefines.Add(Symbol("HX_BLUR_DIRECTION_VERTICAL"), 1);
-    static const rb4::RenderSettings sDefaultSettings{};
     auto* device = TheRndDevice();
     const auto* settings = device != nullptr ? device->mSettings : nullptr;
     fixedDefines.Add(
         Symbol("HX_TILE_SIZE"),
         static_cast<int>(
-            (settings != nullptr ? *settings : sDefaultSettings).light_tile_size));
+            settings != nullptr ? settings->mLightTileSize
+                                : RndConfig::kDefaultLightTileSize));
 
     mArraySlice = cbuffer.AddConstant(kShaderNumericFloat, "gArraySlice");
     mBlurSampleOffsetsWeights = cbuffer.AddConstantArray(

@@ -1,6 +1,6 @@
 #include "render/lighting/volumetric/RndCShaderVScatCalcDensityInscattering.h"
 
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -8,13 +8,11 @@
 
 namespace {
 
-// The device's settings, or the defaults when there is no device or no
-// settings yet.
-const rb4::RenderSettings& CurrentSettings() {
-    static const rb4::RenderSettings sDefaultSettings{};
+// The device's settings, or null when there is no device or no settings
+// yet.
+const RndConfig* CurrentSettings() {
     auto* device = TheRndDevice();
-    const auto* settings = device != nullptr ? device->mSettings : nullptr;
-    return settings != nullptr ? *settings : sDefaultSettings;
+    return device != nullptr ? device->mSettings : nullptr;
 }
 
 }  // namespace
@@ -65,12 +63,17 @@ void RndCShaderVScatCalcDensityInscattering::_InitConfigImpl(
     RndShaderDefinesGroup& defines,
     RndShaderCBufferConfig& cbuffer,
     RndShaderResourceConfig& resources) {
-    const auto& settings = CurrentSettings();
+    const auto* settings = CurrentSettings();
     fixedDefines.Add(
-        Symbol("HX_TILE_SIZE"), static_cast<int>(settings.light_tile_size));
+        Symbol("HX_TILE_SIZE"),
+        static_cast<int>(
+            settings != nullptr ? settings->mLightTileSize
+                                : RndConfig::kDefaultLightTileSize));
     fixedDefines.Add(
         Symbol("HX_TILE_DEPTH_SLICES"),
-        static_cast<int>(settings.light_tile_depth_slices));
+        static_cast<int>(
+            settings != nullptr ? settings->mLightTileDepthSlices
+                                : RndConfig::kDefaultLightTileDepthSlices));
     fixedDefines.Add(Symbol("HX_SHADOW_CAST_CONTEXT_VOLUMETRIC"), 1);
 
     mBT709ToBT2020 = defines.GetDefines(kShaderProgramCompute)

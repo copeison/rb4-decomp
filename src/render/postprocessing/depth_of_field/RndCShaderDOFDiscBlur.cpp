@@ -1,6 +1,6 @@
 #include "render/postprocessing/depth_of_field/RndCShaderDOFDiscBlur.h"
 
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -80,7 +80,7 @@ void RndCShaderDOFDiscBlur::_InitConfigImpl(
     auto* device = TheRndDevice();
     const auto* settings = device != nullptr ? device->mSettings : nullptr;
     const int tileSize = settings != nullptr
-        ? static_cast<int>(settings->light_tile_size)
+        ? static_cast<int>(settings->mLightTileSize)
         : 32;
     fixedDefines.Add(Symbol("HX_MAX_RADIUS"), tileSize / 2);
     fixedDefines.Add(Symbol("HX_TILE_SIZE"), tileSize);

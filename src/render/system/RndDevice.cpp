@@ -6,8 +6,8 @@
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/context/RndContext.h"
 #include "render/context/RndResourceBarrier.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndWindow.h"
-#include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/targets/RndBufferCollection.h"
 #include "render/resources/audio/audio_analysis_textures.h"
@@ -45,7 +45,7 @@ void FinishBuiltinCBuffer(RndShaderCBuffer& buffer) {
 
 void UpdateFramePhase(const RndDevice& device) {
     render_frame_phase_callbacks(false);
-    if (device.mSettings->partial_framerate_enabled) {
+    if (device.mSettings->mPartialFramerateEnabled) {
         render_set_partial_frame_phase(device.mFrameCount & 1U);
     }
 }
@@ -111,26 +111,24 @@ RndDevice::RndDevice()
 
     for (const auto platform : render_supported_platform_ids()) {
         if (platform < kPlatformConfigCount) {
-            render_platform_config_initialize(
-                mPlatformConfigs[platform], platform);
+            mCapabilities[platform].InitForPlatform(
+                static_cast<HxPlatform>(platform));
         }
     }
 
     // The original calls this predicate for platform seven and ignores the
     // result.
-    render_platform_config_boot_probe(mPlatformConfigs[kCurrentPlatformConfig]);
+    mCapabilities[kCurrentPlatformConfig].CheckMinimumRequirements();
 
-    auto* settings = render_settings_allocate();
-    render_settings_initialize(*settings);
-    mSettings = settings;
+    mSettings = new RndConfig;
 }
 
 // Reconstructed from eboot.elf at 0x3DD790. The members with destructors
 // (the pending-free queue, the lighting globals, the default resources, the
-// platform configurations, the vectors, and the CritSecs) are destroyed after
+// capabilities, the vectors, and the CritSecs) are destroyed after
 // the body.
 RndDevice::~RndDevice() {
-    render_settings_release(mSettings);
+    delete mSettings;
     mSettings = nullptr;
 }
 

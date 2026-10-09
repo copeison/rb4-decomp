@@ -1,6 +1,6 @@
 #include "render/masking/RndShaderStencilSceneMask.h"
 
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"
@@ -25,13 +25,13 @@ void RndShaderStencilSceneMask::_InitConfigImpl(
     RndShaderDefinesGroup&,
     RndShaderCBufferConfig& cbuffer,
     RndShaderResourceConfig& resources) {
-    static const rb4::RenderSettings sDefaultSettings{};
     auto* device = TheRndDevice();
     const auto* settings = device != nullptr ? device->mSettings : nullptr;
     fixedDefines.Add(
         Symbol("HX_TILE_SIZE"),
         static_cast<int>(
-            (settings != nullptr ? *settings : sDefaultSettings).light_tile_size));
+            settings != nullptr ? settings->mLightTileSize
+                                : RndConfig::kDefaultLightTileSize));
 
     mUnrefinedMask = resources.AddTexture(
         "gUnrefinedMask",

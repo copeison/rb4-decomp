@@ -1,7 +1,7 @@
 #include "render/textures/RndTextureCube.h"
 
 #include "render/system/RndFactory.h"
-#include "render/core/settings/render_settings.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 
 // Reconstructed from eboot.elf at 0x6A1030.
@@ -18,7 +18,7 @@ RndTextureCube* RndTextureCube::New(Description& desc, const RndTextureCube* reu
         *TheRndDevice()->mSettings;
     if (texture->mBaseDesc.mFormat.mUsage != kTextureUsageTiledLighting ||
         (texture->mBaseDesc.mFormat.mFlags & 2U) != 0 ||
-        !settings.use_tiled_lighting) {
+        !settings.mUseTiledLighting) {
         texture->SyncStatic(reuse);
     }
     return texture;

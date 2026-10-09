@@ -44,7 +44,7 @@ bool data_format_supported(
     // The original indexes the device's platform configurations by the
     // resource class and reads their capability masks.
     const auto* supported_words =
-        TheRndDevice()->mPlatformConfigs[resource_class].capability_mask;
+        TheRndDevice()->mCapabilities[resource_class].mCapabilityMask;
     const auto format = static_cast<std::uint32_t>(data_format);
     return (supported_words[format >> 6] &
             (std::uint64_t{1} << (format & 63))) != 0;
