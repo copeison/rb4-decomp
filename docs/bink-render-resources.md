@@ -6,7 +6,7 @@ and the working-buffer count at `0x40`. Initialization configures five Bink
 working buffers and installs the engine allocation and file-I/O callbacks
 before publishing the global manager pointer.
 
-`bink_render_manager_prepare_frame` at `0x5F2B40` runs immediately after the
+`BinkRenderMgr::PrepareFrame` at `0x5F2B40` runs immediately after the
 audio-analysis texture update. It first prepares video state on the current
 render context, then walks the four conversion slots. A video object with its
 byte at offset `0x88` set enters `bink_video_convert_frame`; the manager clears

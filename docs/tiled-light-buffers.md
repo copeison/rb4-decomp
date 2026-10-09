@@ -1,6 +1,6 @@
 # Tiled-light buffers
 
-`render_tiled_light_buffers_initialize` at `0x48A400` creates the shared
+`RndLightMgrCom::_InitBuffers` at `0x48A400` creates the shared
 compute buffers used by tiled lighting when that renderer feature is enabled.
 The recovered settings capacities and exact element strides are:
 

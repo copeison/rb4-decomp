@@ -17,7 +17,7 @@ receives the 1,920 × 1,080 fallback, and the final list is sorted by width and
 then height.
 
 The supported IDs come from `platform_mgr.supported_platforms` through
-`render_supported_platform_ids` at `0x3641B0`. This explains why the renderer
+`GetSupportedPlatforms` at `0x3641B0`. This explains why the renderer
 constructs every fixed slot but populates only the platform configurations
 selected by data.
 

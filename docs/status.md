@@ -575,6 +575,13 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Name the main loop's calls from the map: `SystemInit`, `SystemPoll`,
+  `InitRBLayoutDefines`, `StagePresence::InitEnumMacros`, `SoundManager::Poll`,
+  `RBProfileMgr::Poll`, and `UIMgr::Poll`, `GetCurrentLayout` and `Draw`.
+- [x] Convert the remaining render helpers: `Vector2i` extents, `PlatformMgr`
+  and `HxPlatform`, the `RndPixelFormat` data-format table,
+  `RndPrimitiveMeshes`, `RndAudioTextures`, `BinkRenderMgr`, and the tiled
+  light buffers in `RndLightMgrCom`.
 - [x] Convert the render debug and shader helpers: `RndBufferInspection`,
   `ToString(RndUserShadingMode)`, `RndShaderIncludeChecksums`, `RndShaderUtl`,
   `RndShaderResource::Select`, and `RndShaderDrawUtl` for the inlined draw

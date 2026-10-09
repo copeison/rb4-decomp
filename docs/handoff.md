@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-conversion of the render debug and shader helpers to their original
-classes, the nineteenth step of the conversion to the reference map's original names, classes, and module
+conversion of the remaining render helpers and the naming of the main
+loop's calls, the twentieth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **141 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 661 entries, most of the
+executable. The latest unresolved-symbol report contains 664 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Render debug and shader helpers converted to `RndBufferInspection`, `RndShaderIncludeChecksums`, `RndShaderUtl`, `RndShaderDrawUtl` |
+| (this) | Remaining render helpers converted (`PlatformMgr`, `RndPixelFormat`, `RndPrimitiveMeshes`, `RndAudioTextures`, `BinkRenderMgr`, `RndLightMgrCom`); main-loop calls named from the map |
+| `072eb2a` | Render debug and shader helpers converted to `RndBufferInspection`, `RndShaderIncludeChecksums`, `RndShaderUtl`, `RndShaderDrawUtl` |
 | `cd781a8` | Game, input and UI code moved to `App`/`main`, `StagePresence`, `PembrokeGuitarController`, `UILayoutId` |
 | `0d6f812` | Remaining `src/render/core` and `src/render/resources` files moved into the `src/render` domains |
 | `8432703` | `src/render/platform/orbis` folded into `PS4Context`, `PS4Device`, `PS4Window`, `PS4MeshTyped`, `PS4RenderUtl` |

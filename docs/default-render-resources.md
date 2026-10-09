@@ -34,7 +34,7 @@ texture factories for every shape.
 
 `RndDefaults::Poll` at `0x6BFA00` forwards the resource poll to the
 primary scene and the separate lighting scene when present. The shared helper
-at `0xFD8B0` invokes virtual slot `0x90`; its use in `sound_manager_update` for
+at `0xFD8B0` invokes virtual slot `0x90`; its use in `SoundManager::Poll` for
 every active sound scene confirms that this is the normal per-frame resource
 poll rather than a renderer-only callback.
 
