@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/texture.h>
 
 #include "render/textures/RndTextureArray2D.h"
 
@@ -24,7 +25,7 @@ public:
     void _Slot20Impl() override;                                  // 0x8E64B0
 
     // Field names are not in the reference map.
-    void* mGpuTexture;
+    sce::Gnm::Texture* mGpuTexture;
     void* mStorage;
     void* mStencilStorage;
     void* mHtileStorage;

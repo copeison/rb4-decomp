@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/texture.h>
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
 
@@ -36,7 +37,7 @@ public:
     }
 
     // Field names are not in the reference map.
-    void* mGpuTexture;
+    sce::Gnm::Texture* mGpuTexture;
     void* mStorage;
     void* mStorage2;
     sce::Gnm::RenderTarget* mRenderTarget;

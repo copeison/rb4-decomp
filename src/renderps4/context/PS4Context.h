@@ -6,6 +6,7 @@
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
 #include <gnm/sampler.h>
+#include <gnm/texture.h>
 #include <gnmx/computecontext.h>
 #include <gnmx/gfxcontext.h>
 
@@ -154,10 +155,10 @@ public:
     // Texture bindings for PS4RenderUtl's stage selects. Names not in the
     // reference map; not yet reconstructed.
     bool _UsesComputeQueue() const;
-    void _BindGraphicsTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, const void* texture);
-    void _BindGraphicsRwTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, const void* texture);
-    void _BindComputeTexture(std::uint32_t slot, const void* texture);
-    void _BindComputeRwTexture(std::uint32_t slot, const void* texture);
+    void _BindGraphicsTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, sce::Gnm::Texture* texture);
+    void _BindGraphicsRwTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, sce::Gnm::Texture* texture);
+    void _BindComputeTexture(std::uint32_t slot, sce::Gnm::Texture* texture);
+    void _BindComputeRwTexture(std::uint32_t slot, sce::Gnm::Texture* texture);
     void _BindGraphicsTextureSampler(
         sce::Gnm::ShaderStage stage,
         std::uint32_t slot,

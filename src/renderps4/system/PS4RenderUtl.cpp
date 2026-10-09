@@ -110,7 +110,7 @@ void SelectSampledTexture(
     RndContext& context,
     sce::Gnm::ShaderStage stage,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
@@ -206,7 +206,7 @@ void PS4RenderUtl::InitializeInstanceBuffer(
 void PS4RenderUtl::SelectTextureForVS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter) {
     SelectSampledTexture(
@@ -217,7 +217,7 @@ void PS4RenderUtl::SelectTextureForVS(
 void PS4RenderUtl::SelectTextureForHS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
@@ -230,7 +230,7 @@ void PS4RenderUtl::SelectTextureForHS(
 void PS4RenderUtl::SelectTextureForDS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
@@ -242,7 +242,7 @@ void PS4RenderUtl::SelectTextureForDS(
 void PS4RenderUtl::SelectTextureForGS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
@@ -254,7 +254,7 @@ void PS4RenderUtl::SelectTextureForGS(
 void PS4RenderUtl::SelectTextureForPS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
@@ -271,7 +271,7 @@ void PS4RenderUtl::SelectTextureForPS(
 void PS4RenderUtl::SelectTextureForCS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {

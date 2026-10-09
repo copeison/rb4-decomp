@@ -40,6 +40,26 @@ PS4Texture2D::~PS4Texture2D() {
     mStorageRegions = nullptr;
 }
 
+// Inlined into every stage select (0x8D6E40-0x8D713F). The stencil-plane
+// view is chosen by flag; a render target follows the main window's
+// presented buffer when it has a target for it, and other textures follow
+// their active storage.
+sce::Gnm::Texture* PS4Texture2D::SelectView(unsigned int flags) const {
+    if ((flags & PS4RenderUtl::kSelectStencilPlane) != 0) {
+        return mPlaneTexture;
+    }
+    unsigned long index;
+    if (mRenderTargets[0] != nullptr) {
+        index = static_cast<PS4Window*>(gPS4Device->mMainWindow)->mActiveBuffer;
+        if (mRenderTargets[index] == nullptr) {
+            index = 0;
+        }
+    } else {
+        index = mActiveStorage;
+    }
+    return mGpuTextures[index];
+}
+
 // Reconstructed from eboot.elf at 0x8D6E40.
 void PS4Texture2D::_SelectForVSImpl(RndContext& context, unsigned long slot, unsigned int flags) {
     PS4RenderUtl::SelectTextureForVS(

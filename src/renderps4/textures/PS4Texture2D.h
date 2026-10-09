@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/texture.h>
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
 
@@ -49,8 +50,9 @@ public:
     };
 
     // Field names are not in the reference map.
-    void* mGpuTextures[2];
-    void* mPlaneTexture;
+    sce::Gnm::Texture* mGpuTextures[2];
+    // View of a depth target's stencil plane. Name not in the reference map.
+    sce::Gnm::Texture* mPlaneTexture;
     SurfaceSize mDepthSize;
     SurfaceSize mStencilSize;
     SurfaceSize mHtileSize;
@@ -66,13 +68,13 @@ private:
     // Map names; this build's signatures differ. Not yet reconstructed.
     void _SyncDepthStencil();                             // 0x8D6480
     void _SyncRegular(const RndTextureBase* reuse);       // 0x8D6850
-    // Stand-ins for code inlined into the destructor, the dynamic sync, and
-    // the stage selects; not yet reconstructed. Names not in the reference
-    // map.
+    // Stand-ins for code inlined into the destructor and the dynamic sync;
+    // not yet reconstructed. Names not in the reference map.
     static void ReleaseStorage(void* control);
     void FlipStorage();
     void UploadMips();
-    const void* SelectView(unsigned int flags) const;
+    // Inlined into the stage selects. Name not in the reference map.
+    sce::Gnm::Texture* SelectView(unsigned int flags) const;
 };
 
 static_assert(offsetof(PS4Texture2D, mGpuTextures) == 408);

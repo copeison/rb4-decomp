@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gnm/buffer.h>
+#include <gnm/texture.h>
 
 class RndContext;
 class RndVertexInterpreter;
@@ -45,27 +46,27 @@ void InitializeInstanceBuffer(
 void SelectTextureForVS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter);                 // 0x8E1EE0
 void SelectTextureForHS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags);                  // 0x8E1F90
 void SelectTextureForDS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags);                  // 0x8E2040
 void SelectTextureForGS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags);                  // 0x8E20F0
@@ -73,7 +74,7 @@ void SelectTextureForGS(
 void SelectTextureForPS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags);                  // 0x8E21A0
@@ -81,13 +82,15 @@ void SelectTextureForPS(
 void SelectTextureForCS(
     RndContext& context,
     unsigned long slot,
-    const void* texture,
+    sce::Gnm::Texture* texture,
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags);                  // 0x8E2290
 
 // Flags understood by the selects. Names not in the reference map.
 constexpr unsigned int kSelectWritable = 1U << 0;
+// Binds a depth texture's stencil plane.
+constexpr unsigned int kSelectStencilPlane = 1U << 2;
 constexpr unsigned int kSelectNoSampler = 1U << 4;
 
 }  // namespace PS4RenderUtl

@@ -326,10 +326,14 @@ unsigned long RndPixelData::GetTotalBytes() const {
     return bytes;
 }
 
+// Reconstructed from eboot.elf at 0x6832D0. Counts the levels after this one,
+// so a texture without mips reports zero.
 unsigned long RndPixelData::GetNumMips() const {
-    unsigned long count = 0;
-    for (auto* level = this; level != nullptr; level = level->mMip) {
+    unsigned long count = static_cast<unsigned long>(-1);
+    const auto* level = this;
+    do {
+        level = level->mMip;
         ++count;
-    }
+    } while (level != nullptr);
     return count;
 }

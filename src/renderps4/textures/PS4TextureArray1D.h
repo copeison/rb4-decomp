@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/texture.h>
 
 #include "render/textures/RndTextureArray1D.h"
 
@@ -23,7 +24,7 @@ public:
     void _SyncFromGpuImpl(RndContext& context) override;          // 0x8E5C30
     void _Slot20Impl() override;                                  // 0x8E5C40
 
-    void* mGpuTexture;  // Name not in the reference map.
+    sce::Gnm::Texture* mGpuTexture;  // Name not in the reference map.
     void* mStorage;     // Name not in the reference map.
 };
 
