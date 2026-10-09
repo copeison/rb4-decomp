@@ -70,6 +70,9 @@ void PS4TextureCube::_SelectForCSImpl(RndContext& context, unsigned long slot, u
         context, slot, mGpuTexture, WrapMode(), FilterMode(), flags);
 }
 
+// Reconstructed from eboot.elf at 0x8E7170.
+void PS4TextureCube::_SyncDynamicImpl(RndContext&) {}
+
 // Reconstructed from eboot.elf at 0x8E7180.
 void PS4TextureCube::_SyncFromGpuImpl(RndContext&) {}
 

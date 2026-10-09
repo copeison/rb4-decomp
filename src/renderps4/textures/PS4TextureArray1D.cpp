@@ -56,6 +56,9 @@ void PS4TextureArray1D::_SelectForCSImpl(RndContext& context, unsigned long slot
         context, slot, mGpuTexture, WrapMode(), FilterMode(), flags);
 }
 
+// Reconstructed from eboot.elf at 0x8E5C20.
+void PS4TextureArray1D::_SyncDynamicImpl(RndContext&) {}
+
 // Reconstructed from eboot.elf at 0x8E5C30.
 void PS4TextureArray1D::_SyncFromGpuImpl(RndContext&) {}
 
