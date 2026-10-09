@@ -156,8 +156,8 @@ bool App::RunOneFrame() {
     if (layout != nullptr && ui_layout_consume_skip_frame(*layout)) {
         TheRndDevice()->ForceIncrementFrameCount();
     } else {
-        if (rb4::screenshot_capture_pending()) {
-            rb4::screenshot_capture_frame(
+        if (screenshot_capture_pending()) {
+            screenshot_capture_frame(
                 *TheRndDevice()->mMainWindow,
                 TheRndDevice()->mSettings->mScreenshotResolution,
                 [] { theUI->Draw(); });

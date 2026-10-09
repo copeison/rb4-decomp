@@ -128,8 +128,8 @@ public:
     RndSceneResource* mLightingResource;
     RndSceneSettingsCom* mSceneSettings;
     RndLightProbeCom* mLightProbe;
-    std::vector<rb4::RndObjectId> mDirectionalLights;
-    std::vector<rb4::RndObjectId> mShadowedSpotLights;
+    std::vector<RndObjectId> mDirectionalLights;
+    std::vector<RndObjectId> mShadowedSpotLights;
     RndDefaultLightingType mLightingType;
     float mLightingScale;
 };

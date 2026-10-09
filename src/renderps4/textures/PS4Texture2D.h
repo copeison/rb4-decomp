@@ -1,15 +1,12 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/depthrendertarget.h>
+#include <gnm/rendertarget.h>
 
 #include "render/textures/RndTexture2D.h"
 
 class RndContext;
-
-namespace rb4 {
-struct OrbisGpuDepthRenderTarget;
-struct OrbisGpuRenderTarget;
-}  // namespace rb4
 
 // The vtable is at 0x195EC70.
 class PS4Texture2D : public RndTexture2D {
@@ -32,9 +29,9 @@ public:
 
     // Reconstructed from eboot.elf at 0x8D71E0: the active frame's target,
     // falling back to the first. Name from the map's GetRenderTarget.
-    const rb4::OrbisGpuRenderTarget* GetRenderTarget() const;
+    const sce::Gnm::RenderTarget* GetRenderTarget() const;
     // Reconstructed from eboot.elf at 0x8D7240.
-    const rb4::OrbisGpuDepthRenderTarget* GetDepthStencilTarget() const {
+    const sce::Gnm::DepthRenderTarget* GetDepthStencilTarget() const {
         return mDepthTarget;
     }
     // Presentation counts per back buffer. Names not in the reference map.
@@ -61,8 +58,8 @@ public:
     void* mStorageRegions;
     void* mStorageControl;
     unsigned char mUnknown480[8];
-    rb4::OrbisGpuRenderTarget* mRenderTargets[2];
-    rb4::OrbisGpuDepthRenderTarget* mDepthTarget;
+    sce::Gnm::RenderTarget* mRenderTargets[2];
+    sce::Gnm::DepthRenderTarget* mDepthTarget;
     int* mPendingPresentations;
 
 private:

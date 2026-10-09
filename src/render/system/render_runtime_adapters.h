@@ -14,8 +14,6 @@ class RndScene;
 class RndSceneResource;
 class RndSceneSettingsCom;
 
-namespace rb4 {
-
 using RndObjectId = std::uint32_t;
 
 enum class RndMaterialSharingType : std::int32_t {
@@ -24,8 +22,10 @@ enum class RndMaterialSharingType : std::int32_t {
     kUnique = 2,
 };
 
-// Values confirmed from the material blend-mode metadata table.
-enum class RndMaterialBlendMode : std::int32_t {
+// Values confirmed from the material blend-mode metadata table. The map names
+// the type (PS4Context::_SetBlendModeImpl, RndMaterialCom::SetBlendMode); the
+// enumerator names are not in the reference map.
+enum class RndBlendMode : std::int32_t {
     kSourceAlpha = 0,
     kSourceAlphaAdd = 1,
     kPremultipliedAlpha = 2,
@@ -86,7 +86,5 @@ void rnd_material_set_sharing_type(
     RndMaterialSharingType sharing_type);
 void rnd_material_set_blend_mode(
     RndMaterial& material,
-    RndMaterialBlendMode blend_mode);
+    RndBlendMode blend_mode);
 void rnd_material_set_shader_graph(RndMaterial& material, const char* path);
-
-}  // namespace rb4

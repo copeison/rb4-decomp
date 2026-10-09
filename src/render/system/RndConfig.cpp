@@ -10,8 +10,6 @@
 #include "render/system/rnd_config_adapters.h"
 #include "os/platform/platform_adapters.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr std::size_t kCurrentPlatformConfigIndex = 7;

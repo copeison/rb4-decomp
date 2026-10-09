@@ -16,8 +16,6 @@
 #include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr unsigned long kCBufferSlot = 8;

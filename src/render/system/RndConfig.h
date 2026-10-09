@@ -84,8 +84,8 @@ public:
     bool mPartialFramerateEnabled = false;
     bool mStereoOptimizationsEnabled = true;
     std::uint8_t mReserved182[2]{};
-    rb4::ScreenshotResolution mScreenshotResolution =
-        rb4::ScreenshotResolution::kCurrent;
+    ScreenshotResolution mScreenshotResolution =
+        ScreenshotResolution::kCurrent;
     std::uint8_t mReserved188[4]{};
 
     std::int64_t mMaxGeoOverdraw = 10;

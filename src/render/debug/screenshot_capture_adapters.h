@@ -4,8 +4,6 @@
 
 #include "render/debug/screenshot_capture.h"
 
-namespace rb4 {
-
 struct ScreenshotRenderTarget;
 
 ScreenshotRenderTarget* screenshot_recreate_render_target(
@@ -19,5 +17,3 @@ void screenshot_bind_render_target(
 void screenshot_submit_render_target(ScreenshotRenderTarget& target);
 void screenshot_copy_render_target_to_readback(ScreenshotRenderTarget& target);
 void screenshot_write_readback_png(const char* path);
-
-}  // namespace rb4

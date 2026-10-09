@@ -5,8 +5,6 @@
 #include "os/platform/platform_adapters.h"
 #include "render/system/RndConfig.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr Vector2i kFallbackResolution{1920, 1080};

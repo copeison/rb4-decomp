@@ -33,8 +33,6 @@ std::int32_t sceGnmSubmitDone();
 
 }
 
-using namespace rb4;
-
 PS4Device* gPS4Device = nullptr;
 
 // State the submit-done thread keeps across events. Name not in the reference

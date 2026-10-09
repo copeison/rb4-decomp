@@ -4,8 +4,6 @@
 
 #include "math/vector/Vector2i.h"
 
-namespace rb4 {
-
 struct DataConfig;
 
 const DataConfig* load_data_config(const char* name);
@@ -27,5 +25,3 @@ const DataConfig* config_find_block(
 const char* config_read_string(
     const DataConfig& config,
     const char* key);
-
-}  // namespace rb4

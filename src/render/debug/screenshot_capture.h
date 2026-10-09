@@ -5,8 +5,7 @@
 
 #include "render/system/RndWindow.h"
 
-namespace rb4 {
-
+// Screenshot capture. Names not in the reference map.
 enum class ScreenshotResolution : std::uint32_t {
     kCurrent = 0,
     k720p = 1,
@@ -30,5 +29,3 @@ void screenshot_capture_to_file(
     std::uint32_t shading_mode,
     std::uint32_t inspection_mode,
     std::function<void()> render);  // 0x43B240
-
-}  // namespace rb4
