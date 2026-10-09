@@ -4,8 +4,6 @@
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 
-namespace rb4 {
-
 namespace {
 
 constexpr const char* kScreenshotTargetName = "Screenshot";
@@ -116,5 +114,3 @@ void screenshot_capture_to_file(
     screenshot_copy_render_target_to_readback(*g_screenshot_target);
     screenshot_write_readback_png(kScreenshotPath);
 }
-
-}  // namespace rb4

@@ -32,6 +32,6 @@ const char* GfxApiSymbol(HxGfxApi api) {
 
 // Reconstructed from eboot.elf at 0x3641B0.
 std::vector<std::uint32_t> GetSupportedPlatforms() {
-    return rb4::render_configured_supported_platform_ids(
+    return render_configured_supported_platform_ids(
         "platform_mgr", "supported_platforms");
 }

@@ -105,7 +105,7 @@ void RndCommands::_OnToggleHdr() {
 
 // Reconstructed from eboot.elf at 0x6BABD0.
 void RndCommands::_OnTakeScreenshot() {
-    rb4::screenshot_request();
+    screenshot_request();
 }
 
 // Reconstructed from eboot.elf at 0x6BAC00.
@@ -113,8 +113,8 @@ void RndCommands::_OnCycleScreenshotResolution() {
     auto& resolution = render_settings().mScreenshotResolution;
     const auto next =
         (static_cast<std::uint32_t>(resolution) + 1) % 6;
-    resolution = static_cast<rb4::ScreenshotResolution>(next);
-    static_cast<void>(rb4::screenshot_resolution_name(resolution));
+    resolution = static_cast<ScreenshotResolution>(next);
+    static_cast<void>(screenshot_resolution_name(resolution));
 }
 
 namespace {

@@ -11,9 +11,7 @@ class RndComputeBuffer;
 class RndFence;
 class RndShaderCBuffer;
 
-namespace rb4 {
-enum class RndMaterialBlendMode : std::int32_t;
-}  // namespace rb4
+enum class RndBlendMode : std::int32_t;
 
 struct RndResourceBarrier;
 
@@ -92,7 +90,7 @@ public:
     virtual void _BeginFrameImpl();                       // 0x6BDA80
     virtual void _SetRenderTargetsImpl(int mode, const RenderTargetParams& params) = 0;
     virtual void _SetBlendModeImpl(
-        rb4::RndMaterialBlendMode mode,
+        RndBlendMode mode,
         const BlendParams& params) = 0;
     // The map types the parameter as RndDepthMode.
     virtual void _SetDepthModeImpl(unsigned int mode) = 0;

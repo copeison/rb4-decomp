@@ -56,8 +56,6 @@
 #include "render/shaders/RndShaderBasic.h"
 #include "render/shaders/RndShaderError.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr std::ptrdiff_t kSecondaryShaderDirtyOffset = -395;

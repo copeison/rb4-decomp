@@ -16,8 +16,6 @@
 #include "render/video/BinkRenderMgr.h"
 #include "utl/time/Timer.h"
 
-using namespace rb4;
-
 RndDevice* gRndDevice = nullptr;
 
 namespace {

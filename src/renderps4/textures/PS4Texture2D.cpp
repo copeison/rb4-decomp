@@ -1,7 +1,6 @@
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/system/PS4Device.h"
-#include "renderps4/video/OrbisGpuRenderTarget.h"
 #include "renderps4/video/PS4Window.h"
 
 // Reconstructed from eboot.elf at 0x8D62C0.
@@ -100,7 +99,7 @@ void PS4Texture2D::_SyncDynamicImpl(RndContext&) {
     UploadMips();
 }
 
-const rb4::OrbisGpuRenderTarget* PS4Texture2D::GetRenderTarget() const {
+const sce::Gnm::RenderTarget* PS4Texture2D::GetRenderTarget() const {
     const auto frame =
         static_cast<const PS4Window*>(gPS4Device->mMainWindow)->mActiveBuffer;
     auto* target = mRenderTargets[frame];

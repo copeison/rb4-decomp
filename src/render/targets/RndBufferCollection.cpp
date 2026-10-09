@@ -12,8 +12,6 @@
 #include "render/textures/RndTexture3D.h"
 #include "render/textures/RndTextureBase.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr unsigned long kBufferCapacity = 38;

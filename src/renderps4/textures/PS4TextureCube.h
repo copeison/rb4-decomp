@@ -1,15 +1,12 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/depthrendertarget.h>
+#include <gnm/rendertarget.h>
 
 #include "render/textures/RndTextureCube.h"
 
 class RndContext;
-
-namespace rb4 {
-struct OrbisGpuDepthRenderTarget;
-struct OrbisGpuRenderTarget;
-}  // namespace rb4
 
 // The vtable is at 0x195FCF8.
 class PS4TextureCube : public RndTextureCube {
@@ -31,10 +28,10 @@ public:
     void _Slot20Impl() override;                                  // 0x8E7190
 
     // Reconstructed from eboot.elf at 0x8E7270 and 0x8E7280.
-    const rb4::OrbisGpuRenderTarget* GetRenderTarget() const {
+    const sce::Gnm::RenderTarget* GetRenderTarget() const {
         return mRenderTarget;
     }
-    const rb4::OrbisGpuDepthRenderTarget* GetDepthStencilTarget() const {
+    const sce::Gnm::DepthRenderTarget* GetDepthStencilTarget() const {
         return mDepthTarget;
     }
 
@@ -42,16 +39,16 @@ public:
     void* mGpuTexture;
     void* mStorage;
     void* mStorage2;
-    rb4::OrbisGpuRenderTarget* mRenderTarget;
-    rb4::OrbisGpuDepthRenderTarget* mDepthTarget;
+    sce::Gnm::RenderTarget* mRenderTarget;
+    sce::Gnm::DepthRenderTarget* mDepthTarget;
 
 private:
     // Stand-ins for code inlined into _SyncStaticImpl and the destructor; not
     // yet reconstructed. Names not in the reference map.
     void _SyncDepthStencil();
     void _SyncRegular();
-    static void* TargetMetadata(const rb4::OrbisGpuRenderTarget& target);
-    static void* TargetSurface(const rb4::OrbisGpuRenderTarget& target);
+    static void* TargetMetadata(const sce::Gnm::RenderTarget& target);
+    static void* TargetSurface(const sce::Gnm::RenderTarget& target);
 };
 
 static_assert(offsetof(PS4TextureCube, mGpuTexture) == 792);

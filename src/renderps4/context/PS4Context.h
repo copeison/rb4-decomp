@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <gnm/buffer.h>
+#include <gnm/depthrendertarget.h>
+#include <gnm/rendertarget.h>
 #include <gnm/sampler.h>
 #include <gnmx/gfxcontext.h>
 
@@ -11,11 +13,6 @@
 #include "renderps4/context/PS4RenderStateUtl.h"
 
 class PS4Device;
-
-namespace rb4 {
-struct OrbisGpuDepthRenderTarget;
-struct OrbisGpuRenderTarget;
-}  // namespace rb4
 
 // PS4 context: two graphics contexts, compute queues, transient vertex
 // buffers, and submission state. The vtable is at 0x195FDB0.
@@ -75,7 +72,7 @@ public:
     void _BeginFrameImpl() override;                            // 0x8E8850
     void _SetRenderTargetsImpl(int mode, const RenderTargetParams& params) override;  // 0x8E8D20
     void _SetBlendModeImpl(
-        rb4::RndMaterialBlendMode mode,
+        RndBlendMode mode,
         const BlendParams& params) override;                    // 0x8E92D0
     void _SetDepthModeImpl(unsigned int mode) override;         // 0x8E9F60
     void _SetStencilModeImpl(
@@ -142,7 +139,7 @@ public:
     // The map has _ClearDepthStencil(float, unsigned char); this build also
     // passes the depth target and returns whether HTILE was cleared.
     bool _ClearDepthStencil(
-        const rb4::OrbisGpuDepthRenderTarget& target,
+        const sce::Gnm::DepthRenderTarget& target,
         float depth,
         unsigned char stencil);  // 0x8E99E0
     void _FlushClear();          // 0x8EBDA0
@@ -217,13 +214,13 @@ private:
     // Pipeline state. _SyncDepthStencilControl and _SyncPrimitiveSetup are
     // map names; the others are not in the reference map. Not yet
     // reconstructed.
-    void _BindColorTarget(std::size_t slot, const rb4::OrbisGpuRenderTarget* target);
-    void _BindDepthTarget(const rb4::OrbisGpuDepthRenderTarget* target);
+    void _BindColorTarget(std::size_t slot, const sce::Gnm::RenderTarget* target);
+    void _BindDepthTarget(const sce::Gnm::DepthRenderTarget* target);
     void _SetViewportAndScissor(const ViewportRect& viewport);
     void _BeginRenderTargetSync();
     void _PrepareColorTarget(const RenderTargetParams& params, std::size_t slot);
     bool _PrepareDepthTarget(
-        const rb4::OrbisGpuDepthRenderTarget& target,
+        const sce::Gnm::DepthRenderTarget& target,
         const RenderTargetParams& params);
     void _FinishRenderTargetSync();
     void _SetGnmBlendControl(std::size_t targetSlot, std::uint32_t blendControl);

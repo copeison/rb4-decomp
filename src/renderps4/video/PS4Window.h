@@ -1,12 +1,29 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <gnm/dataformats.h>
+#include <gnm/gpumem.h>
+#include <gnm/rendertarget.h>
 
 #include "render/system/RndWindow.h"
-#include "renderps4/video/OrbisGpuRenderTarget.h"
 
 class PS4Device;
 class PS4Texture2D;
+
+// Back-buffer surface parameters passed from _BackBufferSpecification to
+// _InitRenderTarget. Declared only; it is narrower than the SDK's
+// sce::Gnm::RenderTargetSpec. Name not in the reference map.
+struct OrbisBackBufferSpecification {
+    std::uint32_t mWidth;
+    std::uint32_t mHeight;
+    sce::Gnm::DataFormat mDataFormat;
+    std::uint32_t mTileMode;
+    std::uint32_t mGpuMode;
+};
+
+// The back buffers are 64-byte Gnm render-target register blocks.
+static_assert(sizeof(sce::Gnm::RenderTarget) == 64);
 
 // The PS4 main window: two video-out back buffers wrapped in one texture
 // and presented alternately. The vtable is at 0x195F708.
@@ -24,29 +41,29 @@ public:
     void _InitBuffers();
 
     // Back-buffer helpers, declared only. Names not in the reference map.
-    static rb4::OrbisBackBufferSpecification _BackBufferSpecification(
+    static OrbisBackBufferSpecification _BackBufferSpecification(
         const PS4Device& device,
-        rb4::OrbisBackBufferDataFormat dataFormat);
+        sce::Gnm::DataFormat dataFormat);
     static void _InitRenderTarget(
-        rb4::OrbisGpuRenderTarget& target,
-        const rb4::OrbisBackBufferSpecification& specification);
-    static rb4::OrbisSizeAlign _RenderTargetSizeAlign(
-        const rb4::OrbisGpuRenderTarget& target);
+        sce::Gnm::RenderTarget& target,
+        const OrbisBackBufferSpecification& specification);
+    static sce::Gnm::SizeAlign _RenderTargetSizeAlign(
+        const sce::Gnm::RenderTarget& target);
     static void* _AllocateBackBuffer(
         std::size_t size,
         const char* name,
         std::size_t alignment);
     static void _SetRenderTargetStorage(
-        rb4::OrbisGpuRenderTarget& target,
+        sce::Gnm::RenderTarget& target,
         void* allocation);
-    static void _DisableAuxiliarySurfaces(rb4::OrbisGpuRenderTarget& target);
+    static void _DisableAuxiliarySurfaces(sce::Gnm::RenderTarget& target);
     static PS4Texture2D* _WrapBackBufferTextures(
-        rb4::OrbisGpuRenderTarget* targets,
+        sce::Gnm::RenderTarget* targets,
         std::size_t targetCount);
     void _AttachBackBufferTexture(PS4Texture2D& texture);
     static void _RegisterBackBuffers(
         PS4Device& device,
-        const rb4::OrbisGpuRenderTarget* targets,
+        const sce::Gnm::RenderTarget* targets,
         std::size_t targetCount);
 
     unsigned long mActiveBuffer;  // Name not in the reference map.

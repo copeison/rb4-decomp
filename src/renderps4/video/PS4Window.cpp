@@ -4,8 +4,6 @@
 
 #include "renderps4/system/PS4Device.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr std::size_t kBackBufferCount = 2;
@@ -26,15 +24,15 @@ PS4Window::PS4Window()
 void PS4Window::_InitBuffers() {
     auto& device = *gPS4Device;
     const auto specification = _BackBufferSpecification(
-        device, OrbisBackBufferDataFormat::kB8G8R8A8Srgb);
-    OrbisGpuRenderTarget targets[kBackBufferCount] = {};
+        device, sce::Gnm::kDataFormatB8G8R8A8UnormSrgb);
+    sce::Gnm::RenderTarget targets[kBackBufferCount] = {};
     for (auto& target : targets) {
         _InitRenderTarget(target, specification);
         const auto sizeAlign = _RenderTargetSizeAlign(target);
-        const auto alignment =
-            std::max(sizeAlign.alignment, kMinimumBackBufferAlignment);
+        const auto alignment = std::max<std::size_t>(
+            sizeAlign.m_align, kMinimumBackBufferAlignment);
         auto* storage = _AllocateBackBuffer(
-            sizeAlign.size, kBackBufferAllocationName, alignment);
+            sizeAlign.m_size, kBackBufferAllocationName, alignment);
         _SetRenderTargetStorage(target, storage);
         _DisableAuxiliarySurfaces(target);
     }

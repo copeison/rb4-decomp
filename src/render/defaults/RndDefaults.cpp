@@ -20,8 +20,6 @@
 #include "render/textures/RndTextureCube.h"
 #include "utl/containers/Std.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr const char* kDefaultComputeBufferName = "Default Compute Buffer";
@@ -278,7 +276,7 @@ RndMaterial* CreateDefaultMaterial(
     RndScene& scene,
     const char* objectName,
     const char* shaderGraph,
-    RndMaterialBlendMode blendMode) {
+    RndBlendMode blendMode) {
     auto* material = CreateMaterialObject(scene, objectName);
     if (material != nullptr) {
         rnd_material_set_blend_mode(*material, blendMode);
@@ -423,7 +421,7 @@ void RndDefaults::_CreateMaterials(RndScene& scene) {
         scene,
         "default_mat_add",
         kDefaultUnlitShader,
-        RndMaterialBlendMode::kAdd);
+        RndBlendMode::kAdd);
     mLitMaterial = CreateDefaultMaterial(
         scene, "default_mat_lit", kDefaultLitShader);
     mTextMaterial = CreateDefaultMaterial(
@@ -432,12 +430,12 @@ void RndDefaults::_CreateMaterials(RndScene& scene) {
         scene,
         "default_particle_mat",
         kDefaultParticleShader,
-        RndMaterialBlendMode::kAdd);
+        RndBlendMode::kAdd);
     mDecalMaterial = CreateDefaultMaterial(
         scene,
         "default_decal_mat",
         kDefaultDecalShader,
-        RndMaterialBlendMode::kSource);
+        RndBlendMode::kSource);
 }
 
 // Reconstructed from eboot.elf at 0x6BEF40.

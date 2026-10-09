@@ -17,21 +17,17 @@
 #include "renderps4/system/PS4Fence.h"
 #include "renderps4/system/PS4RenderUtl.h"
 
-using namespace rb4;
-
-namespace rb4 {
-
 // Render-target and depth-target queries the context uses. They have no
-// original home yet; not yet reconstructed.
+// original home yet; not yet reconstructed. Names not in the reference map.
 const RndContext::RenderTargetParams& orbis_default_render_target_binding();
 const RndContext::BlendParams& orbis_default_blend_configuration();
 std::size_t orbis_render_target_color_count(
     const RndContext::RenderTargetParams& binding);
-const OrbisGpuRenderTarget* orbis_resolve_color_render_target(
+const sce::Gnm::RenderTarget* orbis_resolve_color_render_target(
     const RndContext::RenderTargetParams& binding,
     std::int32_t target_kind,
     std::size_t slot);
-const OrbisGpuDepthRenderTarget* orbis_resolve_depth_render_target(
+const sce::Gnm::DepthRenderTarget* orbis_resolve_depth_render_target(
     const RndContext::RenderTargetParams& binding,
     std::int32_t target_kind);
 PS4Context::ViewportRect orbis_render_target_viewport(
@@ -42,18 +38,16 @@ bool orbis_color_render_target_requires_sync(
 bool orbis_depth_render_target_requires_prepare(
     const RndContext::RenderTargetParams& binding);
 std::uint32_t orbis_build_blend_control(
-    RndMaterialBlendMode mode,
+    RndBlendMode mode,
     const RndContext::BlendParams& configuration,
     std::size_t target_slot);
 bool orbis_depth_target_has_htile(
-    const OrbisGpuDepthRenderTarget& target);
+    const sce::Gnm::DepthRenderTarget& target);
 bool orbis_depth_target_stencil_clear_range(
-    const OrbisGpuDepthRenderTarget& target,
+    const sce::Gnm::DepthRenderTarget& target,
     PS4Context::DepthClearRange& range);
 PS4Context::DepthClearRange orbis_depth_target_htile_clear_range(
-    const OrbisGpuDepthRenderTarget& target);
-
-}  // namespace rb4
+    const sce::Gnm::DepthRenderTarget& target);
 
 namespace {
 
@@ -267,7 +261,7 @@ void PS4Context::_BeginFrameImpl() {
     PS4Context::_SetRenderTargetsImpl(
         kUnboundTargetKind, orbis_default_render_target_binding());
     PS4Context::_SetBlendModeImpl(
-        RndMaterialBlendMode::kSource, orbis_default_blend_configuration());
+        RndBlendMode::kSource, orbis_default_blend_configuration());
     _SetDefaultRasterState();
     _SetDefaultDepthStencilState();
     _DisableStreamOutput();
@@ -276,7 +270,7 @@ void PS4Context::_BeginFrameImpl() {
 
 // Reconstructed from eboot.elf at 0x8E8D20.
 void PS4Context::_SetRenderTargetsImpl(int mode, const RenderTargetParams& params) {
-    std::array<const OrbisGpuRenderTarget*, kColorRenderTargetCount>
+    std::array<const sce::Gnm::RenderTarget*, kColorRenderTargetCount>
         colorTargets{};
     const auto colorCount = std::min(
         orbis_render_target_color_count(params), colorTargets.size());
@@ -314,7 +308,7 @@ void PS4Context::_SetRenderTargetsImpl(int mode, const RenderTargetParams& param
 }
 
 // Reconstructed from eboot.elf at 0x8E92D0.
-void PS4Context::_SetBlendModeImpl(RndMaterialBlendMode mode, const BlendParams& params) {
+void PS4Context::_SetBlendModeImpl(RndBlendMode mode, const BlendParams& params) {
     if (static_cast<std::int32_t>(mode) == kPerTargetBlendMode) {
         for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
             _SetGnmBlendControl(slot, orbis_build_blend_control(mode, params, slot));
@@ -349,7 +343,7 @@ void PS4Context::_SetColorWriteMaskImpl(unsigned char targets, RndWriteMaskChann
 
 // Reconstructed from eboot.elf at 0x8E99E0.
 bool PS4Context::_ClearDepthStencil(
-    const OrbisGpuDepthRenderTarget& target,
+    const sce::Gnm::DepthRenderTarget& target,
     float depth,
     unsigned char stencil) {
     if (orbis_depth_target_has_htile(target)) {

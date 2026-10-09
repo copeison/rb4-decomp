@@ -6,8 +6,6 @@
 #include "render/system/RndDevice.h"
 #include "utl/streams/BinStream.h"
 
-using namespace rb4;
-
 namespace {
 
 constexpr unsigned int kMinimumCacheVersion = 3;
