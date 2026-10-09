@@ -90,7 +90,7 @@ RndDevice::RndDevice()
       mOffscreenFrameCount(0),
       mInFrame(false),
       mTerminating(false),
-      mFrameWindows{mFrameWindows.mStorage, 0, 6, {}},
+      mFrameWindows(),
       mLastFrameCycles(0),
       mPendingFrameCycles(0),
       mFrameTimerState(0),

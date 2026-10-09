@@ -83,7 +83,7 @@ unsigned long RndCShaderClearBuffer::Select(RndContext& context, Params& params)
     auto& cbuffer = RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
     std::memcpy(
         RndShaderDrawUtl::GetCBufferMember(cbuffer, mClearColor),
-        params.mClearValue,
+        &params.mClearValue,
         sizeof(params.mClearValue));
     RndShaderDrawUtl::CommitCBuffer(cbuffer, context, mCBufferSize);
 

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "math/color/Color.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
@@ -10,12 +11,21 @@
 class RndComputeBuffer;
 class RndFence;
 class RndShaderCBuffer;
+class RndTextureBase;
 
 enum class RndBlendMode : std::int32_t;
 
 struct RndResourceBarrier;
 
 enum RndVertexType : unsigned int;
+
+// What kind of texture a render-target binding draws into. The name is the
+// map's; the enumerators are not in the reference map.
+enum RndTargetMode : int {
+    kTargetModeNone = -1,
+    kTargetMode2D = 0,    // 2D textures and slices of 2D arrays.
+    kTargetModeCube = 2,  // Cube textures.
+};
 
 enum RndCullMode : unsigned int {
     kCullNone = 0,
@@ -72,11 +82,44 @@ struct RndGpuStatScope {
 // 0x19376C0; the PS4 context derives from it.
 class RndContext {
 public:
-    // Render-target binding. Defined by the PS4 context code until the
-    // render-target classes are converted. Name from the map.
-    struct RenderTargetParams;
-    // Per-target blend configuration. Name not in the reference map.
-    struct BlendParams;
+    // Render-target binding: up to eight color targets, each optionally
+    // cleared, and a depth target, with the clear values and the viewport.
+    // Name from the map; field names are not in the reference map.
+    struct RenderTargetParams {
+        struct Target {
+            RndTextureBase* mTexture;
+            int mClearMode;        // 1 clears the target.
+            unsigned long mSlice;  // Array slice, or -1.
+        };
+
+        RenderTargetParams()
+            : mClearColor(Hmx::Color::GetZero()),
+              mDepthClear(0.0F),
+              mStencilClear(0),
+              mViewportX(0.0F),
+              mViewportY(0.0F),
+              mViewportWidth(0.0F),
+              mViewportHeight(0.0F),
+              mMinDepth(0.0F),
+              mMaxDepth(1.0F),
+              mDepthTexture(nullptr),
+              mDepthClearMode(0),
+              mDepthSlice(static_cast<unsigned long>(-1)) {}
+
+        Hmx::Color mClearColor;
+        float mDepthClear;
+        unsigned char mStencilClear;
+        float mViewportX;
+        float mViewportY;
+        float mViewportWidth;
+        float mViewportHeight;
+        float mMinDepth;
+        float mMaxDepth;
+        FixedVector<Target, 8> mTargets;
+        RndTextureBase* mDepthTexture;
+        int mDepthClearMode;  // 1 clears depth and stencil.
+        unsigned long mDepthSlice;
+    };
 
     explicit RndContext(bool disableComputeQueues);  // 0x6BBDE0
     virtual ~RndContext();                           // 0x6BC120, 0x6BC190
@@ -88,10 +131,14 @@ public:
     virtual void _WaitFenceImpl(const RndFence& fence);   // 0x6BDA60
     virtual void _FinishImpl();                           // 0x6BDA70
     virtual void _BeginFrameImpl();                       // 0x6BDA80
-    virtual void _SetRenderTargetsImpl(int mode, const RenderTargetParams& params) = 0;
+    virtual void _SetRenderTargetsImpl(
+        RndTargetMode mode,
+        const RenderTargetParams& params) = 0;
+    // The map has _SetBlendModeImpl(RndBlendMode); this build adds a blend
+    // color.
     virtual void _SetBlendModeImpl(
         RndBlendMode mode,
-        const BlendParams& params) = 0;
+        const Hmx::Color& blendColor) = 0;
     // The map types the parameter as RndDepthMode.
     virtual void _SetDepthModeImpl(unsigned int mode) = 0;
     // The map has _SetStencilModeImpl(RndStencilMode, unsigned char); this
@@ -223,3 +270,7 @@ static_assert(offsetof(RndContext, mUnknown22264) == 0x56F8);
 static_assert(offsetof(RndContext, mGpuStatScopes) == 0x5700);
 static_assert(offsetof(RndContext, mUnknown22304) == 22304);
 static_assert(sizeof(RndContext) == 0x5728);
+
+static_assert(sizeof(RndContext::RenderTargetParams) == 288);
+static_assert(offsetof(RndContext::RenderTargetParams, mTargets) == 48);
+static_assert(offsetof(RndContext::RenderTargetParams, mDepthTexture) == 264);

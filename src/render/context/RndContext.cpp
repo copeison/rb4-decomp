@@ -36,9 +36,6 @@ RndContext::RndContext(bool disableComputeQueues)
       mActiveComputeSlot(0),
       mCBuffers{},
       mUnknown22304(false) {
-    mUnknown24.mData = mUnknown24.mStorage;
-    mUnknown24.mSize = 0;
-    mUnknown24.mCapacity = 8;
     // The constructor also copies two 16-byte constants into +0x49E0..+0x4A18;
     // their values have not been recovered.
     std::memset(mUnknown19096, 0xFF, sizeof(mUnknown19096));

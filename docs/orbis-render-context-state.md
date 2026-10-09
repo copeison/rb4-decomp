@@ -1,25 +1,53 @@
 # Orbis render-context state
 
 The first three platform-specific state methods in the Orbis render-context
-vtable are now identified. Slot 7 at `0x8E8850` restores the default pipeline
-state, slot 8 at `0x8E8D20` binds a render-target set, and slot 9 at `0x8E92D0`
-programs color blending.
+vtable are:
+- slot 7, `PS4Context::_BeginFrameImpl` (`0x8E8850`), which restores the
+  default pipeline state;
+- slot 8, `_SetRenderTargetsImpl(RndTargetMode, const RenderTargetParams&)`
+  (`0x8E8D20`), which binds a render-target set;
+- slot 9, `_SetBlendModeImpl(RndBlendMode, const Hmx::Color&)` (`0x8E92D0`),
+  which programs color blending. The blend color is passed but not read.
 
-Render-target binding resolves at most eight engine color attachments into Gnm
-render targets and resolves the optional depth attachment separately. It binds
-all eight hardware color slots, using null targets for unused slots, then binds
-depth and derives the hardware viewport and scissor from the floating-point
-rectangle stored in the binding. The right and bottom edges are computed from
-the nonnegative width and height.
+## Render-target binding
 
-Attachments marked for transition cause event type 46 to be emitted once
-before their preparation commands. The depth target has a separate preparation
-path. If either color or depth preparation records work, the method ends the
-transition sequence with the matching synchronization packet.
+`RndContext::RenderTargetParams` is 288 bytes:
 
-`orbis_render_context_set_blend_mode` maps the engine's blend-mode number to a
-packed Gnm `BlendControl` and writes it to all eight color slots. Mode 11 builds
-the control separately for each target; the other modes reuse one value.
+| Offset | Field |
+| --- | --- |
+| +0 | clear color (`Hmx::Color::GetZero()` by default) |
+| +16, +20 | depth and stencil clear values |
+| +24-+36 | viewport x, y, width and height |
+| +40, +44 | depth range, 0 and 1 |
+| +48 | `FixedVector<Target, 8>`; a target is the texture, a clear mode (1 clears) and an array slice (-1 for none) |
+| +264, +272, +280 | depth texture, depth clear mode, depth slice |
+
+The `RndTargetMode` selects how textures resolve to Gnm targets:
+- **Mode 0** takes 2D textures and slices of 2D arrays. `PS4TextureArray2D`'s
+  `GetRenderTarget(slice)` (`0x8E6590`) and `GetDepthStencilTarget(slice)`
+  (`0x8E65C0`) set the target's array view to the slice.
+- **Mode 2** takes cube textures.
+- **Mode -1** binds nothing.
+
+The method binds all eight color slots (null for unused ones), the depth
+target, and `setupScreenViewport` with the right and bottom edges at least one
+pixel past the origin.
+
+It then clears the targets the binding marks:
+- Each color target is cleared by `RndCShaderClearBuffer::Dispatch` with the
+  binding's clear color as float4. Before the first, the method triggers
+  `kEventTypeFlushAndInvalidateCbMeta`.
+- The depth target is cleared by `_ClearDepthStencil`.
+
+After any clear, the method allocates a label from the draw command buffer and
+writes it at `kEopCsDone` with `kCacheActionWriteBackAndInvalidateL1andL2`. The
+graphics pipe then waits for the label to equal 1.
+
+## Blending
+
+`_SetBlendModeImpl` maps the engine's blend-mode number to a packed Gnm
+`BlendControl` and writes it to all eight color slots. Mode 11 builds the
+control separately for each target; the other modes reuse one value.
 
 | Mode | Enabled | Source multiplier | Function | Destination multiplier |
 | --- | --- | --- | --- | --- |
@@ -36,10 +64,15 @@ the control separately for each target; the other modes reuse one value.
 | 10 | Yes | One | Subtract | Source color |
 | 11, per-target | Yes | Source alpha | Add | One |
 
-The reset method clears the context's cached state, unbinds render targets,
-selects the Source blend mode, restores raster and depth/stencil defaults,
-disables stream output, and clears shader-resource bindings for all six shader
-stages. This is the baseline installed before a new frame records draw work.
+`_BeginFrameImpl` installs the baseline before a frame records draw work:
+1. It resets `SetupDraw`'s caches to -1, turns the GS mode off, and enables
+   color writes (`kCbModeNormal`, `kRasterOpCopy`).
+2. It binds a default `RenderTargetParams` in mode -1, which unbinds every
+   target.
+3. It selects the Source blend mode with `Hmx::Color::GetWhite()`.
+4. It resets depth, stencil (masks `FF`), counter-clockwise winding, no
+   culling and solid fill, and sets the render-target mask to `FFFF`.
+5. It deselects the read-write and source textures of all six stages.
 
 ## Depth, stencil, and raster state
 

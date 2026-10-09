@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
 #include <gnm/texture.h>
@@ -24,6 +25,23 @@ public:
     void _SyncDynamicImpl(RndContext& context) override;          // 0x8E6490
     void _SyncFromGpuImpl(RndContext& context) override;          // 0x8E64A0
     void _Slot20Impl() override;                                  // 0x8E64B0
+
+    // The color and depth targets viewing one slice, or the targets as they
+    // are for a slice of -1.
+    const sce::Gnm::RenderTarget* GetRenderTarget(unsigned long slice) const {  // 0x8E6590
+        if (slice != static_cast<unsigned long>(-1)) {
+            mColorTarget->setArrayView(
+                static_cast<std::uint32_t>(slice), static_cast<std::uint32_t>(slice));
+        }
+        return mColorTarget;
+    }
+    const sce::Gnm::DepthRenderTarget* GetDepthStencilTarget(unsigned long slice) const {  // 0x8E65C0
+        if (slice != static_cast<unsigned long>(-1)) {
+            mDepthTarget->setArrayView(
+                static_cast<std::uint32_t>(slice), static_cast<std::uint32_t>(slice));
+        }
+        return mDepthTarget;
+    }
 
     // Field names are not in the reference map.
     sce::Gnm::Texture* mGpuTexture;

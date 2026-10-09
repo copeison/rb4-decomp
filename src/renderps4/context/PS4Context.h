@@ -48,14 +48,6 @@ public:
         std::uint64_t mRenderEpoch = 0;
     };
 
-    // Viewport of a render-target binding. Name not in the reference map.
-    struct ViewportRect {
-        float mX;
-        float mY;
-        float mWidth;
-        float mHeight;
-    };
-
     // GPU range a depth or HTILE clear fills. Name not in the reference map.
     struct DepthClearRange {
         std::uint64_t mGpuAddress = 0;
@@ -68,10 +60,12 @@ public:
     void _SignalFenceImpl(RndFence& fence) override;            // 0x8EB730
     void _WaitFenceImpl(const RndFence& fence) override;        // 0x8EB7F0
     void _BeginFrameImpl() override;                            // 0x8E8850
-    void _SetRenderTargetsImpl(int mode, const RenderTargetParams& params) override;  // 0x8E8D20
+    void _SetRenderTargetsImpl(
+        RndTargetMode mode,
+        const RenderTargetParams& params) override;           // 0x8E8D20
     void _SetBlendModeImpl(
         RndBlendMode mode,
-        const BlendParams& params) override;                    // 0x8E92D0
+        const Hmx::Color& blendColor) override;               // 0x8E92D0
     void _SetDepthModeImpl(unsigned int mode) override;         // 0x8E9F60
     void _SetStencilModeImpl(
         unsigned int mode,
@@ -191,23 +185,7 @@ private:
     void _InitFrameCommandState(std::size_t frame);
     void _EmitDefaultControlState(std::size_t frame);
 
-    // Pipeline state. _SyncDepthStencilControl and _SyncPrimitiveSetup are
-    // map names; the others are not in the reference map. Not yet
-    // reconstructed.
-    void _BindColorTarget(std::size_t slot, const sce::Gnm::RenderTarget* target);
-    void _BindDepthTarget(const sce::Gnm::DepthRenderTarget* target);
-    void _SetViewportAndScissor(const ViewportRect& viewport);
-    void _BeginRenderTargetSync();
-    void _PrepareColorTarget(const RenderTargetParams& params, std::size_t slot);
-    bool _PrepareDepthTarget(
-        const sce::Gnm::DepthRenderTarget& target,
-        const RenderTargetParams& params);
-    void _FinishRenderTargetSync();
-    void _ResetCachedPipelineState();
-    void _SetDefaultRasterState();
-    void _SetDefaultDepthStencilState();
-    void _DisableStreamOutput();
-    void _ClearShaderResources();
+    // Pipeline state.
     // Rebuild and set the Gnm depth-stencil and primitive-setup state from
     // the cache. Map names; inlined into the setters in this build.
     void _SyncDepthStencilControl();

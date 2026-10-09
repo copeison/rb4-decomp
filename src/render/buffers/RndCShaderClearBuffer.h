@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "render/shaders/RndShader.h"
+#include "math/color/Color.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 
 class RndComputeBuffer;
@@ -15,9 +16,15 @@ public:
     // What to clear: a texture, or a buffer when there is no texture, to a
     // value of the numeric type. Field names are not in the reference map.
     struct Params {
+        Params()
+            : mTexture(nullptr),
+              mBuffer(nullptr),
+              mClearValue(Hmx::Color::GetZero()),
+              mNumericType(kShaderNumericFloat4) {}
+
         RndTextureBase* mTexture;
         RndComputeBuffer* mBuffer;
-        float mClearValue[4];
+        Hmx::Color mClearValue;
         RndShaderNumericType mNumericType;  // kShaderNumericUInt or kShaderNumericFloat4.
     };
 

@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct `PS4Context::_BeginFrameImpl` and `_SetRenderTargetsImpl`, with
+  `RndContext::RenderTargetParams`, `RndTargetMode` and the `PS4TextureArray2D`
+  slice targets.
 - [x] Reconstruct `RndCShaderClearBuffer::Select` and `Dispatch`.
 - [x] Reconstruct the `PS4Context` split-barrier signals, waits and label ring.
 - [x] Reconstruct `PS4Context::_SetSamplerImpl`, `_DeactivateShaderProgramTypeImpl`,

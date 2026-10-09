@@ -12,31 +12,19 @@
 #include "render/meshes/RndVertexInterpreter.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "render/system/RndDevice.h"
+#include "render/buffers/RndCShaderClearBuffer.h"
+#include "render/shaders/RndShaderMgr.h"
+#include "render/textures/RndTextureBase.h"
 #include "renderps4/buffers/PS4ComputeBuffer.h"
+#include "renderps4/textures/PS4Texture2D.h"
+#include "renderps4/textures/PS4TextureArray2D.h"
+#include "renderps4/textures/PS4TextureCube.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Fence.h"
 #include "renderps4/system/PS4RenderUtl.h"
 
-// Render-target and depth-target queries the context uses. They have no
-// original home yet; not yet reconstructed. Names not in the reference map.
-const RndContext::RenderTargetParams& orbis_default_render_target_binding();
-const RndContext::BlendParams& orbis_default_blend_configuration();
-std::size_t orbis_render_target_color_count(
-    const RndContext::RenderTargetParams& binding);
-const sce::Gnm::RenderTarget* orbis_resolve_color_render_target(
-    const RndContext::RenderTargetParams& binding,
-    std::int32_t target_kind,
-    std::size_t slot);
-const sce::Gnm::DepthRenderTarget* orbis_resolve_depth_render_target(
-    const RndContext::RenderTargetParams& binding,
-    std::int32_t target_kind);
-PS4Context::ViewportRect orbis_render_target_viewport(
-    const RndContext::RenderTargetParams& binding);
-bool orbis_color_render_target_requires_sync(
-    const RndContext::RenderTargetParams& binding,
-    std::size_t slot);
-bool orbis_depth_render_target_requires_prepare(
-    const RndContext::RenderTargetParams& binding);
+// Depth-target queries the depth clear uses. They have no original home
+// yet; not yet reconstructed. Names not in the reference map.
 bool orbis_depth_target_has_htile(
     const sce::Gnm::DepthRenderTarget& target);
 bool orbis_depth_target_stencil_clear_range(
@@ -58,6 +46,7 @@ constexpr std::size_t kComputeCommandBufferSize = 0x3FFFFC;
 constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
 constexpr unsigned int kNumShaderStages = 6;
+constexpr unsigned int kAllShaderStages = (1U << kNumShaderStages) - 1;
 // The Gnm stage of each engine stage (vertex, hull, domain, geometry,
 // pixel, compute), as the table at 0x12D19D0. Name not in the reference map.
 constexpr sce::Gnm::ShaderStage kGnmShaderStages[kNumShaderStages] = {
@@ -83,7 +72,6 @@ constexpr unsigned int kTessellationStageBits =
 constexpr unsigned int kGeometryStageBit = 1U << kShaderProgramGeometry;
 
 constexpr std::size_t kColorRenderTargetCount = 8;
-constexpr std::int32_t kUnboundTargetKind = -1;
 constexpr std::array<std::uint8_t, 10> kStencilMasks = {
     0xFF, 0x07, 0x08, 0x10, 0x0F,
     0x1F, 0x20, 0x28, 0x30, 0xC0,
@@ -298,61 +286,137 @@ void PS4Context::_ResetFrame() {
 
 // Pipeline state -------------------------------------------------------------
 
-// Reconstructed from eboot.elf at 0x8E8850.
+// Reconstructed from eboot.elf at 0x8E8850. Forgets SetupDraw's state,
+// turns the GS mode off and color writes on, unbinds every target, and resets
+// blending, depth-stencil, raster and color-write state and the shader
+// resources to their defaults.
 void PS4Context::_BeginFrameImpl() {
-    _ResetCachedPipelineState();
-    PS4Context::_SetRenderTargetsImpl(
-        kUnboundTargetKind, orbis_default_render_target_binding());
-    PS4Context::_SetBlendModeImpl(
-        RndBlendMode::kSource, orbis_default_blend_configuration());
-    _SetDefaultRasterState();
-    _SetDefaultDepthStencilState();
-    _DisableStreamOutput();
-    _ClearShaderResources();
+    mCachedShaderStages = static_cast<sce::Gnm::ActiveShaderStages>(-1);
+    mCachedPrimitiveType = static_cast<sce::Gnm::PrimitiveType>(-1);
+    auto& gfx = _ActiveGfxContext();
+    gfx.setGsModeOff();
+    mGsModeEnabled = false;
+    gfx.setCbControl(sce::Gnm::kCbModeNormal, sce::Gnm::kRasterOpCopy);
+    mCbEnabled = true;
+
+    RenderTargetParams params;
+    PS4Context::_SetRenderTargetsImpl(kTargetModeNone, params);
+    PS4Context::_SetBlendModeImpl(RndBlendMode::kSource, Hmx::Color::GetWhite());
+
+    mDepthMode = 0;
+    mStencilMode = 0;
+    mStencilReference = 0;
+    mStencilReadMask = 0xFF;
+    mStencilWriteMask = 0xFF;
+    _SyncDepthStencilControl();
+    mFrontFace = 1;
+    mCullMode = kCullNone;
+    mFillMode = 1;
+    _SyncPrimitiveSetup();
+    _ActiveGfxContext().setRenderTargetMask(0xFFFF);
+    mColorWriteTargets = 0xF;
+    mColorWriteChannels = kWriteRGBA;
+
+    PS4Context::_DeselectAllReadWriteTexturesImpl(kAllShaderStages);
+    PS4Context::_DeselectAllSourceTexturesImpl(kAllShaderStages);
 }
 
-// Reconstructed from eboot.elf at 0x8E8D20.
-void PS4Context::_SetRenderTargetsImpl(int mode, const RenderTargetParams& params) {
-    std::array<const sce::Gnm::RenderTarget*, kColorRenderTargetCount>
-        colorTargets{};
-    const auto colorCount = std::min(
-        orbis_render_target_color_count(params), colorTargets.size());
-    for (std::size_t slot = 0; slot < colorCount; ++slot) {
-        colorTargets[slot] =
-            orbis_resolve_color_render_target(params, mode, slot);
+// Reconstructed from eboot.elf at 0x8E8D20. Binds the color and depth
+// targets of the binding and its viewport, then clears the targets it marks:
+// colors with the clear compute shader, after flushing the color metadata
+// once, and depth and stencil through _ClearDepthStencil. After any clear
+// the graphics pipe waits for the compute work and flushes the caches.
+void PS4Context::_SetRenderTargetsImpl(
+    RndTargetMode mode,
+    const RenderTargetParams& params) {
+    const sce::Gnm::RenderTarget* colorTargets[kColorRenderTargetCount] = {};
+    const sce::Gnm::DepthRenderTarget* depthTarget = nullptr;
+    const auto& targets = params.mTargets;
+    if (mode == kTargetMode2D) {
+        for (unsigned long index = 0; index < targets.mSize; ++index) {
+            auto* texture = targets.mData[index].mTexture;
+            const int type = texture->_GetTypeImpl();
+            if (type == RndTextureBase::kTextureArray2D) {
+                colorTargets[index] = static_cast<PS4TextureArray2D*>(texture)
+                                          ->GetRenderTarget(targets.mData[index].mSlice);
+            } else if (type == RndTextureBase::kTexture2D) {
+                colorTargets[index] = static_cast<PS4Texture2D*>(texture)->GetRenderTarget();
+            }
+        }
+        if (auto* texture = params.mDepthTexture) {
+            const int type = texture->_GetTypeImpl();
+            if (type == RndTextureBase::kTextureArray2D) {
+                depthTarget = static_cast<PS4TextureArray2D*>(texture)
+                                  ->GetDepthStencilTarget(params.mDepthSlice);
+            } else if (type == RndTextureBase::kTexture2D) {
+                depthTarget = static_cast<PS4Texture2D*>(texture)->GetDepthStencilTarget();
+            }
+        }
+    } else if (mode == kTargetModeCube) {
+        for (unsigned long index = 0; index < targets.mSize; ++index) {
+            auto* texture = targets.mData[index].mTexture;
+            if (texture->_GetTypeImpl() == RndTextureBase::kTextureCube) {
+                colorTargets[index] = static_cast<PS4TextureCube*>(texture)->GetRenderTarget();
+            }
+        }
+        if (auto* texture = params.mDepthTexture) {
+            if (texture->_GetTypeImpl() == RndTextureBase::kTextureCube) {
+                depthTarget = static_cast<PS4TextureCube*>(texture)->GetDepthStencilTarget();
+            }
+        }
     }
-    const auto* depthTarget = orbis_resolve_depth_render_target(params, mode);
 
-    for (std::size_t slot = 0; slot < colorTargets.size(); ++slot) {
-        _BindColorTarget(slot, colorTargets[slot]);
+    for (unsigned int slot = 0; slot < kColorRenderTargetCount; ++slot) {
+        _ActiveGfxContext().setRenderTarget(slot, colorTargets[slot]);
     }
-    _BindDepthTarget(depthTarget);
-    _SetViewportAndScissor(orbis_render_target_viewport(params));
+    _ActiveGfxContext().setDepthRenderTarget(depthTarget);
+    const auto left = static_cast<std::uint32_t>(params.mViewportX);
+    const auto top = static_cast<std::uint32_t>(params.mViewportY);
+    _ActiveGfxContext().setupScreenViewport(
+        left,
+        top,
+        static_cast<std::uint32_t>(std::max(1.0F, params.mViewportWidth) + params.mViewportX),
+        static_cast<std::uint32_t>(std::max(1.0F, params.mViewportHeight) + params.mViewportY),
+        1.0F,
+        0.0F);
 
-    bool synchronized = false;
-    for (std::size_t slot = 0; slot < colorCount; ++slot) {
-        if (!orbis_color_render_target_requires_sync(params, slot)) {
+    bool cleared = false;
+    for (unsigned long index = 0; index < targets.mSize; ++index) {
+        if (targets.mData[index].mClearMode != 1) {
             continue;
         }
-        if (!synchronized) {
-            _BeginRenderTargetSync();
+        if (!cleared) {
+            _ActiveGfxContext().triggerEvent(sce::Gnm::kEventTypeFlushAndInvalidateCbMeta);
         }
-        _PrepareColorTarget(params, slot);
-        synchronized = true;
+        RndCShaderClearBuffer::Params clear;
+        clear.mTexture = targets.mData[index].mTexture;
+        clear.mClearValue = params.mClearColor;
+        TheRndDevice()->mShaderMgr.mClearBufferCShader->Dispatch(*this, clear);
+        cleared = true;
     }
-
-    if (depthTarget != nullptr &&
-        orbis_depth_render_target_requires_prepare(params)) {
-        synchronized = _PrepareDepthTarget(*depthTarget, params) || synchronized;
+    if (depthTarget != nullptr && params.mDepthClearMode == 1) {
+        cleared = _ClearDepthStencil(*depthTarget, params.mDepthClear, params.mStencilClear) || cleared;
     }
-    if (synchronized) {
-        _FinishRenderTargetSync();
+    if (cleared) {
+        auto& dcb = _ActiveGfxContext().m_dcb;
+        auto* label = static_cast<std::uint32_t*>(
+            dcb.allocateFromCommandBuffer(sizeof(std::uint32_t), sce::Gnm::kEmbeddedDataAlignment4));
+        *label = 0;
+        dcb.writeAtEndOfPipe(
+            sce::Gnm::kEopCsDone,
+            sce::Gnm::kEventWriteDestMemory,
+            label,
+            sce::Gnm::kEventWriteSource32BitsImmediate,
+            1,
+            sce::Gnm::kCacheActionWriteBackAndInvalidateL1andL2,
+            sce::Gnm::kCachePolicyLru);
+        dcb.waitOnAddress(label, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncEqual, 1);
     }
 }
 
 // Reconstructed from eboot.elf at 0x8E92D0. Decal-lit blending rebuilds the
 // control for every target.
-void PS4Context::_SetBlendModeImpl(RndBlendMode mode, const BlendParams&) {
+void PS4Context::_SetBlendModeImpl(RndBlendMode mode, const Hmx::Color&) {
     auto& gfx = _ActiveGfxContext();
     sce::Gnm::BlendControl control;
     if (mode != RndBlendMode::kDecalLitSourceAlpha) {
