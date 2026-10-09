@@ -2,6 +2,7 @@
 
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndVertexInterpreter.h"
+#include "render/textures/RndPixelFormat.h"
 #include "renderps4/context/PS4RenderStateUtl.h"
 #include "renderps4/context/PS4Context.h"
 
@@ -138,6 +139,97 @@ sce::Gnm::PrimitiveType PS4RenderUtl::GetPrimitiveType(RndPrimitive primitive) {
         return sce::Gnm::kPrimitiveTypeTriStrip;
     }
     return kPrimitiveTypes[index];
+}
+
+// Reconstructed from eboot.elf at 0x8E1790. The binary looks the name up for
+// an assertion compiled out of this build.
+sce::Gnm::DataFormat PS4RenderUtl::GetDataFormat(int dataFormat) {
+    switch (dataFormat) {
+    case 0:  // R_UNorm8
+        return sce::Gnm::kDataFormatR8Unorm;
+    case 1:  // RG_UNorm8
+        return sce::Gnm::kDataFormatR8G8Unorm;
+    case 6:  // RGBA_UNorm8
+        return sce::Gnm::kDataFormatR8G8B8A8Unorm;
+    case 7:  // RGBA_UNorm8_sRGB
+        return sce::Gnm::kDataFormatR8G8B8A8UnormSrgb;
+    case 10:  // RGBA_UInt8
+        return sce::Gnm::kDataFormatR8G8B8A8Uint;
+    case 11:  // BGRA_UNorm8
+        return sce::Gnm::kDataFormatB8G8R8A8Unorm;
+    case 12:  // BGRA_UNorm8_sRGB
+    case 14:  // BGRX_UNorm8_sRGB
+        return sce::Gnm::kDataFormatB8G8R8A8UnormSrgb;
+    case 13:  // BGRX_UNorm8
+        return sce::Gnm::kDataFormatB8G8R8X8Unorm;
+    case 15:  // R_UNorm16
+        return sce::Gnm::kDataFormatR16Unorm;
+    case 16:  // R_Float16
+        return sce::Gnm::kDataFormatR16Float;
+    case 17:  // RG_UNorm16
+        return sce::Gnm::kDataFormatR16G16Unorm;
+    case 18:  // RG_Float16
+        return sce::Gnm::kDataFormatR16G16Float;
+    case 20:  // RGBA_UNorm16
+        return sce::Gnm::kDataFormatR16G16B16A16Unorm;
+    case 21:  // RGBA_Float16
+        return sce::Gnm::kDataFormatR16G16B16A16Float;
+    case 22:  // R_Float32
+        return sce::Gnm::kDataFormatR32Float;
+    case 23:  // RG_Float32
+        return sce::Gnm::kDataFormatR32G32Float;
+    case 24:  // RGBA_Float32
+        return sce::Gnm::kDataFormatR32G32B32A32Float;
+    case 25:  // RGBA_UNorm1010102
+        return sce::Gnm::kDataFormatR10G10B10A2Unorm;
+    case 26:  // RGB_Float111110
+        return sce::Gnm::kDataFormatR11G11B10Float;
+    case 27:  // BC1
+    case 29:  // BC1A
+        return sce::Gnm::kDataFormatBc1Unorm;
+    case 28:  // BC1_sRGB
+    case 30:  // BC1A_sRGB
+        return sce::Gnm::kDataFormatBc1UnormSrgb;
+    case 31:  // BC2
+        return sce::Gnm::kDataFormatBc2Unorm;
+    case 32:  // BC2_sRGB
+        return sce::Gnm::kDataFormatBc2UnormSrgb;
+    case 33:  // BC3
+        return sce::Gnm::kDataFormatBc3Unorm;
+    case 34:  // BC3_sRGB
+        return sce::Gnm::kDataFormatBc3UnormSrgb;
+    case 35:  // BC4U
+        return sce::Gnm::kDataFormatBc4Unorm;
+    case 36:  // BC4S
+        return sce::Gnm::kDataFormatBc4Snorm;
+    case 37:  // BC5U
+        return sce::Gnm::kDataFormatBc5Unorm;
+    case 38:  // BC5S
+        return sce::Gnm::kDataFormatBc5Snorm;
+    case 39:  // BC6HU
+        return sce::Gnm::kDataFormatBc6Uf16;
+    case 40:  // BC6HS
+        return sce::Gnm::kDataFormatBc6Sf16;
+    case 41:  // BC7
+    case 43:  // BC7A
+        return sce::Gnm::kDataFormatBc7Unorm;
+    case 42:  // BC7_sRGB
+    case 44:  // BC7A_sRGB
+        return sce::Gnm::kDataFormatBc7UnormSrgb;
+    default:
+        (void)RndDataFormatName(dataFormat);
+        return sce::Gnm::kDataFormatInvalid;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8E1820.
+sce::GpuAddress::SurfaceType PS4RenderUtl::GetSurfaceType(const RndPixelFormat& format) {
+    if (format.mUsage == kTextureUsageDepth) {
+        return sce::GpuAddress::kSurfaceTypeDepthOnlyTarget;
+    }
+    return (format.mFlags & kPixelFormatRenderTarget) != 0
+        ? sce::GpuAddress::kSurfaceTypeColorTarget
+        : sce::GpuAddress::kSurfaceTypeTextureFlat;
 }
 
 // Reconstructed from eboot.elf at 0x8E1840.

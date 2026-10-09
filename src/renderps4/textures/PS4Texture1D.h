@@ -19,7 +19,9 @@ public:
     void _SelectForCSImpl(RndContext& context, unsigned long slot, unsigned int flags, unsigned long extra) override;  // 0x8E5370
     // Not yet reconstructed.
     void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) override;  // 0x8E5390
-    void _SyncStaticImpl(const RndTextureBase* reuse) override;  // 0x8E5050  // not yet reconstructed
+    // The map has _SyncStaticImpl(); this build's slot takes a texture to
+    // reuse, which it ignores.
+    void _SyncStaticImpl(const RndTextureBase* reuse) override;  // 0x8E5050
     void _SyncDynamicImpl(RndContext& context) override;          // 0x8E52A0
     void _SyncFromGpuImpl(RndContext& context) override;          // 0x8E52B0
     void _Slot20Impl() override;                                  // 0x8E52C0

@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 672 entries, most of the
+executable. The latest unresolved-symbol report contains 677 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `PS4OcclusionQuery` commands reconstructed on the Gnm SDK |
+| (this) | PS4 1D, 3D, 1D-array and cube-array texture syncs reconstructed |
+| `d010b77` | `PS4OcclusionQuery` commands reconstructed on the Gnm SDK |
 | `ec6009e` | `PS4ComputeBuffer` creation and stage binding reconstructed |
 | `100d054` | PS4 shader programs, compute contexts and constant-buffer select reconstructed |
 | `a736a52` | Last `rb4` code moved to the global namespace with SDK render-target types; `PS4ParticleBuffer` draw and creation reconstructed |

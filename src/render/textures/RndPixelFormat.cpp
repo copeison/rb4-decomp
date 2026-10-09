@@ -353,3 +353,33 @@ std::int32_t RndFindSupportedDataFormat(
 
     return -1;
 }
+
+// Reconstructed from eboot.elf at 0x68F200; the table is at 0x1934360.
+const char* RndDataFormatName(int dataFormat) {
+    static const char* const kNames[] = {
+        "Invalid", "R_UNorm8", "RG_UNorm8", "RGB_UNorm8", "RGB_UNorm8_sRGB",
+        "BGR_UNorm8", "BGR_UNorm8_sRGB", "RGBA_UNorm8", "RGBA_UNorm8_sRGB",
+        "RGBX_UNorm8", "RGBX_UNorm8_sRGB", "RGBA_UInt8", "BGRA_UNorm8",
+        "BGRA_UNorm8_sRGB", "BGRX_UNorm8", "BGRX_UNorm8_sRGB", "R_UNorm16",
+        "R_Float16", "RG_UNorm16", "RG_Float16", "RGB_UNorm16", "RGBA_UNorm16",
+        "RGBA_Float16", "R_Float32", "RG_Float32", "RGBA_Float32",
+        "RGBA_UNorm1010102", "RGB_Float111110", "BC1", "BC1_sRGB", "BC1A",
+        "BC1A_sRGB", "BC2", "BC2_sRGB", "BC3", "BC3_sRGB", "BC4U", "BC4S",
+        "BC5U", "BC5S", "BC6HU", "BC6HS", "BC7", "BC7_sRGB", "BC7A",
+        "BC7A_sRGB", "ETC2R", "ETC2RG", "ETC2RGB", "ETC2RGB_sRGB", "ETC2RGBA1",
+        "ETC2RGBA1_sRGB", "ETC2RGBA", "ETC2RGBA_sRGB", "Depth_UNorm16",
+        "Depth_UNorm16_Stencil_UInt8", "Depth_UNorm24_Stencil_UInt8",
+        "Depth_Float32_Stencil_UInt8", "ASTC_4x4", "ASTC_5x4", "ASTC_5x5",
+        "ASTC_6x5", "ASTC_6x6", "ASTC_8x5", "ASTC_8x6", "ASTC_8x8",
+        "ASTC_10x5", "ASTC_10x6", "ASTC_10x8", "ASTC_10x10", "ASTC_12x10",
+        "ASTC_12x12", "ASTC_4x4_sRGB", "ASTC_5x4_sRGB", "ASTC_5x5_sRGB",
+        "ASTC_6x5_sRGB", "ASTC_6x6_sRGB", "ASTC_8x5_sRGB", "ASTC_8x6_sRGB",
+        "ASTC_8x8_sRGB", "ASTC_10x5_sRGB", "ASTC_10x6_sRGB", "ASTC_10x8_sRGB",
+        "ASTC_10x10_sRGB", "ASTC_12x10_sRGB", "ASTC_12x12_sRGB",
+    };
+    const auto index = static_cast<unsigned int>(dataFormat + 1);
+    if (index >= sizeof(kNames) / sizeof(kNames[0])) {
+        return nullptr;
+    }
+    return kNames[index];
+}

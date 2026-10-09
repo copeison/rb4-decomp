@@ -2,6 +2,7 @@
 
 #include <gnm/buffer.h>
 #include <gnm/texture.h>
+#include <gpu_address.h>
 
 class RndContext;
 class RndVertexInterpreter;
@@ -9,11 +10,21 @@ struct RndInstanceData;
 enum class RndPrimitive : unsigned int;
 
 // Gnm helpers shared by the PS4 resources.
+class RndPixelFormat;
+
 namespace PS4RenderUtl {
 
 // Unknown primitives draw as triangle strips. The map has
 // GetPrimitiveType(RndContext::Primitive); this build's enum is RndPrimitive.
 sce::Gnm::PrimitiveType GetPrimitiveType(RndPrimitive primitive);  // 0x8E1770
+
+// The Gnm format of an engine data format; formats the PS4 cannot sample
+// give kDataFormatInvalid. The map has GetDataFormat(RndPixelFormat const&);
+// this build passes the data format alone.
+sce::Gnm::DataFormat GetDataFormat(int dataFormat);  // 0x8E1790
+// Depth textures are depth targets, render targets color targets, and the
+// rest flat textures.
+sce::GpuAddress::SurfaceType GetSurfaceType(const RndPixelFormat& format);  // 0x8E1820
 
 // Instance data occupies the nine vertex streams after the mesh streams.
 // Name not in the reference map.

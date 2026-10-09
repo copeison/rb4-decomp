@@ -16,6 +16,10 @@ public:
 
 static_assert(sizeof(RndPixelFormat) == 44);
 
+// RndPixelFormat::mFlags bit for textures rendered to. Name not in the
+// reference map.
+constexpr unsigned int kPixelFormatRenderTarget = 0x2;
+
 // Texture usages the reconstructed code distinguishes. Names not in the
 // reference map.
 enum RndTextureUsage : int {
@@ -50,3 +54,7 @@ int RndFindDataFormat(const RndDataFormatInfo& info);  // 0x68E070
 int RndFindSupportedDataFormat(
     const RndDataFormatInfo& info,
     HxPlatform platform);  // 0x68E4D0, 0x68E550
+
+// The data format's name, "Invalid" for -1, or null outside the list.
+// Name not in the reference map.
+const char* RndDataFormatName(int dataFormat);  // 0x68F200

@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Type the PS4 textures as `sce::Gnm::Texture` and reconstruct the 1D,
+  3D, 1D-array and cube-array static syncs with `PS4RenderUtl::GetDataFormat`
+  and `GetSurfaceType`.
 - [x] Reconstruct the `PS4OcclusionQuery` query and predication commands.
 - [x] Reconstruct `PS4ComputeBuffer::_SyncStaticImpl` and its stage selects.
 - [x] Reconstruct the four `PS4ShaderProgram*` classes with
