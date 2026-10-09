@@ -36,9 +36,12 @@ stream only for the measurement when it is not already open.
 `_FMODSoundAsyncSampleProcessor` is a `ThreadCallback` (vtable `0x18F0C18`)
 that decodes a stream for an `AsyncSampleProcessor`. Its decode buffer is
 tagged `FMODSoundToPCMCallback`, the name earlier reconstructions used for the
-class. `ThreadStart` at `0x272F60` waits for the sound to open unless
-cancelled, announces the sample rate, sample size, channel count and length,
-and feeds one block at a time. A rejected block marks the resource as failed
+class. `FmodAudioStreamResource::StartAsyncSampleProcessor` (`0x272B80`)
+resets the processor chain (`ChainReset`), creates the sound and queues the
+work item unless the creation failed (`mCreateFailed`). `ThreadStart` at
+`0x272F60` waits for the sound to open unless cancelled, announces the
+sample rate, format, channel count and length (`ChainInit`), and feeds one
+block at a time (`ChainProcessSampleFrames`). A rejected block marks the resource as failed
 and cancels the decode. The processor is told the decode finished or was
 cancelled, and `ThreadDone` deletes the work item. Its destructor clears the
 resource's pointer to it under the resource lock.

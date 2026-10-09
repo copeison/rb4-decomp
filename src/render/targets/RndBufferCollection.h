@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "math/vector/Vector2i.h"
+#include "render/targets/RndScenePartialFramerateData.h"
 #include "render/textures/RndPixelFormat.h"
 #include "utl/containers/FixedVector.h"
 
@@ -37,47 +38,10 @@ enum RndBufferCollectionFlags : unsigned int {
 // collections implement the allocation slots.
 class RndBufferCollection {
 public:
-    // Per-frame state of a partial-framerate scene, constructed at 0x6D18A0.
-    // The map calls this RndScenePartialFramerateData. Field names not in
-    // the reference map.
-    //
-    // Only mShowHideContext through mDrawSceneMask are used in this build:
-    // the scene drawer's parameter finalization (0x41B060) saves those draw
-    // parameters on a scene's first partial frame and restores them on the
-    // following ones. The other fields are only initialized; their names
-    // follow the map's RndSceneDrawer::_StoreCullResults and
-    // _RestoreCullResults, which used this data in the older build, and are
-    // uncertain.
-    struct PartialFramerateData {
-        int mLightCullResults[5];       // -1 when empty. Never read.
-        // Neither initialized nor read: alignment padding.
-        unsigned int mPad20;
-        int mLightProbeCullResults[4];  // -1 when empty. Never read.
-        // Only cleared by the constructor's vector store; never read.
-        unsigned int mPad40;
-        // Copy of the draw parameters' RndShowHideContext: a value and the
-        // show/hide flags (0x21 by default; the drawer ORs in 2 or 4 for the
-        // main or aux camera).
-        unsigned int mShowHideContext[2];
-        // The draw parameters' shading mode; -1 takes the buffer
-        // collection's mShadingMode.
-        int mShadingMode;
-        // The draw parameters' sky, post-processing and scene-mask switches.
-        bool mDrawSky;
-        bool mDrawPostProc;
-        bool mDrawSceneMask;
-        // Cleared with the switches by one dword store; never read.
-        bool mPad59;
-        bool mCullResultsStored;        // Never read.
-        int mShadowCullResults[3];      // -1 when empty. Never read.
-        unsigned short mCullResultCount;  // Never read.
-        bool mCullResultsRestored;      // Never read.
-    };
-
     // Buffers drawn once per frame interval: the full-rate frame, then one
     // set per partial-framerate scene. Field names not in the reference map.
     struct FrameIntervalBuffers {
-        PartialFramerateData* mPartialFramerateData;
+        RndScenePartialFramerateData* mPartialFramerateData;
         RndTextureBase* mPartialLightAccum;
         RndTextureBase* mDepthStencil;
         // Never allocated or read in this build; only released. The older
@@ -133,7 +97,7 @@ public:
         const RndBufferCollection* reuse);  // 0x6B0760
     // The map's parameter is RndTargetMode.
     void SetTargetMode(int mode);  // 0x6B28D0
-    PartialFramerateData* ObtainPartialFramerateData(unsigned long scene);  // 0x6B2910
+    RndScenePartialFramerateData* ObtainPartialFramerateData(unsigned long scene);  // 0x6B2910
     void SelectPartialFramerateBuffers(long scene, long sceneContext);  // 0x6B2A20
 
     void _AllocLightAccumBuffers(const RndBufferCollection* reuse);   // 0x6B0B20
@@ -223,20 +187,6 @@ public:
     long mActiveSceneContext;
 };
 
-static_assert(sizeof(RndBufferCollection::PartialFramerateData) == 80);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mShowHideContext) == 44);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mShadingMode) == 52);
-static_assert(offsetof(RndBufferCollection::PartialFramerateData, mDrawSky) == 56);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mDrawSceneMask) == 58);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mCullResultsStored) == 60);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mShadowCullResults) == 64);
-static_assert(
-    offsetof(RndBufferCollection::PartialFramerateData, mCullResultCount) == 76);
 static_assert(
     offsetof(RndBufferCollection::FrameIntervalBuffers, mShadowDepth) == 0x18);
 static_assert(offsetof(RndBufferCollection, mFullResBlurredLightAccum) == 0x188);

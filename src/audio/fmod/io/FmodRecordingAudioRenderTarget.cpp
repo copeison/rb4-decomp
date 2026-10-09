@@ -31,7 +31,7 @@ FmodRecordingAudioRenderTarget::FmodRecordingAudioRenderTarget(
     mType = kTypeRecording;
     mFModSystem.Init(
         name, false, kRecordingOutput, bufferLength, 2, maxChannels, maxChannels, false);
-    *reinterpret_cast<FmodRecordingAudioRenderTarget**>(mFModSystem.mUnknown368) = this;
+    mFModSystem.mOwnerTarget = this;
     mFModSystem.SetSpeakerConfig(speakerConfig);
     mFModSystem.InitBufferedOutput();
     mFModSystem.mBufferedOutputCallback = [this](FMOD_OUTPUT_STATE* state) {

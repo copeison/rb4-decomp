@@ -48,6 +48,7 @@ data format, attachment index, and reused texture to the map's signatures.
 | 0x6B3730 | `_AllocVolumetricScatteringBuffers` | Inscattering and accumulated scattering volumes |
 | 0x6B28D0 | `SetTargetMode` | Writes the mode into every registered buffer |
 | 0x6B2910 | `ObtainPartialFramerateData` | Creates missing partial-framerate intervals |
+| 0x6D18A0 | `RndScenePartialFramerateData::RndScenePartialFramerateData` | Per-interval partial-framerate state, in its own `RndScenePartialFramerateData.cpp` as in the map |
 | 0x6B2A20 | `SelectPartialFramerateBuffers` | Selects the active interval |
 
 ## Corrections made during the conversion
@@ -74,7 +75,7 @@ data format, attachment index, and reused texture to the map's signatures.
 | --- | --- |
 | `RenderTargetResources`, `RenderTargetState` | `RndBufferCollection` |
 | `RenderTargetResourceBlock` | `RndBufferCollection::FrameIntervalBuffers` |
-| `RenderPartialFrameState` | `RndBufferCollection::PartialFramerateData` |
+| `RenderPartialFrameState`, `RndBufferCollection::PartialFramerateData` | `RndScenePartialFramerateData` |
 | `render_target_resources_initialize` | `InstallBackBuffer` |
 | `render_target_resources_release` | `Destroy` |
 | `render_target_resources_set_resource_mode` | `SetTargetMode` |

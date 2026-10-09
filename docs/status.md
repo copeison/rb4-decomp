@@ -749,8 +749,8 @@
   `MicReaderThread`) and `FmodBufferedStreamGenerator`.
 - [x] Replace the `Unknown` placeholder names outside the audio module with
   names inferred from the binary (see [naming.md](naming.md)).
-- [ ] Replace the remaining audio placeholders (the `AudioEmitterCom` slots,
-  `PlayArgs` fields and the `Unknown4` callable slot).
+- [x] Replace the remaining audio placeholders (the `AudioEmitterCom` slots,
+  `PlayArgs` fields and the `IsVirtualInstrument` callable slot).
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

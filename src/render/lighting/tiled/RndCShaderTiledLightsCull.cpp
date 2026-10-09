@@ -25,8 +25,8 @@ constexpr unsigned long kThreadsPerGroup = 64;
 
 // Thread-group widths, set by a static initializer at 0x6D9EA0; only the 2D
 // width is used. Names not in the reference map.
-[[maybe_unused]] int gCullUnknown = -1;      // 0x1AB18B8
-int gCullGroupSize2D = 8;                   // 0x1AB18BC
+[[maybe_unused]] int gCullGroupSizeUnused = -1;  // 0x1AB18B8
+int gCullGroupSize2D = 8;  // 0x1AB18BC
 [[maybe_unused]] int gCullGroupSize3D = 4;  // 0x1AB18C0
 
 // Names not in the reference map.

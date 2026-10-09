@@ -25,7 +25,8 @@ The audio analysis has eight slots, `AudioAnalysis::sSlots` at `0x19C9960`, each
 0x21D8 bytes. They are the shared state of the "HMX.Analysis" FMOD DSP, and an
 `AnalyzerCom` component sets them up. Each slot holds:
 - a VU meter;
-- an FFT of power-of-two size;
+- an FFT of power-of-two size, with its frequency band (20 to 5500 Hz by
+  default) and optional equal-loudness weighting and mel-scale bins;
 - an eight-band filter bank;
 - a semitone filter bank.
 

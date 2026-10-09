@@ -11,6 +11,7 @@ The 80-byte base has its vtable at `0x18DCD58`:
 
 | Offset | Field | Meaning |
 | ---: | --- | --- |
+| `+0x08` | `mName` | Sound name, stored by the sound manager's play. |
 | `+0x10` | `mManager` | Owning manager. |
 | `+0x18` | `mIndex` | Pool index. |
 | `+0x1C` | `mState` | 0 init, 2 ready, 3 playing, 4 paused, 5 stopped, 6 stopping. |
@@ -98,6 +99,23 @@ See [fmod-audio-bus-generator.md](fmod-audio-bus-generator.md),
 [fmod-audio-stream-generator.md](fmod-audio-stream-generator.md) and
 [fmod-studio-sound-generator.md](fmod-studio-sound-generator.md).
 
+## Emitter interface
+
+`AudioEmitterCom` in the source is the emitter interface that the audio
+emitter component keeps at `+0x228` (vtable `0x18DF628`). Its 29 slots
+forward to the component, and their names come from the map's
+`AudioEmitterCom` members: `GetCompositeGenerator`, `RegisterTempoListener`,
+`UnregisterTempoListener`, the `PlaySound`, `PrepareSound`, `PlayMusic` and
+`PrepareMusic` overloads, `StopAllSounds`, `KillAllSounds`,
+`PauseAllSounds`, `ContinueAllSounds`, `GetMasterMusic`, `GetMixGroup`,
+`GetWorldXfm`, two `PlayDialog` overloads, the dialog queries and setters,
+`Is2D`, `Is3D`, `Set2D`, `Set3D` and `GetComponent`. The names the map lacks
+are marked in the header.
+
+`PlayArgs` (104 bytes) carries the request. `mGlobalSoundHandle` (`+0x48`)
+registers the new handle with the state graph's global sound handles;
+`mReservedName` (`+0x50`) is never read.
+
 ## Reconstructed core
 
 The platform-neutral generator code is reconstructed in
@@ -106,8 +124,9 @@ The platform-neutral generator code is reconstructed in
 - `AudioGenerator.cpp` is the map's `audio/AudioGenerator.o`: the manager's
   `Init` (`0x40500`), `Destroy` (`0x40540`), `Play` (`0x40570`), `Prepare`
   (`0x406C0`) and destructor (`0xE780`, reached from `0x40AC0`),
-  `KillLocked`, `GetNewHandle`, the handle release check at `0x40770`, the
-  emitter notifications at `0x407C0` and `0x407E0`, four event-parameter
+  `KillLocked`, `GetNewHandle`, the handle release check at `0x40770`,
+  `RegisterTempoListener` (`0x407C0`) and `UnregisterTempoListener`
+  (`0x407E0`), which forward to the emitter, four event-parameter
   queries forwarded to the FMOD platform (`0x40800` to `0x40890`), and the
   `PlayArgs::Route` descriptions at `0x408C0`. The `AudioGenerator`
   defaults at `0xE3E0` to `0xE5F0` and its destructor are emitted with the

@@ -25,16 +25,28 @@ constexpr unsigned int kFmodHeaderVersion = 0x00011004;
 void Convert(const Transform& xfm, FMOD_3D_ATTRIBUTES& attributes);
 
 class AudioGenerator;
+class TempoListener;
 
 // User data shared by the engine's HMX.* DSP plugins. The generator that owns
 // the event is stored when the plugin is found in the event's channel group.
-// Name not in the reference map.
+// Each plugin's create callback (for example at 0x27CC90) builds it at +8 in
+// its state. Names not in the reference map.
 struct FmodPluginUserData {
-    void* mUnknown0;
+    // Always kPluginUserDataMagic.
+    unsigned int mMagic;
     void* mPluginData;
     AudioGenerator* mGenerator;
-    void* mNotifyGenerator;  // Non-null when the generator wants a notification.
+    // The plugin's tempo listener, registered with the generator's emitter
+    // when the plugin binds; null for plugins that ignore the tempo.
+    TempoListener* mTempoListener;
 };
+
+static_assert(offsetof(FmodPluginUserData, mPluginData) == 8);
+static_assert(offsetof(FmodPluginUserData, mTempoListener) == 24);
+
+// The marker the plugins store in FmodPluginUserData::mMagic. Name not in
+// the reference map.
+constexpr unsigned int kPluginUserDataMagic = 0xD00DFACE;
 
 // Finds the DSP with the given name in a channel group and returns its
 // plugin data. Reconstructed from eboot.elf at 0x27AD20. Name not in the
@@ -251,7 +263,10 @@ public:
     int mMaxChannels;
     bool mShuttingDown;
     std::function<FMOD_RESULT(FMOD_OUTPUT_STATE*)> mBufferedOutputCallback;
-    unsigned char mUnknown368[8];
+    // The recording target that owns this system; cleared by the
+    // constructor (0x276530) and set only by FmodRecordingAudioRenderTarget.
+    // Nothing in this build reads it, so the name rests on that store.
+    AudioRenderTarget* mOwnerTarget;
     unsigned long mMixCount;
     AudioCpuTimer mHmxTimer;
     AudioCpuTimer mFmodTimer;
@@ -259,10 +274,12 @@ public:
     // EASTL list of per-source AudioCpuTimer entries.
     LinkedListSizeTracked::ListBase mSourceTimers;
     void* mSourceTimersAllocator;
-    long mUnknown664;
+    // Set to -1 by the constructor and never read in this build; the name
+    // only records the invalid-handle value. The evidence is weak.
+    long mUnusedHandle;
     bool mInMix;
-    unsigned char mUnknown673[7];
-    sem_t mMixSemaphore;
+    // Eight-byte aligned in the binary; bytes 673-679 are never accessed.
+    alignas(8) sem_t mMixSemaphore;
     bool mUpdateStudio;
     CritSec mDeferredCritSec;
     DeferredReleaseList mDeferredReleases[2];

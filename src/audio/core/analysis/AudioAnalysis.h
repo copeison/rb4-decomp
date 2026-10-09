@@ -91,11 +91,17 @@ public:
     float mVUMeterDbRange;
 
     bool mFFTEnabled;
-    float mUnknown2C;  // 20.0 initially.
-    float mUnknown30;  // 5500.0 initially.
+    // The band of the bins, in Hz: 20 to 5500 initially. The analyzer DSP
+    // (0x111F650) spaces its bins between them.
+    float mFFTMinFreq;
+    float mFFTMaxFreq;
     int mFFTSize;
-    bool mUnknown38;
-    bool mUnknown39;
+    // Weights the bins by the ISO 226 equal-loudness contour at 90 phon
+    // (table at 0x136B2F0).
+    bool mFFTEqualLoudness;
+    // Spaces the bins on the mel scale, 1127 ln(1 + f / 700), rather than
+    // linearly.
+    bool mFFTMelScale;
     int mFFTDspSize;
     float mFFTRiseMs;
     float mFFTFallMs;

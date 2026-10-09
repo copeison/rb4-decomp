@@ -122,24 +122,6 @@ const RndBufferCollection::FrameIntervalBuffers* ReusedInterval(
     return reuse != nullptr ? &reuse->mFrameIntervals.mData[index] : nullptr;
 }
 
-RndBufferCollection::PartialFramerateData* NewPartialFramerateData() {
-    auto* data = static_cast<RndBufferCollection::PartialFramerateData*>(
-        operator new(sizeof(RndBufferCollection::PartialFramerateData)));
-    *data = {};
-    for (auto& value : data->mLightCullResults) {
-        value = -1;
-    }
-    for (auto& value : data->mLightProbeCullResults) {
-        value = -1;
-    }
-    data->mShowHideContext[1] = 33;
-    data->mShadingMode = -1;
-    for (auto& value : data->mShadowCullResults) {
-        value = -1;
-    }
-    return data;
-}
-
 RndComputeBuffer* NewTiledLightBuffer(
     unsigned long elementSize,
     unsigned long elementCount,
@@ -691,7 +673,7 @@ void RndBufferCollection::_AllocFrameIntervalBuffers(
     bool partial,
     const FrameIntervalBuffers* reuse) {
     if (partial) {
-        buffers.mPartialFramerateData = NewPartialFramerateData();
+        buffers.mPartialFramerateData = new RndScenePartialFramerateData();
         if ((mFlags & kBufferLightAccum) != 0) {
             buffers.mPartialLightAccum = _AllocOneLightAccumBuffer(
                 "Partial Light Accum Buffer",
@@ -738,8 +720,7 @@ void RndBufferCollection::SetTargetMode(int mode) {
 
 // Reconstructed from eboot.elf at 0x6B2910. Missing partial-framerate scenes
 // are created on demand.
-RndBufferCollection::PartialFramerateData*
-RndBufferCollection::ObtainPartialFramerateData(unsigned long scene) {
+RndScenePartialFramerateData* RndBufferCollection::ObtainPartialFramerateData(unsigned long scene) {
     const auto index = scene + 1;
     const auto count = mFrameIntervals.mSize;
     if (index >= count) {

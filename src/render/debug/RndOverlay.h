@@ -23,10 +23,16 @@ public:
         kFlagKeyboard = 1,
         // PrintHelp prints something; overlay_help skips the others.
         kFlagHasHelp = 2,
-        // Set by the framerate overlay. Name not in the reference map.
-        kFlagUnknown4 = 4,
-        // Read by the options component at 0x5F9AD0.
-        kFlagUnknown8 = 8,
+        // The overlay has options: RndOverlayOptionsCom's _Init (0x5F9AD0)
+        // gives it a "<name>_options" entry filled by _RegisterOptions. Set
+        // by the framerate overlay.
+        kFlagHasOptions = 4,
+        // The same _Init marks the overlay's show toggle with the two
+        // property attributes that runtime-only properties such as
+        // "last_broadcast" and raw bitfields get (+612 set, +1329 cleared),
+        // taken to keep the toggle out of saved settings. Set by the console
+        // overlay. The evidence for the name is weak.
+        kFlagNoSave = 8,
         // Text overlays wrap their lines at the viewport's width less the
         // margins.
         kFlagWrapText = 0x10,

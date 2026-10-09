@@ -43,8 +43,10 @@ block. The original assumes the buffer length is a multiple of 128.
 `0xC0` bytes). It holds an `AudioBuffer<float>` at `+0x08`, the block size,
 channel count, sample rate and its reciprocal, an owner told on destruction
 at `+0xA8`, and the bus lock at `+0xB0`. Slot 2 is `Prepare`, slot 3 sets the
-sample rate, slot 4 `Process` is pure in this build, and slots 5 to 9 are
-the map's inline lock helpers.
+sample rate, slot 4 `Process` is pure in this build, slots 5 to 9 are
+the map's inline lock helpers, and slot 10 `IsVirtualInstrument` is true only
+for the instrument buses such as `FusionSampler`. `AudioBusGenerator`
+reports its source's answer through `AudioBusCallable::IsVirtualInstrument`.
 
 ## Recording targets
 

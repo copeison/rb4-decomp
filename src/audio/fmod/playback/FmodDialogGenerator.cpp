@@ -9,7 +9,8 @@ namespace {
 // Only dialog requests reach this manager. Name not in the reference map.
 constexpr int kDialogFormat = 4;
 // Length reported until the first programmer sound is measured: one hour.
-constexpr float kUnknownDialogLengthMs = 3600000.0F;
+// Names not in the reference map.
+constexpr float kPendingDialogLengthMs = 3600000.0F;
 constexpr FMOD_MODE kProgrammerSoundMode =
     FMOD_NONBLOCKING | FMOD_ACCURATETIME | FMOD_CREATECOMPRESSEDSAMPLE;
 
@@ -24,7 +25,7 @@ bool FmodDialogGenerator::Setup(const char* path, const PlayArgs& args) {
         return false;
     }
     DialogGenerator::Setup(path, args);
-    mLengthMs = kUnknownDialogLengthMs;
+    mLengthMs = kPendingDialogLengthMs;
     mStudio.mEmitter = mEmitter;
     mStudio.mRenderTarget = mRenderTarget;
     return mStudio._Setup(path, args, _ProgrammerSoundCallback, this);

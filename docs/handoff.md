@@ -212,7 +212,8 @@ The latest focused commits, newest first, are:
 | `d198179` | Graph overlay drawing, timer list views, `DrawLines2D`, wide text and text measuring |
 | `ce8c8f0` | `RndTypesetter`, the text enums, font glyph and kerning lookup |
 | `c3eb541` | Audio core: generators, buses, mixer, render targets, stream reader thread |
-| (this) | Audio buffers, WAV files, voice pool, mic core, buffered streams; inferred names replace the Unknown placeholders outside audio |
+| `c6fee06` | Audio buffers, WAV files, voice pool, mic core, buffered streams; inferred names replace the Unknown placeholders outside audio |
+| (this) | Inferred names for the audio placeholders, `RndScenePartialFramerateData`, directional light wrap fix |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

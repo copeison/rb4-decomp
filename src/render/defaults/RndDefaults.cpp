@@ -380,7 +380,7 @@ void RndDefaults::_CreateBackupLighting(Entity* entity) {
     object->SetName(Symbol(kBackupDirectional));
     auto* light = reinterpret_cast<RndLightDirectionalCom*>(
         object->CreateComponent(RndLightDirectionalCom::sClassName, false));
-    light->mIntensity = 2.0f;
+    light->mLightWrap = 2.0f;
 
     // Face the light along the backup direction with Z kept up.
     TransCom* trans = object->GetCom<TransCom>();

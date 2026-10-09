@@ -4,22 +4,37 @@
 #include <cstddef>
 
 #include "os/files/File.h"
+#include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
 
 class BinStream;
+class TextStream;
 
-// Type information shared by every resource of one class. Only the fields
-// read by the IsA overrides are declared. Field names are not in the
-// reference map.
+// Type information shared by every resource of one class, constructed at
+// 0x1AF130 and filled by Init (0x1AF490, the map's Init(Symbol, Symbol,
+// bool)). Field names are not in the reference map.
 class ResourceMetaData {
 public:
-    unsigned char mUnknown0[64];
+    // The file extensions of the type, such as "mp3" and "wav" for
+    // FmodAudioStreamResource; Init registers each in the extension map.
+    eastl::vector<Symbol> mExtensions;
+    // An empty Symbol, four flags the constructor sets, three it clears and
+    // an int. Init skips the extension registration when the flag at +44 is
+    // set; Resource's companion-file check (0x1AD310) reads the one at +45.
+    unsigned char mTypeSettings[24];
+    // Returns the platform folder symbol; the constructor stores 0x1AF1A0,
+    // which returns PlatformSymbol(7).
+    Symbol (*mPlatformSymbolFunc)();
     Symbol mId;
-    unsigned char mUnknown72[8];
+    // Set when Init finishes.
+    bool mInitialized;
     ResourceMetaData* mParent;
 };
 
+static_assert(offsetof(ResourceMetaData, mTypeSettings) == 32);
+static_assert(offsetof(ResourceMetaData, mPlatformSymbolFunc) == 56);
 static_assert(offsetof(ResourceMetaData, mId) == 64);
+static_assert(offsetof(ResourceMetaData, mInitialized) == 72);
 static_assert(offsetof(ResourceMetaData, mParent) == 80);
 
 // Path of a loadable resource. The map places it with Resource in the entity
@@ -46,7 +61,8 @@ class Resource {
 public:
     // Inlined into each resource constructor, for example at 0x271660. The
     // engine path is resolved from the empty string.
-    Resource() : mRefs(0), mUnknown20(0), mUnknown22(), mUnknown40(0) {
+    Resource()
+        : mRefs(0), mNoCompanionFile(false), mFileChangedOnDisk(false), mFileTime(), mLoadTime(0) {
         FileResolvePath(mPath.mPath, "");
     }
 
@@ -57,11 +73,21 @@ public:
     virtual bool Load(BinStream& stream, bool unknown);  // slot 4
     virtual void Save(BinStream& stream, bool unknown);  // slot 5
     virtual bool Fail() const;                          // slot 6
-    virtual void Unknown7();                            // slot 7: 0x5C270. Name not in the reference map.
-    virtual void Unknown8();                            // slot 8: 0x5CF90. Name not in the reference map.
-    virtual void Unknown9();                            // slot 9: 0x5CFA0. Name not in the reference map.
+    // Slot 7 at 0x5C270: false here. When a resource has no generated
+    // companion file, the loader at 0x1AD310 builds one only for types that
+    // support it; two types override this to return !mNoCompanionFile.
+    virtual bool SupportsCompanionFile() const;
+    // Slots 8-9 at 0x5CF90 and 0x5CFA0 are never overridden or called in
+    // this build. The map's vtable has twelve slots; slots 8-9 are matched
+    // to its two CSV statistics members, a guess resting on their being
+    // the remaining const members. Slot 8 returns zero.
+    virtual int PrintCsvStatsHeader(TextStream& stream) const;
+    virtual void PrintCsvStats(TextStream& stream) const;
     virtual ~Resource();                                // slots 10-11: 0x1ADD70
-    virtual void Unknown12();                           // slot 12: 0x5D030. Name not in the reference map.
+    // Slot 12 at 0x5D030, added after the map's build: false here. GetOrLoad
+    // reloads a loaded resource when mFileChangedOnDisk is set or this
+    // returns true. Name not in the reference map.
+    virtual bool NeedsReload();
 
     void AddRef();      // 0x1ADEB0
     void ReleaseRef();  // 0x1ADEF0
@@ -86,14 +112,24 @@ public:
     // Field names are not in the reference map.
     ResourcePath mPath;
     std::atomic<int> mRefs;
-    unsigned short mUnknown20;
-    unsigned char mUnknown22[18];
-    int mUnknown40;
+    // Read by the SupportsCompanionFile overrides; no writer is identified,
+    // so the name is weakly supported.
+    bool mNoCompanionFile;
+    // Set by the file watcher (0x1ACCEE) for a resource whose file changed;
+    // GetOrLoad reloads the resource and clears it.
+    bool mFileChangedOnDisk;
+    // The file's modification time when it was loaded, as returned by
+    // 0x378AA0; the loader compares it with the companion file's.
+    unsigned long mFileTime[2];
+    // How long LoadFile took, measured around it at 0x1AC4F4.
+    int mLoadTime;
 };
 
 static_assert(offsetof(Resource, mPath) == 8);
 static_assert(offsetof(Resource, mRefs) == 16);
-static_assert(offsetof(Resource, mUnknown40) == 40);
+static_assert(offsetof(Resource, mFileChangedOnDisk) == 21);
+static_assert(offsetof(Resource, mFileTime) == 24);
+static_assert(offsetof(Resource, mLoadTime) == 40);
 static_assert(sizeof(Resource) == 48);
 
 // Intrusive reference to a Resource.

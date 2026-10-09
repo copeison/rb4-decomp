@@ -14,7 +14,7 @@ namespace {
 
 // Thread-group widths, set by a static initializer at 0x6DA530; only the 2D
 // width is used. Names not in the reference map.
-int gInterpUnknown = -1;     // 0x1AB18F0
+int gInterpGroupSizeUnused = -1;  // 0x1AB18F0
 int gInterpGroupSize2D = 8;  // 0x1AB18F4
 int gInterpGroupSize3D = 4;  // 0x1AB18F8
 constexpr unsigned long kComputeKey = 4;
@@ -95,7 +95,7 @@ void RndCShaderTiledLightsInterpolation::Dispatch(
     dimensions[3] = 1.0F / static_cast<float>(size.y);
     RndShaderDrawUtl::CommitCBuffer(cbuffer, context, mCBufferSize);
 
-    (void)gInterpUnknown;
+    (void)gInterpGroupSizeUnused;
     (void)gInterpGroupSize3D;
     context._DispatchComputeImpl(
         static_cast<unsigned int>(

@@ -14,7 +14,7 @@ namespace {
 // Thread-group widths of the 2D and 3D clears, set by a static initializer
 // at 0x637BF0; the first is unused. The 1D clear uses groups of 64. Names
 // not in the reference map.
-int gClearUnknown = -1;     // 0x1AAB6E0
+int gClearGroupSizeUnused = -1;  // 0x1AAB6E0
 int gClearGroupSize2D = 8;  // 0x1AAB6E4
 int gClearGroupSize3D = 4;  // 0x1AAB6E8
 constexpr int kClearGroupSize1D = 64;
@@ -136,7 +136,7 @@ void RndCShaderClearBuffer::Dispatch(RndContext& context, Params& params) {
         groupsZ = 1;
         break;
     }
-    (void)gClearUnknown;
+    (void)gClearGroupSizeUnused;
     context._DispatchComputeImpl(groupsX, groupsY, groupsZ);
 }
 

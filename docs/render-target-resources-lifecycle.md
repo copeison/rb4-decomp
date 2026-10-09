@@ -113,9 +113,9 @@ Three adjacent owner helpers complete the active-block controls:
   mode only when it changes, then propagates it to registered resources.
 - `RndBufferCollection::ObtainPartialFramerateData` at `0x6B2910` maps a
   partial-scene index to block `index + 1`, grows and initializes the block
-  array as needed, and returns the block's 80-byte state. That state is now a
-  typed allocation with the exact constructor defaults recovered from
-  `0x6D18A0`; block teardown releases it directly.
+  array as needed, and returns the block's 80-byte
+  `RndScenePartialFramerateData`. Its out-of-line constructor at `0x6D18A0`
+  sets the recovered defaults; block teardown releases it directly.
 - `RndBufferCollection::SelectPartialFramerateBuffers` at `0x6B2A20` stores the
   active block index and scene context. Passing `-1, -1` selects the primary
   block and clears the context.

@@ -27,8 +27,11 @@ public:
     // Slot 3 at 0x47650.
     virtual bool _MakeSamples(
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock);
-    // Slot 4 at 0x47660. Name not in the reference map.
-    virtual bool Unknown4();
+    // Slot 4 at 0x47660: whether the callable renders a virtual
+    // instrument. Only AudioBusGenerator overrides it, forwarding
+    // AudioBus::IsVirtualInstrument of its source; nothing in this build
+    // calls it. Name not in the reference map.
+    virtual bool IsVirtualInstrument();
 
     // Claimed by the first caller of _MakeSamples in each block. Name not in
     // the reference map.
@@ -42,12 +45,13 @@ static_assert(sizeof(AudioBusCallable) == 40);
 
 class AudioBus;
 
-// Object told when an AudioBus it holds is destroyed. Only the slot the bus
-// calls is declared. Name not in the reference map.
+// Object told when an AudioBus it holds is destroyed. No implementation is
+// identified in this build; slots 0-1 are taken to be the destructor pair
+// that Itanium places first, which is weak evidence. Name not in the
+// reference map.
 class AudioBusOwner {
 public:
-    virtual void Unknown0();
-    virtual void Unknown1();
+    virtual ~AudioBusOwner();
     // Slot 2: called from ~AudioBus at 0xBF0A0 with the dying bus.
     virtual void OnBusDestroyed(AudioBus* bus);
 };
@@ -87,15 +91,19 @@ public:
         return &mBusLock;
     }
     virtual void TearDown() {}  // slot 9: 0x43C30
-    // Slot 10 at 0x52330. Name not in the reference map.
-    virtual bool Unknown10() {
+    // Slot 10 at 0x52330: false here; the instrument buses, among them
+    // FusionSampler (0x43C40 for the vtable at 0x18E4D68), return true.
+    // Name not in the reference map.
+    virtual bool IsVirtualInstrument() {
         return false;
     }
 
     // Field names are not in the reference map.
     AudioBuffer<float> mBuffer;
-    int mUnknown136;
-    int mUnknown140;
+    // Zeroed by the constructor and Prepare and read nowhere in this build;
+    // the names record only that. The evidence is weak.
+    int mPrepareResetA;
+    int mPrepareResetB;
     int mBlockSize;      // Samples per rendered block.
     int mNumChannels;
     double mSampleRate;
@@ -105,7 +113,7 @@ public:
 };
 
 static_assert(offsetof(AudioBus, mBuffer) == 8);
-static_assert(offsetof(AudioBus, mUnknown136) == 136);
+static_assert(offsetof(AudioBus, mPrepareResetA) == 136);
 static_assert(offsetof(AudioBus, mBlockSize) == 144);
 static_assert(offsetof(AudioBus, mNumChannels) == 148);
 static_assert(offsetof(AudioBus, mSampleRate) == 152);

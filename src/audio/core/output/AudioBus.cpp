@@ -9,12 +9,12 @@ bool AudioBusCallable::_MakeSamples(int, float, int, int, bool) {
 }
 
 // Reconstructed from eboot.elf at 0x47660.
-bool AudioBusCallable::Unknown4() {
+bool AudioBusCallable::IsVirtualInstrument() {
     return false;
 }
 
 // Reconstructed from eboot.elf at 0xBEF90.
-AudioBus::AudioBus() : mUnknown136(0), mUnknown140(0), mSampleRate(0.0), mSecondsPerSample(0.0), mOwner(nullptr) {}
+AudioBus::AudioBus() : mPrepareResetA(0), mPrepareResetB(0), mSampleRate(0.0), mSecondsPerSample(0.0), mOwner(nullptr) {}
 
 // Reconstructed from eboot.elf at 0xBF0A0. The owner is told first, then the
 // bus tears itself down.
@@ -29,8 +29,8 @@ AudioBus::~AudioBus() {
 void AudioBus::Prepare(float sampleRate, unsigned int numChannels, unsigned int blockSize, bool allocate) {
     mSampleRate = sampleRate;
     mSecondsPerSample = 1.0 / mSampleRate;
-    mUnknown136 = 0;
-    mUnknown140 = 0;
+    mPrepareResetA = 0;
+    mPrepareResetB = 0;
     mBlockSize = static_cast<int>(blockSize);
     mNumChannels = static_cast<int>(numChannels);
     if (blockSize != 0 && allocate) {

@@ -391,7 +391,7 @@ FusionVoice* FusionVoicePool::GetFreeVoice(
         mCritSec.Exit();
         return nullptr;
     }
-    if (keyzone->mUsePitchShift ? sampler == nullptr || mNumPitchShifts == 0 : sampler == nullptr) {
+    if (keyzone->mMaintainTime ? sampler == nullptr || mNumPitchShifts == 0 : sampler == nullptr) {
         mCritSec.Exit();
         return nullptr;
     }
@@ -468,14 +468,14 @@ FusionVoice* FusionVoicePool::GetFreeVoice(
         mCritSec.Exit();
         return nullptr;
     }
-    if (keyzone->mUsePitchShift && chosen->mPitchShift == nullptr && mNumFreePitchShifts == 0) {
+    if (keyzone->mMaintainTime && chosen->mPitchShift == nullptr && mNumFreePitchShifts == 0) {
         mCritSec.Exit();
         return nullptr;
     }
 
     chosen->Kill();
     SmbPitchShift* pitchShift = nullptr;
-    if (keyzone->mUsePitchShift) {
+    if (keyzone->mMaintainTime) {
         mCritSec.Enter();
         for (unsigned int slot = 0; slot < mNumPitchShifts; ++slot) {
             if (!mPitchShifts[slot].mInUse) {

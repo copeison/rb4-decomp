@@ -59,7 +59,7 @@ bool RndFramerateOverlay::gSplitFrameTiming = false;
 
 // Reconstructed from eboot.elf at 0x6E27A0.
 RndFramerateOverlay::RndFramerateOverlay()
-    : RndOverlayTextBase("framerate", kFlagKeyboard | kFlagHasHelp | kFlagUnknown4),
+    : RndOverlayTextBase("framerate", kFlagKeyboard | kFlagHasHelp | kFlagHasOptions),
       mShowCpuAverage(false),
       mShowGpuAverage(false),
       mCpuTimer(nullptr) {

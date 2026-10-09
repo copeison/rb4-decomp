@@ -49,13 +49,17 @@ public:
 
     // Field names are not in the reference map.
     FmodStudioSoundGenerator mStudio;
-    std::function<void()> mUnknown352;
-    unsigned char mUnknown400[8];
+    // A callback and its context, like DialogGenerator's sink. Only
+    // constructed and destroyed in this build (the pool at 0x26F37F and the
+    // destructors); the names are weakly supported.
+    std::function<void()> mCompletionCallback;
+    void* mCompletionContext;
     float mLengthMs;
 };
 
 static_assert(offsetof(FmodDialogGenerator, mStudio) == 136);
-static_assert(offsetof(FmodDialogGenerator, mUnknown352) == 352);
+static_assert(offsetof(FmodDialogGenerator, mCompletionCallback) == 352);
+static_assert(offsetof(FmodDialogGenerator, mCompletionContext) == 400);
 static_assert(offsetof(FmodDialogGenerator, mLengthMs) == 408);
 static_assert(sizeof(FmodDialogGenerator) == 416);
 

@@ -108,7 +108,7 @@ public:
     bool _MakeSamples(
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock) override;  // slot 34: 0xE14E0
     // Slot 35 at 0xE13F0: forwards to the source bus.
-    bool Unknown4() override;
+    bool IsVirtualInstrument() override;
 
     // Snaps the gain and mute ramps. At 0xE0900. The map has
     // _ResetGainAndMute() on FmodAudioBusGenerator; this build passes the

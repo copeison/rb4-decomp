@@ -154,18 +154,18 @@ bool AudioGenerator::TryDeactivateHandle() {
 }
 
 // Reconstructed from eboot.elf at 0x407C0.
-void AudioGenerator::NotifyPluginAttached() {
+void AudioGenerator::RegisterTempoListener(TempoListener* listener) {
     if (mEmitter != nullptr) {
-        mEmitter->Unknown1();
+        mEmitter->RegisterTempoListener(listener);
     }
 }
 
 // Reconstructed from eboot.elf at 0x407E0.
-bool AudioGenerator::QueryEmitter() {
+bool AudioGenerator::UnregisterTempoListener(TempoListener* listener) {
     if (mEmitter == nullptr) {
         return false;
     }
-    return mEmitter->Unknown2();
+    return mEmitter->UnregisterTempoListener(listener);
 }
 
 // Reconstructed from eboot.elf at 0x40800.

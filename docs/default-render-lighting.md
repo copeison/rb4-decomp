@@ -66,7 +66,8 @@ spot list is empty.
 
 `render_create_fallback_default_lighting` at `0x6BF4F0` creates an object named
 `default_directional_light`, attaches a directional-light component, sets its
-intensity field to `2.0`, orients its transform from engine defaults, appends
+`light_wrap` property (`RndLightDirectionalCom::mLightWrap`, offset 88; the
+`intensity` property is at 80) to `2.0`, orients its transform from engine defaults, appends
 its object ID to the directional list, and applies the active lighting mode.
 Its transform construction remains in IDA until the involved math types and
 global basis vectors are recovered. The high-level fallback path is now in the

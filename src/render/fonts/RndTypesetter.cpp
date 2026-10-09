@@ -14,11 +14,14 @@
 
 namespace {
 
-// Set by the static initializer at 0x681610 and never read; the same triple
-// follows other render objects. Names not in the reference map.
-[[maybe_unused]] int gTypesetterUnknown = -1;  // 0x1AAE28C
-[[maybe_unused]] int gTypesetterUnknown2 = 8;  // 0x1AAE290
-[[maybe_unused]] int gTypesetterUnknown3 = 4;  // 0x1AAE294
+// Set by the static initializer at 0x681610 and never read. The same -1, 8,
+// 4 triple is initialized in 516 objects, so it comes from a shared header;
+// the compute shaders read the 8 and 4 as their 2D and 3D thread-group
+// widths (see RndCShaderTiledLightsCull), and nothing reads the -1. Names
+// not in the reference map.
+[[maybe_unused]] int gTypesetterGroupSizeUnused = -1;  // 0x1AAE28C
+[[maybe_unused]] int gTypesetterGroupSize2D = 8;       // 0x1AAE290
+[[maybe_unused]] int gTypesetterGroupSize3D = 4;       // 0x1AAE294
 
 // The block glyph drawn for a missing or rejected character. Name not in
 // the reference map.

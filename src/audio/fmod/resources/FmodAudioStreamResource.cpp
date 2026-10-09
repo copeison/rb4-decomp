@@ -295,7 +295,8 @@ int _FMODSoundAsyncSampleProcessor::ThreadStart() {
     mSound->getFormat(&type, &format, &channels, &bits);
     mSound->getDefaults(&frequency, &priority);
     mSound->getLength(&numFrames, FMOD_TIMEUNIT_PCM);
-    mBlockFrames = mProcessor->BeginStream(static_cast<int>(frequency), 2, channels, numFrames);
+    mBlockFrames = mProcessor->ChainInit(
+        static_cast<int>(frequency), FMOD_SOUND_FORMAT_PCM16, channels, numFrames);
     const unsigned int frameBytes = channels * 2;
     mBufferBytes = mBlockFrames * channels * 2;
     mBuffer = MemAlloc(mBufferBytes, "FMODSoundToPCMCallback", 8);
@@ -307,7 +308,7 @@ int _FMODSoundAsyncSampleProcessor::ThreadStart() {
         unsigned int bytesRead = 0;
         mSound->readData(mBuffer, mBufferBytes, &bytesRead);
         const unsigned int frames = bytesRead / frameBytes;
-        accepted = mProcessor->ProcessSamples(mBuffer, bytesRead);
+        accepted = mProcessor->ChainProcessSampleFrames(static_cast<char*>(mBuffer), bytesRead);
         if (bytesRead == 0 || !(accepted && !mCancel)) {
             break;
         }

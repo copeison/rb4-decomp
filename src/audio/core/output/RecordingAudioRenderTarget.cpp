@@ -22,10 +22,15 @@ constexpr auto kRecordingFileMode = static_cast<FileMode>(4);
 constexpr float kSampleScale = 32767.0F;
 
 // The emitter component's layout as _CreateEmitter reaches it: the name of
-// the render target it plays into, and its emitter interface. Names not in
-// the reference map.
+// the render target it plays into, and its emitter interface. Both belong to
+// the component's RuntimeData (constructed at 0x37710), which starts at
+// +104. Names not in the reference map.
 struct EmitterComponentView {
-    unsigned char mUnknown0[544];
+    // The Component base.
+    unsigned char mComponentBase[104];
+    // RuntimeData's members before the render target: the
+    // CompositeGenerator at +128 in it and the emitter's lists and locks.
+    unsigned char mRuntimeData[440];
     Symbol mRenderTarget;
     AudioEmitterCom mEmitter;
 };
@@ -94,7 +99,7 @@ void RecordingAudioRenderTarget::_CreateEmitter() {
     auto* component = reinterpret_cast<EmitterComponentView*>(
         object->CreateComponent(gAudioEmitterComClass, false));
     mEmitter = &component->mEmitter;
-    mEmitter->Unknown26(true);
+    mEmitter->Set2D(true);
 
     const bool savedFlag = gEntityThreadState.mEnterImmediately;
     gEntityThreadState.mEnterImmediately = false;
@@ -107,7 +112,7 @@ void RecordingAudioRenderTarget::_CreateEmitter() {
 // Reconstructed from eboot.elf at 0x1128D30.
 RecordingAudioRenderTarget::~RecordingAudioRenderTarget() {
     mStopRequested = true;
-    mEmitter->Unknown0()->KillLocked();
+    mEmitter->GetCompositeGenerator()->KillLocked();
     delete mEntityResource;
     mEntityResource = nullptr;
     mEmitter = nullptr;
@@ -169,7 +174,7 @@ void RecordingAudioRenderTarget::ReleaseRecording() {
 // Reconstructed from eboot.elf at 0x1129140.
 void RecordingAudioRenderTarget::StopRecording() {
     if (mEmitter != nullptr) {
-        mEmitter->Unknown0()->KillLocked();
+        mEmitter->GetCompositeGenerator()->KillLocked();
     }
 }
 

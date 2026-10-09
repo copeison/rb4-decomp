@@ -69,7 +69,7 @@ void RndConsoleOverlay::ConsoleDebugReflection::Print(const char* str) {
 RndConsoleOverlay::RndConsoleOverlay()
     : RndOverlayTextBase(
           "console",
-          kFlagKeyboard | kFlagHasHelp | kFlagUnknown8 | kFlagWrapText),
+          kFlagKeyboard | kFlagHasHelp | kFlagNoSave | kFlagWrapText),
       mInput(this),
       mReflection(this),
       mPrintType(-1) {}

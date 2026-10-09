@@ -11,7 +11,7 @@ namespace {
 // Thread-group widths of the 2D and 3D copies, set by a static initializer
 // at 0x6F3DE0; the first is unused. The 1D copy uses groups of 64. Names
 // not in the reference map.
-int gCopyUnknown = -1;     // 0x1AB1FA4
+int gCopyGroupSizeUnused = -1;  // 0x1AB1FA4
 int gCopyGroupSize2D = 8;  // 0x1AB1FA8
 int gCopyGroupSize3D = 4;  // 0x1AB1FAC
 constexpr int kCopyGroupSize1D = 64;
@@ -132,7 +132,7 @@ void RndCShaderCopyBuffer::Dispatch(RndContext& context, Params& params) {
         groupsZ = 1;
         break;
     }
-    (void)gCopyUnknown;
+    (void)gCopyGroupSizeUnused;
     context._DispatchComputeImpl(groupsX, groupsY, groupsZ);
 }
 

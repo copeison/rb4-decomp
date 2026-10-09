@@ -29,11 +29,11 @@ AudioAnalysis::AudioAnalysis() {
     mVUMeterDbMax = 0.0f;
     mVUMeterDbRange = 30.0f;
     mFFTEnabled = false;
-    mUnknown2C = 20.0f;
-    mUnknown30 = 5500.0f;
+    mFFTMinFreq = 20.0f;
+    mFFTMaxFreq = 5500.0f;
     mFFTSize = 256;
-    mUnknown38 = false;
-    mUnknown39 = false;
+    mFFTEqualLoudness = false;
+    mFFTMelScale = false;
     mFFTDspSize = 256;
     mFFTRiseMs = 50.0f;
     mFFTFallMs = 250.0f;

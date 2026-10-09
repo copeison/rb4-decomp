@@ -176,8 +176,8 @@ void BindPluginsToGenerator(FMOD::ChannelControl* channelGroup, AudioGenerator* 
         dsp->getUserData(reinterpret_cast<void**>(&data));
         if (data != nullptr) {
             data->mGenerator = generator;
-            if (data->mNotifyGenerator != nullptr) {
-                generator->NotifyPluginAttached();
+            if (data->mTempoListener != nullptr) {
+                generator->RegisterTempoListener(data->mTempoListener);
             }
         }
     }

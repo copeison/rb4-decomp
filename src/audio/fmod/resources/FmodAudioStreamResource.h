@@ -7,24 +7,30 @@
 #include "audio/fmod/api/fmod_api.h"
 #include "os/threading/CritSec.h"
 
-// Consumer of decoded PCM. Only the slots the FMOD decoder calls are
-// declared; the earlier ones are placeholders that keep the recovered vtable
-// offsets. Names not in the reference map unless noted.
+// Consumer of decoded PCM (audio/AsyncSampleProcessor.o). Processors form
+// a chain: each Chain* member runs the matching On* hook and passes the call
+// on. No implementation is linked into this build, so only slots 7-11 are
+// fixed by their callers; the names of slots 0-6 come from the map's
+// AsyncSampleProcessor and ToMonoFloatAsyncProcessor members, ordered like
+// the Chain* slots, and their order is a guess.
 class AsyncSampleProcessor {
 public:
-    virtual void Unknown0();
-    virtual void Unknown1();
-    virtual void Unknown2();
-    virtual void Unknown3();
-    virtual void Unknown4();
-    virtual void Unknown5();
-    virtual void Unknown6();
-    virtual void Unknown7();
+    virtual ~AsyncSampleProcessor();  // slots 0-1
+    virtual void OnReset();           // slot 2
+    virtual int OnInit(  // slot 3
+        int sampleRate, FMOD_SOUND_FORMAT format, unsigned int numChannels, unsigned int numFrames);
+    virtual bool OnProcessSampleFrames(char* data, unsigned int bytes);  // slot 4
+    virtual void OnDone();            // slot 5
+    virtual void OnCancel();          // slot 6
+    // Slot 7: FmodAudioStreamResource::StartAsyncSampleProcessor (0x272B80)
+    // resets the chain before queueing the decode.
+    virtual void ChainReset();
     // Slot 8: announces the stream format and returns the block size in
     // frames.
-    virtual int BeginStream(int sampleRate, int bytesPerSample, int numChannels, unsigned int numFrames);
+    virtual int ChainInit(
+        int sampleRate, FMOD_SOUND_FORMAT format, unsigned int numChannels, unsigned int numFrames);
     // Slot 9: consumes one block; false aborts the decode.
-    virtual bool ProcessSamples(void* data, unsigned int bytes);
+    virtual bool ChainProcessSampleFrames(char* data, unsigned int bytes);
     virtual void ChainDone();      // slot 10
     virtual void ChainCanceled();  // slot 11
 };
@@ -62,7 +68,9 @@ public:
     void* mBuffer;
     int mBlockFrames;
     int mBufferBytes;
-    bool mUnknown48;
+    // Set by StartAsyncSampleProcessor (0x272B80) when FMOD cannot create
+    // the sound; the decode is then not queued.
+    bool mCreateFailed;
     bool mCancel;
 };
 

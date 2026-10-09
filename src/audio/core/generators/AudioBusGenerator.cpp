@@ -85,11 +85,11 @@ void AudioBusGenerator::SetMute(bool mute, bool immediate) {
 }
 
 // Reconstructed from eboot.elf at 0xE13F0.
-bool AudioBusGenerator::Unknown4() {
+bool AudioBusGenerator::IsVirtualInstrument() {
     if (mSource == nullptr) {
         return false;
     }
-    return mSource->Unknown10();
+    return mSource->IsVirtualInstrument();
 }
 
 // Reconstructed from eboot.elf at 0xE1430.

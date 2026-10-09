@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <functional>
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
@@ -14,11 +15,20 @@ class AudioEmitterCom;
 class AudioGenerator;
 class AudioGeneratorManager;
 class AudioRenderTarget;
+class Component;
+struct DialogPlayArgs;
+struct PlayMusicArgs;
+class TempoListener;
 class TextStream;
 class Transform;
 
-// Playback request shared by every generator manager. Only the fields read
-// by the FMOD generators are named. The constructor and destructor are
+// Music request options of the map's AudioEmitterCom::PlayMusic overloads.
+// Their values are not modelled.
+enum MusicSyncOptions : int;
+enum MusicTimelineMapping : int;
+enum MusicUnmutePoint : int;
+
+// Playback request shared by every generator manager. The constructor and destructor are
 // inlined into each builder, for example
 // AudioGeneratorManager::Play(Symbol, AudioEmitterCom*, bool) at 0x40570.
 // Field names are not in the reference map.
@@ -61,18 +71,24 @@ struct PlayArgs {
     AudioEmitterCom* mEmitter;
     bool mStartPaused;
     bool mStartMuted;
-    unsigned char mUnknown18[2];
-    bool mHasInitialGain;
+    // The gain fields start a new 4-byte group and the route a new 8-byte
+    // group; the bytes before each are never written by any builder, so the
+    // original probably grouped them in nested structs.
+    alignas(4) bool mHasInitialGain;
     float mInitialGainDb;
     float mInitialGainFadeSecs;
     int mInitialGainPostFade;
-    int mUnknown36;
-    int mRoute;
+    alignas(8) int mRoute;
     Symbol mRoutePath;
     float mSpread;
     Symbol mRenderTarget;
-    Symbol mUnknown72;
-    Symbol mUnknown80;
+    // When set, SoundManager's play (0x7A00) registers the new handle under
+    // this name through the static StateGraphDriverCom::AddSoundHandle at
+    // 0x701970, for the global lookups of HasSoundHandle.
+    Symbol mGlobalSoundHandle;
+    // Initialized to the empty symbol by every builder and read nowhere in
+    // this build; the name only records that. The evidence is weak.
+    Symbol mReservedName;
     ParameterList* mParameters;
     // 4 marks a DialogPlayArgs.
     int mFormat;
@@ -88,53 +104,93 @@ static_assert(offsetof(PlayArgs, mRoute) == 40);
 static_assert(offsetof(PlayArgs, mRoutePath) == 48);
 static_assert(offsetof(PlayArgs, mSpread) == 56);
 static_assert(offsetof(PlayArgs, mRenderTarget) == 64);
+static_assert(offsetof(PlayArgs, mGlobalSoundHandle) == 72);
+static_assert(offsetof(PlayArgs, mReservedName) == 80);
 static_assert(offsetof(PlayArgs, mParameters) == 88);
 static_assert(offsetof(PlayArgs, mFormat) == 96);
 static_assert(offsetof(PlayArgs, mStreaming) == 101);
 static_assert(sizeof(PlayArgs) == 104);
 
-// Scene component that owns sounds. Only the virtual slots called by the
-// audio generators are declared; the earlier slots are placeholders so the
-// calls use the recovered vtable offsets. Names not in the reference map.
+// The emitter interface of the audio emitter component. The component's
+// RuntimeData (constructed at 0x37710, at +104 in the component) holds it at
+// +0x228 in the component, with a back pointer to the component after it;
+// the vtable is at 0x18DF628. Most slots forward to the component's own
+// methods, whose names come from the map's AudioEmitterCom; the slots the
+// map does not name are marked. Slot 18 onward drive the component's
+// "is_2D" (+0x20) and "allow_dialog_overlap" (+0x21) properties and its
+// dialog handle (+0x1B4) and interruptible flag (+0x1B8).
 class AudioEmitterCom {
 public:
-    // Slot 0: a generator the emitter is playing. RecordingAudioRenderTarget
-    // kills it through AudioGenerator::KillLocked.
-    virtual AudioGenerator* Unknown0();
-    // Slot 1: told when an HMX DSP plugin binds to one of its generators.
-    virtual void Unknown1();
-    // Slot 2: queried through AudioGenerator at 0x407E0.
-    virtual bool Unknown2();
-    virtual void Unknown3();
-    virtual void Unknown4();
-    virtual void Unknown5();
-    virtual void Unknown6();
-    virtual void Unknown7();
-    virtual void Unknown8();
-    virtual void Unknown9();
-    virtual void Unknown10();
-    virtual void Unknown11();
-    virtual void Unknown12();
-    virtual void Unknown13();
-    virtual void Unknown14();
-    virtual void Unknown15();
-    // Slot 16: the emitter's mix group, or null. When present, the FMOD
-    // generators route through its channel group, whose getter is inlined
-    // as null in this build.
+    // Slot 0 at 0x379D0: the component's CompositeGenerator (at +0xE8), the
+    // parent of every sound the emitter plays. Name not in the reference
+    // map.
+    virtual AudioGenerator* GetCompositeGenerator();
+    // Slot 1 at 0x379E0: adds a tempo listener and sends it the current
+    // tempo. AudioGenerator::RegisterTempoListener forwards here.
+    virtual void RegisterTempoListener(TempoListener* listener);
+    // Slot 2 at 0x379F0: false when the listener was not registered. Name
+    // not in the reference map.
+    virtual bool UnregisterTempoListener(TempoListener* listener);
+    // Slots 3-10 at 0x37A00 and 0x37AB0 through 0x37B10 return the new
+    // handle.
+    virtual unsigned int PlaySound(PlayArgs& args);
+    virtual unsigned int PlaySound(Symbol name);
+    virtual unsigned int PrepareSound(Symbol name);
+    virtual unsigned int PlayMusic(PlayMusicArgs& args);
+    virtual unsigned int PlayMusic(
+        Symbol name, MusicSyncOptions sync, MusicTimelineMapping mapping, MusicUnmutePoint unmute);
+    virtual unsigned int PlayMusic(Symbol name, Symbol sync);
+    virtual unsigned int PrepareMusic(Symbol name, MusicSyncOptions sync);
+    virtual unsigned int PrepareMusic(Symbol name, Symbol sync);
+    // Slots 11-14 at 0x37B20 through 0x37B80 stop, kill, pause and continue
+    // the composite generator. RecordingAudioRenderTarget kills its emitter's
+    // sounds through slot 0 instead.
+    virtual void StopAllSounds();
+    virtual void KillAllSounds();
+    virtual void PauseAllSounds();
+    virtual void ContinueAllSounds();
+    // Slot 15 at 0x37BA0: the handle of the music the emitter follows.
+    virtual unsigned int GetMasterMusic();
+    // Slot 16 at 0x37BB0: the emitter's mix group, or null. When present,
+    // the FMOD generators route through its channel group, whose getter is
+    // inlined as null in this build. Name not in the reference map.
     virtual void* GetMixGroup();
-    // Slot 17: the emitter's world transform.
+    // Slot 17 at 0x37BC0: the component's world transform, or the listener's
+    // for a 2D emitter. Name not in the reference map.
     virtual const Transform& GetWorldXfm();
-    virtual void Unknown18();
-    virtual void Unknown19();
-    virtual void Unknown20();
-    virtual void Unknown21();
-    virtual void Unknown22();
-    virtual void Unknown23();
-    virtual void Unknown24();
-    // Slot 25: whether the emitter is positional.
+    // Slot 18 at 0x37BE0: builds a DialogPlayArgs and plays it, stopping the
+    // current line unless overlap is allowed. The last argument is an object
+    // reference (the map's ObjPtr). Name not in the reference map.
+    virtual unsigned int PlayDialog(
+        Symbol name,
+        bool interruptible,
+        const std::function<void(AudioEmitterCom*, Symbol, void*)>& sink,
+        const void* object);
+    // Slot 19 at 0x37CB0: the same for a prepared request. Name not in the
+    // reference map.
+    virtual unsigned int PlayDialog(DialogPlayArgs& args);
+    // Slot 20 at 0x37CC0: whether the dialog handle still names a generator
+    // ("dialog_is_playing"). Name not in the reference map.
+    virtual bool IsDialogPlaying();
+    // Slot 21 at 0x37CD0: a dialog handle is held and its line is not interruptible.
+    // Name not in the reference map.
+    virtual bool IsDialogUninterruptible();
+    // Slot 22 at 0x37CE0: sets the current line's interruptible flag when the handle
+    // names a dialog generator. Name not in the reference map.
+    virtual bool SetDialogInterruptible(bool interruptible);
+    // Slot 23 at 0x37D00: the "allow_dialog_overlap" property. Name not in the
+    // reference map.
+    virtual void SetAllowDialogOverlap(bool allow);
+    // Slots 24-27 at 0x37D20 through 0x37D50 read and write the "is_2D"
+    // property; a 2D emitter is not
+    // positioned. Names not in the reference map.
+    virtual bool Is2D();
     virtual bool Is3D();
-    // Slot 26: RecordingAudioRenderTarget sets it on the emitter it creates.
-    virtual void Unknown26(bool enable);
+    virtual void Set2D(bool is2D);
+    virtual void Set3D(bool is3D);
+    // Slot 28 at 0x37D60: the owning component. Name not in the reference
+    // map.
+    virtual Component* GetComponent();
 };
 
 // The class symbol of the emitter component, at 0x19C7770. The component's
@@ -339,15 +395,17 @@ public:
     // Clears the active handle bit when no caller holds the generator, so
     // the pool can release it. At 0x40770. Name not in the reference map.
     bool TryDeactivateHandle();
-    // Tells the emitter that an HMX DSP plugin bound to this generator. At
-    // 0x407C0. Name not in the reference map.
-    void NotifyPluginAttached();
-    // Forwards slot 2 of the emitter; false without one. At 0x407E0, with no
-    // callers in this build. Name not in the reference map.
-    bool QueryEmitter();
+    // Registers a tempo listener, such as an HMX DSP plugin bound to this
+    // generator, with the emitter. At 0x407C0.
+    void RegisterTempoListener(TempoListener* listener);
+    // Removes the listener from the emitter; false without one. At 0x407E0,
+    // with no callers in this build. The map's version is larger; this one
+    // only forwards to the emitter.
+    bool UnregisterTempoListener(TempoListener* listener);
 
     // Field names are not in the reference map.
-    Symbol mUnknown8;
+    // The sound's name, stored by SoundManager's play (0x7A00).
+    Symbol mName;
     AudioGeneratorManager* mManager;
     int mIndex;
     State mState;

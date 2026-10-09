@@ -7,7 +7,7 @@ namespace {
 
 // Thread-group widths, set by a static initializer at 0x6DB050; only the 2D
 // width is used. Names not in the reference map.
-int gTonemapUnknown = -1;     // 0x1AB1948
+int gTonemapGroupSizeUnused = -1;  // 0x1AB1948
 int gTonemapGroupSize2D = 8;  // 0x1AB194C
 int gTonemapGroupSize3D = 4;  // 0x1AB1950
 
@@ -27,7 +27,7 @@ RndCShaderTonemap::~RndCShaderTonemap() {}
 void RndCShaderTonemap::Dispatch(RndContext& context, const Params& params) {
     _Select(context, params);
     const auto& desc = params.mOutput->mBaseDesc;
-    (void)gTonemapUnknown;
+    (void)gTonemapGroupSizeUnused;
     (void)gTonemapGroupSize3D;
     context._DispatchComputeImpl(
         NumGroups(static_cast<int>(desc.mWidth), gTonemapGroupSize2D),
