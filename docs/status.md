@@ -446,6 +446,7 @@
   hardware-reciprocal texel offset and HDR10 color-space selection.
 - [x] Reconstruct the single-texture linearize-depth, refine-scene-mask,
   and display-sphere-map draw functions.
+- [x] Reconstruct the test-pattern and render-test-simple draw functions.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

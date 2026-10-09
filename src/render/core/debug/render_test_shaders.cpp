@@ -1,14 +1,17 @@
-#include "render/resources/shaders/builtin_shader_resources.h"
+#include "render/core/debug/render_test_shaders.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -191,6 +194,65 @@ void render_test_shader_construct(void* shader) {
     }
     shader_field(shader, 328) = -1;
     shader_field(shader, 336) = 0;
+}
+
+
+// Reconstructed from eboot.elf at 0x645420.
+void render_test_pattern_shader_draw(
+    void* shader,
+    RenderContext& context,
+    const RenderTestPatternDrawParameters& parameters) {
+    const auto extent = static_cast<std::uint64_t>(shader_field(shader, 312));
+    auto& buffer = render_shader_select_constant_buffer(context, extent);
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 288)),
+        parameters.color0,
+        sizeof(parameters.color0));
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 296)),
+        parameters.color1,
+        sizeof(parameters.color1));
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 304)),
+        parameters.tile_count,
+        sizeof(parameters.tile_count));
+    render_shader_commit_constant_buffer(buffer, context, extent);
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    render_primary_shader_bind(primary_shader(shader), context, keys);
+}
+
+// Reconstructed from eboot.elf at 0x642580. The color constant is uploaded
+// only for the constant-buffer-color permutation. Vertex color is a global
+// permutation and is written into every program key.
+void render_test_simple_shader_draw(
+    void* shader,
+    RenderContext& context,
+    const RenderTestSimpleDrawParameters& parameters) {
+    constexpr std::size_t kPixelKey = 3;
+    if (parameters.constant_buffer_color) {
+        const auto extent =
+            static_cast<std::uint64_t>(shader_field(shader, 336));
+        auto& buffer = render_shader_select_constant_buffer(context, extent);
+        std::memcpy(
+            render_shader_constant_member(buffer, shader_field(shader, 328)),
+            parameters.color,
+            sizeof(parameters.color));
+        render_shader_commit_constant_buffer(buffer, context, extent);
+    }
+
+    const auto& vertex_color = parameter_binding(shader, 0);
+    const auto global_field = static_cast<std::uint64_t>(
+        ((parameters.vertex_color ? 1U : 0U) - vertex_color.first_value)
+        << vertex_color.bit_offset) << 32;
+    std::uint64_t keys[kRenderShaderProgramKeyCount];
+    for (auto& key : keys) {
+        key = global_field;
+    }
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        global_field,
+        parameter_binding(shader, 1),
+        parameters.constant_buffer_color ? 1U : 0U);
+    render_primary_shader_bind(primary_shader(shader), context, keys);
 }
 
 }  // namespace rb4

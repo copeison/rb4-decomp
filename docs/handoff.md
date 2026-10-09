@@ -3,7 +3,7 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct single-texture shader draws` milestone, which added
+`decomp: reconstruct test shader draws` milestone, which added
 more pass draw functions on top of compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Single-texture linearize-depth, refine-mask, sphere-map draws |
+| (this) | Test-pattern and render-test-simple draws |
+| `9c93567` | Single-texture linearize-depth, refine-mask, sphere-map draws |
 | `2537e18` | Downsample draw |
 | `d0cdc60` | Output-conversion draw and sRGB conversion |
 | `b94af4c` | Bloom draw and shared pass-draw helpers |
@@ -425,10 +426,9 @@ it. Each one belongs in its pass's domain folder:
 
 - blur at `0x634BB0`, a 3.8 KB function with an auto-vectorized Gaussian
   weight loop that needs raw-assembly reading;
-- 39 further callers of `render_primary_shader_bind`. List them by
+- 37 further callers of `render_primary_shader_bind`. List them by
   cross-referencing `0x638920` in IDA; several still lack IDA function
-  definitions (`0x5F8E78`, `0x642680`, `0x645507`, `0x6F345E`,
-  `0x6F3ED8`).
+  definitions (`0x5F8E78`, `0x6F345E`, `0x6F3ED8`).
 
 Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared
 helpers in `render/resources/shaders/shader_draw_state.h` cover texture
