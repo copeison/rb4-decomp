@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -17,24 +18,6 @@ namespace rb4 {
 namespace {
 
 constexpr std::size_t kManagerLinkOffset = 272;
-
-struct RenderManagedObjectDispatch {
-    void* reserved_0;
-    void (*release_dynamic)(void* object);
-};
-
-struct RenderManagedObject {
-    RenderManagedObjectDispatch* dispatch;
-};
-
-struct RenderManagedObjectArray {
-    RenderManagedObject** begin;
-    RenderManagedObject** end;
-    RenderManagedObject** capacity;
-    void* allocator;
-};
-
-static_assert(sizeof(RenderManagedObjectArray) == 32);
 
 template <typename Element>
 void release_array_storage(

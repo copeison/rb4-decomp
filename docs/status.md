@@ -424,6 +424,8 @@
   permutation, four YCrCbA plane textures, and scale/offset constants.
 - [x] Reconstruct the test-pattern and render-test-simple graphics shaders,
   retiring the last built-in dispatch adapters and the shared adapter file.
+- [x] Reconstruct the `BinStream` endian/cipher read and seek primitives,
+  the Park-Miller stream cipher, and the compiled-shader cache object loader.
 - [ ] Extend source-owned primary-shader dispatches from 7 to the binary's 11
   slots, including permutation validators and per-shader slot 8/9 overrides.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
