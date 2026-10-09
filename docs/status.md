@@ -575,6 +575,10 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Use the SDK's `sce::Gnm` and `sce::Gnmx::GfxContext` types in the PS4
+  backend, and reconstruct `PS4Context::SetupDraw` and
+  `PS4RenderUtl::GetPrimitiveType`.
+- [x] Pass the screenshot render callback as `std::function<void()>`.
 - [x] Name the main loop's calls from the map: `SystemInit`, `SystemPoll`,
   `InitRBLayoutDefines`, `StagePresence::InitEnumMacros`, `SoundManager::Poll`,
   `RBProfileMgr::Poll`, and `UIMgr::Poll`, `GetCurrentLayout` and `Draw`.
