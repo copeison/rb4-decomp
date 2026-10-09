@@ -3,6 +3,12 @@
 #include <cmath>
 #include <cstring>
 
+class FmodAudioBusGeneratorManager;
+
+// Declared in FmodAudioBusGenerator.h. Its storage sits in this object
+// before sTypeId.
+FmodAudioBusGeneratorManager* gAudioBusGeneratorManager;  // 0x19E26A8
+
 Symbol AudioBusGenerator::sTypeId;
 
 // Reconstructed from eboot.elf at 0xE0490. The block buffer holds one stereo

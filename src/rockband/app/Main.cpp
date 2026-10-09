@@ -2,6 +2,7 @@
 
 #include "audio/core/system/SoundManager.h"
 #include "os/files/File.h"
+#include "os/system/Core.h"
 #include "os/system/System.h"
 #include "rb_game/stagepresence/RBStagePresenceEnum.h"
 #include "rb_meta/profiles/RBProfileMgr.h"
@@ -20,7 +21,6 @@
 struct DingoService;
 struct UILayoutController;
 
-void core_initialize();
 void engine_register_types();
 void animation_register_types();
 void physics_register_types();

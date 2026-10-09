@@ -1,7 +1,7 @@
 #include "audio/fmod/playback/FmodDialogGenerator.h"
 
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
-#include "audio/fmod/playback/FmodGeneratorPool.h"
+#include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/system/FmodPlatform.h"
 
 namespace {
@@ -82,7 +82,7 @@ FMOD_RESULT FmodDialogGenerator::_ProgrammerSoundCallback(
 // Reconstructed from eboot.elf at 0x26EBE0.
 void FmodDialogGenerator::Release() {
     mStudio._ReleaseEvent();
-    FmodGeneratorPool::Release(*this);
+    GeneratorPool::Release(*this);
 }
 
 // Reconstructed from eboot.elf at 0x26F6E0.
@@ -203,7 +203,7 @@ AudioGenerator* FmodDialogGeneratorManager::Play(const PlayArgs& args) {
     }
     AudioEmitterCom* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
-    auto* generator = FmodGeneratorPool::Allocate<FmodDialogGenerator>(*this, target, emitter);
+    auto* generator = GeneratorPool::Allocate<FmodDialogGenerator>(*this, target, emitter);
     if (generator == nullptr) {
         return nullptr;
     }
@@ -235,22 +235,22 @@ Symbol FmodDialogGeneratorManager::GetResourceExt() {
 
 // Reconstructed from eboot.elf at 0x26EFD0.
 AudioGenerator* FmodDialogGeneratorManager::LockIfOwned(unsigned int handle, int index) {
-    return FmodGeneratorPool::LockIfOwned(*this, mPool, handle, index);
+    return GeneratorPool::LockIfOwned(*this, mPool, handle, index);
 }
 
 // Reconstructed from eboot.elf at 0x26F040.
 void FmodDialogGeneratorManager::SendStopToAllGenerators() {
-    FmodGeneratorPool::SendStop(*this, mPool);
+    GeneratorPool::SendStop(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26F0B0.
 void FmodDialogGeneratorManager::SendKillToAllGenerators() {
-    FmodGeneratorPool::SendKill(*this, mPool);
+    GeneratorPool::SendKill(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26F120.
 void FmodDialogGeneratorManager::GetActiveHandles(void* handles) {
-    FmodGeneratorPool::GetActiveHandles(*this, mPool, handles);
+    GeneratorPool::GetActiveHandles(*this, mPool, handles);
 }
 
 // Reconstructed from eboot.elf at 0x26F270.
@@ -260,12 +260,12 @@ void FmodDialogGeneratorManager::_SetManagerIndex(int index) {
 
 // Reconstructed from eboot.elf at 0x26F280.
 void FmodDialogGeneratorManager::_InitGeneratorPool() {
-    FmodGeneratorPool::Init(*this, mPool);
+    GeneratorPool::Init(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26F420.
 bool FmodDialogGeneratorManager::_DeleteGeneratorPool() {
-    return FmodGeneratorPool::Delete(*this, mPool);
+    return GeneratorPool::Delete(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26F6B0.

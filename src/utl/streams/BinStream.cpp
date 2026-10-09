@@ -83,6 +83,22 @@ void BinStream::WriteEncrypted(const void* data, unsigned long size) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x219F10. The length is written as a
+// 32-bit value, then the characters without a terminator.
+BinStream& BinStream::operator<<(const Symbol& symbol) {
+    const char* const text = symbol.Str();
+    const unsigned long length = std::strlen(text);
+    const unsigned int count = static_cast<unsigned int>(length);
+    WriteEndian(&count, sizeof(count));
+    Fail();
+    if (mCrypto == nullptr) {
+        WriteImpl(text, length);
+    } else {
+        WriteEncrypted(text, length);
+    }
+    return *this;
+}
+
 // Reconstructed from eboot.elf at 0x21A280. The fail query is issued before
 // every read and its result is ignored, matching the original.
 void BinStream::Read(void* data, unsigned long size) {

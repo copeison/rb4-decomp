@@ -5,7 +5,18 @@
 
 #include "audio/core/generators/AudioGenerator.h"
 #include "audio/core/generators/CompositeGenerator.h"
+#include "audio/core/generators/MoggGenerator.h"
+#include "audio/core/fusion/FusionGenerator.h"
+#include "audio/core/instruments/MultiFusionGenerator.h"
+#include "audio/core/instruments/SynthRackGenerator.h"
+#include "audio/core/music/MidiMusicGenerator.h"
+#include "audio/core/resources/MidiMusicResource.h"
+#include "audio/core/music/MoggMusicGenerator.h"
+#include "audio/core/resources/MoggMusicResource.h"
+#include "audio/core/music/MusicTimelineGenerator.h"
 #include "audio/core/output/AudioRenderTarget.h"
+#include "audio/core/resources/FusionPatchResource.h"
+#include "audio/core/resources/MoggResource.h"
 #include "audio/fmod/platform/orbis/FmodPlatform_PS4.h"
 #include "audio/fmod/system/FmodPlatform.h"
 #include "entity/core/Entity.h"
@@ -60,17 +71,9 @@ class WaveResource {
 public:
     static void Init();  // 0x1510
 };
-class MoggResource {
-public:
-    static void Init();  // 0x1680
-};
 class MoggSampleResource {
 public:
     static void Init();  // 0x17F0
-};
-class FusionPatchResource {
-public:
-    static void Init();  // 0x1960
 };
 class MultiFusionResource {
 public:
@@ -79,14 +82,6 @@ public:
 class MidiFileResource {
 public:
     static void Init();  // 0x1C40
-};
-class MoggMusicResource {
-public:
-    static void Init();  // 0x1DB0
-};
-class MidiMusicResource {
-public:
-    static void Init();  // 0x1F20
 };
 class AudioAnalyzerCom {
 public:
@@ -137,94 +132,6 @@ public:
 class MidiMsgBroadcasterCom {
 public:
     static void Init();  // 0x5730, class "MidiMsgBroadcaster"
-};
-
-// The pool overrides every concrete generator manager declares, in
-// AudioGeneratorManager's slot order. Not in the reference map.
-#define DECLARE_GENERATOR_MANAGER_OVERRIDES                                      AudioGenerator* Play(const PlayArgs& args) override;                         int GetIndex() override;                                                     Symbol GetId() override;                                                     Symbol GetResourceExt() override;                                            AudioGenerator* LockIfOwned(unsigned int handle, int index) override;        void SendStopToAllGenerators() override;                                     void SendKillToAllGenerators() override;                                     void GetActiveHandles(void* handles) override;                               void _SetManagerIndex(int index) override;                                   void _InitGeneratorPool() override;                                          bool _DeleteGeneratorPool() override;
-
-// The generator managers the sound manager creates by name. Each is
-// 72 bytes with its pool at +64; only the members the creation inlines are
-// declared. The names they register under are their kIdStr, the char
-// pointers at 0x19B00A0 through 0x19B00E0, which the map defines with the
-// managers in their generators' objects (audio/FusionGenerator.o and the
-// like); those objects, the vtables and kIdStr are not reconstructed.
-class FusionGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit FusionGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~FusionGeneratorManager() override;  // The vtable is at 0x18E0440.
-
-    static const char* kIdStr;  // 0x19B00A0
-    void* mPool;
-};
-class MidiMusicGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit MidiMusicGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~MidiMusicGeneratorManager() override;  // The vtable is at 0x18E09F8.
-
-    static const char* kIdStr;  // 0x19B00A8
-    void* mPool;
-};
-class MoggGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit MoggGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~MoggGeneratorManager() override;  // The vtable is at 0x18E0BE0.
-
-    static const char* kIdStr;  // 0x19B00B0
-    void* mPool;
-};
-class MoggMusicGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit MoggMusicGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~MoggMusicGeneratorManager() override;  // The vtable is at 0x18E1100.
-
-    static const char* kIdStr;  // 0x19B00C0
-    void* mPool;
-};
-class MultiFusionGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit MultiFusionGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~MultiFusionGeneratorManager() override;  // The vtable is at 0x18E1550.
-
-    static const char* kIdStr;  // 0x19B00C8
-    void* mPool;
-};
-class MusicTimelineGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit MusicTimelineGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~MusicTimelineGeneratorManager() override;  // The vtable is at 0x18E2148.
-
-    static const char* kIdStr;  // 0x19B00D8
-    void* mPool;
-};
-class SynthRackGeneratorManager : public AudioGeneratorManager {
-public:
-    explicit SynthRackGeneratorManager(int poolSize) {
-        mPoolSize = poolSize;
-    }
-    DECLARE_GENERATOR_MANAGER_OVERRIDES
-    ~SynthRackGeneratorManager() override;  // The vtable is at 0x18E2598.
-
-    static const char* kIdStr;  // 0x19B00E0
-    void* mPool;
 };
 
 namespace {

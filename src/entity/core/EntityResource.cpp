@@ -1,10 +1,10 @@
 #include "entity/core/EntityResource.h"
 
+#include "entity/core/ComMetaData.h"
 #include "entity/core/EditorCom.h"
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/InstanceCom.h"
-
 
 // The class's metadata at 0x19E3008.
 ResourceMetaData EntityResource::sMetaData;
@@ -15,41 +15,14 @@ ResourceMetaData EntityResource::sMetaData;
 // map.
 extern Symbol gEntityInstanceComId;  // 0x19E3280
 
-// The parts of a component class's ComMetaData that EntityResource reads.
-// The type is the map's; ComMetaData is not reconstructed, so its members
-// are reached through these offsets. Names not in the reference map.
-namespace {
-
-// The required component classes, a vector of class symbols at +0x80.
-const eastl::vector<Symbol>& RequiredComponents(const ComMetaData& metaData) {
-    return *reinterpret_cast<const eastl::vector<Symbol>*>(
-        reinterpret_cast<const unsigned char*>(&metaData) + 0x80);
-}
-
-// The classes that depend on the class, a vector of class symbols at
-// +0x140.
-const eastl::vector<Symbol>& DependentComponents(const ComMetaData& metaData) {
-    return *reinterpret_cast<const eastl::vector<Symbol>*>(
-        reinterpret_cast<const unsigned char*>(&metaData) + 0x140);
-}
-
-// The entity resource classes the component class may be created in, a
-// vector of class symbols at +0x30.
-const eastl::vector<Symbol>& AllowedResources(const ComMetaData& metaData) {
-    return *reinterpret_cast<const eastl::vector<Symbol>*>(
-        reinterpret_cast<const unsigned char*>(&metaData) + 0x30);
-}
-
-}  // namespace
-
 // Reconstructed from eboot.elf at 0xFD610. The binary forwards the
 // arguments to Entity::_LoadRoot.
 void EntityResource::_LoadRoot(
     BinStream& stream,
     Entity* entity,
-    eastl::vector<unsigned char>* rootData,
-    eastl::vector<ResourcePath>* paths) {
-    Entity::_LoadRoot(stream, entity, rootData, paths);
+    eastl::vector<ResourcePath>* paths,
+    eastl::vector<unsigned char>* rootData) {
+    Entity::_LoadRoot(stream, entity, paths, rootData);
 }
 
 // Reconstructed from eboot.elf at 0xFD630.
@@ -69,7 +42,7 @@ Entity* EntityResource::CreateEntity() {
     root->CreateComponent(InstanceCom::sClassName, false);
     for (const GameObject::ComIndex& entry : root->mComs) {
         if (entry.mId == EditorCom::sId) {
-            EditorCom* const editor = reinterpret_cast<EditorCom*>(entry.mCom);
+            EditorCom* const editor = static_cast<EditorCom*>(entry.mCom);
             if (editor != nullptr) {
                 editor->RevokeEditorCapability(root, EditorCom::kCanDelete);
                 editor->RevokeEditorCapability(root, EditorCom::kCanChangeProperties);
@@ -232,7 +205,7 @@ bool EntityResource::LayerExists(unsigned long layer) const {
 // Reconstructed from eboot.elf at 0x101A20. Only the classes the object
 // lacks, or holds as null, are created.
 bool EntityResource::CreateRequiredComponents(GameObject* object, const ComMetaData& metaData) {
-    for (const Symbol& required : RequiredComponents(metaData)) {
+    for (const Symbol& required : metaData.mRequiredComponents) {
         bool found = false;
         for (const GameObject::ComIndex& entry : object->mComs) {
             if (entry.mId == required) {
@@ -250,7 +223,7 @@ bool EntityResource::CreateRequiredComponents(GameObject* object, const ComMetaD
 // Reconstructed from eboot.elf at 0x101AC0. The empty symbol matches a
 // component registered without a class.
 void EntityResource::DestroyDependentComponents(GameObject* object, const ComMetaData& metaData) {
-    for (const Symbol& dependent : DependentComponents(metaData)) {
+    for (const Symbol& dependent : metaData.mDependentComponents) {
         for (const GameObject::ComIndex& entry : object->mComs) {
             const bool matches = dependent == Symbol()
                 ? entry.mId == dependent
@@ -267,7 +240,7 @@ void EntityResource::DestroyDependentComponents(GameObject* object, const ComMet
 
 // Reconstructed from eboot.elf at 0x101B80.
 bool EntityResource::IsAllowedComponent(const ComMetaData& metaData) const {
-    for (const Symbol& allowed : AllowedResources(metaData)) {
+    for (const Symbol& allowed : metaData.mAllowedResources) {
         if (IsA(allowed)) {
             return true;
         }

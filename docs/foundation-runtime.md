@@ -68,10 +68,19 @@ time on the `"Hmx ThreadCall"` thread:
 - `ThreadCallPoll` (`0x259F90`) reports the finished head call through
   `ThreadDone` and signals the semaphore for the next one.
 
-The `0x219B80` that `FmodAudioStreamResource` calls is a wrapper that polls
-ThreadCall, two other services and `TimeMgr`. It is not `ThreadCallPoll`;
-the source names it `core_poll_and_update_time`. `FmodAudioStreamResource`
-uses `ThreadCallback` from `utl/threading/ThreadCall.h`.
+`src/os/system/Core.cpp` holds the core runtime's per-frame service, which
+sits between `math/Trig.o` and `utl/BinStream.o` with `core_initialize`
+(`0x219AA0`). The map has none of it, so the names are inferred:
+
+- `core_poll` (`0x219BB0`) polls ThreadCall, the resource preload requests
+  (`0x1168140`) and an empty platform hook (`0x112DC50`).
+- `core_update_time` (`0x219BD0`) runs `TimeMgr::Poll` (`0x25AE20`).
+- `core_poll_and_update_time` (`0x219B80`) does both. Only
+  `FmodAudioStreamResource`'s asynchronous decode waits call it; `SystemPoll`
+  calls the two halves.
+
+`FmodAudioStreamResource` uses `ThreadCallback` from
+`utl/threading/ThreadCall.h`.
 
 ## TimeMgr clocks
 

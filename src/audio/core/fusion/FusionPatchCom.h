@@ -7,14 +7,32 @@
 #include "audio/core/modulation/LFO.h"
 #include "audio/core/modulation/Modulator.h"
 #include "audio/core/resources/AudioSampleResource.h"
+#include "entity/core/Component.h"
 #include "entity/resources/Resource.h"
+#include "utl/data/DataArray.h"
+
+class FusionPatchResource;
 
 // Sampler patch component (audio/FusionPatchCom.o). The component has not
 // been reconstructed; only the settings FusionVoicePool and FusionSampler
 // read are declared. Its property arrays are the map's PropArray<T>, of
 // which only the storage pointer and the count are modelled.
-class FusionPatchCom {
+class FusionPatchCom : public Component {
 public:
+    static Symbol sId;  // 0x19C8BB8
+    // The class symbol GameObject::CreateComponent takes. Name not in the
+    // reference map.
+    static Symbol sClassName;  // 0x19C8BC0
+
+    // The patch loaders FusionPatchResource uses; true when the patch
+    // loaded. _LoadFromDTAFile reads the ".fusion" text file and passes it
+    // to _LoadFromDataArray, whose name is not in the reference map.
+    bool _LoadFromSXTFile(ResourcePath path);  // 0x83BB0
+    bool _LoadFromDTAFile(ResourcePath path);  // 0x76B20
+    bool _LoadFromDataArray(const DataArrayPtr& data, const ResourcePath& path);  // 0x76BB0
+    // The patch in the ".fusion" text format.
+    DataArrayPtr _SaveToDataArray();  // 0x79A50
+
     // The "portamento" struct. The map's PortamentoSettings::Mode is
     // FusionSampler::PortamentoMode here. Field names are not in the
     // reference map.
@@ -134,9 +152,7 @@ public:
         bool ContainsNoteAndVelocity(unsigned char note, unsigned char velocity) const;
     };
 
-    // The component's fields. Names are not in the reference map; mOpaque0
-    // is the component base, which is not modelled.
-    unsigned char mOpaque0[24];
+    // The component's fields. Names are not in the reference map.
     // The preset FusionSampler::LoadPatch starts from: the
     // "preset_options" "current" property, as far as is known.
     unsigned long mCurrentPreset;
@@ -151,6 +167,10 @@ public:
     KeyzoneSettings* mKeyzones;
     unsigned int mNumKeyzones;
     unsigned char mKeyzonesStorage[20];
+    unsigned char mOpaque112[80];
+    // The resource that created the component, set by
+    // FusionPatchResource::CreateEntity (0x5C060).
+    FusionPatchResource* mResource;
 };
 
 // The "keyzones" array object as FusionSampler's keyzone search
@@ -193,6 +213,7 @@ static_assert(offsetof(FusionPatchCom, mPresets) == 40);
 static_assert(offsetof(FusionPatchCom, mNumPresets) == 48);
 static_assert(offsetof(FusionPatchCom, mKeyzonesVtable) == 72);
 static_assert(offsetof(FusionPatchCom, mNumKeyzones) == 88);
+static_assert(offsetof(FusionPatchCom, mResource) == 192);
 
 static_assert(offsetof(FusionPatchCom::KeyzoneSettings, mPriority) == 6);
 static_assert(offsetof(FusionPatchCom::KeyzoneSettings, mPan) == 8);

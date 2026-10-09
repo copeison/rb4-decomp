@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
-#include "audio/fmod/playback/FmodGeneratorPool.h"
+#include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/system/FmodPlatform.h"
 #include "math/transform/Transform.h"
 
@@ -522,7 +522,7 @@ void FmodAudioBusGenerator::Kill() {
 
 // Reconstructed from eboot.elf at 0x268380.
 void FmodAudioBusGenerator::Release() {
-    FmodGeneratorPool::Release(*this);
+    GeneratorPool::Release(*this);
 }
 
 // Reconstructed from eboot.elf at 0x2683F0.
@@ -600,22 +600,22 @@ Symbol FmodAudioBusGeneratorManager::GetResourceExt() {
 
 // Reconstructed from eboot.elf at 0x268660.
 AudioGenerator* FmodAudioBusGeneratorManager::LockIfOwned(unsigned int handle, int index) {
-    return FmodGeneratorPool::LockIfOwned(*this, mPool, handle, index);
+    return GeneratorPool::LockIfOwned(*this, mPool, handle, index);
 }
 
 // Reconstructed from eboot.elf at 0x2686D0.
 void FmodAudioBusGeneratorManager::SendStopToAllGenerators() {
-    FmodGeneratorPool::SendStop(*this, mPool);
+    GeneratorPool::SendStop(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x268740.
 void FmodAudioBusGeneratorManager::SendKillToAllGenerators() {
-    FmodGeneratorPool::SendKill(*this, mPool);
+    GeneratorPool::SendKill(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x2687B0.
 void FmodAudioBusGeneratorManager::GetActiveHandles(void* handles) {
-    FmodGeneratorPool::GetActiveHandles(*this, mPool, handles);
+    GeneratorPool::GetActiveHandles(*this, mPool, handles);
 }
 
 // Reconstructed from eboot.elf at 0x268900.
@@ -625,12 +625,12 @@ void FmodAudioBusGeneratorManager::_SetManagerIndex(int index) {
 
 // Reconstructed from eboot.elf at 0x268910.
 void FmodAudioBusGeneratorManager::_InitGeneratorPool() {
-    FmodGeneratorPool::Init(*this, mPool);
+    GeneratorPool::Init(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x268A60.
 bool FmodAudioBusGeneratorManager::_DeleteGeneratorPool() {
-    return FmodGeneratorPool::Delete(*this, mPool);
+    return GeneratorPool::Delete(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x268B10.
@@ -639,5 +639,5 @@ FmodAudioBusGeneratorManager::~FmodAudioBusGeneratorManager() {}
 // Reconstructed from eboot.elf at 0x268B40.
 FmodAudioBusGenerator* FmodAudioBusGeneratorManager::_GetGenerator(
     AudioRenderTarget* target, AudioEmitterCom* emitter) {
-    return FmodGeneratorPool::Allocate<FmodAudioBusGenerator>(*this, target, emitter);
+    return GeneratorPool::Allocate<FmodAudioBusGenerator>(*this, target, emitter);
 }

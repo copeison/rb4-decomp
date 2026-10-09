@@ -123,6 +123,12 @@ public:
     // removes it at once.
     void RemoveReader(StreamReader* reader);
 
+    // Creates the global reader thread (stored at 0x19C9900) and starts it.
+    // At 0xD0650, with its own copies of the members at 0xD0xxx, where the
+    // map places audio/StreamReaderThread.o; MoggGeneratorManager::Init
+    // calls it.
+    static void Init();
+
     // The thread body at 0x264470. On quit, every queued reader completes
     // with result 15.
     static int _ReaderThreadMain(void* context);

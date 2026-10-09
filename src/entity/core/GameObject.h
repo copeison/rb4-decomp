@@ -5,8 +5,11 @@
 #include "entity/props/PropArray.h"
 #include "utl/text/Symbol.h"
 
+class BinStream;
 class Component;
 class Entity;
+
+enum DestroyType : int;
 
 // The id of an object within its entity: the serial in bits 16-31, the
 // layer in bits 12-15 and the object's index in that layer in bits 0-11.
@@ -37,6 +40,10 @@ public:
     // One entry of the component table. The map names the type; the field
     // names are not in the reference map.
     struct ComIndex {
+        // The array's default element: no component and empty symbols
+        // (0xF86D0).
+        ComIndex() : mCom(nullptr) {}
+
         Component* mCom;
         // The component class's sId.
         Symbol mId;
@@ -46,10 +53,34 @@ public:
         Symbol mBaseId;
     };
 
+    // An empty, active object of the entity. Inlined into its allocations,
+    // Entity::_CreateAndInsertNewGameObject (0xF0AD0) and Entity::_LoadRoot
+    // (0xEFA00). Name not in the reference map.
+    GameObject(Entity* entity, GameObjectId id)
+        : mEntity(entity),
+          mPollOrder(),
+          mComs(),
+          mId(id),
+          mName(),
+          mImprinted(false),
+          mActive(true),
+          mEntered(false),
+          mPollOrderDirty(false),
+          mComsAdded(false),
+          mReserved(nullptr),
+          mAllComsFlagged(false) {}
+
+    // Reads the object's name and components, and its poll order from
+    // revision 3. The map's ObjPtr::Load(BinStream&). Not reconstructed.
+    void Load(BinStream& stream);  // 0x116590
+
     // A description for error messages, formatted "%s object in %s" from
     // "<name> (<index>)" and the entity's MakeErrorName. The map's
     // ObjPtr::MakeErrorName() const.
     const char* MakeErrorName() const;  // 0x115FC0
+    // The object's name and serial, "%s (%u)". The map's
+    // ObjPtr::GetSafeName() const; the evidence is weak.
+    const char* GetSafeName() const;  // 0x116110
     // Sets the name and tells the entity's resource. The map's
     // ObjPtr::SetName(Symbol).
     void SetName(Symbol name);  // 0x1160F0
@@ -64,15 +95,48 @@ public:
     // components and adds it to the table. The map's
     // ObjPtr::CreateComponent(Symbol, bool). Name not in the reference map.
     Component* _CreateComponent(Symbol className, bool deferSort);  // 0x116AE0
-    // Destroys the component of the class. The map's
-    // ObjPtr::DestroyComponent(Symbol); this build adds a flag, which
-    // EntityResource::DestroyDependentComponents sets. Not reconstructed.
-    void DestroyComponent(Symbol className, bool unknown);  // 0x117760
-    // Rebuilds the poll order of a component table changed since the last
-    // sort. Name not in the reference map; the map's
+    // Destroys the component with the class or interface symbol, exiting it
+    // first when it is entered, after the entity resource destroys the
+    // components that depend on it. The map's
+    // ObjPtr::DestroyComponent(Symbol); this build adds the flag, which
+    // EntityResource::DestroyDependentComponents sets, to clear the
+    // entity's references to the component's class.
+    void DestroyComponent(Symbol className, bool clearReferences);  // 0x117760
+    // Removes the first component with the id or interface from the table,
+    // calls its _PreDestroy and destroys it; `resort` re-sorts the table.
+    // Name not in the reference map.
+    void _DestroyComponent(
+        Symbol className,
+        DestroyType type,
+        bool resort,
+        bool clearReferences);  // 0x117890
+    // Sorts the component table by the classes' component-order
+    // dependencies and rebuilds the poll order, when the table changed since
+    // the last sort. Name not in the reference map; the map's
     // PollComponentBefore(Symbol, Symbol) suggests the ordering, so the
     // evidence is weak.
     void _SortComponents();  // 0x1162F0
+    // Orders the components by the classes' dependencies into `order`, as
+    // indices into mComs: the poll order (slot 17) when `poll` is set,
+    // otherwise the component order (slot 18). Name not in the reference
+    // map. Not reconstructed.
+    void _BuildComponentOrder(PropArray<unsigned int>* order, bool poll);  // 0x117A90
+    // Rebuilds the poll order for the current table. Name not in the
+    // reference map.
+    void _UpdatePollOrder();  // 0x117160
+    // Calls _PreDestroy on every component. The map's
+    // ObjPtr::_PreDestroy(DestroyType).
+    void _PreDestroy(DestroyType type);  // 0x1174D0
+    // Whether every component's resources are ready. Name not in the
+    // reference map.
+    bool AreResourcesReady();  // 0x115F60
+    // Enters every component in the edit mode. Name not in the reference
+    // map.
+    void _EditEnterComponents();  // 0x1160A0
+    // Exits every component in the game or the edit mode. Names not in the
+    // reference map.
+    void _ExitComponents(DestroyType type);      // 0x1179F0
+    void _EditExitComponents(DestroyType type);  // 0x117A40
 
     // The component with the class or base-class symbol, or null; the empty
     // symbol matches a component registered without a class. Inlined into
@@ -93,7 +157,7 @@ public:
     T* GetCom() const {
         for (const ComIndex& index : mComs) {
             if (index.mId == T::sId) {
-                return reinterpret_cast<T*>(index.mCom);
+                return static_cast<T*>(index.mCom);
             }
         }
         return nullptr;
@@ -108,7 +172,7 @@ public:
         }
         for (const ComIndex& index : mComs) {
             if (index.mBaseId == T::sClassName) {
-                return reinterpret_cast<T*>(index.mCom);
+                return static_cast<T*>(index.mCom);
             }
         }
         return nullptr;
@@ -123,7 +187,7 @@ public:
         while (index->mId != T::sId) {
             ++index;
         }
-        return reinterpret_cast<T*>(index->mCom);
+        return static_cast<T*>(index->mCom);
     }
 
     // The component derived from base class T, which must exist. Inlined
@@ -135,7 +199,7 @@ public:
         while (index->mBaseId != T::sClassName) {
             ++index;
         }
-        return reinterpret_cast<T*>(index->mCom);
+        return static_cast<T*>(index->mCom);
     }
 
     // Field names are not in the reference map.

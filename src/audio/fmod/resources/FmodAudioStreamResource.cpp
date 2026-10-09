@@ -8,6 +8,7 @@
 #include "audio/fmod/system/FmodPlatform.h"
 #include "os/files/File.h"
 #include "os/memory/MemMgr.h"
+#include "os/system/Core.h"
 #include "utl/time/Timer.h"
 #include "os/threading/CritSec.h"
 

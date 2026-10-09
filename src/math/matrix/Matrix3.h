@@ -45,6 +45,6 @@ inline void Transpose(const Hmx::Matrix3& matrix, Hmx::Matrix3& transpose) {
 // Whether the rows form a right-handed basis: (x cross y) dot z >= 0. Name
 // not in the reference map.
 bool IsRightHanded(const Hmx::Matrix3& matrix);  // 0x2150D0
-// The Euler angles of a rotation. Not reconstructed. The binary also has a
-// thunk at 0x218610 that takes the arguments in the other order.
+// The Euler angles of a rotation, from math/Rot.o; see math/rotation/Rot.h.
+// Declared here as well for the users that include only this header.
 void MakeEuler(const Hmx::Matrix3& matrix, Vector3& euler);  // 0x215B10

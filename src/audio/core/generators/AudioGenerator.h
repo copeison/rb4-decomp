@@ -462,6 +462,19 @@ public:
     // Slots 16-17: 0x40AC0, which jumps to the body at 0xE780, and 0x40AD0.
     virtual ~AudioGeneratorManager();
 
+    // Returns an allocated generator of this pool to the free list. Inlined
+    // where a music manager's Play cannot complete a voice, for example at
+    // 0x449ED in MidiMusicGeneratorManager::Play; each copy also loads the
+    // generator's reference count without using it.
+    void FreeGenerator(AudioGenerator* generator) {
+        ScopedCritSec lock(mCritSec);
+        generator->mHandle &= ~kGeneratorHandleActive;
+        generator->mEmitter = nullptr;
+        if (generator->mPoolNode.mList != &mFreeList) {
+            mFreeList.PushBack(*generator);
+        }
+    }
+
     // Field names are not in the reference map. Each concrete manager stores
     // its typed pool array at +64.
     int mPoolSize;

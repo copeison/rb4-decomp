@@ -12,14 +12,18 @@ map puts all of this in its `entity` module.
 | `entity/ResourceMetaData.o` | `0x1AF110`-`0x1AF940` | `src/entity/resources/ResourceMetaData.cpp` |
 | `ResourcePath` methods | `0x1AF950`-`0x1AFFAB` | `src/entity/resources/ResourcePath.cpp` |
 | `entity/EntityResource.o` (part) | `0xFD610`-`0x102708` | `src/entity/core/EntityResource.cpp` |
-| `entity/TransEntityResource.o` (part) | `0x1BAAA0`-`0x1BB9F2` | `src/entity/core/TransEntityResource.cpp` |
-| `entity/Entity.o` (part) | `0xEF180`-`0xF3060` | `src/entity/core/Entity.cpp` |
-| `entity/GameObject.o` (part) | `0x115FC0`-`0x117752` | `src/entity/core/GameObject.cpp` |
+| `entity/TransEntityResource.o` | `0x1BAAA0`-`0x1BB9F2` | `src/entity/core/TransEntityResource.cpp` |
+| `entity/Entity.o` (part) | `0xEE880`-`0xF3060` | `src/entity/core/Entity.cpp` |
+| `entity/GameObject.o` (part) | `0x115F60`-`0x117A40` | `src/entity/core/GameObject.cpp` |
 | `entity/TransCom.o` (part) | `0x127730`, `0x1B3A90` | `src/entity/core/TransCom.cpp` |
 | `entity/EntityConstants.o` | data only | `src/entity/core/EntityConstants.cpp` |
 | `utl/DataUtl.o` (part) | `0x23C2E0` | `src/utl/data/DataUtl.cpp` |
 | `utl/FileUtl.o` (part) | `0x244860`-`0x245866` | `src/utl/files/FileUtl.cpp` |
 | `utl/PollMgr.o` (part) | thread-local data | `src/utl/threading/PollMgr.cpp` |
+| `utl/BinStream.o` (part) | `0x219F10` | `src/utl/streams/BinStream.cpp` |
+
+The component base and the property system are in
+[entity-components.md](entity-components.md).
 
 The map has the `ResourcePath` methods in `Resource.o`. This build places
 them after `ResourceMetaData.o`'s static initializer, in an object the map
@@ -79,18 +83,36 @@ The vtable has 33 slots, checked against `0x18E6AF8` and `0x18E9B68` with
 `ThreadPollContext::mEnterImmediately` cleared. `RndSceneResource` derives
 from it through an unmodelled intermediate class.
 
-The loaders (`Load`, `_LoadEntity`, `_LoadRoot` and `Save`) are declared but
-not reconstructed. They need the property system (`PropRegistry`,
-`PropPath`, `ComMetaData`) and the `Component` vtable, neither of which is
-modelled yet.
+`_LoadRoot` (slot 32) passes the layer paths before the root data, unlike
+the map's signature. `Entity::_LoadRoot` reads the root header from
+revisions 12 to `kEntityResourceRev` (18), the entity revision (from
+`kEntityRev`, 33), the layer count and the root object.
+`TransEntityResource` reads the root data of revisions 12 and 13 itself
+and, before revision 12, copies it from the root's `InstanceCom` icon data.
+Its `_LoadEntity` resets the root's transform unless the instance
+component drives the parent, and `_PostLoad` takes the instance component's
+class from the first root component whose class serves as one.
+
+`EntityResource::Load`, `_LoadEntity`, `Save` and `IsProfilingLoad` remain
+declared: they report to the load-progress listeners at `0x12D240`-`0x12DA40`
+(the list at `0x19E3CC0`, a task named "EntityLoad"), which are not
+modelled.
 
 ## Entities and objects
 
 `Entity` keeps its layers in a `PropArray<Entity::Layer>` at +168, its
-owning resource at +288 and its state flags at +300. `GameObject`
-(128 bytes) keeps its components in a `PropArray<GameObject::ComIndex>`.
-`PropArrayBase` declares the element-operation slots: `CreateObject` grows
-the component table through slot 6, the element move.
+poll and post-poll orders as `PropArray<GameObjectId>`s, its owning
+resource at +288 and its state flags at +300. `GameObject` (128 bytes)
+keeps its components in a `PropArray<GameObject::ComIndex>` and their poll
+order as indices.
+
+`Entity::_LoadResources` loads every object's components in poll order,
+restarting an object whose components a load added to, then waits up to
+ten passes for them to report ready. `_CreateAndInsertNewGameObject` gives
+the object the layer's next serial and first free index. `SafeGetObject`
+rejects stale ids. The constructor, `Enter`, `Exit`, `_Poll` and `_Destroy`
+remain declared: they need the `MsgSource` and `PollDepBase` bases
+(vtables `0x18E6818` and `0x18E6888`), which are not modelled.
 
 `GameObject::CreateComponent` wraps `_CreateComponent`, the map's
 `ObjPtr::CreateComponent`. It re-sorts the components after an addition
@@ -98,9 +120,11 @@ unless the caller defers the sort. `GetDataCom` looks the command's object
 up in `gDataThread.mDefaultEntity` and its component by class or base
 class.
 
-`Component` is still a byte layout. Its 41-slot vtable (`0x18E6518`) is not
-modelled, so `Component::MakeErrorName` and the other component methods
-remain declarations.
+`GameObject::_SortComponents` orders the table by the classes' component
+dependencies and rebuilds the poll order; the ordering itself (`0x117A90`)
+is declared. `DestroyComponent` exits the component in the entity's mode,
+lets the resource destroy its dependants, removes it and clears the
+entity's references to it.
 
 ## Weak evidence
 
@@ -115,3 +139,4 @@ remain declarations.
 - The global `0x19E3280` is named `gEntityInstanceComId`. It is the class id
   of the component registered at `0x118E60`, whose class name is not
   recovered.
+- `InstanceCom::mPollRequested` (+520) has no identified writer.

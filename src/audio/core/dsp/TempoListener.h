@@ -5,23 +5,13 @@
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "os/threading/CritSec.h"
 
-class TempoListener;
-
-// The object a TempoListener is registered with; slot 2 removes the
-// listener. No implementation is identified in this build; slots 0-1 are
-// taken to be the destructor pair, which is weak evidence. Name not in the
-// reference map.
-class TempoListenerOwner {
-public:
-    virtual ~TempoListenerOwner();
-    virtual void RemoveTempoListener(TempoListener* listener);
-};
+class AudioEmitterCom;
 
 // Receives tempo and speed changes, for example the HMX DSP plugins and
 // Delay. The map emits its destructor in audio/DelayPlugin.o; this build
-// calls out-of-line copies of the constructor and the destructor, which
-// have not been reconstructed. The vtable is at 0x18E2638; the object is 40
-// bytes.
+// has an object of its own for the members (0x5B2A0 to 0x5B56C), which
+// TempoListener.cpp reconstructs. The vtable is at 0x18E2638; the object is
+// 40 bytes.
 class TempoListener {
 public:
     TempoListener();           // 0x5B2A0
@@ -29,18 +19,24 @@ public:
     // Slot 2. Name not in the reference map.
     virtual void OnTempoChanged(float tempo, float speed) = 0;
 
-    // Leaves the owner under sCritSec; the destructor inlines the same
-    // steps. Delay's inline destructor calls it first. At 0x5B390. Name not
-    // in the reference map.
+    // Leaves the emitter under sCritSec; the destructor inlines it. Delay's
+    // inline destructor calls it first. At 0x5B390. Name not in the
+    // reference map.
     void Unregister();
 
-    // Guards every owner's listener list. 0x19C87A8, returned by 0x5B4C0.
-    // Name not in the reference map.
+    // Returns sCritSec; the emitter's registration code locks it when it is
+    // not null. At 0x5B4C0. Name not in the reference map.
+    static CritSec* GetCritSec();
+
+    // Guards every emitter's listener list. 0x19C87A8, built by the object's
+    // static initializer (0x5B4D0). Name not in the reference map.
     static CritSec sCritSec;
 
     // Field names are not in the reference map.
-    LinkedListSizeTracked::Node mNode;
-    TempoListenerOwner* mOwner;
+    LinkedListSizeTracked::Node mNode;  // In the emitter's listener list.
+    // The emitter interface that registered the listener (+0x228 in the
+    // AudioEmitterCom component); slot 2 removes it.
+    AudioEmitterCom* mOwner;
 };
 
 static_assert(offsetof(TempoListener, mNode) == 8);

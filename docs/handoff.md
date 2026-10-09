@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 663 entries. The audio
+executable. The latest unresolved-symbol report contains 655 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -220,7 +220,8 @@ The latest focused commits, newest first, are:
 | `c6fee06` | Audio buffers, WAV files, voice pool, mic core, buffered streams; inferred names replace the Unknown placeholders outside audio |
 | `d5c8ada` | Inferred names for the audio placeholders, `RndScenePartialFramerateData`, directional light wrap fix |
 | `3be3757` | Foundation runtime (string formatting, script data, threads, time, perf timers) and the audio voices, pitch DSP, `SoundManager`, `FModSystem` and bank resource |
-| (this) | Resource system, entity and game-object core, `FusionSampler`, modulators and the composite generator |
+| `c58714e` | Resource system, entity and game-object core, `FusionSampler`, modulators and the composite generator |
+| (this) | Component base and property system, entity loaders, audio effects, interpolators, generator managers, `FusionGenerator` |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

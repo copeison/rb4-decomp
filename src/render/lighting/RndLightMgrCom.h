@@ -3,17 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "entity/core/Component.h"
+
 class RndComputeBuffer;
 class RndTextureArray2D;
 
 // The scene's light manager: its tiled-light buffers and the spot shadow
 // depth array. The functions follow RndLightGlobals in the binary, where the
 // map places RndLightMgrCom.o, and the map's RndLightMgrCom::_InitBuffers()
-// matches the buffer setup. The leading bytes are the component base. Field
+// matches the buffer setup. Field
 // names are not in the reference map; the property members take the names
 // of the properties the registry (0x486830) binds to their offsets, and the
 // constructors are at 0x480280 and 0x4803B0 (the part from offset 200).
-class RndLightMgrCom {
+class RndLightMgrCom : public Component {
 public:
     // A spot shadow configuration: the number of shadow layers and the
     // index of their resolution. One element of the "quality_settings"
@@ -35,8 +37,6 @@ public:
     // The tiled-light portion of 0x480AD0. Name not in the reference map.
     void _TerminateBuffers();
 
-    // The Component base, which this declaration does not derive from.
-    unsigned char mComponentBase[24];
     std::int32_t mDefaultEnvironment;  // An object id.
     std::int32_t mAmbientOcclusion;    // An object id.
     float mMasterIntensityMult;

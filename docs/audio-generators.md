@@ -55,8 +55,9 @@ builds the pool. `Destroy` frees the pool only when every voice is idle.
 
 ## Shared pool sequence
 
-The five FMOD managers each have their own copy of the same pool code.
-`src/audio/fmod/playback/FmodGeneratorPool.h` keeps one source for it:
+The five FMOD managers and the core managers each have their own copy of
+the same pool code. `src/audio/core/generators/GeneratorPool.h` keeps one
+source for it:
 
 - `_InitGeneratorPool` allocates the array with `new[]`, calls each voice's
   `Init`, and links it into the free list.

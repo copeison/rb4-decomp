@@ -36,12 +36,6 @@ public:
     virtual void ChainCanceled();  // slot 11
 };
 
-// Polls ThreadCall and two other core services, like the core poll at
-// 0x219BB0 that SystemPoll calls, and then updates TheTimeMgr. Only the
-// asynchronous decode waits call it. At 0x219B80; it is not ThreadCallPoll.
-// Name not in the reference map.
-void core_poll_and_update_time();
-
 class FmodAudioStreamResource;
 
 // Decodes a stream to 16-bit PCM for an AsyncSampleProcessor. The decode

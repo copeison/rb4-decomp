@@ -95,11 +95,13 @@ timed with the render target's `"fusion"` timer and
 `VirtualInstrument::mProcessTimer`. The voice count peak goes to
 `VirtualInstrument::mVoiceMeter` (`Meter`, lock `0x19C9910`).
 
-The effects are declared, not reconstructed: `Delay` (a `TempoListener`),
-`BitCrusher`, `DistortionEffect` and `AmpSimulator` (`0x1090650`). The amp
-simulator is newer than the map, so its name is inferred. `FIRFilter` is
-header-only. Its vtable (`0x18E5040`) and `DistortionEffect`'s destructor
-(`0x9D010`) are emitted in this object, as in the map's build.
+`Delay` (a `TempoListener`) is reconstructed in `Delay.cpp`; see
+`audio-dsp.md`. So are `BitCrusher.cpp`, `DistortionEffect.cpp` and
+`AmpSimulator.cpp`. The amp simulator (`0x1090650`) is newer than the map, so
+its name is inferred, and its five amp models are only declared.
+`FIRFilter` is header-only. Its vtable (`0x18E5040`) and
+`DistortionEffect`'s destructor (`0x9D010`) are emitted in this object, as in
+the map's build.
 
 ## Controllers
 
@@ -119,3 +121,60 @@ these:
 
 `GetController` scales the volume and expression values by 127 twice,
 which wraps them in 8 bits.
+
+## FusionGenerator
+
+`audio/FusionGenerator.o` (`0x41F80` to `0x44430`) is reconstructed in
+`src/audio/core/fusion/FusionGenerator.{h,cpp}`. `FusionGenerator`
+completes the sampler (`0x5498` bytes). Its primary vtable is at `0x18E00C8`
+(75 slots), and its `AudioGenerator` vtable is at `0x18E0330`. Both match the
+emitted vtables slot for slot.
+
+The generator overrides slots 0-1, 11 (`CallPreProcessCallbacks`), 38-39
+(the audio-thread client list, guarded by `mClientListLock` at
+`0x19C84F8`), 41 (`SetPatch`) and 44-46. Slots 44-46 clear, store and test
+the master handle at `+0x5470`; the map names slot 44 `DetachedFromMaster`.
+Slots 55-74 are the `AudioGenerator` overrides.
+
+`FusionGeneratorManager::Play` (`0x423A0`) plays only patches registered in
+`sPatchMap` (`0x19C84C0`, lock `0x19C84B0`). A `FusionPlayArgs` request is
+format 2. When its slot type (`+0x68`) is nonzero, the generator becomes a
+slave of the instrument at `+0x6C` through `AddSlave`. Any other request
+takes a bus generator (`+0x5478`) from `gAudioBusGeneratorManager`
+(`0x19E26A8`). The playback calls forward to that bus generator. A slave
+stops at once and leaves its master. `InstrumentHandleLock` is the map's
+lock on a master's handle; this build inlines it.
+
+The other names are weak: `FusionPlayArgs`, `mBusGenerator`,
+`GetPatchNames` (`0x42090`) and `sPatchMapCritSec`.
+
+## FusionPatchResource
+
+`audio/FusionPatchResource.o` (`0x5B590` to `0x5C282`) is reconstructed in
+`src/audio/core/resources/FusionPatchResource.{h,cpp}`. The class is an
+`EntityResource` of `0xD0` bytes, with its vtable at `0x18E2660`. The root
+object, named `"fusion_patch"`, holds the `FusionPatchCom`.
+
+The resource loads in one of three ways:
+
+- `.sxt` files load directly through `_LoadFromSXTFile`.
+- `.fusion` files load directly through `_LoadFromDTAFile`.
+- Any other file loads through the cache. A `.fusion` cache holds the text
+  format. `Save` writes that format and `_LoadEntity` reads it back, unless
+  `Component::sRegressionTesting` (`0x19E2970`) is set.
+
+A patch that loads registers with `FusionGeneratorManager::AddPatch` under
+its file name, and its destructor removes it. `NeedsReload` (slot 12)
+returns true in two cases: there is no patch, or a keyzone's sample changed
+on disk or must itself be reloaded.
+
+Slots 8 and 9 of the binary also override `Resource`:
+
+- Slot 8 (`0x5C280`) returns true.
+- Slot 9 (`0x5B890`) collects each keyzone's sample, with that sample's own
+  dependencies, into an `eastl::vector<ResourcePtr<Resource>>`.
+
+`Resource.h` still declares those slots as `PrintCsvStatsHeader` and
+`PrintCsvStats`, so the emitted vtable keeps `0x5CF90` and `0x5CFA0` there.
+`IsModified` (`0x5BFF0`) is declared only. The function at `0x5C170`
+returns zero and is not identified.

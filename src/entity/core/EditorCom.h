@@ -8,8 +8,8 @@
 class GameObject;
 
 // The component that holds an object's editor capabilities
-// (entity/EditorCom.o). Only the class symbols and the capability flags
-// that EntityResource uses are declared; the class is not reconstructed.
+// (entity/EditorCom.o). Only the class symbols and the capabilities that
+// EntityResource uses are declared; the class is not reconstructed.
 class EditorCom : public Component {
 public:
     // The capability bits. Enumerator names not in the reference map: the
@@ -24,13 +24,21 @@ public:
         kCanChangeProperties = 8,
     };
 
+    // Sets the capability; the object is ignored. Name not in the reference
+    // map.
+    void GrantEditorCapability(GameObject* object, EditorCapability capability);  // 0xEABC0
     // Clears the capability. The map's signature is
     // RevokeEditorCapability(EditorCom::EditorCapability); this build
-    // passes the object too and ignores it. Not reconstructed.
+    // passes the object too and ignores it.
     void RevokeEditorCapability(GameObject* object, EditorCapability capability);  // 0xEABD0
 
     static Symbol sId;  // 0x19E29C0
     // The class symbol GameObject::CreateComponent takes. Name not in the
     // reference map.
     static Symbol sClassName;  // 0x19E29C8
+
+    // The EditorCapability bits. Name not in the reference map.
+    unsigned int mCapabilities;
 };
+
+static_assert(offsetof(EditorCom, mCapabilities) == 24);

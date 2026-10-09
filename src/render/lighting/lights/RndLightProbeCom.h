@@ -23,9 +23,6 @@ public:
     // Field names are not in the reference map; the members take the names
     // of the properties the probe's registry (0x49B290) binds to their
     // offsets. The constructor is at 0x498170.
-    // Alignment padding before mFalloffStart; the constructor does not
-    // write it and no probe property lives there.
-    unsigned char mPad;
     float mFalloffStart;
     float mFalloffEnd;
     std::int32_t mFalloffFunction;

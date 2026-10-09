@@ -126,12 +126,12 @@ public:
     }
     // Slot 32: reads the entity's root. The map's
     // _LoadRoot(BinStream&, EntityPtr, vector<unsigned char>&,
-    // vector<ResourcePath>&); this build passes pointers.
+    // vector<ResourcePath>&); this build passes pointers, the paths first.
     virtual void _LoadRoot(
         BinStream& stream,
         Entity* entity,
-        eastl::vector<unsigned char>* rootData,
-        eastl::vector<ResourcePath>* paths);  // 0xFD610
+        eastl::vector<ResourcePath>* paths,
+        eastl::vector<unsigned char>* rootData);  // 0xFD610
 
     // Builds the entity class's metadata.
     static void _Init(ResourceMetaData& metaData);  // 0xFDF10

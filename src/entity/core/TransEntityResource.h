@@ -12,6 +12,13 @@
 // immediate flag. The vtable is at 0x18E9B68; the object is 280 bytes.
 class TransEntityResource : public EntityResource {
 public:
+    // An element of mPropRegistries: a registry and 16 bytes after it that
+    // nothing in this build reads or writes. Name not in the reference map.
+    struct RegistryEntry {
+        PropRegistry mRegistry;
+        unsigned char mPadding[16];  // Never read or written.
+    };
+
     // The class id, created on first use and inlined into its users. The
     // local static is at 0x19C6328.
     static Symbol Id() {
@@ -33,20 +40,19 @@ public:
     ~TransEntityResource() override;                 // slots 10-11: 0x1BB8C0, 0x1BB950
     // Slot 14. Reads the revision, the root data of revisions 12-13 and the
     // instance component's class from revision 15, loads the entity, and
-    // resets the root's TransCom unless the instance component keeps it.
-    // The map's TransEntityResource::Load(BinStream&, bool). Not
-    // reconstructed.
+    // resets the root's TransCom unless the instance component drives the
+    // parent. The map's TransEntityResource::Load(BinStream&, bool).
     bool _LoadEntity(BinStream& stream, bool cached) override;  // 0x1BAF10
     // Slot 15. For revisions before 15, takes the instance component's
-    // class from the root's components. Not reconstructed.
+    // class from the root's first component whose class serves as one.
     bool _PostLoad(BinStream& stream, bool cached) override;  // 0x1BB0E0
     // Slot 16. Enters with the thread's immediate flag cleared unless
     // `flags` has bit 0 set or polling is suppressed. The map's
     // EnterEntity(EntityPtr).
     void _EnterEntity(Entity* entity, unsigned int flags) override;  // 0x1BB580
-    // Slot 18. A suppressed, entered entity is polled once with the
-    // immediate flag cleared, while its instance component asks for it.
-    // The map's PollEntity(EntityPtr). Not reconstructed.
+    // Slot 18. A suppressed, entered entity is polled only when its root's
+    // instance component asks for it, once, with the immediate flag
+    // cleared. The map's PollEntity(EntityPtr).
     void _PollEntity(Entity* entity) override;  // 0x1BB660
     // Slots 20-21: skipped while polling is suppressed.
     void _EnterImmediately(Entity* entity) override;  // 0x1BB7B0
@@ -59,14 +65,14 @@ public:
     // when the TransCom parent option is set. The map's InitObject(ObjPtr&).
     void InitObject(GameObject* object) override;  // 0x1BB520
     // Slot 32: reads the root, taking the root data from the instance
-    // component for revisions before 12. The map's _LoadRoot(BinStream&,
-    // EntityPtr, vector<unsigned char>&, vector<ResourcePath>&). Not
-    // reconstructed.
+    // component's icon data for revisions before 12. The map's
+    // _LoadRoot(BinStream&, EntityPtr, vector<unsigned char>&,
+    // vector<ResourcePath>&).
     void _LoadRoot(
         BinStream& stream,
         Entity* entity,
-        eastl::vector<unsigned char>* rootData,
-        eastl::vector<ResourcePath>* paths) override;  // 0x1BAC60
+        eastl::vector<ResourcePath>* paths,
+        eastl::vector<unsigned char>* rootData) override;  // 0x1BAC60
 
     // Builds the class's metadata: extension "transentity", category
     // "Trans Entities".
@@ -85,8 +91,9 @@ public:
     eastl::vector<unsigned char> mIconData;
     // Property registries the resource builds; the destructor destroys them
     // with PropRegistry's destructor (0x180540). The map's
-    // SetupPropRegistry() suggests their use.
-    eastl::vector<PropRegistry> mPropRegistries;
+    // SetupPropRegistry() suggests their use; nothing in this build adds
+    // one.
+    eastl::vector<RegistryEntry> mPropRegistries;
     // Set for a resource whose entity enters with the poll flag cleared
     // (_EnterEntity) and is not polled at once while its entity is entered
     // (_EnterImmediately). The meaning is inferred.
@@ -99,6 +106,7 @@ public:
     Symbol mInstanceComId;
 };
 
+static_assert(sizeof(TransEntityResource::RegistryEntry) == 176);
 static_assert(offsetof(TransEntityResource, mIconData) == 200);
 static_assert(offsetof(TransEntityResource, mPropRegistries) == 232);
 static_assert(offsetof(TransEntityResource, mSuppressPoll) == 264);

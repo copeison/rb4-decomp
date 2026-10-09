@@ -766,8 +766,12 @@
   `Entity`'s object lookup, `GameObject::CreateComponent`, `TransCom`'s
   rotation and parent, `GetDataCom` and the thread poll context (see
   [entity-resources.md](entity-resources.md)).
-- [ ] Reconstruct `Component`'s vtable, `ComMetaData`, the property system and
-  the entity loaders.
+- [x] Reconstruct `Component`'s vtable, `ComMetaData`, the property registry
+  and arrays, the entity's root and resource loading, and component creation,
+  sorting and destruction (see [entity-components.md](entity-components.md)).
+- [ ] Reconstruct the entity resource loaders and the entity's enter, poll
+  and destroy, after modelling the load-progress listeners, `MsgSource` and
+  `PollDepBase`.
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

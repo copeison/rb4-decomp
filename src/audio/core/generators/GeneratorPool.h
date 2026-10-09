@@ -5,11 +5,12 @@
 #include "utl/containers/Std.h"
 #include "os/threading/CritSec.h"
 
-// Pool operations shared by the FMOD generator managers. Each manager has its
-// own copy of these members in the binary (for example _InitGeneratorPool at
-// 0x268910, 0x26A690, 0x26E000, 0x26F280 and 0x271190); the helpers keep one
-// source for the shared sequence. Names not in the reference map.
-namespace FmodGeneratorPool {
+// Pool operations shared by the generator managers. Each manager has its own
+// copy of these members in the binary (for example _InitGeneratorPool at
+// 0x268910, 0x26A690, 0x26E000, 0x26F280 and 0x271190 for the FMOD managers
+// and 0x438B0 for FusionGeneratorManager); the helpers keep one source for
+// the shared sequence. Names not in the reference map.
+namespace GeneratorPool {
 
 // LockIfOwned: retains a pooled generator whose handle still matches.
 template <class Generator>
@@ -135,4 +136,4 @@ inline void Release(AudioGenerator& generator) {
     }
 }
 
-}  // namespace FmodGeneratorPool
+}  // namespace GeneratorPool

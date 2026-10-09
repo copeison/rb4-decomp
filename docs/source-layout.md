@@ -8,7 +8,7 @@ accumulating implementation files. Names and classes follow
 
 | Module | Contents | Domains so far |
 |---|---|---|
-| `src/math` | Math types | `color`, `hash`, `random`, `vector` |
+| `src/math` | Math types | `color`, `geometry`, `hash`, `interp`, `matrix`, `random`, `rotation`, `scalar`, `smoothing`, `transform`, `vector` |
 | `src/utl` | Engine utilities | `containers`, `data`, `files`, `options`, `streams`, `text`, `threading`, `time` |
 | `src/os` | Platform services | `files`, `joypads`, `memory`, `platform`, `system`, `threading` |
 | `src/render` | Platform-neutral renderer (`Rnd*`) | `audio`, `buffers`, `context`, `debug`, `defaults`, `depth`, `distance_fields`, `frame`, `lighting`, `masking`, `meshes`, `postprocessing`, `queries`, `shaders`, `system`, `targets`, `textures`, `video` |
@@ -25,7 +25,9 @@ Every renderer file now sits in a domain folder of `src/render` or
 `src/render/platform/orbis` trees are gone. The screenshot capture code (`render/debug/screenshot_capture.cpp`)
 and a few adapter headers (`*_adapters.h`) still carry descriptive names
 because the map has no match for them. Audio utilities are under
-`src/audio/core`, and FMOD integration is under `src/audio/fmod`.
+`src/audio/core` (domains such as `dsp`, `fusion`, `generators`,
+`instruments`, `music`, `resources` and `system`), and FMOD integration is
+under `src/audio/fmod`.
 
 New work should enter the narrowest fitting domain in its original module.
 Create a clearly named domain folder when none fits, and use

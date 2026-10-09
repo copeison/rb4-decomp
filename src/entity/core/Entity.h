@@ -41,7 +41,9 @@ public:
     // The object with the name, or null. The failure report is made only
     // when fail is set.
     GameObject* TryGetObject(Symbol name, bool fail) const;  // 0xF0FF0
-    // The object with the id, or null. Not reconstructed.
+    // The object with the id, or null when the id is invalid or stale. The
+    // failure report that `fail` asks for is compiled out; only the
+    // entity's description is made.
     GameObject* SafeGetObject(GameObjectId id, bool fail) const;  // 0xF11C0
     // The first object of any layer. The map's signature is
     // BeginObject() const; this build forwards to NextObject.
@@ -67,17 +69,31 @@ public:
     // Assigns the next id in the layer and stores the object there,
     // allocating a new one when `object` is null. Returns the id.
     GameObjectId _CreateAndInsertNewGameObject(unsigned long layer, GameObject* object);  // 0xF0AD0
-    // Loads the objects' component resources. Not reconstructed.
-    bool _LoadResources(bool unknown);  // 0xEE880
-    // Reads the entity's root from the stream: the revision, the root data
-    // and the paths of the resources the entity uses. The map's signature
-    // takes an EntityPtr and references; this build passes pointers, which
-    // may be null. Not reconstructed.
+    // Loads the resources of every object's components, then waits (up to
+    // ten passes) for them to be ready unless the parent entity is still
+    // loading. `quiet` suppresses the components' failure reports.
+    bool _LoadResources(bool quiet);  // 0xEE880
+    // Reads the entity's root from the stream: the revision, the layer
+    // files, the root data, the layer count and the root object. The map's
+    // signature is _LoadRoot(BinStream&, EntityPtr, vector<unsigned char>&,
+    // vector<ResourcePath>&); this build passes the paths first, and the
+    // root data may be null.
     static void _LoadRoot(
         BinStream& stream,
         Entity* entity,
-        eastl::vector<unsigned char>* rootData,
-        eastl::vector<ResourcePath>* paths);  // 0xEFA00
+        eastl::vector<ResourcePath>* paths,
+        eastl::vector<unsigned char>* rootData);  // 0xEFA00
+    // Rebuilds the entity's poll order when it is marked stale (flag
+    // 0x400). The map's _UpdatePollOrder(). Not reconstructed.
+    void _UpdatePollOrder();  // 0xF0260
+    // Calls _ResetEntered on every component and marks the objects' poll
+    // orders stale. The map's ResetEntered(). Not reconstructed.
+    void ResetEntered();  // 0xF38E0
+    // Points the entity's references to the object's component of the class
+    // at another object, or at none. The map's signature is
+    // _ReplaceObject(GameObjectId, GameObjectId, Entity::ReplaceType,
+    // EntityPtr, set*, set*); this build wraps it. Not reconstructed.
+    void _ReplaceObject(GameObjectId from, GameObjectId to, Symbol com);  // 0xF25C0
     // Exits the entity if it is entered and destroys its objects and the
     // entity. Not reconstructed.
     void _Destroy();  // 0xF65C0
@@ -115,18 +131,23 @@ public:
     unsigned char mPollDepBase[144];
     // The layers, the map's PropArray<Entity::Layer>.
     PropArray<Layer> mLayers;
-    // Two arrays of 4-byte elements the constructor sets up (vtable
-    // 0x18E6A18). The map's _UpdatePollOrder() and _UpdatePostPollOrder()
-    // suggest the objects' poll orders; the evidence is weak.
-    PropArray<unsigned int> mPollOrder;
-    PropArray<unsigned int> mPostPollOrder;
+    // The objects in poll order and the objects that post-poll (vtable
+    // 0x18E6A28), rebuilt by the map's _UpdatePollOrder() and
+    // _UpdatePostPollOrder() (0xF3CB0).
+    PropArray<GameObjectId> mPollOrder;
+    PropArray<GameObjectId> mPostPollOrder;
     // The resource that owns the entity.
     EntityResource* mResource;
     // Zeroed by the constructor; not identified.
     unsigned char mPadding[4];
-    // State flags. Bits 1-2 hold the entered state (2 when entered), 0x400
-    // marks changed components, 0x800 comes from the resource
-    // (EntityResource slot 30) and 0x1000 marks an entity entered at once.
+    // State flags. Bit 0 marks an entity built in place, which _Destroy
+    // destructs without deleting (0x200 then keeps its storage); bits 1-2
+    // hold the mode it is entered in (1 the game mode, 2 the edit mode),
+    // 0x10 is set while it is entered, 0x20 once its resources are loaded,
+    // 0x100 while it is active, 0x400 marks changed components, 0x800 comes
+    // from the resource (EntityResource slot 30), 0x1000 marks an entity
+    // entered at once and 0x10000 is set while the root object's components
+    // load their resources.
     unsigned int mFlags;
     // The object in the parent entity that instances this one, or null.
     GameObject* mParentObject;

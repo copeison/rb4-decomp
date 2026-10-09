@@ -1,32 +1,40 @@
 #pragma once
 
 #include <cstddef>
+#include <new>
 
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
 
+class PropInfo;
+
 // The untyped base of every PropArray<T>, a property-visible array whose
 // element operations go through its vtable (the map's PropArrayBase in
-// entity/PropUtl.o). Each PropArray<T> has its own vtable, such as
-// 0x18E6928 for PropArray<GameObject::ComIndex>; the element operations are
-// not reconstructed, so they are only declared. Names of the slots and the
-// fields are not in the reference map.
+// entity/PropUtl.o; the vtable is at 0x18DC3D0). Each PropArray<T> has its
+// own vtable, such as 0x18E6938 for PropArray<GameObject::ComIndex>. The
+// names of slots 2, 3, 5, 6 and 7 and of the fields are not in the
+// reference map.
 class PropArrayBase {
 public:
-    virtual ~PropArrayBase();  // slots 0-1
+    // Slots 0-1: 0xA640, 0xA650.
+    virtual ~PropArrayBase() {}
     // Slot 2: default-constructs `count` elements at `data` and returns it.
-    virtual void* Construct(unsigned long count, void* data) const;
+    virtual void* Construct(unsigned long count, void* data) const = 0;
     // Slot 3: the element alignment (8 for GameObject::ComIndex).
-    virtual unsigned long Alignment() const;
-    // Slot 4: destroys `count` elements; empty for plain elements.
-    virtual void Destruct(unsigned long count, void* data) const;
-    // Slot 5: copies `count` elements, or default-constructs them when
+    virtual unsigned long Alignment() const = 0;
+    // Slot 4 at 0xA400: updates the element info of an array whose element
+    // type comes from its PropInfo; empty here and for typed arrays.
+    virtual void _FixupItemInfo(const PropInfo* info) {
+        static_cast<void>(info);
+    }
+    // Slot 5: copies `count` elements, or value-initializes them when
     // `source` is null.
-    virtual void Copy(unsigned long count, void* data, const void* source) const;
+    virtual void Copy(unsigned long count, void* data, const void* source) const = 0;
     // Slot 6: moves `count` elements, handling overlap.
-    virtual void Move(unsigned long count, void* data, void* source) const;
-    // Slot 7: empty in every vtable seen; its purpose is not identified.
-    virtual void Reserved7() const;
+    virtual void Move(unsigned long count, void* data, void* source) const = 0;
+    // Slot 7: destroys `count` elements; Resize calls it for the elements it
+    // drops.
+    virtual void Destruct(unsigned long count, void* data) const = 0;
 
     // Grows the storage to at least `count` elements, moving the elements
     // across; the old storage is freed unless it is static. Inlined into its
@@ -47,12 +55,20 @@ public:
         mCapacity = count;
     }
 
-    // Resizes the array, constructing or destroying elements through the
-    // vtable. Not reconstructed.
-    void Resize(unsigned int size);  // 0xA660
-    // Inserts the element at the index, growing the array. The map's
-    // signature is not known. Not reconstructed.
-    void Insert(unsigned int index, const void* element);  // 0x2ABE0
+    // The element at the index. Name not in the reference map.
+    void* ElementAt(unsigned long index) const {
+        return static_cast<unsigned char*>(mData) + index * mElemSize;
+    }
+
+    // Resizes the array, destroying the dropped elements and
+    // value-initializing the new ones through the vtable.
+    void Resize(unsigned long size);  // 0xA660
+    // Inserts a copy of the element at the index, doubling the storage when
+    // it is full; the element may live in the array. Returns the new size.
+    unsigned int _Insert(unsigned long index, const void* element);  // 0x2ABE0
+    // Replaces the elements with copies of the other array's, unless the
+    // calling thread is imprinting. Not reconstructed.
+    void _Copy(const PropArrayBase& other);  // 0xBA70
 
     void* mData;
     unsigned int mSize;
@@ -60,7 +76,8 @@ public:
     unsigned int mElemSize;
     // Set while mData points at storage the array does not own.
     unsigned int mStatic;
-    // The element type's symbol.
+    // The element type's symbol; PropArray<T>::sType, which is empty for
+    // the types seen.
     Symbol mType;
 };
 
@@ -70,10 +87,73 @@ static_assert(offsetof(PropArrayBase, mElemSize) == 24);
 static_assert(offsetof(PropArrayBase, mType) == 32);
 static_assert(sizeof(PropArrayBase) == 40);
 
-// A typed view of a PropArrayBase. Only the element access is declared.
+// A typed PropArrayBase. The element operations are the template's, which
+// the compiler emits for each element type as the binary does.
 template <typename T>
 class PropArray : public PropArrayBase {
 public:
+    // Inlined by every user, for example Entity::_CreateAndInsertNewGameObject
+    // at 0xF0AD0.
+    PropArray() {
+        mData = nullptr;
+        mSize = 0;
+        mCapacity = 0;
+        mElemSize = sizeof(T);
+        mStatic = 0;
+        mType = sType;
+    }
+    ~PropArray() override {
+        Resize(0);
+        if (mStatic == 0) {
+            MemFree(mData);
+        }
+        mData = nullptr;
+        mCapacity = 0;
+    }
+
+    void* Construct(unsigned long count, void* data) const override {
+        T* element = static_cast<T*>(data);
+        for (unsigned long index = 0; index < count; ++index) {
+            new (element + index) T;
+        }
+        return data;
+    }
+    unsigned long Alignment() const override {
+        return alignof(T);
+    }
+    void Copy(unsigned long count, void* data, const void* source) const override {
+        T* element = static_cast<T*>(data);
+        if (source == nullptr) {
+            for (unsigned long index = 0; index < count; ++index) {
+                new (element + index) T();
+            }
+            return;
+        }
+        const T* from = static_cast<const T*>(source);
+        for (unsigned long index = 0; index < count; ++index) {
+            new (element + index) T(from[index]);
+        }
+    }
+    void Move(unsigned long count, void* data, void* source) const override {
+        T* element = static_cast<T*>(data);
+        T* from = static_cast<T*>(source);
+        if (element < from) {
+            for (unsigned long index = 0; index < count; ++index) {
+                new (element + index) T(from[index]);
+            }
+        } else {
+            for (unsigned long index = count; index != 0; --index) {
+                new (element + index - 1) T(from[index - 1]);
+            }
+        }
+    }
+    void Destruct(unsigned long count, void* data) const override {
+        T* element = static_cast<T*>(data);
+        for (unsigned long index = 0; index < count; ++index) {
+            element[index].~T();
+        }
+    }
+
     T* data() const {
         return static_cast<T*>(mData);
     }
@@ -89,4 +169,12 @@ public:
     T* end() const {
         return data() + mSize;
     }
+
+    // The element type's symbol, empty unless a type sets it. Each
+    // instantiation has a guarded copy, such as 0x19C53B0 for
+    // PropArray<unsigned int>.
+    static Symbol sType;
 };
+
+template <typename T>
+Symbol PropArray<T>::sType;

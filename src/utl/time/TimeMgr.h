@@ -76,6 +76,10 @@ public:
         int mDeltaMode;
     };
 
+    // Advances the real-time timer and the clocks by the frame's time.
+    // Not reconstructed.
+    void Poll();  // 0x25AE20
+
     // Field names are not in the reference map.
     unsigned char mOpaque0[200];  // Fields the debug overlays do not read.
     // Real time since startup; the overlay graphs plot against it.

@@ -9,6 +9,10 @@
 // gives only its type.
 void* MemAlloc(unsigned long size, const char* name, int unknown);
 
+// MemAlloc with the calling thread's temporary-allocation depth (+0x84 in
+// its heap state) raised for the call. At 0x37B6F0.
+void* MemAllocTemp(unsigned long size, const char* name, int unknown);
+
 // Tracked heap release at 0x37B800. Null is ignored.
 void MemFree(void* allocation);
 

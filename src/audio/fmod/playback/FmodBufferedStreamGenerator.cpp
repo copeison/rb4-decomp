@@ -6,7 +6,7 @@
 
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
 #include "audio/fmod/playback/FmodAudioBusGenerator.h"
-#include "audio/fmod/playback/FmodGeneratorPool.h"
+#include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/resources/FmodAudioStreamResource.h"
 #include "audio/fmod/system/FmodPlatform.h"
 #include "utl/time/TimeMgr.h"
@@ -177,7 +177,7 @@ bool FmodBufferedStreamGenerator::_AcquireBusGenerator(const PlayArgs& args) {
     if (manager == nullptr) {
         return false;
     }
-    mBusGenerator = FmodGeneratorPool::Allocate<FmodAudioBusGenerator>(*manager, mRenderTarget, args.mEmitter);
+    mBusGenerator = GeneratorPool::Allocate<FmodAudioBusGenerator>(*manager, mRenderTarget, args.mEmitter);
     if (mBusGenerator == nullptr) {
         return false;
     }
@@ -399,7 +399,7 @@ void FmodBufferedStreamGenerator::Release() {
     mReaders.clear();
     mDecodeBuffer.Release();
     mSound->release();
-    FmodGeneratorPool::Release(*this);
+    GeneratorPool::Release(*this);
 }
 
 // Reconstructed from eboot.elf at 0x26C480. Up to half the ring is kept
@@ -805,7 +805,7 @@ FmodBufferedStreamGenerator* FmodBufferedStreamGeneratorManager::_AllocateAndSet
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator =
-        FmodGeneratorPool::Allocate<FmodBufferedStreamGenerator>(*this, target, emitter);
+        GeneratorPool::Allocate<FmodBufferedStreamGenerator>(*this, target, emitter);
     if (generator == nullptr) {
         return nullptr;
     }
@@ -843,22 +843,22 @@ Symbol FmodBufferedStreamGeneratorManager::GetResourceExt() {
 
 // Reconstructed from eboot.elf at 0x26DD50.
 AudioGenerator* FmodBufferedStreamGeneratorManager::LockIfOwned(unsigned int handle, int index) {
-    return FmodGeneratorPool::LockIfOwned(*this, mPool, handle, index);
+    return GeneratorPool::LockIfOwned(*this, mPool, handle, index);
 }
 
 // Reconstructed from eboot.elf at 0x26DDC0.
 void FmodBufferedStreamGeneratorManager::SendStopToAllGenerators() {
-    FmodGeneratorPool::SendStop(*this, mPool);
+    GeneratorPool::SendStop(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26DE30.
 void FmodBufferedStreamGeneratorManager::SendKillToAllGenerators() {
-    FmodGeneratorPool::SendKill(*this, mPool);
+    GeneratorPool::SendKill(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26DEA0.
 void FmodBufferedStreamGeneratorManager::GetActiveHandles(void* handles) {
-    FmodGeneratorPool::GetActiveHandles(*this, mPool, handles);
+    GeneratorPool::GetActiveHandles(*this, mPool, handles);
 }
 
 // Reconstructed from eboot.elf at 0x26DFF0.
@@ -868,12 +868,12 @@ void FmodBufferedStreamGeneratorManager::_SetManagerIndex(int index) {
 
 // Reconstructed from eboot.elf at 0x26E000.
 void FmodBufferedStreamGeneratorManager::_InitGeneratorPool() {
-    FmodGeneratorPool::Init(*this, mPool);
+    GeneratorPool::Init(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26E270.
 bool FmodBufferedStreamGeneratorManager::_DeleteGeneratorPool() {
-    return FmodGeneratorPool::Delete(*this, mPool);
+    return GeneratorPool::Delete(*this, mPool);
 }
 
 // Reconstructed from eboot.elf at 0x26AAE0.

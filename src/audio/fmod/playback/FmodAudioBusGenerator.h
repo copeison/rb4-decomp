@@ -128,3 +128,9 @@ public:
 };
 
 static_assert(offsetof(FmodAudioBusGeneratorManager, mPool) == 64);
+
+// The bus pool the FMOD platform creates (slot 20 at 0x261210 stores it).
+// The Fusion, Mogg, MultiFusion and SynthRack generators take their bus
+// voices from it through _GetGenerator; without it they cannot play. Name
+// not in the reference map.
+extern FmodAudioBusGeneratorManager* gAudioBusGeneratorManager;  // 0x19E26A8

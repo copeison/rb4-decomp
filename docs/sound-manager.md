@@ -81,10 +81,12 @@ the FMOD platform for its loaded events. It returns an array with one
   (`0x5350`): their headers do not declare it, so `_InitComponents` omits
   the calls.
 - The component and resource `Init` bodies, which the map emits in this
-  object, are declared only. `CompositeGeneratorManager`'s members
+  object, are declared only; `FusionPatchResource::Init` is inline in its
+  header. `CompositeGeneratorManager`'s members
   (`0xDD10` to `0xE3C0`) are reconstructed with the composite generator.
-- The Fusion, MidiMusic, Mogg, MoggMusic, MultiFusion, MusicTimeline and
-  SynthRack managers are declared in `SoundManager.cpp` with the members
-  their creation inlines. Their `kIdStr` names (the map's, `0x19B00A0` to
-  `0x19B00E0`) and vtables belong to their generators' objects and remain
-  undefined.
+- The seven managers `InitStandardGenManagers` creates live in their
+  generators' objects, with their `kIdStr` (`0x19B00A0` to `0x19B00E0`) and
+  vtables: see [fusion-sampler.md](fusion-sampler.md),
+  [music-generators.md](music-generators.md) and
+  [instrument-generators.md](instrument-generators.md). The pool code they
+  share is `src/audio/core/generators/GeneratorPool.h`.

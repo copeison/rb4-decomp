@@ -2,17 +2,22 @@
 
 #include <cstddef>
 
+#include "entity/core/Component.h"
 #include "entity/core/GameObject.h"
 #include "math/matrix/Matrix3.h"
 #include "math/transform/Transform.h"
 #include "math/vector/Vector3.h"
 #include "utl/text/Symbol.h"
 
-// The transform component (entity/TransCom.o). Its Component base and most
-// of its methods are not reconstructed; only the class symbols, the local
+// The transform component (entity/TransCom.o; vtable 0x18E8AC0). Most of
+// its methods are not reconstructed; only the class symbols, the local
 // transform that the renderer's default lighting sets, the parent and the
-// world transform that the renderer reads are modelled.
-class TransCom {
+// world transform that the renderer reads are modelled. The class overrides
+// Handle, the identity slots, _GetPollDeps (the parent), slot 29 (which
+// clears a parent that names the object itself), the game and edit enter
+// and poll, and _OnActivate (which marks the local transform dirty); the
+// overrides are not declared.
+class TransCom : public Component {
 public:
     // The local transform as scale, Euler angles and position. Name and
     // field names not in the reference map.
@@ -51,8 +56,6 @@ public:
 
     // Field names are not in the reference map. The property registration
     // (0x1AFFB0) builds a prototype whose fields give the defaults below.
-    // The Component base (vtable, owning object and flags).
-    unsigned char mComponentBase[24];
     LocalXfm mLocalXfm;
     // The parent object, or the invalid id (-1). The map has
     // TransCom::SetTransParent(GameObjectId, bool); the poll (0x1B4140)

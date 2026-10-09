@@ -1,8 +1,10 @@
 #pragma once
 
-// The particle system component. Its Component base and its methods are not
-// reconstructed; only the types the particle buffers read are declared.
-class RndParticleCom {
+#include "entity/core/Component.h"
+
+// The particle system component. Its methods are not reconstructed; only
+// the types the particle buffers read are declared.
+class RndParticleCom : public Component {
 public:
     // How the quads turn, from the particle_alignment property. Enumerator
     // names are not in the reference map; they follow the property's
