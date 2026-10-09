@@ -4,9 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 
+class RndShaderCBuffer;
+
 namespace rb4 {
 
-struct RenderConstantBuffer;
 struct RenderContext;
 struct RenderTexture;
 
@@ -107,7 +108,7 @@ std::uint64_t& render_context_output_slot_limit(
     RenderContext& context,
     std::uint32_t stage);
 // +0x4A80: per-draw constant buffers of 16, 32, 64, ... elements.
-RenderConstantBuffer* render_context_constant_buffer(
+RndShaderCBuffer* render_context_constant_buffer(
     RenderContext& context,
     std::size_t size_class);
 void render_context_unbind_shader_stage(

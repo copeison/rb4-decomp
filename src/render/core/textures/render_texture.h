@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/shaders/render_shader.h"
+#include "render/shaders/RndShaderProgram.h"
 
 namespace rb4 {
 
@@ -187,7 +187,7 @@ std::int32_t render_texture_default_filter_mode(
 void render_texture_bind(
     const RenderTexture& texture,
     RenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     std::uint32_t flags,
     const void* border_color);

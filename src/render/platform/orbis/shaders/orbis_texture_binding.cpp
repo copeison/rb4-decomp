@@ -1,4 +1,5 @@
 #include "render/platform/orbis/shaders/orbis_texture_binding.h"
+#include "render/shaders/RndShaderEnums.h"
 
 #include "render/platform/orbis/shaders/orbis_texture_binding_adapters.h"
 
@@ -33,7 +34,7 @@ void bind_graphics_sampled_texture(
 
 void orbis_bind_texture(
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     const void* texture,
     OrbisSamplerAddressMode address_mode,
@@ -41,31 +42,31 @@ void orbis_bind_texture(
     std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     switch (stage) {
-    case RenderShaderStage::kVertex:
+    case kShaderProgramVertex:
         orbis_bind_vertex_texture(
             context, slot, texture, address_mode, filter_mode, border_color);
         break;
-    case RenderShaderStage::kHull:
+    case kShaderProgramHull:
         orbis_bind_hull_texture(
             context, slot, texture, address_mode, filter_mode, flags,
             border_color);
         break;
-    case RenderShaderStage::kDomain:
+    case kShaderProgramDomain:
         orbis_bind_domain_texture(
             context, slot, texture, address_mode, filter_mode, flags,
             border_color);
         break;
-    case RenderShaderStage::kGeometry:
+    case kShaderProgramGeometry:
         orbis_bind_geometry_texture(
             context, slot, texture, address_mode, filter_mode, flags,
             border_color);
         break;
-    case RenderShaderStage::kPixel:
+    case kShaderProgramPixel:
         orbis_bind_pixel_texture(
             context, slot, texture, address_mode, filter_mode, flags,
             border_color);
         break;
-    case RenderShaderStage::kCompute:
+    case kShaderProgramCompute:
         orbis_bind_compute_texture(
             context, slot, texture, address_mode, filter_mode, flags,
             border_color);

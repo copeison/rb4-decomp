@@ -18,7 +18,7 @@
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/meshes/orbis_builtin_buffers.h"
 #include "render/platform/orbis/system/orbis_render_system.h"
-#include "render/platform/orbis/system/orbis_render_factory.h"
+#include "renderps4/system/PS4Factory.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "render/platform/orbis/textures/orbis_texture_2d.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
@@ -272,7 +272,7 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_create_default_vertex_buffer(system);
     orbis_create_identity_instance_buffer(system);
     auto& base = orbis_render_system_base(system);
-    render_system_set_factory(base, orbis_render_factory_create());
+    render_system_set_factory(base, new PS4Factory);
     orbis_create_back_buffer(system);
     orbis_create_render_context(system);
 

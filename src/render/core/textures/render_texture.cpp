@@ -1,4 +1,5 @@
 #include "render/core/textures/render_texture.h"
+#include "render/shaders/RndShaderEnums.h"
 
 #include <cstddef>
 #include <cstring>
@@ -266,7 +267,7 @@ std::int32_t render_texture_default_filter_mode(
 void render_texture_bind(
     const RenderTexture& texture,
     RenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     std::uint32_t flags,
     const void* border_color) {

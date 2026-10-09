@@ -5,9 +5,10 @@
 
 #include "render/core/frame/render_frame_owner.h"
 
+class RndComputeBuffer;
+
 namespace rb4 {
 
-struct RenderComputeBuffer;
 struct RenderMesh;
 struct RenderTexture;
 struct RenderTexture3D;
@@ -38,11 +39,11 @@ struct RenderTargetResourceBlock {
     RenderTexture* linear_depth;
     RenderTexture* tiled_depth_range;
     RenderTexture* ambient_occlusion;
-    RenderComputeBuffer* tiled_light_ids[2];
-    RenderComputeBuffer* tiled_light_id_ranges;
+    RndComputeBuffer* tiled_light_ids[2];
+    RndComputeBuffer* tiled_light_id_ranges;
     RenderTexture* tiled_light_interpolation;
-    RenderComputeBuffer* stereo_tiled_light_ids[2];
-    RenderComputeBuffer* stereo_tiled_light_id_ranges;
+    RndComputeBuffer* stereo_tiled_light_ids[2];
+    RndComputeBuffer* stereo_tiled_light_id_ranges;
     RenderTexture3D* volumetric_inscattering[3];
     RenderTexture3D* stereo_volumetric_inscattering[3];
     RenderTexture3D* accumulated_volumetric_scattering[3];

@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
+#include "render/shaders/RndShaderEnums.h"
 
 namespace rb4 {
 
@@ -14,7 +15,7 @@ struct OrbisSamplerDescriptor {
 
 void orbis_render_context_bind_graphics_sampler(
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     const OrbisSamplerDescriptor& sampler);
 void orbis_render_context_bind_compute_sampler(
@@ -29,12 +30,12 @@ bool orbis_render_context_graphics_resources_active(
     const OrbisRenderContext& context);
 void orbis_render_context_clear_gnm_rw_textures(
     OrbisRenderContext& context,
-    RenderShaderStage stage);
+    RndShaderProgramType stage);
 void orbis_render_context_clear_gnm_textures(
     OrbisRenderContext& context,
-    RenderShaderStage stage);
+    RndShaderProgramType stage);
 void orbis_render_context_clear_gnm_buffers(
     OrbisRenderContext& context,
-    RenderShaderStage stage);
+    RndShaderProgramType stage);
 
 }  // namespace rb4

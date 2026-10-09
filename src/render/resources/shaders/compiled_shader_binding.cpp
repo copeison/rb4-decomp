@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "render/core/context/render_context.h"
-#include "render/core/shaders/render_shader.h"
+#include "render/shaders/RndShaderProgram.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 
@@ -20,7 +20,7 @@ bool has_program(std::int32_t variant, std::uint32_t bit) {
     return ((static_cast<std::uint32_t>(variant) >> bit) & 1U) != 0;
 }
 
-RenderShader* find_object(
+RndShaderProgram* find_object(
     const RenderManagedObjectArray& objects,
     std::uint64_t key) {
     auto** first = objects.begin;
@@ -28,8 +28,8 @@ RenderShader* find_object(
     while (count > 0) {
         const auto half = count / 2;
         const auto* middle =
-            reinterpret_cast<const RenderShader*>(first[half]);
-        if (middle->permutation_key < key) {
+            reinterpret_cast<const RndShaderProgram*>(first[half]);
+        if (middle->mKey < key) {
             first += half + 1;
             count -= half + 1;
         } else {
@@ -39,7 +39,7 @@ RenderShader* find_object(
     if (first == objects.end) {
         return nullptr;
     }
-    return reinterpret_cast<RenderShader*>(*first);
+    return reinterpret_cast<RndShaderProgram*>(*first);
 }
 
 }  // namespace
@@ -73,12 +73,12 @@ bool render_compiled_shader_objects_bind(
         }
         const auto key = keys[bit];
         auto* shader = find_object(objects[stage], key);
-        if (shader == nullptr || shader->permutation_key != key ||
-            !shader->initialized) {
+        if (shader == nullptr || shader->mKey != key ||
+            !shader->mCreated) {
             return false;
         }
-        shader->last_bound_frame = frame_epoch;
-        render_shader_bind(*shader, context);
+        shader->mLastSelectFrame = frame_epoch;
+        shader->_SelectImpl(context);
     }
     return true;
 }

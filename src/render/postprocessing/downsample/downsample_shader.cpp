@@ -6,7 +6,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
-#include "render/core/buffers/render_constant_buffer.h"
+#include "render/buffers/RndShaderCBuffer.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/core/textures/render_texture.h"
@@ -194,15 +194,15 @@ void render_downsample_shader_draw(
             static_cast<float*>(render_shader_constant_member(
                 buffer, shader_field(shader, 352))),
             offset);
-        buffer.upload_pending = true;
+        buffer.mSyncPending = true;
         render_shader_bind_pixel_texture(
             context, source, shader_field(shader, 368), kTextureFlags);
     }
-    if (buffer.upload_pending) {
-        render_constant_buffer_update_range(buffer, context, 0, extent);
-        buffer.upload_pending = false;
+    if (buffer.mSyncPending) {
+        buffer._SyncImpl(context, 0, extent);
+        buffer.mSyncPending = false;
     }
-    render_constant_buffer_bind(buffer, context);
+    buffer._SelectImpl(context);
 
     const auto hdr_mode = render_system_core_state(*render_system_instance())
                               .render_contexts.hdr_output_mode;

@@ -7,10 +7,11 @@
 #include "game/startup/system_init_options.h"
 #include "render/core/frame/render_frame_owner_list.h"
 
+class RndFactory;
+
 namespace rb4 {
 
 struct RenderContext;
-struct RenderFactory;
 struct RenderFrameOwner;
 struct RenderSettings;
 struct RenderSystem;
@@ -68,7 +69,7 @@ struct RenderSystemCoreState {
     float instantaneous_frame_rate;
     float smoothed_frame_rate;
     RenderSettings* settings;
-    RenderFactory* factory;
+    RndFactory* factory;
 };
 
 static_assert(sizeof(RenderContextArray) == 40);

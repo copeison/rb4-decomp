@@ -6,7 +6,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "render/core/platform/render_platform.h"
-#include "render/core/shaders/render_shader.h"
+#include "render/shaders/RndShaderProgram.h"
 
 namespace rb4 {
 
@@ -34,10 +34,7 @@ std::uint64_t read_permutation_key(BinStream& stream) {
 void release_objects(RenderManagedObjectArray& objects) {
     const auto count = static_cast<std::size_t>(objects.end - objects.begin);
     for (std::size_t index = 0; index < count; ++index) {
-        auto* object = objects.begin[index];
-        if (object != nullptr) {
-            object->dispatch->release_dynamic(object);
-        }
+        delete objects.begin[index];
     }
     objects.end = objects.begin;
 }
@@ -69,8 +66,8 @@ void render_compiled_shader_objects_resize(
     if (new_capacity < count) {
         new_capacity = count;
     }
-    constexpr auto kEntrySize = sizeof(RenderManagedObject*);
-    auto** storage = static_cast<RenderManagedObject**>(
+    constexpr auto kEntrySize = sizeof(RndShaderProgram*);
+    auto** storage = static_cast<RndShaderProgram**>(
         HmxAllocator::gStlAllocator.allocate(new_capacity * kEntrySize));
     if (size != 0) {
         std::memmove(storage, objects.begin, size * kEntrySize);
@@ -93,7 +90,7 @@ void render_compiled_shader_objects_resize(
 // directly from the stream by the platform shader initializer.
 bool render_compiled_shader_objects_load(
     RenderManagedObjectArray (&objects)[kRenderShaderStageCount],
-    void* metadata,
+    const char* name,
     BinStream& stream) {
     for (auto& stage_objects : objects) {
         release_objects(stage_objects);
@@ -122,21 +119,16 @@ bool render_compiled_shader_objects_load(
                 continue;
             }
 
-            const auto* binary = binary_size == 0
-                ? nullptr
-                : reinterpret_cast<const RenderShaderBinary*>(&stream);
+            auto* binary = binary_size == 0 ? nullptr : &stream;
             auto* shader =
-                render_create_shader(static_cast<RenderShaderStage>(stage));
+                RndShaderProgram::New(static_cast<RndShaderProgramType>(stage));
             stream.Tell();
-            auto* object = reinterpret_cast<RenderManagedObject*>(shader);
-            if (!render_shader_initialize(*shader, key, binary, metadata)) {
-                if (object != nullptr) {
-                    object->dispatch->release_dynamic(object);
-                }
+            if (!shader->Create(key, binary, name)) {
+                delete shader;
                 return false;
             }
             stream.Tell();
-            stage_objects.begin[index] = object;
+            stage_objects.begin[index] = shader;
         }
     }
     return true;

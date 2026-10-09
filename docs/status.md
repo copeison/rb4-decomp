@@ -453,6 +453,10 @@
   convert the engine foundation (`Rand2`, `Hmx::Color`, `BinStream`,
   `FileStream`, `File`, `String`, `Symbol`, `Thread`, `MemMgr`, options) to
   real classes under `src/math`, `src/utl`, and `src/os`.
+- [x] Convert the render resource objects to original classes: the
+  `RndShaderResource` base, `RndComputeBuffer`, `RndShaderCBuffer`,
+  `RndParticleBuffer`, `RndOcclusionQuery`, `RndShaderProgram`, `RndFactory`,
+  and their PS4 subclasses, including `PS4Fence`.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

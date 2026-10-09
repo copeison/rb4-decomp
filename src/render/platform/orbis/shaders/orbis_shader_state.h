@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/platform/orbis/shaders/orbis_shader.h"
+#include "render/shaders/RndShaderProgram.h"
 
 namespace rb4 {
 
@@ -18,13 +18,13 @@ enum class OrbisSamplerAddressMode : std::uint32_t {
 
 void orbis_render_context_set_sampler(
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
     std::uint32_t filter_mode);
 void orbis_render_context_clear_shader(
     OrbisRenderContext& context,
-    RenderShaderStage stage);
+    RndShaderProgramType stage);
 void orbis_render_context_clear_rw_resources(
     OrbisRenderContext& context,
     std::uint32_t stage_mask);

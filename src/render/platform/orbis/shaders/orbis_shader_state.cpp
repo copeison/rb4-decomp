@@ -1,4 +1,5 @@
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
+#include "render/shaders/RndShaderEnums.h"
 
 #include <cstdint>
 
@@ -64,23 +65,23 @@ OrbisSamplerDescriptor build_sampler_descriptor(
 // Reconstructed from eboot.elf at 0x8EA830.
 void orbis_render_context_set_sampler(
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
     std::uint32_t filter_mode) {
     const auto sampler = build_sampler_descriptor(address_mode, filter_mode);
     switch (stage) {
-    case RenderShaderStage::kVertex:
-    case RenderShaderStage::kPixel:
+    case kShaderProgramVertex:
+    case kShaderProgramPixel:
         orbis_render_context_bind_graphics_sampler(
             context, stage, slot, sampler);
         break;
-    case RenderShaderStage::kCompute:
+    case kShaderProgramCompute:
         orbis_render_context_bind_compute_sampler(context, slot, sampler);
         break;
-    case RenderShaderStage::kHull:
-    case RenderShaderStage::kDomain:
-    case RenderShaderStage::kGeometry:
+    case kShaderProgramHull:
+    case kShaderProgramDomain:
+    case kShaderProgramGeometry:
         break;
     }
 }
@@ -88,22 +89,22 @@ void orbis_render_context_set_sampler(
 // Reconstructed from eboot.elf at 0x8EA920.
 void orbis_render_context_clear_shader(
     OrbisRenderContext& context,
-    RenderShaderStage stage) {
+    RndShaderProgramType stage) {
     switch (stage) {
-    case RenderShaderStage::kVertex:
+    case kShaderProgramVertex:
         orbis_render_context_clear_vertex_shader(context);
         break;
-    case RenderShaderStage::kGeometry:
+    case kShaderProgramGeometry:
         orbis_render_context_clear_geometry_shader(context);
         break;
-    case RenderShaderStage::kPixel:
+    case kShaderProgramPixel:
         orbis_render_context_clear_pixel_shader(context);
         break;
-    case RenderShaderStage::kCompute:
+    case kShaderProgramCompute:
         orbis_render_context_clear_compute_shader(context);
         break;
-    case RenderShaderStage::kHull:
-    case RenderShaderStage::kDomain:
+    case kShaderProgramHull:
+    case kShaderProgramDomain:
         break;
     }
 }
@@ -120,7 +121,7 @@ void orbis_render_context_clear_rw_resources(
         if ((stage_mask & (1U << index)) == 0) {
             continue;
         }
-        const auto stage = static_cast<RenderShaderStage>(index);
+        const auto stage = static_cast<RndShaderProgramType>(index);
         orbis_render_context_clear_gnm_rw_textures(context, stage);
     }
 }
@@ -137,7 +138,7 @@ void orbis_render_context_clear_read_resources(
         if ((stage_mask & (1U << index)) == 0) {
             continue;
         }
-        const auto stage = static_cast<RenderShaderStage>(index);
+        const auto stage = static_cast<RndShaderProgramType>(index);
         orbis_render_context_clear_gnm_textures(context, stage);
         orbis_render_context_clear_gnm_buffers(context, stage);
     }

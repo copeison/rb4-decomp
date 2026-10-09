@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/core/buffers/render_compute_buffer.h"
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
@@ -21,21 +21,21 @@ std::size_t divide_round_up(std::size_t value, std::size_t divisor) {
     return value / divisor + (value % divisor != 0);
 }
 
-RenderComputeBuffer* create_target_buffer(
+RndComputeBuffer* create_target_buffer(
     std::size_t element_stride,
     std::size_t element_count,
     const char* name) {
-    RenderComputeBufferDescriptor descriptor{};
-    descriptor.element_stride = element_stride;
-    descriptor.element_count = element_count;
-    descriptor.flags = kTargetBufferFlags;
-    descriptor.name = name;
-    return render_create_compute_buffer(descriptor);
+    RndComputeBuffer::Description descriptor{};
+    descriptor.mElementSize = element_stride;
+    descriptor.mNumElements = element_count;
+    descriptor.mFlags = kTargetBufferFlags;
+    descriptor.mName = name;
+    return RndComputeBuffer::New(descriptor);
 }
 
 void create_light_index_and_range_buffers(
-    RenderComputeBuffer* (&light_ids)[2],
-    RenderComputeBuffer*& light_id_ranges,
+    RndComputeBuffer* (&light_ids)[2],
+    RndComputeBuffer*& light_id_ranges,
     std::size_t tile_count,
     std::size_t max_lights_per_tile,
     const char* id_buffer_name,
@@ -51,9 +51,9 @@ void create_light_index_and_range_buffers(
         kLightRangeStride, tile_count, range_buffer_name);
 }
 
-void release_compute_buffer(RenderComputeBuffer*& buffer) {
+void release_compute_buffer(RndComputeBuffer*& buffer) {
     if (buffer != nullptr) {
-        render_compute_buffer_release_dynamic(*buffer);
+        delete buffer;
         buffer = nullptr;
     }
 }

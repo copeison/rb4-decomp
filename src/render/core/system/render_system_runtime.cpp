@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/buffers/render_constant_buffer.h"
+#include "render/buffers/RndShaderCBuffer.h"
 #include "render/core/context/render_context.h"
 #include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/synchronization/render_deferred_release.h"
@@ -33,21 +33,21 @@ constexpr std::size_t kPrimitiveMeshSetOffset = 3568;
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
 
 struct RenderBuiltinBufferDescriptors {
-    const RenderConstantBufferDescriptor* zero_pair;
+    const RndShaderCBufferConfig* zero_pair;
     std::size_t zero_pair_index;
     std::uint8_t reserved_16[56];
-    const RenderConstantBufferDescriptor* zero_vectors;
+    const RndShaderCBufferConfig* zero_vectors;
     std::size_t zero_vectors_index;
     std::uint8_t reserved_88[16];
-    const RenderConstantBufferDescriptor* sentinel;
+    const RndShaderCBufferConfig* sentinel;
     std::size_t negative_sentinel_index;
     std::size_t zero_sentinel_index;
-    const RenderConstantBufferDescriptor* default_values;
+    const RndShaderCBufferConfig* default_values;
     std::size_t default_values_index;
 };
 
 struct RenderBuiltinBuffers {
-    std::array<RenderConstantBuffer*, 4> entries;
+    std::array<RndShaderCBuffer*, 4> entries;
 };
 
 static_assert(offsetof(RenderBuiltinBufferDescriptors, zero_pair) == 0);
@@ -81,21 +81,21 @@ void*& runtime_pointer_at(RenderSystem& system, std::size_t offset) {
 }
 
 float* constant_buffer_element(
-    RenderConstantBuffer& buffer,
+    RndShaderCBuffer& buffer,
     std::size_t index) {
-    return static_cast<float*>(buffer.data) +
+    return static_cast<float*>(buffer.mData) +
         kFloatsPerConstantBufferElement * index;
 }
 
-RenderConstantBuffer* create_deferred_builtin_buffer(
-    const RenderConstantBufferDescriptor& descriptor) {
-    return render_create_constant_buffer(descriptor, 1);
+RndShaderCBuffer* create_deferred_builtin_buffer(
+    const RndShaderCBufferConfig& descriptor) {
+    return RndShaderCBuffer::New(descriptor, 1);
 }
 
-void finish_builtin_buffer_upload(RenderConstantBuffer& buffer) {
-    if (buffer.upload_pending) {
-        render_constant_buffer_initialize_backend(buffer);
-        buffer.upload_pending = false;
+void finish_builtin_buffer_upload(RndShaderCBuffer& buffer) {
+    if (buffer.mSyncPending) {
+        buffer._CreateImpl();
+        buffer.mSyncPending = false;
     }
 }
 
@@ -215,7 +215,7 @@ void render_system_initialize_builtin_buffers(RenderSystem& system) {
 void render_system_release_builtin_buffers(RenderSystem& system) {
     for (auto*& buffer : builtin_buffers(system).entries) {
         if (buffer != nullptr) {
-            render_constant_buffer_release_dynamic(*buffer);
+            delete buffer;
             buffer = nullptr;
         }
     }

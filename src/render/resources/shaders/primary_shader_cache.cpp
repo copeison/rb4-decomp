@@ -229,7 +229,9 @@ bool load_cache(
             }
             if (valid) {
                 loaded = render_compiled_shader_objects_load(
-                    shader.compiled_objects, shader.backend_name, stream);
+                    shader.compiled_objects,
+                    static_cast<const char*>(shader.backend_name),
+                    stream);
             }
             release_defines(defines);
         }

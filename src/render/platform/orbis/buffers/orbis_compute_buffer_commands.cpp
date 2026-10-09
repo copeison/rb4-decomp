@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/platform/orbis/buffers/orbis_compute_buffer.h"
+#include "renderps4/buffers/PS4ComputeBuffer.h"
 #include "render/platform/orbis/buffers/orbis_compute_buffer_commands_adapters.h"
 
 namespace rb4 {
@@ -11,16 +11,16 @@ namespace rb4 {
 // Reconstructed from eboot.elf at 0x8EA740.
 void orbis_render_context_copy_compute_buffer_count(
     OrbisRenderContext& context,
-    const OrbisComputeBuffer& source,
-    OrbisComputeBuffer& destination) {
+    const PS4ComputeBuffer& source,
+    PS4ComputeBuffer& destination) {
     const auto& descriptor =
-        orbis_compute_buffer_active_descriptor(source);
+        source.ActiveBuffer();
     orbis_render_context_bind_compute_rw_buffer(context, 0, &descriptor);
 
     orbis_render_context_copy_gds_to_memory(
         context,
         0,
-        orbis_compute_buffer_active_storage(destination),
+        destination.ActiveStorage(),
         sizeof(std::uint32_t),
         true);
 

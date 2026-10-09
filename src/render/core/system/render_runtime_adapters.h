@@ -3,18 +3,18 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace rb4 {
+class RndLightCom;
+class RndLightDirectionalCom;
+class RndLightProbeCom;
+class RndLightSpotCom;
+class RndMaterial;
+class RndCameraCom;
+class RndObject;
+class RndScene;
+class RndSceneResource;
+class RndSceneSettingsCom;
 
-struct RndLightCom;
-struct RndLightDirectionalCom;
-struct RndLightProbeCom;
-struct RndLightSpotCom;
-struct RndMaterial;
-struct RndCameraCom;
-struct RndObject;
-struct RndScene;
-struct RndSceneResource;
-struct RndSceneSettingsCom;
+namespace rb4 {
 
 using RndObjectId = std::uint32_t;
 

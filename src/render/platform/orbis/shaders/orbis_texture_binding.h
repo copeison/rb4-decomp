@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
+#include "render/shaders/RndShaderEnums.h"
 
 namespace rb4 {
 
@@ -19,7 +20,7 @@ enum OrbisTextureBindingFlag : std::uint32_t {
 
 void orbis_bind_texture(
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     const void* texture,
     OrbisSamplerAddressMode address_mode,

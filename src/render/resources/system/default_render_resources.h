@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "render/core/buffers/render_compute_buffer.h"
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/resources/camera/default_camera.h"
 #include "render/resources/lighting/default_lighting.h"
 #include "render/resources/materials/default_materials.h"
@@ -15,7 +15,7 @@ struct RenderSystem;
 struct DefaultRenderResources {
     RndSceneResource* scene_resource = nullptr;
     DefaultTextureSet textures;
-    std::array<RenderComputeBuffer*, 2> compute_buffers{};
+    std::array<RndComputeBuffer*, 2> compute_buffers{};
     DefaultCameraState camera;
     DefaultMaterialSet materials;
     DefaultLightingState lighting;

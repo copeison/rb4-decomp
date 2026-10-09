@@ -2,7 +2,7 @@
 
 #include <new>
 
-#include "render/core/buffers/render_compute_buffer.h"
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/core/system/render_system.h"
 #include "render/core/textures/render_texture.h"
 
@@ -90,7 +90,7 @@ void render_initialize_default_resources(
     render_create_default_textures(resources.textures);
     for (std::uint32_t index = 0; index < resources.compute_buffers.size();
          ++index) {
-        const RenderComputeBufferDescriptor descriptor{
+        const RndComputeBuffer::Description descriptor{
             sizeof(std::uint32_t),
             1,
             &index,
@@ -100,7 +100,7 @@ void render_initialize_default_resources(
             kDefaultComputeBufferName,
         };
         resources.compute_buffers[index] =
-            render_create_compute_buffer(descriptor);
+            RndComputeBuffer::New(descriptor);
     }
 
     render_create_default_camera(resources.camera, *scene);
@@ -143,7 +143,7 @@ void render_release_default_resources(DefaultRenderResources& resources) {
     }
     for (auto*& buffer : resources.compute_buffers) {
         if (buffer != nullptr) {
-            render_compute_buffer_release_dynamic(*buffer);
+            delete buffer;
             buffer = nullptr;
         }
     }

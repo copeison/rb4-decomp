@@ -4,7 +4,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
-#include "render/core/system/render_factory.h"
+#include "render/system/RndFactory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 
@@ -261,8 +261,7 @@ RenderTextureArrayCube* render_create_texture_array_cube(
     render_texture_resolve_descriptor_fields(
         descriptor.texture_state, 7, -1);
     auto& factory = *render_system_factory(*render_system_instance());
-    auto* texture = render_factory_create_texture_array_cube(
-        factory, descriptor);
+    auto* texture = factory.CreateTextureArrayCube(descriptor);
     render_texture_initialize_backend(*texture, reusable_texture);
     return texture;
 }

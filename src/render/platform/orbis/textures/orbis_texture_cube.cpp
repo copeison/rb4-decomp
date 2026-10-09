@@ -1,4 +1,5 @@
 #include "render/platform/orbis/textures/orbis_texture_cube.h"
+#include "render/shaders/RndShaderEnums.h"
 
 #include <cstddef>
 
@@ -12,7 +13,7 @@ namespace {
 void bind_texture_stage(
     const OrbisTextureCube& texture,
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
@@ -106,7 +107,7 @@ void orbis_texture_cube_bind_vertex(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kVertex, slot, flags,
+        texture, context, kShaderProgramVertex, slot, flags,
         border_color);
 }
 
@@ -120,19 +121,19 @@ void orbis_texture_cube_bind_vertex(
     }
 
 // Reconstructed from eboot.elf at 0x8E71C0.
-RB4_DEFINE_CUBE_BINDING(orbis_texture_cube_bind_hull, RenderShaderStage::kHull)
+RB4_DEFINE_CUBE_BINDING(orbis_texture_cube_bind_hull, kShaderProgramHull)
 // Reconstructed from eboot.elf at 0x8E71E0.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_domain, RenderShaderStage::kDomain)
+    orbis_texture_cube_bind_domain, kShaderProgramDomain)
 // Reconstructed from eboot.elf at 0x8E7200.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_geometry, RenderShaderStage::kGeometry)
+    orbis_texture_cube_bind_geometry, kShaderProgramGeometry)
 // Reconstructed from eboot.elf at 0x8E7220.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_pixel, RenderShaderStage::kPixel)
+    orbis_texture_cube_bind_pixel, kShaderProgramPixel)
 // Reconstructed from eboot.elf at 0x8E7240.
 RB4_DEFINE_CUBE_BINDING(
-    orbis_texture_cube_bind_compute, RenderShaderStage::kCompute)
+    orbis_texture_cube_bind_compute, kShaderProgramCompute)
 
 #undef RB4_DEFINE_CUBE_BINDING
 

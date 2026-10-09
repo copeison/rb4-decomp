@@ -3,10 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 
+class RndComputeBuffer;
+class RndShaderCBuffer;
+
 namespace rb4 {
 
-struct RenderComputeBuffer;
-struct RenderConstantBuffer;
 struct RenderContext;
 struct RenderShaderParameterBinding;
 struct RenderTexture;
@@ -23,7 +24,7 @@ void render_shader_bind_texture(
     std::uint32_t flags);
 void render_shader_bind_buffer(
     RenderContext& context,
-    RenderComputeBuffer& buffer,
+    RndComputeBuffer& buffer,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags);
@@ -39,18 +40,18 @@ void render_shader_bind_pixel_texture(
 
 // Selects the context's smallest per-draw constant buffer that holds the
 // given number of 16-byte elements.
-RenderConstantBuffer& render_shader_select_constant_buffer(
+RndShaderCBuffer& render_shader_select_constant_buffer(
     RenderContext& context,
     std::uint64_t element_count);
 
 // Address of a constant-block member inside a constant buffer's staging data.
 void* render_shader_constant_member(
-    RenderConstantBuffer& buffer,
+    RndShaderCBuffer& buffer,
     std::uint64_t member_offset);
 
 // Uploads the first element_count elements and binds the buffer.
 void render_shader_commit_constant_buffer(
-    RenderConstantBuffer& buffer,
+    RndShaderCBuffer& buffer,
     RenderContext& context,
     std::uint64_t element_count);
 

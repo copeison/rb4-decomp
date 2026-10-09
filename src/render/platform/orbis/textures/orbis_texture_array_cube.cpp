@@ -1,4 +1,5 @@
 #include "render/platform/orbis/textures/orbis_texture_array_cube.h"
+#include "render/shaders/RndShaderEnums.h"
 
 #include <cstddef>
 
@@ -12,7 +13,7 @@ namespace {
 void bind_texture_stage(
     const OrbisTextureArrayCube& texture,
     OrbisRenderContext& context,
-    RenderShaderStage stage,
+    RndShaderProgramType stage,
     std::uint32_t slot,
     std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
@@ -72,7 +73,7 @@ void orbis_texture_array_cube_bind_vertex(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kVertex, slot, flags,
+        texture, context, kShaderProgramVertex, slot, flags,
         border_color);
 }
 
@@ -82,7 +83,7 @@ void orbis_texture_array_cube_bind_hull(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kHull, slot, flags,
+        texture, context, kShaderProgramHull, slot, flags,
         border_color);
 }
 
@@ -92,7 +93,7 @@ void orbis_texture_array_cube_bind_domain(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kDomain, slot, flags,
+        texture, context, kShaderProgramDomain, slot, flags,
         border_color);
 }
 
@@ -102,7 +103,7 @@ void orbis_texture_array_cube_bind_geometry(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kGeometry, slot, flags,
+        texture, context, kShaderProgramGeometry, slot, flags,
         border_color);
 }
 
@@ -112,7 +113,7 @@ void orbis_texture_array_cube_bind_pixel(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kPixel, slot, flags,
+        texture, context, kShaderProgramPixel, slot, flags,
         border_color);
 }
 
@@ -122,7 +123,7 @@ void orbis_texture_array_cube_bind_compute(
     std::uint32_t slot, std::uint32_t flags,
     const OrbisSamplerBorderColor& border_color) {
     bind_texture_stage(
-        texture, context, RenderShaderStage::kCompute, slot, flags,
+        texture, context, kShaderProgramCompute, slot, flags,
         border_color);
 }
 

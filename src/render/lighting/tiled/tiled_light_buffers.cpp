@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-#include "render/core/buffers/render_compute_buffer.h"
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
@@ -52,11 +52,11 @@ std::uint8_t* lighting_system_bytes(RenderLightingSystem& system) {
     return reinterpret_cast<std::uint8_t*>(&system);
 }
 
-RenderComputeBuffer*& tiled_light_buffer(
+RndComputeBuffer*& tiled_light_buffer(
     RenderLightingSystem& system,
     TiledLightBufferKind kind) {
     const auto index = static_cast<std::size_t>(kind);
-    return *reinterpret_cast<RenderComputeBuffer**>(
+    return *reinterpret_cast<RndComputeBuffer**>(
         lighting_system_bytes(system) + kTiledLightBufferOffsets[index]);
 }
 
@@ -81,22 +81,22 @@ RenderTextureArray2D*& spot_shadow_depth_array(
         lighting_system_bytes(system) + kSpotShadowDepthArrayOffset);
 }
 
-RenderComputeBuffer* create_tiled_light_buffer(
+RndComputeBuffer* create_tiled_light_buffer(
     std::size_t element_stride,
     std::size_t element_count,
     const char* name) {
-    RenderComputeBufferDescriptor descriptor{};
-    descriptor.element_stride = element_stride;
-    descriptor.element_count = element_count;
-    descriptor.flags = kTiledLightBufferFlags;
-    descriptor.name = name;
-    return render_create_compute_buffer(descriptor);
+    RndComputeBuffer::Description descriptor{};
+    descriptor.mElementSize = element_stride;
+    descriptor.mNumElements = element_count;
+    descriptor.mFlags = kTiledLightBufferFlags;
+    descriptor.mName = name;
+    return RndComputeBuffer::New(descriptor);
 }
 
 void set_tiled_light_buffer(
     RenderLightingSystem& system,
     TiledLightBufferKind kind,
-    RenderComputeBuffer* buffer) {
+    RndComputeBuffer* buffer) {
     tiled_light_buffer(system, kind) = buffer;
 }
 
@@ -105,7 +105,7 @@ void release_tiled_light_buffer(
     TiledLightBufferKind kind) {
     auto*& buffer = tiled_light_buffer(system, kind);
     if (buffer != nullptr) {
-        render_compute_buffer_release_dynamic(*buffer);
+        delete buffer;
         buffer = nullptr;
     }
 }

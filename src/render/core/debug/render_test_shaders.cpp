@@ -196,7 +196,6 @@ void render_test_shader_construct(void* shader) {
     shader_field(shader, 336) = 0;
 }
 
-
 // Reconstructed from eboot.elf at 0x645420.
 void render_test_pattern_shader_draw(
     void* shader,

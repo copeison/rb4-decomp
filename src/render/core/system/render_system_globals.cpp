@@ -56,14 +56,14 @@ void render_system_set_settings(
     render_system_core_state(system).settings = settings;
 }
 
-RenderFactory* render_system_factory(RenderSystem& system) {
+RndFactory* render_system_factory(RenderSystem& system) {
     return render_system_core_state(system).factory;
 }
 
 // Reconstructed from eboot.elf at 0x3DEDB0.
 void render_system_set_factory(
     RenderSystem& system,
-    RenderFactory* factory) {
+    RndFactory* factory) {
     render_system_core_state(system).factory = factory;
 }
 

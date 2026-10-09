@@ -5,19 +5,20 @@
 
 #include "render/core/frame/render_frame_owner.h"
 
+class RndComputeBuffer;
+
 namespace rb4 {
 
-struct RenderComputeBuffer;
 struct RenderTargetResources;
 struct RenderTexture;
 
 struct TiledLightTargetResources {
     std::uint8_t reserved_0[88]{};
-    RenderComputeBuffer* light_ids[2]{};
-    RenderComputeBuffer* light_id_ranges = nullptr;
+    RndComputeBuffer* light_ids[2]{};
+    RndComputeBuffer* light_id_ranges = nullptr;
     RenderTexture* interpolation_target = nullptr;
-    RenderComputeBuffer* stereo_light_ids[2]{};
-    RenderComputeBuffer* stereo_light_id_ranges = nullptr;
+    RndComputeBuffer* stereo_light_ids[2]{};
+    RndComputeBuffer* stereo_light_id_ranges = nullptr;
 };
 
 static_assert(offsetof(TiledLightTargetResources, light_ids) == 88);

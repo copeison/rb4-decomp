@@ -3,7 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert engine foundation to original classes` milestone. It
+`decomp: convert render resource objects to original classes` milestone,
+the second step of the conversion begun by the engine-foundation milestone. It
 adopted the reference map's original names and module layout (see
 [naming.md](naming.md) and [code-review.md](code-review.md)) and converted the
 engine foundation to real classes. The working tree was clean when the
@@ -11,7 +12,7 @@ snapshot was taken.
 
 The current PS4 object build compiles **185 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 586 unique entries,
+executable. The latest unresolved-symbol report contains 578 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -198,7 +199,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Engine foundation converted to original classes |
+| (this) | Render resource objects converted to original classes |
+| `3338af8` | Engine foundation converted to original classes |
 | `3797688` | DOF sprite draw and per-stage binding |
 | `45a942c` | Test-pattern and render-test-simple draws |
 | `9c93567` | Single-texture linearize-depth, refine-mask, sphere-map draws |
@@ -443,7 +445,7 @@ The surrounding bloom pass (`0x6305A0`, now defined in IDA) is a 3.7 KB
 render-target and state function and a larger, separate milestone.
 
 The final executable link also depends on many engine functions and matching
-FMOD libraries. The 586-entry unresolved report is a work queue, not a list of
+FMOD libraries. The 578-entry unresolved report is a work queue, not a list of
 compile failures. Prioritize dependencies that sit on reconstructed runtime
 paths and collapse groups of related adapters rather than adding arbitrary
 stubs.

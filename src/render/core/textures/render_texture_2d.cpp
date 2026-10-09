@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/system/render_factory.h"
+#include "render/system/RndFactory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 
@@ -133,7 +133,7 @@ RenderTexture2D* render_create_texture_2d(
     render_texture_resolve_descriptor_fields(
         descriptor.texture_state, 1, -1);
     auto& factory = *render_system_factory(*render_system_instance());
-    auto* texture = render_factory_create_texture_2d(factory, descriptor);
+    auto* texture = factory.CreateTexture2D(descriptor);
     render_texture_initialize_backend(*texture, nullptr);
     return texture;
 }

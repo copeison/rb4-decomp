@@ -13,6 +13,7 @@
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/shader_backend_state.h"
+#include "render/shaders/RndShaderProgram.h"
 #include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
@@ -41,9 +42,7 @@ void release_array_storage(
 
 void clear_compiled_objects(RenderManagedObjectArray& objects) {
     for (auto** object = objects.begin; object != objects.end; ++object) {
-        if (*object != nullptr) {
-            (*object)->dispatch->release_dynamic(*object);
-        }
+        delete *object;
     }
     objects.end = objects.begin;
 }

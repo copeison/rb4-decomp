@@ -2,9 +2,10 @@
 
 #include <cstdint>
 
+class RndComputeBuffer;
+
 namespace rb4 {
 
-struct RenderComputeBuffer;
 struct RenderContext;
 struct RenderTexture;
 
@@ -64,6 +65,6 @@ void render_dof_sprite_shader_draw(
     void* shader,
     RenderContext& context,
     RenderTexture& bokeh,
-    RenderComputeBuffer& sprites);
+    RndComputeBuffer& sprites);
 
 }  // namespace rb4

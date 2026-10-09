@@ -1,9 +1,9 @@
 #include "render/resources/shaders/shader_draw_state.h"
 
-#include "render/core/buffers/render_compute_buffer.h"
-#include "render/core/buffers/render_constant_buffer.h"
+#include "render/buffers/RndComputeBuffer.h"
+#include "render/buffers/RndShaderCBuffer.h"
 #include "render/core/context/render_context.h"
-#include "render/core/shaders/render_shader.h"
+#include "render/shaders/RndShaderProgram.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/core/textures/render_texture.h"
@@ -14,6 +14,37 @@
 namespace rb4 {
 
 namespace {
+
+// Draws select a resource through the slot for the requested stage. The
+// compute slot's extra argument is left unspecified by the callers in the
+// binary; zero is passed here.
+void select_resource(
+    RndShaderResource& resource,
+    RenderContext& context,
+    RndShaderProgramType type,
+    std::uint64_t slot,
+    std::uint32_t flags) {
+    switch (type) {
+    case kShaderProgramVertex:
+        resource._SelectForVSImpl(context, slot, flags);
+        break;
+    case kShaderProgramHull:
+        resource._SelectForHSImpl(context, slot, flags);
+        break;
+    case kShaderProgramDomain:
+        resource._SelectForDSImpl(context, slot, flags);
+        break;
+    case kShaderProgramGeometry:
+        resource._SelectForGSImpl(context, slot, flags);
+        break;
+    case kShaderProgramPixel:
+        resource._SelectForPSImpl(context, slot, flags);
+        break;
+    case kShaderProgramCompute:
+        resource._SelectForCSImpl(context, slot, flags, 0);
+        break;
+    }
+}
 
 constexpr std::uint64_t kSmallestConstantBufferElements = 16;
 constexpr std::size_t kConstantElementSize = 16;
@@ -44,7 +75,7 @@ void render_shader_bind_texture(
     render_texture_bind(
         texture,
         context,
-        static_cast<RenderShaderStage>(stage),
+        static_cast<RndShaderProgramType>(stage),
         static_cast<std::uint32_t>(slot),
         flags,
         nullptr);
@@ -52,18 +83,14 @@ void render_shader_bind_texture(
 
 void render_shader_bind_buffer(
     RenderContext& context,
-    RenderComputeBuffer& buffer,
+    RndComputeBuffer& buffer,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags) {
-    buffer.frame_stamp = current_frame_epoch();
+    buffer.mFrameStamp = current_frame_epoch();
     raise_limit(render_context_input_slot_limit(context, stage), slot);
-    render_compute_buffer_bind(
-        buffer,
-        context,
-        static_cast<RenderShaderStage>(stage),
-        static_cast<std::uint32_t>(slot),
-        flags);
+    select_resource(
+        buffer, context, static_cast<RndShaderProgramType>(stage), slot, flags);
 }
 
 void render_shader_bind_pixel_texture(
@@ -77,7 +104,7 @@ void render_shader_bind_pixel_texture(
     }
 }
 
-RenderConstantBuffer& render_shader_select_constant_buffer(
+RndShaderCBuffer& render_shader_select_constant_buffer(
     RenderContext& context,
     std::uint64_t element_count) {
     std::size_t size_class = 0;
@@ -92,20 +119,20 @@ RenderConstantBuffer& render_shader_select_constant_buffer(
 }
 
 void* render_shader_constant_member(
-    RenderConstantBuffer& buffer,
+    RndShaderCBuffer& buffer,
     std::uint64_t member_offset) {
-    return static_cast<std::uint8_t*>(buffer.data) +
+    return static_cast<std::uint8_t*>(buffer.mData) +
         member_offset * kConstantElementSize;
 }
 
 void render_shader_commit_constant_buffer(
-    RenderConstantBuffer& buffer,
+    RndShaderCBuffer& buffer,
     RenderContext& context,
     std::uint64_t element_count) {
-    buffer.upload_pending = true;
-    render_constant_buffer_update_range(buffer, context, 0, element_count);
-    buffer.upload_pending = false;
-    render_constant_buffer_bind(buffer, context);
+    buffer.mSyncPending = true;
+    buffer._SyncImpl(context, 0, element_count);
+    buffer.mSyncPending = false;
+    buffer._SelectImpl(context);
 }
 
 std::uint64_t render_shader_parameter_binding_apply(

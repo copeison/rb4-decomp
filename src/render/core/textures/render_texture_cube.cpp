@@ -4,7 +4,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_factory.h"
+#include "render/system/RndFactory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_texture_mip_chain.h"
 
@@ -192,7 +192,7 @@ RenderTextureCube* render_create_texture_cube(
     render_texture_cube_prepare_descriptor(descriptor.cube);
 
     auto& factory = *render_system_factory(*render_system_instance());
-    auto* texture = render_factory_create_texture_cube(factory, descriptor);
+    auto* texture = factory.CreateTextureCube(descriptor);
     const auto& settings = *render_system_settings(*render_system_instance());
     const auto deferred_usage = static_cast<RenderTextureUsage>(10);
     if (texture->usage_type != deferred_usage ||

@@ -152,12 +152,12 @@ std::uint64_t& render_context_output_slot_limit(
         context, kOutputSlotLimitOffset + stage * sizeof(std::uint64_t));
 }
 
-RenderConstantBuffer* render_context_constant_buffer(
+RndShaderCBuffer* render_context_constant_buffer(
     RenderContext& context,
     std::size_t size_class) {
-    return context_field<RenderConstantBuffer*>(
+    return context_field<RndShaderCBuffer*>(
         context,
-        kConstantBufferPoolOffset + size_class * sizeof(RenderConstantBuffer*));
+        kConstantBufferPoolOffset + size_class * sizeof(RndShaderCBuffer*));
 }
 
 // Reconstructed from eboot.elf at 0x6BD420.

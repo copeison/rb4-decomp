@@ -2,7 +2,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
-#include "render/core/system/render_factory.h"
+#include "render/system/RndFactory.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resources.h"
 #include "render/core/textures/render_texture.h"
@@ -45,7 +45,7 @@ void resolve_descriptor(
     render_texture_resolve_descriptor_fields(state, descriptor_type, -1);
 }
 
-RenderFactory& render_factory() {
+RndFactory& render_factory() {
     return *render_system_factory(*render_system_instance());
 }
 
@@ -73,8 +73,7 @@ RenderTexture* render_target_resources_create_texture_2d(
         descriptor.mip_chain, extent, data_format);
     resolve_descriptor(descriptor.texture_state, 1);
 
-    auto* texture = render_factory_create_texture_2d(
-        render_factory(), descriptor);
+    auto* texture = render_factory().CreateTexture2D(descriptor);
     render_texture_initialize_backend(*texture, reusable_texture);
     return texture;
 }
@@ -113,8 +112,7 @@ RenderTexture* render_target_resources_create_texture_array_2d(
     };
     resolve_descriptor(descriptor.texture_state, 5);
 
-    auto* texture = render_factory_create_texture_array_2d(
-        render_factory(), descriptor);
+    auto* texture = render_factory().CreateTextureArray2D(descriptor);
     render_texture_initialize_backend(*texture, reusable_texture);
     if (mip_chains != nullptr) {
         HmxAllocator::gStlAllocator.deallocate(

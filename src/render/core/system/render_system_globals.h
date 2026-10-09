@@ -2,11 +2,12 @@
 
 #include <cstddef>
 
+class RndFactory;
+
 namespace rb4 {
 
 struct RenderFrameOwner;
 struct RenderContext;
-struct RenderFactory;
 struct RenderSettings;
 struct RenderSystem;
 
@@ -25,10 +26,10 @@ RenderSettings* render_system_settings(RenderSystem& system);
 void render_system_set_settings(
     RenderSystem& system,
     RenderSettings* settings);
-RenderFactory* render_system_factory(RenderSystem& system);
+RndFactory* render_system_factory(RenderSystem& system);
 void render_system_set_factory(
     RenderSystem& system,
-    RenderFactory* factory);
+    RndFactory* factory);
 void render_system_release_back_buffer(RenderSystem& system);
 void render_system_release_render_contexts(RenderSystem& system);
 void render_system_publish_instance(RenderSystem& system);
