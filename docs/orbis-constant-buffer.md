@@ -25,11 +25,12 @@ The range update method at `0x8E3980` copies `(end - first) * 16` bytes into the
 persistent allocation at `first * 16` and invalidates the cached frame-local
 address.
 
-Binding at `0x8E39C0` compares the buffer's frame stamp with the renderer frame
-counter. On the first bind in a frame it allocates suitably sized embedded
-command memory from the active graphics or standalone compute context, copies
-the persistent GPU data into that memory, builds a Gnm buffer descriptor, and
-sets resource memory type `16`. Later binds in the same frame reuse the cached
+Binding at `0x8E39C0` (`PS4ShaderCBuffer::_SelectImpl`) compares the buffer's
+frame stamp with `RndDevice::mFrameCount`. On the first bind in a frame it allocates suitably sized embedded
+command memory from the active `GfxContext` or `ComputeContext` (chosen by
+`RndContext::mActivePipe`), copies
+the persistent GPU data into that memory, builds a constant-buffer descriptor
+(`Buffer::initAsConstantBuffer`), and sets `kResourceMemoryTypeRO`. Later binds in the same frame reuse the cached
 embedded address.
 
 The common descriptor supplies the binding slot at object offset `+20` and a
@@ -38,7 +39,7 @@ stage mask at `+24`. Its bits route the descriptor as follows:
 | Mask | Shader stage |
 | ---: | --- |
 | `0x01` | Vertex |
-| `0x02` | Hull and domain |
+| `0x02` | Hull and domain (the HS and LS stages) |
 | `0x04` | Geometry |
 | `0x08` | Pixel |
 | `0x10` | Compute, using either the graphics CUE or standalone compute context |

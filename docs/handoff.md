@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-retirement of the `rb4` namespace, the twenty-second step of the
-conversion to the reference map's original names, classes, and module
+reconstruction of the PS4 shader programs, the twenty-third step of
+the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -12,9 +12,9 @@ microphone subsystems are converted; the rest of the renderer and the game
 code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **141 C++ translation units**. It creates
+The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 667 entries, most of the
+executable. The latest unresolved-symbol report contains 669 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Last `rb4` code moved to the global namespace with SDK render-target types; `PS4ParticleBuffer` draw and creation reconstructed |
+| (this) | PS4 shader programs, compute contexts and constant-buffer select reconstructed |
+| `a736a52` | Last `rb4` code moved to the global namespace with SDK render-target types; `PS4ParticleBuffer` draw and creation reconstructed |
 | `c2913b0` | PS4 backend switched to the Gnm SDK types; `PS4Context::SetupDraw` reconstructed; screenshot callback is a `std::function` |
 | `66ad08a` | Remaining render helpers converted (`PlatformMgr`, `RndPixelFormat`, `RndPrimitiveMeshes`, `RndAudioTextures`, `BinkRenderMgr`, `RndLightMgrCom`); main-loop calls named from the map |
 | `072eb2a` | Render debug and shader helpers converted to `RndBufferInspection`, `RndShaderIncludeChecksums`, `RndShaderUtl`, `RndShaderDrawUtl` |

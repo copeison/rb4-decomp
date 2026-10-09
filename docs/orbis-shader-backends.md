@@ -1,61 +1,63 @@
 # Orbis shader backends
 
-Each Orbis shader object uses the common shader lifecycle and supplies virtual
-methods for binary initialization, context binding, allocation release, and
-stage identification. The common destructor checks the initialized byte at
-offset 16, calls the class-specific release method when set, and then clears
-that byte.
+The four `PS4ShaderProgram*` classes (`src/renderps4/shaders`) implement the
+common `RndShaderProgram` slots: `_CreateImpl(BinStream&)`,
+`_SelectImpl(RndContext&)`, `_FreeImpl()` and `_GetTypeImpl()`. The common
+destructor calls `Free`, which runs `_FreeImpl` when the program was created.
 
-## Compute shader
+## Loading
 
-Initialization at `0x8E3DC0` parses the shader binary through the Gnmx compute
-shader loader. It allocates the code at 256-byte alignment and the copied
-compute header at four-byte alignment under the `CShader` allocation name.
-The copied header receives the GPU code address split into its 256-byte base
-and high address fields. Object offsets 40, 48, and 56 hold the active header,
-owned header allocation, and code allocation.
+Every `_CreateImpl` follows the same pattern:
 
-Binding at `0x8E3F40` follows the render context's command mode. Graphics mode
-updates the graphics CUE and binds the compute shader through the graphics
-context. Standalone compute mode updates the compute CUE, binds through the
-compute context, and completes the context transition. Other modes do not
-bind. Release at `0x8E4030` defers both owned allocations and clears the active
-header pointer.
+1. A `RndShaderCompilerBlob` (`src/render/shaders/RndShaderCompiler.cpp`,
+   `0x11B2EE0`-`0x11B2FAF`) reads a 32-bit byte count and the shader binary
+   from the stream inside a `MemPushTemp`/`MemPopTemp` scope.
+2. `sce::Gnmx::parseShader` (`parseGsShader` for geometry) splits the binary
+   into the shader header and its GPU code.
+3. The code is copied into a 256-byte-aligned allocation from the `"gpu"`
+   heap (`MemFindHeap` in a function-local static, then `MemPushHeap` and
+   `MemPopHeap`); the header is copied into a 4-byte-aligned allocation sized
+   by the header's `computeSize()`.
+4. The header's `patchShaderGpuAddress` stores the code address, and the
+   blob is freed.
 
-## Pixel shader
+The allocation names are `CShader`, `PShader`, `GShader` and `VShader`.
 
-Initialization at `0x8E4480` uses the Gnmx shader parser and creates aligned
-`PShader` header and code allocations. It copies both regions, patches the
-code address in the header, and stores the active header at offset 40, the
-owned header at 48, and code at 56.
+| Class | Fields (offset) | `_SelectImpl` |
+| --- | --- | --- |
+| `PS4ShaderProgramCompute` | `CsShader*` 40, header 48, code 56 | Graphics pipe: `GfxContext::setCsShader`. Compute pipe: `ComputeContext::setCsShader`, then `RndContext::_ReselectGlobalCBuffers`. |
+| `PS4ShaderProgramPixel` | `PsShader*` 40, header 48, code 56 | `GfxContext::setPsShader`, then `PS4Context::SetCbEnabled(true)` |
+| `PS4ShaderProgramGeometry` | `GsShader*` 40, header 48, GS code 56, copy-shader code 64 | `GfxContext::setGsVsShaders` |
+| `PS4ShaderProgramVertex` | `VsShader*` 40, `EsShader*` 48, their headers 56/64, code 72, shader modifier 80, VS/ES fetch shaders 88/96 | See below |
 
-Binding at `0x8E4600` refreshes the pixel input-resource table when the header
-changes, binds the shader to the active graphics context, and enters pixel
-shader mode. Release at `0x8E4670` defers the header and code allocations and
-clears the active header pointer.
+Every `_FreeImpl` defers the owned allocations through
+`PS4Device::DeferredDelete` and clears only the typed shader pointers. The
+compute constructor initializes nothing; the others clear their pointers.
 
-## Geometry shader
+## Vertex shaders
 
-Initialization at `0x8E4140` parses paired geometry/export code streams. It
-allocates one copied `GShader` header and two 256-byte-aligned code regions,
-then patches both GPU addresses into the copied header. Object offsets 40 and
-48 hold the active and owned header, while offsets 56 and 64 hold the two code
-allocations. Binding at `0x8E4330` installs the active geometry shader on the
-graphics context. Release at `0x8E4350` defers all three allocations and
-clears the active header.
+One compiled vertex shader serves as both the VS-stage shader and, when a
+geometry shader is active, the ES-stage shader. `_CreateImpl` (`0x8E4790`)
+copies the parsed header twice (as `VsShader` and `EsShader`) and patches the
+same code address into both. It then builds a
+`sce::Gnm::FetchShaderInstancingMode` table as long as the larger of the two
+input-semantic counts: one `kFetchShaderUseVertexIndex` entry for each input
+semantic below 8 (the per-vertex streams) and `kFetchShaderUseInstanceId` for
+the rest. `generateVsFetchShader` and `generateEsFetchShader` build the two
+fetch shaders from it into `"gpu"`-heap allocations.
 
-## Vertex shader
+`_SelectImpl` (`0x8E4D80`) tests the geometry bit of
+`RndContext::mActiveShaderStages`. With a geometry shader it clears the VS
+stage and binds the ES variant; otherwise it binds the VS variant and clears
+the ES stage.
 
-Initialization at `0x8E4790` creates primary and alternate `VShader` header
-copies plus one aligned code allocation. It patches the code address into both
-headers, derives the shader's input-semantic table, and fills absent semantic
-slots with the default value 1. Gnmx then generates a fetch shader for each
-header variant. The two active headers occupy offsets 40 and 48; their owned
-copies are at 56 and 64, code is at 72, fetch metadata is at 80, and the two
-fetch-shader allocations are at 88 and 96.
+## Binary and SDK
 
-Binding at `0x8E4D80` selects the normal or alternate vertex header from the
-render-context flag at offset 18784. It refreshes the matching input-resource
-table when the header changes and binds the appropriate header, modifier, and
-fetch shader. Release at `0x8E4ED0` defers both fetch shaders, both copied
-headers, and code, then clears the active header pair.
+The game was built against SDK 2.500, and the reconstruction compiles against
+5.500. The inline SDK bodies still match the binary:
+- `GfxContext::setVsShader` refreshes the CUE's input-parameter cache
+  (`ConstantUpdateEngine::initializeInputsCache`) when the shader changes,
+  then calls the cached `setVsShader`.
+- `setEsShader` calls `setOnChipEsShader` with an LDS size of 0.
+- `ComputeContext::setCsShader` generates the input-resource offset table
+  and calls `ComputeConstantUpdateEngine::setCsShader`.
