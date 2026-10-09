@@ -575,6 +575,10 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the render debug and shader helpers: `RndBufferInspection`,
+  `ToString(RndUserShadingMode)`, `RndShaderIncludeChecksums`, `RndShaderUtl`,
+  `RndShaderResource::Select`, and `RndShaderDrawUtl` for the inlined draw
+  helpers that the map does not name.
 - [x] Move the game, input and UI code into their original modules: `App` and
   `main` in `src/rockband/app/Main.cpp`, `StagePresence` in `src/rb_game`,
   `PembrokeGuitarController` in `src/os/joypads`, and `UILayoutId` in

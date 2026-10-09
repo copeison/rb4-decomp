@@ -21,7 +21,7 @@ accumulating implementation files. Names and classes follow
 Every renderer file now sits in a domain folder of `src/render` or
 `src/renderps4`; the transitional `src/render/core`, `src/render/resources` and
 `src/render/platform/orbis` trees are gone. A few files in those domains still
-carry descriptive names (`render_debug_mode.cpp`, `shader_cache_validation.cpp`,
+carry descriptive names (`screenshot_capture.cpp`,
 `primitive_mesh_set.cpp`, `bink_render_manager.cpp` and similar) until they
 are converted to their original classes. Audio utilities are under
 `src/audio/core`, and FMOD integration is under `src/audio/fmod`.
