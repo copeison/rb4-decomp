@@ -43,8 +43,7 @@ implementation files.
   `src/audio/fmod`. `src/mic` holds the microphone layer.
 - The game lives under `src/rockband` (startup and main loop) and the `rb_*`
   modules. `src/ui` holds the UI system.
-- Code not yet converted may remain under the older folders (`src/core`,
-  `src/game`, `src/input`, and `src/render/platform/orbis`) until its milestone.
+- Joypads and controllers live under `src/os/joypads`.
 - Use source-root-qualified includes, such as
   `renderps4/context/PS4Context.h`, when crossing folders.
 - Add a new domain folder whenever a coherent responsibility would otherwise

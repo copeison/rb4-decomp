@@ -1,8 +1,8 @@
 # Main frame loop
 
-`game_run_frame` at `0x190` updates the runtime and game subsystems in a fixed
+`App::RunOneFrame` at `0x190` updates the runtime and game subsystems in a fixed
 order, then either skips or renders one frame. Its boolean return value controls
-the loop in `game_main`.
+the loop in `main`.
 
 ## Update order
 
@@ -41,5 +41,5 @@ frame, submits the active UI layout, and ends the frame.
 
 The function requests another iteration only while the exit flag is clear and
 the render system still exists. The cleaned control flow is in
-`src/game/frame/frame.cpp`; the direct decompilation remains in
+`src/rockband/app/Main.cpp`; the direct decompilation remains in
 `analysis/exports/game-run-frame.c`.

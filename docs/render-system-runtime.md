@@ -1,7 +1,7 @@
 # Render-system runtime lifecycle
 
 `RndDevice::Init` at `0x3DDAE0` receives the same 16-byte
-`RndInitParams` block created by `game_initialize`. It copies the block
+`RndInitParams` block created by `App::Initialize`. It copies the block
 into the renderer, starts the resource manager, invokes the platform backend,
 creates backend resources and built-in buffers, initializes every frame owner,
 and records a timestamp when the runtime epoch counter changes from zero to

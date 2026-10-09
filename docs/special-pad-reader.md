@@ -24,7 +24,7 @@ remains reproducible.
 
 ## Hardware probing
 
-`special_pad_reader_open` at `0x8D28A0` opens the normal special-pad path, then
+`PembrokeGuitarController::Activate` at `0x8D28A0` opens the normal special-pad path, then
 probes these extended device identifiers:
 
 | Game hardware ID | Vendor ID | Product ID |

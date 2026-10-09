@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-move of the remaining `src/render/core` and `src/render/resources` files
-into the `src/render` domains, the seventeenth step of the conversion to the reference map's original names, classes, and module
+move of the game, input and UI code into the `rockband`, `rb_game`, `os`
+and `ui` modules, the eighteenth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -12,9 +12,9 @@ microphone subsystems are converted; the rest of the renderer and the game
 code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **141 C++ translation units**. It creates
+The current PS4 object build compiles **139 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 662 entries, most of the
+executable. The latest unresolved-symbol report contains 661 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Remaining `src/render/core` and `src/render/resources` files moved into the `src/render` domains |
+| (this) | Game, input and UI code moved to `App`/`main`, `StagePresence`, `PembrokeGuitarController`, `UILayoutId` |
+| `0d6f812` | Remaining `src/render/core` and `src/render/resources` files moved into the `src/render` domains |
 | `8432703` | `src/render/platform/orbis` folded into `PS4Context`, `PS4Device`, `PS4Window`, `PS4MeshTyped`, `PS4RenderUtl` |
 | `592987d` | Render settings and capabilities converted to `RndConfig` and `RndCapabilities` |
 | `1081c74` | `RndLightGlobals`, `RndCommands`, `Rnd::Init`/`Terminate`, `PS4TransientBuffer`, `PS4RenderStateUtl` |
