@@ -416,6 +416,8 @@
   permutations, texture modes, constants, and sampled resources.
 - [x] Reconstruct the bloom graphics shader, half-size and hue-preservation
   permutations, three sampled bloom inputs, and bloom/overbright constants.
+- [x] Reconstruct the blur graphics shader, sample-count/type/direction and
+  mask/classification permutations, weighted-offset array, and four textures.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

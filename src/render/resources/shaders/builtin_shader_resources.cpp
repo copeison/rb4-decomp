@@ -54,19 +54,6 @@ void render_bink_convert_shader_construct(void* shader) {
     shader_field(shader, 384) = 0;
 }
 
-// Reconstructed from eboot.elf at 0x634AE0.
-void render_blur_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_blur_shader_install_dispatch, 6);
-    for (std::size_t offset = 408; offset <= 432; offset += 8) {
-        shader_field(shader, offset) = -1;
-    }
-    shader_field(shader, 440) = 0;
-    shader_field(shader, 448) = -1;
-    shader_field(shader, 456) = -1;
-    shader_field(shader, 472) = -1;
-}
-
 // Reconstructed from eboot.elf at 0x6367A0.
 void render_output_conversion_shader_construct(void* shader) {
     construct_parameterized_shader(
