@@ -272,7 +272,7 @@ void FmodBufferedStreamGenerator::_UpdateSync() {
         return;
     }
     LockBus();
-    float now = TheTimeMgr->mClock.DefaultTime();
+    float now = TheTimeMgr->mClock.Seconds();
     float elapsed = now - mSyncLastTime;
     mSyncLastTime = now;
     int moved = mSyncTargetFrame - mSyncPrevTargetFrame;
@@ -725,7 +725,7 @@ float FmodBufferedStreamGenerator::EnableSync(float levelRate, float timeScale) 
     mSyncTargetFrame = static_cast<int>(targetMs * (kSecondsPerMs * mSoundFrequency));
     mSyncSmoother.ForceValue(mSoundFrequency, false);
     mSyncRate = 0.0F;
-    mSyncLastTime = TheTimeMgr->mClock.DefaultTime();
+    mSyncLastTime = TheTimeMgr->mClock.Seconds();
     mSyncSmoother.mLevelRate = levelRate;
     mSyncSmoother.mTrendRate = 0.0F;
     mSyncTimeScale = timeScale;

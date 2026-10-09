@@ -29,7 +29,7 @@ public:
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock);
     // Slot 4 at 0x47660: whether the callable renders a virtual
     // instrument. Only AudioBusGenerator overrides it, forwarding
-    // AudioBus::IsVirtualInstrument of its source; nothing in this build
+    // AudioBus::IsInstrument of its source; nothing in this build
     // calls it. Name not in the reference map.
     virtual bool IsVirtualInstrument();
 
@@ -92,9 +92,11 @@ public:
     }
     virtual void TearDown() {}  // slot 9: 0x43C30
     // Slot 10 at 0x52330: false here; the instrument buses, among them
-    // FusionSampler (0x43C40 for the vtable at 0x18E4D68), return true.
-    // Name not in the reference map.
-    virtual bool IsVirtualInstrument() {
+    // FusionSampler (0x43C40 for the vtable at 0x18E4D68), return true. It
+    // shares AudioGenerator::IsInstrument's name: FusionSampler's one
+    // override fills both its slot 10 and the thunk at 0x43FC0 in its
+    // AudioGenerator vtable.
+    virtual bool IsInstrument() {
         return false;
     }
 

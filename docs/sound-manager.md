@@ -70,12 +70,21 @@ handle. The script functions `play_sound`, `sound_valid`, `sound_stop`,
 `sound_pause`, `sound_continue`, `sound_get_elapsed_ms` and
 `sound_set_param` hold the generator through `SoundHandleLock`.
 
+`_GetLoadedEvents` (`0x80E0`) evaluates the variable the message's third
+node names, takes its object (`DataNode::LiteralSink`, `0x237C00`) and asks
+the FMOD platform for its loaded events. It returns an array with one
+`(symbol path path)` entry per event; the strings drop a leading `/`.
+
 ## Not reconstructed
 
-- `_GetLoadedEvents(DataArray*)` at `0x80E0`.
 - The inline `Init` of `AudioEmitterCom` (`0x42F0`) and `FusionPatchCom`
   (`0x5350`): their headers do not declare it, so `_InitComponents` omits
   the calls.
-- The component and resource `Init` bodies and `CompositeGeneratorManager`'s
-  members (`0xDD10` to `0xE3C0`), which the map emits in this object, are
-  declared only.
+- The component and resource `Init` bodies, which the map emits in this
+  object, are declared only. `CompositeGeneratorManager`'s members
+  (`0xDD10` to `0xE3C0`) are reconstructed with the composite generator.
+- The Fusion, MidiMusic, Mogg, MoggMusic, MultiFusion, MusicTimeline and
+  SynthRack managers are declared in `SoundManager.cpp` with the members
+  their creation inlines. Their `kIdStr` names (the map's, `0x19B00A0` to
+  `0x19B00E0`) and vtables belong to their generators' objects and remain
+  undefined.

@@ -9,13 +9,10 @@
 #include "entity/core/GameObject.h"
 #include "os/memory/MemMgr.h"
 #include "utl/data/DataFunc.h"
+#include "utl/data/DataUtl.h"
 #include "utl/messages/MsgSink.h"
 #include "utl/text/Str.h"
 
-// The component a component-reference command array names, from
-// utl/DataUtl.o. Weak evidence for the name: the body at 0x23C2E0 looks the
-// object up in the thread's default entity and then the component in it.
-Component* GetDataCom(DataArray* command);  // 0x23C2E0
 // Parses the text into an array, from utl/DataFile.o.
 DataArrayPtr DataReadString(const char* str);  // 0x2203A0
 
@@ -439,9 +436,9 @@ DataNode DataExecute(DataArray* command) {
     // base class, or a registered function.
     const Symbol& name = RawSym(func);
     const GameObject* const object = gDataThread.mThisObject;
-    if (object != nullptr && object->mNumComs != 0) {
-        const GameObject::ComIndex* index = object->mComs;
-        const GameObject::ComIndex* const end = index + object->mNumComs;
+    if (object != nullptr && object->mComs.size() != 0) {
+        const GameObject::ComIndex* index = object->mComs.begin();
+        const GameObject::ComIndex* const end = object->mComs.end();
         for (; index < end; ++index) {
             if (name == Symbol() ? index->mId == Symbol()
                                  : index->mId == name || index->mBaseId == name) {

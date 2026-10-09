@@ -89,7 +89,7 @@ bool AudioBusGenerator::IsVirtualInstrument() {
     if (mSource == nullptr) {
         return false;
     }
-    return mSource->IsVirtualInstrument();
+    return mSource->IsInstrument();
 }
 
 // Reconstructed from eboot.elf at 0xE1430.

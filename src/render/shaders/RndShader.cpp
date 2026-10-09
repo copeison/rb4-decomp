@@ -1,5 +1,6 @@
 #include "render/shaders/RndShader.h"
 
+#include "entity/resources/Resource.h"
 #include "os/files/File.h"
 #include "os/memory/MemMgr.h"
 #include "os/threading/CritSec.h"
@@ -285,9 +286,9 @@ void RndShader::_InitShaderCollection() {
     bool rebuild = false;
     String generated("");
     FileStat stat{};
-    Symbol source("");
-    FileResolvePath(source, mFilePath);
-    if (FileFindGenerated(source, "", generated, rebuild, stat)) {
+    ResourcePath source;
+    source = mFilePath;
+    if (CheckCache(source, "", generated, rebuild, stat)) {
         const bool archive = gFileArchiveMode != 0;
         bool failed = true;
         if (!rebuild || archive) {

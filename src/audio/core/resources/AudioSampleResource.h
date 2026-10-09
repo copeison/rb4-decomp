@@ -1,6 +1,6 @@
 #pragma once
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 
 class BinStream;
 class String;

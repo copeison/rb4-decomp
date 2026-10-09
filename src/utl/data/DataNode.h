@@ -46,7 +46,7 @@ enum DataType : int {
     // with the null id. Inferred name.
     kDataGameObjectId = 0x28,
     // A resource path: the value is the path's characters, which Str returns
-    // as is and Sym resolves through FileResolvePath (0x2374E0). Sorting
+    // as is and Sym resolves through ResourcePath::operator= (0x2374E0). Sorting
     // (0x21E600) and CompatibleType (0x236F40) treat it as a symbol.
     // Inferred name.
     kDataResourcePath = 0x29,
@@ -77,6 +77,12 @@ public:
     explicit DataNode(float value) : mType(kDataFloat) {
         mValue.object = nullptr;
         mValue.real = value;
+    }
+    // A symbol node. Inline in the map's build, for example in
+    // SoundManager::_GetLoadedEvents at 0x80E0. Name not in the reference
+    // map.
+    explicit DataNode(Symbol sym) : mType(kDataSymbol) {
+        mValue.symbol = sym.Str();
     }
     // A script function node. Inline in the map's build.
     explicit DataNode(DataNode (*func)(DataArray*)) : mType(kDataFunc) {
@@ -120,6 +126,9 @@ public:
     // The glob's bytes, storing their count in `size` when it is given.
     // The map places a copy in utl/DataArray.o.
     const void* Glob(int* size, const DataArray* source) const;  // 0x21FD60
+    // The object of an object node without evaluating it, or null. The
+    // map's return type is not recorded; the evidence for the name is weak.
+    void* LiteralSink(const DataArray* source) const;  // 0x237C00
     // The variable a kDataVar node names, in the calling thread.
     DataNode* Var(const DataArray* source) const;  // 0x237E40
     // The array of a command node. The binary folds the map's identical

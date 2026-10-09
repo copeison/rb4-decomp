@@ -14,10 +14,14 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 616 entries. The audio
+executable. The latest unresolved-symbol report contains 663 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
-managers, `LFO`, `ADSR` and the decoders. It covers
+managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
+reconstruction ([entity-resources.md](entity-resources.md)) resolved the
+resource, entity, object and transform symbols, and declares the entity
+internals it calls: the entity loaders, enter, poll and destroy, and the
+file utilities. The report covers
 engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -215,7 +219,8 @@ The latest focused commits, newest first, are:
 | `c3eb541` | Audio core: generators, buses, mixer, render targets, stream reader thread |
 | `c6fee06` | Audio buffers, WAV files, voice pool, mic core, buffered streams; inferred names replace the Unknown placeholders outside audio |
 | `d5c8ada` | Inferred names for the audio placeholders, `RndScenePartialFramerateData`, directional light wrap fix |
-| (this) | Foundation runtime (string formatting, script data, threads, time, perf timers) and the audio voices, pitch DSP, `SoundManager`, `FModSystem` and bank resource |
+| `3be3757` | Foundation runtime (string formatting, script data, threads, time, perf timers) and the audio voices, pitch DSP, `SoundManager`, `FModSystem` and bank resource |
+| (this) | Resource system, entity and game-object core, `FusionSampler`, modulators and the composite generator |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |
@@ -494,8 +499,6 @@ original class headers:
 
 | Address | Adapter | Notes |
 | ---: | --- | --- |
-| `0x1AD8B0` | `FileFindGenerated` | Generated-file timestamps and archive mode |
-| `0x1AF950` | `FileResolvePath` | Path normalization into a symbol |
 | `0x376D40` | `File::NewFile` | File-system open |
 | `0x37AA30`, `0x37AAF0` | `MemPushTemp`/`MemPopTemp` | Thread-local heap mode |
 | `0x256410` | `IntToStaticString` | Interned small-integer text |

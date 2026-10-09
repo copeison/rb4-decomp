@@ -145,8 +145,10 @@ public:
 
 // The generator managers the sound manager creates by name. Each is
 // 72 bytes with its pool at +64; only the members the creation inlines are
-// declared. The names they register under are the char pointers at
-// 0x19B00A0 through 0x19B00E0.
+// declared. The names they register under are their kIdStr, the char
+// pointers at 0x19B00A0 through 0x19B00E0, which the map defines with the
+// managers in their generators' objects (audio/FusionGenerator.o and the
+// like); those objects, the vtables and kIdStr are not reconstructed.
 class FusionGeneratorManager : public AudioGeneratorManager {
 public:
     explicit FusionGeneratorManager(int poolSize) {
@@ -155,7 +157,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~FusionGeneratorManager() override;  // The vtable is at 0x18E0440.
 
-    static const char* sName;  // 0x19B00A0
+    static const char* kIdStr;  // 0x19B00A0
     void* mPool;
 };
 class MidiMusicGeneratorManager : public AudioGeneratorManager {
@@ -166,7 +168,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~MidiMusicGeneratorManager() override;  // The vtable is at 0x18E09F8.
 
-    static const char* sName;  // 0x19B00A8
+    static const char* kIdStr;  // 0x19B00A8
     void* mPool;
 };
 class MoggGeneratorManager : public AudioGeneratorManager {
@@ -177,7 +179,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~MoggGeneratorManager() override;  // The vtable is at 0x18E0BE0.
 
-    static const char* sName;  // 0x19B00B0
+    static const char* kIdStr;  // 0x19B00B0
     void* mPool;
 };
 class MoggMusicGeneratorManager : public AudioGeneratorManager {
@@ -188,7 +190,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~MoggMusicGeneratorManager() override;  // The vtable is at 0x18E1100.
 
-    static const char* sName;  // 0x19B00C0
+    static const char* kIdStr;  // 0x19B00C0
     void* mPool;
 };
 class MultiFusionGeneratorManager : public AudioGeneratorManager {
@@ -199,7 +201,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~MultiFusionGeneratorManager() override;  // The vtable is at 0x18E1550.
 
-    static const char* sName;  // 0x19B00C8
+    static const char* kIdStr;  // 0x19B00C8
     void* mPool;
 };
 class MusicTimelineGeneratorManager : public AudioGeneratorManager {
@@ -210,7 +212,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~MusicTimelineGeneratorManager() override;  // The vtable is at 0x18E2148.
 
-    static const char* sName;  // 0x19B00D8
+    static const char* kIdStr;  // 0x19B00D8
     void* mPool;
 };
 class SynthRackGeneratorManager : public AudioGeneratorManager {
@@ -221,7 +223,7 @@ public:
     DECLARE_GENERATOR_MANAGER_OVERRIDES
     ~SynthRackGeneratorManager() override;  // The vtable is at 0x18E2598.
 
-    static const char* sName;  // 0x19B00E0
+    static const char* kIdStr;  // 0x19B00E0
     void* mPool;
 };
 
@@ -639,30 +641,30 @@ void SoundManager::GetDefaultGenManagerConfig(GenManagerConfig& config) {
 // name is looked up and left in place; the check's report is compiled out.
 template <class T>
 T* SoundManager::InitGeneratorManager(int poolSize) {
-    if (sGenManagers.find(Symbol(T::sName)) != sGenManagers.end()) {
-        static_cast<void>(sGenManagers[Symbol(T::sName)]);
+    if (sGenManagers.find(Symbol(T::kIdStr)) != sGenManagers.end()) {
+        static_cast<void>(sGenManagers[Symbol(T::kIdStr)]);
     }
     T* manager = new T(poolSize);
     manager->Init();
-    sGenManagers[Symbol(T::sName)] = manager;
+    sGenManagers[Symbol(T::kIdStr)] = manager;
     return manager;
 }
 
 // Reconstructed from eboot.elf at 0x7120.
 bool SoundManager::InitGeneratorManager(const char* name, int poolSize) {
-    if (std::strcmp(name, FusionGeneratorManager::sName) == 0) {
+    if (std::strcmp(name, FusionGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<FusionGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, MidiMusicGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, MidiMusicGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<MidiMusicGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, MoggGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, MoggGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<MoggGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, MoggMusicGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, MoggMusicGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<MoggMusicGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, MultiFusionGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, MultiFusionGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<MultiFusionGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, SynthRackGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, SynthRackGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<SynthRackGeneratorManager>(poolSize);
-    } else if (std::strcmp(name, MusicTimelineGeneratorManager::sName) == 0) {
+    } else if (std::strcmp(name, MusicTimelineGeneratorManager::kIdStr) == 0) {
         InitGeneratorManager<MusicTimelineGeneratorManager>(poolSize);
     } else {
         return false;
@@ -923,6 +925,26 @@ AudioGeneratorManager* SoundManager::_GetManager(Symbol id) {
     return nullptr;
 }
 
+// Reconstructed from eboot.elf at 0x80E0.
+DataNode SoundManager::_GetLoadedEvents(DataArray* msg) {
+    void* object = msg->Node(2).Var(msg)->LiteralSink(nullptr);
+    eastl::vector<Symbol> events;
+    GetLoadedEvents(object, &events);
+    DataArrayPtr result(new DataArray(0));
+    for (Symbol* event = events.begin(); event != events.end(); ++event) {
+        DataArrayPtr entry(new DataArray(3));
+        entry->Node(0) = DataNode(*event);
+        String path(event->Str());
+        if (path.c_str()[0] == '/') {
+            path.erase(0, 1);
+        }
+        entry->Node(1) = DataNode(path);
+        entry->Node(2) = DataNode(path);
+        result->Insert(result->Size(), DataNode(entry));
+    }
+    return DataNode(result);
+}
+
 // Reconstructed from eboot.elf at 0x85E0.
 DataNode SoundManager::_OnPlaySound(DataArray* msg) {
     return DataNode(static_cast<int>(theSoundManager.PlaySound(msg->Sym(1), nullptr, false)));
@@ -1006,7 +1028,7 @@ void SoundManager::DumpGeneratorStats(TextStream& stream) {
         const int numFree = static_cast<int>(manager->mFreeList.mSize);
         scePthreadMutexUnlock(&manager->mCritSec.mCritSec);
         const int poolSize = manager->mPoolSize;
-        stream << " " << manager->GetId().Str() << ": " << (poolSize - numFree) << "/" << poolSize << "\n";
+        stream << " " << manager->GetId() << ": " << (poolSize - numFree) << "/" << poolSize << "\n";
     }
     stream << "\nActive sounds:\n";
     eastl::vector<unsigned int> handles;
@@ -1017,7 +1039,7 @@ void SoundManager::DumpGeneratorStats(TextStream& stream) {
             if (lock.mGenerator != nullptr && lock.mGenerator->mName != Symbol()) {
                 FormatString text("%08x");
                 text << handle;
-                stream << " " << lock.mGenerator->mName.Str() << " (" << text.Str() << ")\n";
+                stream << " " << lock.mGenerator->mName << " (" << text.Str() << ")\n";
             }
         }
     }

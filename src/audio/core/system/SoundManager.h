@@ -204,8 +204,10 @@ public:
     void StopAllNonObjectSounds();
     // The registered generator manager whose GetId matches, or null.
     AudioGeneratorManager* _GetManager(Symbol id);  // 0x8090
-    // The "_get_loaded_events" handler body at 0x80E0, which builds an array
-    // of the platform's events. Not reconstructed.
+    // The "_get_loaded_events" handler body at 0x80E0: an array of the
+    // platform's events for the object in the variable the message's third
+    // node names, each as (symbol path path) with the leading '/' dropped
+    // from the strings.
     DataNode _GetLoadedEvents(DataArray* msg);
 
     // Script functions registered by _InitAudioDataFuncs.

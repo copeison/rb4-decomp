@@ -4,7 +4,7 @@
 
 #include "audio/core/generators/AudioGenerator.h"
 #include "audio/core/output/AudioBus.h"
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "audio/core/streams/StreamReaderThread.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "math/smoothing/DoubleExponentialSmoother.h"

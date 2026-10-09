@@ -18,12 +18,16 @@ struct OptionArgs {
     OptionArg* mCapacity;
 };
 
-// Address not yet recovered. Name not in the reference map.
+// At 0x19E7FD8. Name not in the reference map.
 extern OptionArgs gOptionArgs;
 
 // The map has OptionStr(char const*, char const*), reading a global list;
 // this build takes the list explicitly.
 const char* OptionStr(OptionArgs& args, const char* name, const char* def);
+
+// Whether "-<name>" was given, toggling `def`; the entry is marked used.
+// The map's OptionBool(char const*, bool); this build takes the list.
+bool OptionBool(OptionArgs& args, const char* name, bool def);  // 0x2525A0
 
 // The map has OptionCheck(); this build takes the list explicitly.
 void OptionCheck(OptionArgs& args);

@@ -26,20 +26,6 @@ Symbol PlatformSymbol(HxPlatform platform) {
     return platform < kNumPlatforms ? sNames[platform] : Symbol();
 }
 
-// Reconstructed from eboot.elf at 0x1AE4D0.
-Symbol GfxApiSymbol(HxGfxApi api) {
-    static Symbol sNames[kNumGfxApis] = {
-        Symbol("null"),
-        Symbol("dx11"),
-        Symbol("ps4"),
-        Symbol("mtl"),
-        Symbol("vlk"),
-        Symbol("nx"),
-        Symbol("gles3"),
-    };
-    return api < kNumGfxApis ? sNames[api] : Symbol();
-}
-
 // Reconstructed from eboot.elf at 0x3641B0.
 eastl::vector<int> GetSupportedPlatforms() {
     static Symbol sPlatformMgr;

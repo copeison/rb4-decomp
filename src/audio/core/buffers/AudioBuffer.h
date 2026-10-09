@@ -120,6 +120,19 @@ public:
         }
     }
 
+    // Adds planar samples to the channels. Inline in the map's build, which
+    // emits it in audio/FusionSampler.o; FusionSampler::Process at 0x9ACC0
+    // inlines it.
+    void Accumulate(T** channels, int numChannels, int numFrames) {
+        for (int channel = 0; channel < numChannels; ++channel) {
+            T* output = mChannelData[channel];
+            const T* input = channels[channel];
+            for (int frame = 0; frame < numFrames; ++frame) {
+                output[frame] += input[frame];
+            }
+        }
+    }
+
     // Field names are not in the reference map.
     LinkedList::Node mNode;  // Unlinks itself when the buffer is destroyed.
     CleanupMode mCleanupMode;

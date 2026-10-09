@@ -89,3 +89,46 @@ and a formant mode, 1 with `maintain_formant` and 2 without.
 `elastique_pro`, `elastique_eff_with_formant` and `elastique_mobile`. The
 static initializer at `0xE03B0` registers the `smbPitchShift` category
 through `0x247110`; that registry is not reconstructed.
+
+## BiquadFilter
+
+`BiquadFilter::Coefs::MakeFromSettings` (`0xD9B40`, `BiquadFilter.cpp`)
+resets the coefficients to a pass-through and, for enabled settings,
+designs the RBJ audio EQ cookbook response at the stored sample rate. The
+frequency is clamped to the Nyquist rate. The map's `_Make*Coefs` members are
+inlined: low-, high- and band-pass use `mQ` as Q; the peaking filter treats
+it as a bandwidth (scaled by 2 ln 2); the shelves treat it as the slope.
+The gain is `10^(dB / 40)`. The string, response and test members of the
+map's object are not reconstructed.
+
+## Modulation
+
+`src/audio/core/modulation` holds the Fusion sampler's control sources.
+
+- `ADSR` (`ADSR.o`, `0xBD740` to `0xBDBA7`). `State` (40 bytes): sample rate
+  `+0x00`, level `+0x04`, stage `+0x08`, samples since the start `+0x0C`,
+  settings `+0x10`, attack, decay and release rates `+0x18` to `+0x20`,
+  depth mode `+0x24`. `Advance` moves through attack, decay, sustain and
+  release; `GetValue` scales the level by the depth. The five editor
+  `ParameterSpec`s (`0x19B00FC`) are unused.
+- `LFO` (`LFO.o`, `0xBDD10` to `0xBE7BF`, 48 bytes): phase `+0x00`
+  (double), output range `+0x08`, depth mode `+0x10`, settings `+0x18`,
+  cycles per sample `+0x20`, seconds per sample `+0x28` and the tempo the
+  increment was computed for `+0x2C`. The shapes come from
+  `sApplyWaveshapingTbl` (`0x19B0140`); `Noise` is not in it. A beat-synced
+  LFO scales its frequency by the tempo over 60.
+- `ModulatorTarget` (`ModulatorTarget.o`, `0xBEBE0` to `0xBEF83`, 40
+  bytes): name, default range magnitude, units, the float the modulators add
+  to, and a depth mode (additive, subtractive or centered).
+  `kDummyTarget` (`0x19B0180`) stands for no target.
+- `Modulator` (`Modulator.o`, `0xBE8D0` to `0xBEBD2`, 80 bytes): the target,
+  a depth `SPL::Parameter` (`[0, 1]`, 0.5) at `+0x08`, a range-magnitude
+  parameter (`[0, 1000000]`, 1) at `+0x28` and the target's range for that
+  magnitude at `+0x48`. `Modulate` adds the depth-shaped value mapped onto
+  the range to the target's float.
+
+The depth modes shape a value `v` with depth `d` as `d v`, `1 - d v` (the
+ADSR and the LFO compute `1 + d - d v`) and `d v + (1 - d) / 2`.
+`SPL::ParameterSpec` (minimum, default, maximum), `SPL::Parameter` (a
+clamped value with a change callback) and `SPL::Range` (start, length) are
+in `src/audio/core/dsp/ParameterSpec.h`.

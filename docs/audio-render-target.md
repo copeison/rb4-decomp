@@ -44,7 +44,7 @@ block. The original assumes the buffer length is a multiple of 128.
 channel count, sample rate and its reciprocal, an owner told on destruction
 at `+0xA8`, and the bus lock at `+0xB0`. Slot 2 is `Prepare`, slot 3 sets the
 sample rate, slot 4 `Process` is pure in this build, slots 5 to 9 are
-the map's inline lock helpers, and slot 10 `IsVirtualInstrument` is true only
+the map's inline lock helpers, and slot 10 `IsInstrument` is true only
 for the instrument buses such as `FusionSampler`. `AudioBusGenerator`
 reports its source's answer through `AudioBusCallable::IsVirtualInstrument`.
 
@@ -114,7 +114,7 @@ stops each voice creating its own Mogg and XMA decoders.
 
 `FusionVoice` (`0x9D920` to `0xA0340`) is the whole of `audio/FusionVoice.o`.
 `AssignIDs` binds a keyzone, the sampler's two `ADSR` envelopes and two
-`LFO`s (`src/audio/core/modulation`, declarations only) and the first of the
+`LFO`s (`src/audio/core/modulation`) and the first of the
 PCM, Mogg and XMA `AudioDecoder`s that takes the sample's format, and counts
 the voice on the sampler. `AttackWithTargetNote` turns the note's distance
 from the root key plus `SetPitchOffset`'s offset into a pitch ratio (clamped
@@ -143,12 +143,8 @@ envelope has finished or that has run out of sample dies once both peaks
 fall below 0.0001, unless the sampler's portamento holds it. The map's
 `PlaySampleSlice` has no counterpart in this build.
 
-`FusionSampler` (`audio/FusionSampler.o`, about `0x95C40` to `0x9D920`) is
-only partly reconstructed: its vtable and the members the voices use are
-declared, with `VirtualInstrument` (`src/audio/core/instruments`) as its
-primary base and `AudioGenerator` at `+312`. `FusionSampler.cpp` defines
-`SetVoicePool`, `VoicePoolWillDestruct`, `SetBeat`, `GetMaxNumVoices`, the
-pitch-bend, channel-gain and mute accessors and the `_Get*` getters.
+`FusionSampler` (`audio/FusionSampler.o`, `0x95C40` to `0x9D90F`) is
+described in [fusion-sampler.md](fusion-sampler.md).
 
 ## Buffers and wave files
 

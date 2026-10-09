@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "utl/containers/List.h"
 #include "utl/containers/Map.h"

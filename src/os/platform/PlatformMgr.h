@@ -39,7 +39,8 @@ enum HxGfxApi : std::uint32_t {
 Symbol PlatformSymbol(HxPlatform platform);  // 0x363030
 
 // The graphics API's short name ("ps4"), or "" when out of range. Name not
-// in the reference map; its object file is not identified.
+// in the reference map; the binary places it in entity/Resource.o, whose
+// GetCachedResourcePath uses it.
 Symbol GfxApiSymbol(HxGfxApi api);  // 0x1AE4D0
 
 // The platform ids listed in the platform_mgr config block's

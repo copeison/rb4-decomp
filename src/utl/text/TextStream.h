@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utl/text/Symbol.h"
+
 // Text output sink (utl/TextStream.o). Subclasses implement Print; the
 // stream operators format their value and pass the text to it. Only the
 // members the reconstructed code uses are declared. The vtable has three
@@ -18,6 +20,7 @@ public:
     TextStream& operator<<(char c);              // 0x258560
     TextStream& operator<<(int value);           // 0x258640
     TextStream& operator<<(const char* str);     // 0x2588E0
+    TextStream& operator<<(Symbol sym);          // 0x258900
     TextStream& operator<<(unsigned long value);  // 0x2589D0
 };
 

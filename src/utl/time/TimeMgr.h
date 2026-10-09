@@ -62,12 +62,6 @@ public:
         float TutorialSeconds() const;                 // 0x25AD20
         float DeltaTutorialSeconds() const;            // 0x25AD30
 
-        // Transitional spelling of Seconds for callers not yet updated. Not
-        // a function of the binary; name not in the reference map.
-        float DefaultTime() const {
-            return Seconds();
-        }
-
     private:
         float Delta(const Timeline& timeline) const {  // Inlined; name not in the reference map.
             return static_cast<float>(

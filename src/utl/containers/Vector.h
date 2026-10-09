@@ -18,6 +18,23 @@ public:
           mpEnd(nullptr),
           mpCapacity(nullptr),
           mAllocator("EASTL vector") {}
+    // Allocates exactly count elements and default-constructs them, as
+    // EASTL's vector(size_type, const allocator_type&) does; FusionSampler's
+    // constructor at 0x95C40 inlines it.
+    explicit vector(unsigned long count)
+        : mpBegin(nullptr),
+          mpEnd(nullptr),
+          mpCapacity(nullptr),
+          mAllocator("EASTL vector") {
+        if (count != 0) {
+            mpBegin = static_cast<T*>(mAllocator.allocate(count * sizeof(T)));
+        }
+        mpEnd = mpBegin;
+        mpCapacity = mpBegin + count;
+        for (; mpEnd != mpCapacity; ++mpEnd) {
+            new (mpEnd) T();
+        }
+    }
     // Copies the allocator, allocates exactly the other vector's size and
     // copy-constructs its elements, as EASTL's copy constructor does.
     vector(const vector& other)

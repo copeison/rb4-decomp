@@ -48,6 +48,17 @@ public:
         // the stored sample rate when they are enabled. At 0xD9B40.
         void MakeFromSettings(const Settings& settings);
 
+        // The responses of the RBJ audio EQ cookbook. Each clamps the
+        // frequency to the Nyquist rate. MakeFromSettings inlines them.
+        void _MakeLowPassCoefs(float frequency, float q);
+        void _MakeHighPassCoefs(float frequency, float q);
+        void _MakeBandPassCoefs(float frequency, float q);
+        // The bandwidth in octaves, the gain in decibels.
+        void _MakePeakingCoefs(float frequency, float bandwidth, float gainDb);
+        // The shelf slope, the gain in decibels.
+        void _MakeLowShelfCoefs(float frequency, float slope, float gainDb);
+        void _MakeHighShelfCoefs(float frequency, float slope, float gainDb);
+
         // Whether the coefficients pass the signal through. Inlined into
         // FusionVoice::Process at 0x9F2A0. Name not in the reference map.
         bool IsPassThrough() const {

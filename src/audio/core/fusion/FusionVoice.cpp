@@ -397,7 +397,7 @@ void FusionVoice::_RestoreFilterGain(void* voice) {
 // call. A voice whose envelope has finished, or that has run out of sample,
 // dies once its output falls silent, unless portamento holds it.
 unsigned int FusionVoice::Process(
-    float** channels, unsigned int /* startFrame */, unsigned int numFrames, float speed, float tempo) {
+    float** channels, unsigned int /* numChannels */, unsigned int numFrames, float speed, float tempo) {
     if (!IsInUse()) {
         return 0;
     }

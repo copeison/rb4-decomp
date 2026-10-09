@@ -9,6 +9,16 @@ const Hmx::Matrix3 Hmx::Matrix3::sID = {
     {0.0F, 0.0F, 1.0F},
 };
 
+// Reconstructed from eboot.elf at 0x2150D0. The triple product of the rows.
+bool IsRightHanded(const Hmx::Matrix3& matrix) {
+    const Vector3& x = matrix.x;
+    const Vector3& y = matrix.y;
+    const Vector3& z = matrix.z;
+    const float triple = (x.y * y.z - x.z * y.y) * z.x + (y.x * x.z - x.x * y.z) * z.y
+        + (y.y * x.x - x.y * y.x) * z.z;
+    return triple >= 0.0F;
+}
+
 // Reconstructed from eboot.elf at 0x2152E0. The binary sums the first and
 // third terms before subtracting the second.
 float Det(const Hmx::Matrix3& matrix) {

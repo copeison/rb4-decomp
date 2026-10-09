@@ -2,10 +2,11 @@
 
 #include <cstddef>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "audio/core/system/Audio.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "os/threading/CritSec.h"
+#include "utl/threading/ThreadCall.h"
 
 // Consumer of decoded PCM (audio/AsyncSampleProcessor.o). Processors form
 // a chain: each Chain* member runs the matching On* hook and passes the call
@@ -35,18 +36,11 @@ public:
     virtual void ChainCanceled();  // slot 11
 };
 
-// Work item run on an engine worker thread. The map emits its destructor in
-// the FmodAudioStreamResource object and the queue in utl/ThreadCall, which
-// has not been reconstructed. The vtable is at 0x18F0C48.
-class ThreadCallback {
-public:
-    virtual ~ThreadCallback() {}         // slots 0-1: 0x273160, 0x273170
-    virtual int ThreadStart() = 0;       // slot 2
-    virtual void ThreadDone(int result) = 0;  // slot 3
-};
-
-// Runs finished ThreadCallback completions. At 0x219B80.
-void ThreadCallPoll();
+// Polls ThreadCall and two other core services, like the core poll at
+// 0x219BB0 that SystemPoll calls, and then updates TheTimeMgr. Only the
+// asynchronous decode waits call it. At 0x219B80; it is not ThreadCallPoll.
+// Name not in the reference map.
+void core_poll_and_update_time();
 
 class FmodAudioStreamResource;
 

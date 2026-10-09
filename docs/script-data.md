@@ -18,7 +18,7 @@ These types are new in this engine (their names are inferred):
 - two waveform types, `0x26` and `0x27`;
 - `kDataGameObjectId` (`0x28`);
 - `kDataResourcePath` (`0x29`). Its value is a path string. `Str` returns the
-  path, and `Sym` resolves it through `FileResolvePath`.
+  path, and `Sym` resolves it through `ResourcePath::operator=`.
 
 A variable node holds the variable's index, not a pointer.
 

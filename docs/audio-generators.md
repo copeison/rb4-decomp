@@ -146,9 +146,36 @@ The platform-neutral generator code is reconstructed in
 destructors that every owner's destructor repeats.
 
 The sound manager, which registers the managers and resolves handles, is
-described in `docs/sound-manager.md`. `CompositeGenerator` and its manager
-are declared in `src/audio/core/generators/CompositeGenerator.h`; only the
-members the sound manager uses are modelled.
+described in `docs/sound-manager.md`.
+
+## CompositeGenerator
+
+`CompositeGenerator.cpp` is `audio/CompositeGenerator.o` (`0x40AF0` to
+`0x41E6B`, vtable `0x18DFFB8`, 160 bytes). Every emitter owns one as the
+parent of its sounds, and `SoundManager::PlaySound` groups several results
+under one. Its fields are an unused second list node (`+0x50`), the child
+list (`+0x68`), the pending list (`+0x80`), the last gain (`+0x98`, one by
+default) and the last mute flag (`+0x9C`). Children link through their pool
+node.
+
+`AddGenerator` only tries the kill lock: when another thread holds it, the
+child goes to the pending list under `mCompositeGenChildListLock`
+(`0x19C8498`). Every forwarding call takes the kill lock and first moves the
+pending children (`_AddPendingChildren`). `Pause`, `Continue` and `Stop`
+forward and set the state; `GetElapsedMs` and `GetTimelineMs` both return
+the largest child `GetElapsedMs`; `SetParameter` reports whether any child
+took the value, `GetParameter` the first child that has it. `GetGain` reads
+the first child, or the stored gain without children. `Poll` releases the
+children that finished and whose handle can be deactivated, and stops
+once none is left. `Kill` kills each child; a child still locked by a
+caller moves to the default emitter's composite generator unless this
+generator belongs to that emitter. `Release` is the map's inline
+`AudioGeneratorManager::FreeGenerator`. `kTypeId` is at `0x19C8480`.
+
+`CompositeGeneratorManager` (`0xDD10` to `0xE3C0`, vtable `0x18DCCB8`) has
+the shared pool code; `Play` returns null, the resource extension is
+`.--none--`, and `kIdStr` (`0x19B0098`) is unreferenced. The map emits the
+manager in `SoundManager.o`; the source keeps it with the generator.
 
 Slots 25-27 are now `SetPlayScale`, `GetPlayScale` and
 `GetPrimaryStreamValue`. Only the Fusion and music generators override

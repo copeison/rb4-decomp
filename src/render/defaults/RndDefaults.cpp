@@ -133,9 +133,9 @@ void RndDefaults::Init(const RndInitParams& params) {
     }
 
     mSceneResource->LoadResources();
-    mSceneResource->EnterEntity(mSceneResource->mEntity);
+    mSceneResource->EnterEntity(mSceneResource->mEntity, 1);
     if (mLightingResource) {
-        mLightingResource->EnterEntity(mLightingResource->mEntity);
+        mLightingResource->EnterEntity(mLightingResource->mEntity, 1);
     }
 }
 

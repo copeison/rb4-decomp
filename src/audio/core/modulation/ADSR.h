@@ -2,9 +2,12 @@
 
 #include <cstddef>
 
-// Attack-decay-sustain-release envelope (audio/ADSR.o). The class has not
-// been reconstructed; the out-of-line state members are declared, and the
-// state transitions FusionVoice inlines are defined here.
+#include "audio/core/dsp/ParameterSpec.h"
+#include "audio/core/modulation/ModulatorTarget.h"
+#include "utl/containers/Vector.h"
+
+// Attack-decay-sustain-release envelope (audio/ADSR.o, 0xBD740 to 0xBDBA7).
+// The state transitions FusionVoice inlines are defined here.
 class ADSR {
 public:
     // One element of a Fusion patch's "adsrs" array. Field names follow the
@@ -16,7 +19,30 @@ public:
             kTargetNone = 0,
             kTargetVolume = 1,
             kTargetFilterFreq = 2,
+            // StringToTarget's result for an unknown name; the value between
+            // has no name.
+            kTargetInvalid = 4,
         };
+
+        // The table at 0x18E59C0; null past the last target. At 0xBD740.
+        static const char* TargetToString(Target target);
+        static Target StringToTarget(const char* name);  // 0xBD760
+        // The editor values of the amplitude envelope's target ("Volume"
+        // only) and of the assignable one ("None" or "Filter Freq"). At
+        // 0xBD7C0 and 0xBD8B0.
+        static eastl::vector<AllowedValue<unsigned char>> GetVolumeAllowedTargetValues();
+        static eastl::vector<AllowedValue<unsigned char>> GetAssignableAllowedTargetValues();
+
+        // The patch's defaults, built by FusionSampler's constructor at
+        // 0x95C40.
+        Settings()
+            : mTarget(kTargetVolume),
+              mEnabled(false),
+              mAttack(0.0f),
+              mDecay(0.0f),
+              mSustain(1.0f),
+              mRelease(1.0f),
+              mDepth(0.5f) {}
 
         Target mTarget;
         bool mEnabled;
@@ -62,7 +88,15 @@ public:
                 mStage = kStageAttack;
                 float samples = attack * mSampleRate;
                 mAttackRate = 1.0f / (samples == 0.0f ? 1.0f : samples);
-            } else if (mSettings->mSustain < 1.0f && mSettings->mDecay > 0.0f) {
+            } else {
+                LeavePeak();
+            }
+        }
+        // Leaves the peak for the decay towards the sustain level, or for
+        // the sustain level at once. Inlined into Attack and Advance. Name
+        // not in the reference map.
+        void LeavePeak() {
+            if (mSettings->mSustain < 1.0f && mSettings->mDecay > 0.0f) {
                 mLevel = 1.0f;
                 mStage = kStageDecay;
                 float samples = mSettings->mDecay * mSampleRate;
@@ -116,18 +150,27 @@ public:
         float mSampleRate;
         float mLevel;
         Stage mStage;
-        // Samples advanced since the envelope was stopped; FusionVoicePool
-        // steals the voice with the larger count first.
+        // Samples advanced since the envelope started; Stop clears it.
+        // FusionVoicePool steals the voice with the larger count first.
         unsigned int mSamplesElapsed;
         const Settings* mSettings;
         float mAttackRate;   // Level per sample.
         float mDecayRate;
         float mReleaseRate;
-        // How GetValue applies the depth (0-2); the patch's modulator code
-        // calls these depth modes. Zeroed by the constructor.
+        // How GetValue applies the depth, in the order of
+        // ModulatorTarget::DepthMode: additive, subtractive or centered.
+        // Zeroed by the constructor.
         int mDepthMode;
     };
 };
+
+// The editors' limits of the settings' fields, at 0x19B00FC through
+// 0x19B0134. Nothing in this build reads them.
+extern SPL::ParameterSpec kAttackTimeParamSpec;
+extern SPL::ParameterSpec kDecayTimeParamSpec;
+extern SPL::ParameterSpec kReleaseTimeParamSpec;
+extern SPL::ParameterSpec kSustainLevelParamSpec;
+extern SPL::ParameterSpec kDepthLevelParamSpec;
 
 static_assert(offsetof(ADSR::Settings, mAttack) == 4);
 static_assert(offsetof(ADSR::Settings, mDepth) == 20);

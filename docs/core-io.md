@@ -140,7 +140,8 @@ conversions, which handle sequences of one to three bytes. It also holds the
 CJK line-break rules that `FindLineBreaks` uses:
 - `IsCJKChar` tests code point ranges.
 - `CanBeginLine` and `CanEndLine` look the character up in two
-  `eastl::set<unsigned short>`s, at `0x1B5D2A8` and `0x1B5D2E0`.
+  `eastl::set<unsigned short>`s, at `0x1B5D2A8` and `0x1B5D2E0`. The set
+  template is in `utl/containers/Set.h`.
 
 The static initializer at `0x1186E60` builds those sets from the arrays at
 `0x136DD00` and `0x136DE10`. Each range ends `sizeof(array)` elements past its

@@ -21,6 +21,14 @@ public:
         mRate = rate;
         mIncrement = 1.0f / rate * (1.0f / rampSeconds);
     }
+    // The same with the ramp length in milliseconds; a zero length makes
+    // each ramp take one block. Inlined, for example into
+    // FusionSampler::SetSampleRate at 0x99C10. Name not in the reference
+    // map.
+    void SetRateMs(float rate, float rampMs) {
+        mRate = rate;
+        mIncrement = rampMs == 0.0f ? 1.0f : 1000.0f / (rampMs * rate);
+    }
     // Starts a ramp from the current value. The map's out-of-line version
     // also selects a ramp shape. Inlined, for example into
     // FusionVoice::_RestoreFilterGain at 0x9F250.

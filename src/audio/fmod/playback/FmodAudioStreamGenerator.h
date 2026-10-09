@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "audio/core/generators/AudioGenerator.h"
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "audio/fmod/api/fmod_api.h"
 
 class AudioBusCallable;

@@ -13,7 +13,7 @@ class SmbPitchShift;
 class AudioDecoder {
 public:
     // A PCM or Mogg decoder; null for other formats, XMA among them. At
-    // 0xD4540.
+    // 0xD4540, in audio/AudioData.o.
     static AudioDecoder* NewDecoderForFormat(AudioData::EncodedFormat format);
 
     // Default channel map and gains for Render.
@@ -59,3 +59,30 @@ public:
         const unsigned int* channelMap,
         const float* gains);
 };
+
+// The PCM decoder (audio/AudioData.o). Only its construction is declared.
+// The object is 48 bytes.
+class PcmAudioDecoder : public AudioDecoder {
+public:
+    PcmAudioDecoder();  // 0x12C00
+
+    // The decoder's state after the vtable, cleared by the constructor; not
+    // reconstructed.
+    unsigned char mDecoderState[40];
+};
+
+static_assert(sizeof(PcmAudioDecoder) == 48);
+
+// The Mogg (Ogg Vorbis) decoder. The constructor allocates the
+// "MoggAudioPrivateDecoder" state and a 800 KiB "VorbisPool", and looks up
+// the default render target's "mogg" object. Only its construction is
+// declared. Name not in the reference map; the object is 120 bytes.
+class MoggAudioDecoder : public AudioDecoder {
+public:
+    MoggAudioDecoder();  // 0xD4B60
+
+    // The decoder's state after the vtable; not reconstructed.
+    unsigned char mDecoderState[112];
+};
+
+static_assert(sizeof(MoggAudioDecoder) == 120);

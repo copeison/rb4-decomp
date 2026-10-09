@@ -10,6 +10,11 @@
 // their first members right after mEnabled.
 class Component {
 public:
+    // A description for error messages, "%s component in %s" from the
+    // class name and the object's MakeErrorName. The map's
+    // MakeErrorName(ObjPtr const&) const; this build uses the owning object.
+    const char* MakeErrorName() const;  // 0xE8280
+
     // The vtable pointer; the virtual methods are not reconstructed. Name not
     // in the reference map.
     unsigned char mVtable[8];

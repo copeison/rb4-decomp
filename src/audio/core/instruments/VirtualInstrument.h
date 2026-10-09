@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+#include "audio/core/analysis/Meter.h"
+#include "audio/core/generators/AudioGenerator.h"
 #include "audio/core/output/AudioBus.h"
 #include "os/threading/CritSec.h"
 #include "utl/text/Str.h"
@@ -12,28 +14,46 @@
 // the base supplies are noted with their addresses. The object is 312 bytes.
 class VirtualInstrument : public AudioBus {
 public:
-    // The controller numbers of SetController. Values not modelled.
-    enum ControllerID : int {};
+    // The controller numbers of SetController: MIDI control changes. Only
+    // those FusionSampler handles are named; names not in the reference map.
+    enum ControllerID : int {
+        kBankSelect = 0,
+        kPortamentoTime = 5,
+        kVolume = 7,
+        kPan = 10,
+        kExpression = 11,
+        kPortamento = 65,
+        kResonance = 71,
+        kReleaseTime = 72,
+        kAttackTime = 73,
+        kBrightness = 74,
+    };
 
     explicit VirtualInstrument(const char* name);  // 0x66DF0
     ~VirtualInstrument() override;                  // slots 0-1: 0x66F40, 0x66FE0
 
-    // Slot 11, empty here (0x51D70). FusionGenerator's override hands the
-    // message to its listeners and drops those that return false. Name not
-    // in the reference map; it rests on that forwarding and is weak.
-    virtual void ForwardMidiMessage(
-        signed char status, signed char data1, signed char data2, float detune, bool immediate);
+    // Slot 11, empty here (0x51D70). FusionGenerator's override, the map's
+    // FusionGenerator::CallPreProcessCallbacks, runs _PrepareToMakeSamples
+    // on its audio-thread clients and drops those that return false.
+    // FusionSampler::Process calls it before each block.
+    virtual void CallPreProcessCallbacks(
+        int numSamples, float sampleRate, int mixCount, int block, bool lastBlock);
     // Slot 12 at 0x51D80. Name not in the reference map.
     virtual bool ProcessCallWillProduceSilence() const;
-    // Slot 13. Matched to the map's FusionSampler member by its patch
-    // reset; a guess.
-    virtual void ResetPatchRelatedState() = 0;
-    virtual void ResetInstrumentState() = 0;  // slot 14
-    virtual void NoteOn(signed char note, signed char velocity, signed char channel, float detune) = 0;  // slot 15
-    virtual void NoteOff(signed char note, signed char channel) = 0;  // slot 16
-    // Slot 17: a note-on of zero velocity in FusionSampler. Name not in the
-    // reference map.
-    virtual void ReleaseNote(signed char note) = 0;
+    // Slot 13. FusionSampler's (0x9A200) sits where the map places
+    // ResetInstrumentState among its members.
+    virtual void ResetInstrumentState() = 0;
+    // Slot 14: all notes off and the pitch bend reset in FusionSampler. Name
+    // not in the reference map; it rests on that behaviour.
+    virtual void ResetMidiState() = 0;
+    // Slot 15. The float is a start offset in milliseconds, which
+    // FusionSampler adds to the patch's start point.
+    virtual void NoteOn(signed char note, signed char velocity, signed char channel, float startOffsetMs) = 0;
+    // Slot 16: whether a note-on is pending or a voice plays the note. Name
+    // not in the reference map.
+    virtual bool IsNotePlaying(signed char note) = 0;
+    // Slot 17. HandleMidiMessage sends note-off messages here.
+    virtual void NoteOff(signed char note, signed char channel) = 0;
     virtual void SetExtraPitchBend(float bend, signed char channel);  // slot 18: empty here (0x52340)
     virtual void SetPitchBend(float bend, signed char channel) = 0;   // slot 19
     virtual float GetPitchBend(signed char channel) const = 0;        // slot 20
@@ -49,10 +69,9 @@ public:
     virtual void SetBeat(float beat);    // slot 27: empty here (0x51EE0)
     virtual void SetTempo(float tempo);  // slot 28: empty here (0x52350)
     // Slot 29 at 0x67080: dispatches on the status nibble.
-    virtual void HandleMidiMessage(signed char status, signed char data1, signed char data2, float detune);
+    virtual void HandleMidiMessage(signed char status, signed char data1, signed char data2, float startOffsetMs);
     virtual int GetMaxNumVoices() const;  // slot 30 at 0x51EF0
-    // Slot 31. Name not in the reference map.
-    virtual int GetNumActiveVoices() const = 0;
+    virtual int GetNumVoicesInUse() const = 0;  // slot 31
     virtual void SetMidiChannelVolume(float volume, float fadeSecs, signed char channel) = 0;  // slot 32
     virtual float GetMidiChannelVolume(signed char channel) const = 0;                       // slot 33
     virtual void SetMidiChannelGain(float gain, float fadeSecs, signed char channel) = 0;    // slot 34
@@ -63,10 +82,19 @@ public:
 
     // Field names are not in the reference map.
     String mName;
-    unsigned char mOpaque208[88];  // Not modelled.
+    // Runs while FusionSampler::Process renders its voices.
+    GeneratorTimer mProcessTimer;
+    // No updater is identified; by analogy with mVoiceMeter it is taken to
+    // track the processing time, which is weak.
+    Meter mProcessMeter;
+    // The peak of the voices in use, raised by FusionSampler's note-ons.
+    Meter mVoiceMeter;
     CritSec mInstrumentLock;
 };
 
 static_assert(offsetof(VirtualInstrument, mName) == 192);
+static_assert(offsetof(VirtualInstrument, mProcessTimer) == 208);
+static_assert(offsetof(VirtualInstrument, mProcessMeter) == 232);
+static_assert(offsetof(VirtualInstrument, mVoiceMeter) == 264);
 static_assert(offsetof(VirtualInstrument, mInstrumentLock) == 296);
 static_assert(sizeof(VirtualInstrument) == 312);

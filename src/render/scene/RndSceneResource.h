@@ -2,14 +2,15 @@
 
 #include <cstddef>
 
-#include "entity/core/EntityResource.h"
+#include "entity/core/TransEntityResource.h"
 #include "utl/text/Symbol.h"
 
 // A scene file: an entity resource whose root object carries the scene
-// components. The binary derives it from an intermediate entity resource
-// class (vtable 0x1937A08, constructor 0x6C0CA0) that is not modelled; its
-// members are covered by the padding. The vtable is at 0x19013C0.
-class RndSceneResource : public EntityResource {
+// components. The binary derives it from an intermediate class (vtable
+// 0x1937A08, constructor 0x6C0CA0) between it and TransEntityResource that
+// is not modelled; its members are covered by the padding. The vtable is at
+// 0x19013C0.
+class RndSceneResource : public TransEntityResource {
 public:
     RndSceneResource();  // 0x4384A0
 
@@ -31,13 +32,11 @@ public:
         return id;
     }
 
-    // The members of the unmodelled base classes: EntityResource's members
-    // past mEntity (constructor 0x1BAAA0) and those of the intermediate
-    // class (constructor 0x6C0CA0), which builds three named draw lists,
-    // "head", "after tex renderers" and "tail", at 296, 448 and 600. The
-    // intermediate class is probably the map's RndEntityResource. Name not
-    // in the reference map.
-    unsigned char mBaseMembers[728];
+    // The members of the unmodelled intermediate class (constructor
+    // 0x6C0CA0), which builds three named draw lists, "head", "after tex
+    // renderers" and "tail", at 296, 448 and 600. The intermediate class is
+    // probably the map's RndEntityResource. Name not in the reference map.
+    unsigned char mBaseMembers[504];
 };
 
 static_assert(sizeof(RndSceneResource) == 784);

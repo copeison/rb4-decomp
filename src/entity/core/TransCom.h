@@ -8,19 +8,19 @@
 #include "math/vector/Vector3.h"
 #include "utl/text/Symbol.h"
 
-// The transform component (entity/Utl.o in the map). Its Component base and
-// most of its methods are not reconstructed; only the class id, the local
-// transform that the renderer's default lighting sets, and the world
-// transform that the renderer reads are modelled.
+// The transform component (entity/TransCom.o). Its Component base and most
+// of its methods are not reconstructed; only the class symbols, the local
+// transform that the renderer's default lighting sets, the parent and the
+// world transform that the renderer reads are modelled.
 class TransCom {
 public:
     // The local transform as scale, Euler angles and position. Name and
     // field names not in the reference map.
     struct LocalXfm {
         // Splits the rotation into the row scales and the Euler angles
-        // (through MakeEuler at 0x215B10). RndDefaults passes true, which
-        // takes the scale signs from the stored scale. Name not in the
-        // reference map.
+        // (through MakeEuler at 0x215B10). With `keepScaleSigns`, which
+        // RndDefaults passes, the scale signs come from the stored scale.
+        // Name not in the reference map.
         void SetRotation(const Hmx::Matrix3& rotation, bool keepScaleSigns);  // 0x127730
 
         Vector3 mScale;
@@ -38,9 +38,16 @@ public:
         mDirtyFlags |= 1;
     }
 
-    // Assigned when the component class registers; GetId (0x1B4CB0) returns
-    // it.
+    // Makes the object the parent, or the invalid id for none. `keepWorld`
+    // also marks the world transform for keeping (flag 0x10).
+    void SetTransParent(GameObjectId parent, bool keepWorld);  // 0x1B3A90
+
+    // Assigned when the component class registers (0x1AFFB0); the class's
+    // virtual at slot 4 (0x1B4CB0) returns it.
     static Symbol sId;  // 0x19E46E8
+    // The class symbol that GameObject::CreateComponent takes, returned by
+    // the virtual at slot 5 (0x1B4CC0). Name not in the reference map.
+    static Symbol sClassName;  // 0x19E46F0
 
     // Field names are not in the reference map. The property registration
     // (0x1AFFB0) builds a prototype whose fields give the defaults below.
@@ -56,10 +63,9 @@ public:
     // Which parent attributes are inherited: 0 the entire transform, 1 scale
     // and rotation, 2 translation. Registered as "inherit_type".
     int mInheritType;
-    // The low byte of a 32-bit flag word: 1 marks the local transform dirty.
-    unsigned char mDirtyFlags;
-    // The upper bytes of the flag word.
-    unsigned char mDirtyFlagsHigh[3];
+    // Flags: 1 marks the local transform dirty, 4 the parent changed and
+    // 0x10 a parent change that keeps the world transform.
+    unsigned int mDirtyFlags;
     // Makes the entity's parent object (Entity+304) the parent instead of
     // mTransParent. Name inferred from its use in the poll (0x1B4140).
     bool mUseEntityParent;

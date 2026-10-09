@@ -64,8 +64,9 @@ public:
     bool IsInUse() const;             // 0x9F120
     // Adds numFrames of the voice to the two channels and returns the count,
     // or zero when the voice is idle. The map has Process(float**, unsigned
-    // int, unsigned int, float); this build adds the tempo. At 0x9F2A0.
-    unsigned int Process(float** channels, unsigned int startFrame, unsigned int numFrames, float speed, float tempo);
+    // int, unsigned int, float); this build adds the tempo. FusionSampler
+    // passes the block's channel count, which the voice ignores. At 0x9F2A0.
+    unsigned int Process(float** channels, unsigned int numChannels, unsigned int numFrames, float speed, float tempo);
     // A null keyzone matches any. At 0xA0320.
     bool MatchesIDs(
         const FusionSampler* sampler,

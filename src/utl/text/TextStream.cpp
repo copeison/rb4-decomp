@@ -19,6 +19,12 @@ TextStream& TextStream::operator<<(const char* str) {
     return *this;
 }
 
+// Reconstructed from eboot.elf at 0x258900.
+TextStream& TextStream::operator<<(Symbol sym) {
+    Print(sym.Str());
+    return *this;
+}
+
 // Reconstructed from eboot.elf at 0x2589D0.
 TextStream& TextStream::operator<<(unsigned long value) {
     char buffer[1024];

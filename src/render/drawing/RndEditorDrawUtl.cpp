@@ -1,6 +1,6 @@
 #include "render/drawing/RndEditorDrawUtl.h"
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndVertex.h"
 #include "render/textures/RndTexture2DResource.h"

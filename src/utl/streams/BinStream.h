@@ -62,6 +62,9 @@ public:
     void Write(const void* data, unsigned long size);  // 0x219DF0
     void Seek(long offset, SeekType origin);
     BinStream& operator>>(Symbol& symbol);
+    // Writes the symbol's length and characters, encrypted when the stream
+    // has a cipher.
+    BinStream& operator<<(const Symbol& symbol);  // 0x219F10
 
     // Data members are public so the layout asserts below can reach them.
     // Names not in the reference map.

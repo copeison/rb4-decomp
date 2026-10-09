@@ -754,10 +754,20 @@
 - [x] Reconstruct `FusionVoice`, `SoundManager`, `PitchDetector` with
   `SndAnalysis` and `IIRFilter`, `SmbPitchShift`, the FMOD gain and
   pitch-shift plug-ins, `FModSystem`'s construction and timers and the
-  `FModBankResource` object; `FusionSampler` is partly done (see
+  `FModBankResource` object (see
   [sound-manager.md](sound-manager.md), [audio-dsp.md](audio-dsp.md),
   [audio-render-target.md](audio-render-target.md),
   [fmod-system.md](fmod-system.md) and [fmod-resources.md](fmod-resources.md)).
+- [x] Reconstruct `FusionSampler` with its vtables, presets, effects chain
+  and controllers (see [fusion-sampler.md](fusion-sampler.md)).
+- [x] Reconstruct `Resource`, `ResourceMetaData`, `ResourcePath`, the cache
+  paths and `GetUncachedResourcePath`, and the entity core the codebase calls:
+  `EntityResource` and `TransEntityResource` with their 33-slot vtables,
+  `Entity`'s object lookup, `GameObject::CreateComponent`, `TransCom`'s
+  rotation and parent, `GetDataCom` and the thread poll context (see
+  [entity-resources.md](entity-resources.md)).
+- [ ] Reconstruct `Component`'s vtable, `ComMetaData`, the property system and
+  the entity loaders.
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

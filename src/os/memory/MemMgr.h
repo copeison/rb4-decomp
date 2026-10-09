@@ -26,6 +26,9 @@ void MemPopHeap();
 // The heap's size in bytes.
 unsigned long MemHeapSize(unsigned long heap);  // 0x37BBB0
 
+// The tracked heap's allocated bytes and its allocation and free counts.
+void MemGetStats(unsigned long& bytes, int& allocs, int& frees);  // 0x37C080
+
 class FixedString;
 
 // Appends the heap report to `out`. The memory overlay passes -3.

@@ -244,7 +244,7 @@ void FModBankResource::_ResolvePlatformPath(String& path) {
     if (path.endswith("_eng.bank") || path.endswith("/eng.bank")) {
         mLocalized = true;
         path.resize(std::strlen(path.c_str()) - kEnglishBankLength);
-        path << theSoundManager.GetLanguage().Str() << ".bank";
+        path << theSoundManager.GetLanguage() << ".bank";
     }
 }
 

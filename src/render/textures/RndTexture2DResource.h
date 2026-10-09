@@ -1,6 +1,6 @@
 #pragma once
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "utl/text/Symbol.h"
 
 // A 2D texture loaded from a file. Only the class id, which the typed

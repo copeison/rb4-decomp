@@ -175,6 +175,7 @@ the source tree.
 | `0x273740`-`0x275180` | `FModBankResource` | `src/audio/fmod/resources/FmodBankResource.cpp` | PS4 and localized path handling, per-Studio-system bank and sample-data load, bus locking, unload waits, event and bus path enumeration, and paired master-bank routing recovered. |
 | `0x275490`-`0x275C00`, `0x27B3E0`-`0x27BA9B` | FMOD audio input manager and record devices | `src/mic/fmod/MicHwManager_FMOD.cpp` | Studio bus binding, authored-volume scaling, mute and channel-group access, fixed device slots, `GENERAL` driver filtering, duplicate suppression, and connection reconciliation recovered. |
 | `0x275E20`-`0x2763C0` | FMOD recording audio render target | `src/audio/fmod/io/FmodRecordingAudioRenderTarget.cpp` | Embedded FMOD state delegation, buffered-output mixer reads, dual-layer locking, mix-consumer dispatch, and the `async_audio_record` engine-thread configuration, thunk, result, and join lifecycle recovered. |
+| `0x1AB390`-`0x1AFFAB`, `0xEF180`-`0xF3060`, `0xFD610`-`0x102708`, `0x115FC0`-`0x117752`, `0x1BAAA0`-`0x1BB9F2` | Resources and the entity core | `src/entity/resources/*.cpp`, `src/entity/core/*.cpp` | Resource map, reference counts, loading and cache paths, extension metadata, resource paths, the entity resource and trans-entity resource vtables, entity object lookup, component creation wrapper; loaders and the component vtable remain declared. See [entity-resources.md](entity-resources.md). |
 
 ## Game initialization
 

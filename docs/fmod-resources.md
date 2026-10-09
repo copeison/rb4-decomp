@@ -1,8 +1,9 @@
 # FMOD resources
 
-Both FMOD resources derive from the engine's `Resource`, whose entity module
-is not reconstructed; `src/audio/core/resources/Resource.h` declares only the
-members they use. The sources are in `src/audio/fmod/resources`.
+Both FMOD resources derive from the engine's `Resource`
+(`src/entity/resources/Resource.h`, see
+[entity-resources.md](entity-resources.md)). The sources are in
+`src/audio/fmod/resources`.
 
 ## FmodAudioStreamResource
 

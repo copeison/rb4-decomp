@@ -4,7 +4,8 @@
 // polling thread (utl/ThreadCall.o). Calls run one at a time, in order.
 
 // Work for the call thread. ThreadStart runs on the call thread; ThreadDone
-// receives its result in ThreadCallPoll.
+// receives its result in ThreadCallPoll. The vtable is at 0x18F0C48; the
+// inline destructor pair is emitted at 0x273160 and 0x273170.
 class ThreadCallback {
 public:
     virtual ~ThreadCallback() {}

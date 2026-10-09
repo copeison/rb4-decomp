@@ -1,6 +1,6 @@
 #include "render/debug/RndDebugFont.h"
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "math/color/Color.h"
 #include "math/vector/Vector2i.h"
 #include "os/platform/PlatformMgr.h"

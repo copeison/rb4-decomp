@@ -5,8 +5,16 @@
 class Symbol;
 class String;
 
+// The modes File::NewFile opens a file in. Enumerator names not in the
+// reference map: 1 reads outside the archive (FileExists uses it to test the
+// disk), 3 opens for appending, which Resource::Save uses to test that the
+// file is writable, and 4 writes.
 enum FileMode {
     kRead = 0,
+    kReadNoArk = 1,
+    kReadNoBuffer = 2,
+    kAppend = 3,
+    kWrite = 4,
 };
 
 // Platform file. Every File* wrapper below is a thin call through one of
@@ -49,26 +57,28 @@ struct FileStat {
     long mFraction;  // Name not in the reference map.
 };
 
-// Byte at 0x19E4558. When set, generated files are trusted as shipped and
-// never treated as stale; several file-system paths consult it. Name not in
-// the reference map.
+// Bytes 0x19E4558 and 0x19E4559, in entity/Resource.o: the map's
+// Resource::sPrecached and Resource::sPrecaching. Resource::Init sets them
+// from the "precached" and "precache" options. In precached mode cached
+// files are trusted as shipped and never treated as stale. The names are
+// kept here until their users move to the Resource members.
 extern unsigned char gFileArchiveMode;
-
-// Byte at 0x19E4559, set while the runtime is generating or consuming its
-// precached data set. Name not in the reference map.
 extern bool gResourcePrecacheMode;
 
-// Path-to-symbol resolution at 0x1AF950. Any "::" suffix is ignored while the
-// path is normalized, then restored. Name not in the reference map.
-void FileResolvePath(Symbol& symbol, const char* path);
-
-// Generated-file lookup at 0x1AD8B0. Resolves the generated file for a
-// source path and extension, reports whether it must be rebuilt because the
-// source is newer, and returns false when neither file is usable. Name not in
-// the reference map.
-bool FileFindGenerated(
-    const Symbol& source,
-    const char* extension,
-    String& generatedPath,
-    bool& rebuildNeeded,
-    FileStat& stat);
+// Whether the file exists. kReadNoArk asks the disk directly; other modes
+// open the file.
+bool FileExists(const char* path, FileMode mode);  // 0x3788B0
+// The file's modification time, or zero when it is missing. The map's
+// FileTimestamp(char const*); its return type is not in the map.
+FileStat FileTimestamp(const char* path);  // 0x378AA0
+// Replaces `to` with `from`. Without `overwrite`, an existing `to` is kept.
+bool FileRename(const char* from, const char* to, bool overwrite);  // 0x378B10
+bool FileCopy(const char* from, const char* to, bool overwrite);  // 0x378C10
+// The engine's root folder.
+const char* FileRoot();  // 0x377250
+// The path with its "eng/" folder replaced by the system language's, in
+// `buffer`, or the path itself for English.
+const char* FileLocalize(const char* path, char* buffer);  // 0x376F20
+// Whether the path is on a mounted PS4 volume ("data:/", "download0:/",
+// "savedata0:/") or starts with "addcont". In os/FileUtl_PS4.o.
+bool FileIsLocal(const char* path);  // 0x379BC0

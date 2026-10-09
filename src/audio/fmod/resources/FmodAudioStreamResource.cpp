@@ -206,7 +206,7 @@ float FmodAudioStreamResource::GetLengthMs() {
 // Reconstructed from eboot.elf at 0x272C30.
 void FmodAudioStreamResource::WaitForAsyncProcessToComplete() {
     while (mAsyncProcess != nullptr) {
-        ThreadCallPoll();
+        core_poll_and_update_time();
         usleep(1000);
     }
 }
@@ -226,7 +226,7 @@ void FmodAudioStreamResource::StopAsyncProcess(bool wait) {
     }
     _FMODSoundAsyncSampleProcessor* process;
     do {
-        ThreadCallPoll();
+        core_poll_and_update_time();
         usleep(1000);
         mAsyncCritSec.Enter();
         process = mAsyncProcess;

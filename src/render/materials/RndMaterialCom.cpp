@@ -4,7 +4,7 @@
 
 // Reconstructed from eboot.elf at 0x4F3790.
 void RndMaterialCom::SetShaderGraphFile(const char* file) {
-    FileResolvePath(mShaderGraphFile.mPath, file);
+    mShaderGraphFile = file;
 }
 
 // Reconstructed from eboot.elf at 0x4F3A00.

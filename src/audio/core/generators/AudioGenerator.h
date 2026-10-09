@@ -290,6 +290,12 @@ struct GeneratorTimer {
             mStartCycles = __builtin_ia32_rdtsc();
         }
     }
+    // Ends the outermost run, adding its cycles.
+    void Stop() {
+        if (mRunning > 0 && --mRunning == 0) {
+            mElapsedCycles += __builtin_ia32_rdtsc() - mStartCycles;
+        }
+    }
     void Pause() {
         if (mRunning > 0) {
             mRunning = -mRunning;

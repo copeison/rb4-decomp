@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "entity/core/Component.h"
 #include "utl/text/Symbol.h"
 

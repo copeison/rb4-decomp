@@ -9,10 +9,11 @@ accumulating implementation files. Names and classes follow
 | Module | Contents | Domains so far |
 |---|---|---|
 | `src/math` | Math types | `color`, `hash`, `random`, `vector` |
-| `src/utl` | Engine utilities | `containers`, `options`, `streams`, `text`, `threading`, `time` |
+| `src/utl` | Engine utilities | `containers`, `data`, `files`, `options`, `streams`, `text`, `threading`, `time` |
 | `src/os` | Platform services | `files`, `joypads`, `memory`, `platform`, `system`, `threading` |
 | `src/render` | Platform-neutral renderer (`Rnd*`) | `audio`, `buffers`, `context`, `debug`, `defaults`, `depth`, `distance_fields`, `frame`, `lighting`, `masking`, `meshes`, `postprocessing`, `queries`, `shaders`, `system`, `targets`, `textures`, `video` |
 | `src/renderps4` | PS4 backend (`PS4*`) | `buffers`, `context`, `meshes`, `queries`, `shaders`, `system`, `textures`, `video` |
+| `src/entity` | Resources, entities, objects and components | `core`, `props`, `resources` |
 | `src/audio` | Audio engine and FMOD integration | `core`, `fmod` |
 | `src/rockband` | Game startup and main loop (`App`, `main`) | `app` |
 | `src/rb_game` | Game logic | `stagepresence` |

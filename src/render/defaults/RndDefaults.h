@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "entity/core/GameObject.h"
 #include "render/scene/RndSceneResource.h"
 #include "render/textures/RndTextureBase.h"

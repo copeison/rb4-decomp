@@ -69,7 +69,9 @@ time on the `"Hmx ThreadCall"` thread:
   `ThreadDone` and signals the semaphore for the next one.
 
 The `0x219B80` that `FmodAudioStreamResource` calls is a wrapper that polls
-ThreadCall, two other services and `TimeMgr`. It is not `ThreadCallPoll`.
+ThreadCall, two other services and `TimeMgr`. It is not `ThreadCallPoll`;
+the source names it `core_poll_and_update_time`. `FmodAudioStreamResource`
+uses `ThreadCallback` from `utl/threading/ThreadCall.h`.
 
 ## TimeMgr clocks
 
@@ -85,8 +87,7 @@ A timeline keeps its time, its previous two times and a pause flag. Deltas
 measure from the previous time, or from the one before when the clock's
 mode is 1.
 
-`0x25AB20` is `UISeconds` and `0x25AC70` is `Seconds`. `DefaultTime` remains
-as an inline alias of `Seconds` for callers that use the old name.
+`0x25AB20` is `UISeconds` and `0x25AC70` is `Seconds`.
 
 The rest of `TimeMgr` is not reconstructed.
 

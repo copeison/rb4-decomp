@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "utl/containers/Vector.h"
 
 class RndShaderCBuffer;

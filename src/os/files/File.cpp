@@ -1,8 +1,5 @@
 #include "os/files/File.h"
 
-unsigned char gFileArchiveMode = 0;
-bool gResourcePrecacheMode = false;
-
 // Reconstructed from eboot.elf at 0x378940.
 void* FileOpen(const char* path, FileMode mode) {
     return File::NewFile(path, mode);

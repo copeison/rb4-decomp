@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-#include "audio/core/resources/Resource.h"
+#include "entity/resources/Resource.h"
 #include "entity/core/GameObject.h"
 #include "os/files/File.h"
 #include "os/memory/MemMgr.h"
@@ -165,9 +165,9 @@ Symbol DataNode::LiteralSym(const DataArray* source) const {
     static_cast<void>(source);
     switch (mType) {
     case kDataResourcePath: {
-        Symbol symbol;
-        FileResolvePath(symbol, mValue.symbol);
-        return symbol;
+        ResourcePath path;
+        path = mValue.symbol;
+        return path.mPath;
     }
     case kDataString:
         return Symbol(reinterpret_cast<const char*>(mValue.array->mNodes));

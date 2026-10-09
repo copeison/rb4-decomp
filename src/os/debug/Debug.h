@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include "utl/text/TextStream.h"
 
 // The engine's debug channel (os/Debug.o): a TextStream that logs what is
@@ -22,7 +24,19 @@ public:
     // Reports a failure. This build's release body only runs the fail
     // callbacks on the "failure" heap, guarded against reentry.
     void Fail(const char* msg);  // 0x35C4C0
+
+    // The byte at +8 is not read by the reconstructed code. The map's
+    // SetDisabled(bool) suggests a disabled flag; this build has no such
+    // setter, so the name is weakly supported. Name not in the reference
+    // map.
+    bool mDisabled;
+    // Set by Exit (0x35CC50) before the exit callbacks run; resources are
+    // no longer released once it is set (Resource::ReleaseRef, 0x1ADEF0).
+    // Name not in the reference map.
+    bool mExiting;
 };
+
+static_assert(offsetof(Debug, mExiting) == 9);
 
 // The global debug stream, at 0x19FDB40.
 extern Debug TheDebug;
