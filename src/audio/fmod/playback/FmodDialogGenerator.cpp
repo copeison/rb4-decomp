@@ -201,7 +201,7 @@ AudioGenerator* FmodDialogGeneratorManager::Play(const PlayArgs& args) {
         return nullptr;
     }
     AudioEmitterCom* emitter =
-        args.mEmitter != nullptr ? args.mEmitter : gSoundManager.GetDefault2DEmitter();
+        args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     auto* generator = FmodGeneratorPool::Allocate<FmodDialogGenerator>(*this, target, emitter);
     if (generator == nullptr) {
         return nullptr;

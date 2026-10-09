@@ -87,7 +87,7 @@ bool FmodAudioStreamGenerator::Setup(
     mMuteGain.Snap();
 
     const FMOD_MODE mode =
-        mEmitter != nullptr && mEmitter != gSoundManager.GetDefault2DEmitter()
+        mEmitter != nullptr && mEmitter != theSoundManager.GetDefault2DEmitter()
         ? kStreamMode3D
         : kStreamMode2D;
     if (lowLevel->createSound(resource->mFile.Str(), mode, nullptr, &mSound) != FMOD_OK) {
@@ -426,7 +426,7 @@ FmodAudioStreamGenerator* FmodAudioStreamGeneratorManager::PlayWithCallback(
 FmodAudioStreamGenerator* FmodAudioStreamGeneratorManager::_AllocateAndSetUpGenerator(
     ResourcePtr<FmodAudioStreamResource> resource, const PlayArgs& args) {
     AudioEmitterCom* emitter =
-        args.mEmitter != nullptr ? args.mEmitter : gSoundManager.GetDefault2DEmitter();
+        args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator = FmodGeneratorPool::Allocate<FmodAudioStreamGenerator>(*this, target, emitter);
     if (generator == nullptr) {

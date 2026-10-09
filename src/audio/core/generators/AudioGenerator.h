@@ -381,6 +381,8 @@ extern CritSec gGeneratorKillCritSec;  // 0x19C8488
 class SoundManager {
 public:
     AudioEmitterCom* GetDefault2DEmitter() const;
+    // Updates the FMOD systems, emitters and registered sounds once per frame.
+    void Poll();  // 0x7560
 };
 
-extern SoundManager gSoundManager;  // Name not in the reference map.
+extern SoundManager theSoundManager;

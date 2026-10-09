@@ -36,5 +36,7 @@ enum Id {
 static_assert(sizeof(Id) == 4);
 
 Symbol _ToSymbol(Id id);  // 0x997590
+// Registers kInvalidStagePresence and the Id values as data macros.
+void InitEnumMacros();  // 0x997780
 
 }  // namespace StagePresence

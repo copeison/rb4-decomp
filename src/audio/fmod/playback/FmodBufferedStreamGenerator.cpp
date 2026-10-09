@@ -161,7 +161,7 @@ AudioGenerator* FmodBufferedStreamGeneratorManager::Play(const PlayArgs& args) {
 FmodBufferedStreamGenerator* FmodBufferedStreamGeneratorManager::_AllocateAndSetUpGenerator(
     ResourcePtr<FmodAudioStreamResource> resource, const PlayArgs& args) {
     AudioEmitterCom* emitter =
-        args.mEmitter != nullptr ? args.mEmitter : gSoundManager.GetDefault2DEmitter();
+        args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator =
         FmodGeneratorPool::Allocate<FmodBufferedStreamGenerator>(*this, target, emitter);
