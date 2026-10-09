@@ -53,22 +53,51 @@ public:
     // is given it. Name not in the reference map.
     static Symbol sClassName;  // 0x1A8B928
 
-    // Field names are not in the reference map.
-    unsigned char mUnknown23[161];
+    // Field names are not in the reference map; the members from 216 take
+    // the names of the properties the material's registry (0x4F1C10) binds
+    // to their offsets. The constructor is at 0x4F3290.
+    // The members of the unmodelled classes between Component and
+    // RndMaterialCom: a property array object at 24, a sub-object built at
+    // 72, and a secondary base whose vtable pointer is at 160.
+    unsigned char mBaseMembers[161];
     ResourcePath mShaderGraphFile;
-    unsigned char mUnknown192[24];
+    // Set to -1 and true by the constructor alongside mShaderGraphFile;
+    // not decoded.
+    unsigned char mShaderGraphState[8];
+    // A sub-object with its own vtable pointer, built by the helper at
+    // 0x6C9BA0; not decoded.
+    unsigned char mUpdateLink[16];
     RndMaterialSharing mSharing;
-    unsigned char mUnknown220[4];
+    // The "bucket" property.
+    std::int32_t mBucket;
     RndBlendMode mBlendMode;
-    unsigned char mUnknown228[28];
-    // Cleared by SetSharingType.
-    bool mUnknown256;
+    // "blend_factor", a Hmx::Color that starts white.
+    float mBlendFactor[4];
+    std::int32_t mCullMode;
+    bool mReceiveAtmosphere;
+    bool mReceiveDecals;
+    bool mDepthPrepass;
+    bool mForceOpaque;
+    bool mSceneMask;
+    bool mUnique;
+    // Alignment padding; the constructor does not write it.
+    unsigned char mPad[2];
+    // Set by the "sharing_type" property's change handler (0x4F4EE0) and
+    // cleared once the sharing is applied, by SetSharingType and by the
+    // sharing resync at 0x4F38C0.
+    bool mSharingDirty;
     // Set when the render state must be rebuilt.
     bool mRenderStateDirty;
 };
 
 static_assert(offsetof(RndMaterialCom, mShaderGraphFile) == 184);
+static_assert(offsetof(RndMaterialCom, mUpdateLink) == 200);
 static_assert(offsetof(RndMaterialCom, mSharing) == 216);
+static_assert(offsetof(RndMaterialCom, mBucket) == 220);
 static_assert(offsetof(RndMaterialCom, mBlendMode) == 224);
-static_assert(offsetof(RndMaterialCom, mUnknown256) == 256);
+static_assert(offsetof(RndMaterialCom, mBlendFactor) == 228);
+static_assert(offsetof(RndMaterialCom, mCullMode) == 244);
+static_assert(offsetof(RndMaterialCom, mReceiveAtmosphere) == 248);
+static_assert(offsetof(RndMaterialCom, mUnique) == 253);
+static_assert(offsetof(RndMaterialCom, mSharingDirty) == 256);
 static_assert(offsetof(RndMaterialCom, mRenderStateDirty) == 257);

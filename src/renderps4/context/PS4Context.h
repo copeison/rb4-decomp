@@ -188,7 +188,8 @@ public:
     // Layout is modeled only where the offsets are known. Field names are
     // not in the reference map. The first range starts in RndContext's tail
     // padding at 0x5721.
-    unsigned char mUnknown22305[7];
+    // Alignment padding before mGfxContexts; nothing touches it.
+    unsigned char mPad22305[7];
     // One Gnmx graphics context per frame slot.
     sce::Gnmx::GfxContext mGfxContexts[kFrameSlotCount];
     // Per frame slot: the CUE heap, the draw command buffer and the constant
@@ -248,13 +249,13 @@ public:
     bool mGsModeEnabled;
     // SetCbEnabled's last state. Name not in the reference map.
     bool mCbEnabled;
-    unsigned char mUnknown280714[6];
+    unsigned char mPad280714[6];  // Tail padding; nothing touches it.
 };
 
 static_assert(sizeof(sce::Gnmx::GfxContext) == 0xE888);
 static_assert(sizeof(PS4Context::GpuStatBlock) == 24);
 static_assert(sizeof(PS4Context::ResourceSignal) == 24);
-static_assert(offsetof(PS4Context, mUnknown22305) == 0x5721);
+static_assert(offsetof(PS4Context, mPad22305) == 0x5721);
 static_assert(offsetof(PS4Context, mGfxContexts) == 0x5728);
 static_assert(offsetof(PS4Context, mCueHeaps) == 0x22838);
 static_assert(offsetof(PS4Context, mGlobalResourceTable) == 0x22868);
@@ -282,5 +283,5 @@ static_assert(offsetof(PS4Context, mCachedShaderStages) == 0x44880);
 static_assert(offsetof(PS4Context, mCachedPrimitiveType) == 0x44884);
 static_assert(offsetof(PS4Context, mGsModeEnabled) == 0x44888);
 static_assert(offsetof(PS4Context, mCbEnabled) == 0x44889);
-static_assert(offsetof(PS4Context, mUnknown280714) == 0x4488A);
+static_assert(offsetof(PS4Context, mPad280714) == 0x4488A);
 static_assert(sizeof(PS4Context) == 0x44890);

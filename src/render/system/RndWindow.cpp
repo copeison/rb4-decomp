@@ -5,7 +5,7 @@
 #include "render/targets/RndBufferCollection.h"
 
 // Reconstructed from eboot.elf at 0x4486F0.
-RndWindow::RndWindow() : mUnknown8(-1) {}
+RndWindow::RndWindow() : mId(-1) {}
 
 // Reconstructed from eboot.elf at 0x448710.
 RndWindow::~RndWindow() {}
@@ -17,7 +17,7 @@ void RndWindow::Poll() {}
 void RndWindow::CheckForResize() {}
 
 // Reconstructed from eboot.elf at 0x448840.
-bool RndWindow::_UnknownSlot6() {
+bool RndWindow::IsActive() {
     return true;
 }
 

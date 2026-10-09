@@ -28,6 +28,25 @@ struct BlockRamp {
         mOnDone = nullptr;
         mOnDoneContext = nullptr;
     }
+    // Advances one block; reaching the end lands on the target and runs the
+    // completion callback once. Inlined twice into
+    // FmodAudioBusGenerator::_PrepareToMakeSamples at 0x2675A0.
+    void Advance() {
+        if (mProgress == 1.0F) {
+            return;
+        }
+        mProgress += mStep;
+        mValue += mIncrement;
+        if (mProgress >= 1.0F && !mBusy) {
+            mValue = mTarget;
+            mProgress = 1.0F;
+            if (mOnDone != nullptr) {
+                mOnDone(mOnDoneContext);
+            }
+            mOnDone = nullptr;
+            mOnDoneContext = nullptr;
+        }
+    }
     // Jumps to the target without running the completion callback.
     void Snap() {
         if (!mBusy) {
@@ -113,7 +132,7 @@ public:
     AudioMixer* mMixer;  // The render target's mixer.
     RenderBuffer mBuffer;
     AudioBus* mSource;
-    bool mUnknown264;    // Set by Setup.
+    bool mIsSetUp;    // Set by Setup; nothing recovered reads it.
     BlockRamp mGainRamp;
     int mGainFadeMode;   // The PostFadeOption of the last SetGain.
     BlockRamp mMuteRamp;
@@ -127,7 +146,7 @@ static_assert(offsetof(AudioBusGenerator, mBuffer) == 128);
 static_assert(offsetof(AudioBusGenerator, mBuffer.mChannelData) == 152);
 static_assert(offsetof(AudioBusGenerator, mBuffer.mHasSamples) == 253);
 static_assert(offsetof(AudioBusGenerator, mSource) == 256);
-static_assert(offsetof(AudioBusGenerator, mUnknown264) == 264);
+static_assert(offsetof(AudioBusGenerator, mIsSetUp) == 264);
 static_assert(offsetof(AudioBusGenerator, mGainRamp) == 272);
 static_assert(offsetof(AudioBusGenerator, mGainFadeMode) == 320);
 static_assert(offsetof(AudioBusGenerator, mMuteRamp) == 328);

@@ -17,7 +17,11 @@ public:
 
     DELETE_OVERLOAD
 
-    void* mUnknown0;  // Name not in the reference map.
+    // 0 before the first update, 1 while hashing (Update at 0x367C50
+    // resets the hash when it is 0 or 2) and 2 once the hash is final
+    // (0x367CB0). Name not in the reference map.
+    int mState;
+    unsigned char mPadding[4];  // Never read or written.
     CSHA1 mSha1;      // Name not in the reference map.
     String mFile;     // Name not in the reference map.
 };

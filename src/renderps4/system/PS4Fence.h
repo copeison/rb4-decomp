@@ -25,7 +25,8 @@ public:
     // Field names are not in the reference map.
     unsigned int* mLabel;
     unsigned int mSequence;
-    unsigned int mUnknown20;
+    // Alignment padding; nothing reads or writes it.
+    unsigned int mPad;
 };
 
 static_assert(offsetof(PS4Fence, mLabel) == 8);

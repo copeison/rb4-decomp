@@ -7,6 +7,7 @@
 
 class BinStream;
 class RndPixelCanvas;
+class RndPixelFormat;
 
 // One mip level of texture pixels, linked to the next smaller level. The
 // vtable is at 0x1932C28.
@@ -59,8 +60,17 @@ public:
     unsigned long mBufferSize;
     RndPixelData* mMip;
     unsigned int mFlags;  // 4: no mips are loaded.
-    unsigned int mUnknown52[5];
-    void* mUnknown72;
+    // Header values that the header load (0x686650) and save (0x686410)
+    // carry but nothing in this build interprets. mTileMode follows the
+    // flags in the header; each level stores its own mPitch and
+    // mUnprocessedBufferSize. The names are uncertain: they follow the
+    // map's GetMinTiledVersion and GetUnprocessedBufferSize.
+    unsigned int mTileMode;
+    unsigned long mPitch;
+    unsigned long mUnprocessedBufferSize;
+    // The requested format read from a header older than revision 7, which
+    // texture creation adopts as the description's format. Owned.
+    RndPixelFormat* mLegacyFormat;
 
     // Releases the pixels and mips and resets the size and format. Also the
     // destructor's body.
@@ -72,5 +82,8 @@ static_assert(offsetof(RndPixelData, mFormat) == 20);
 static_assert(offsetof(RndPixelData, mBuffer) == 24);
 static_assert(offsetof(RndPixelData, mMip) == 40);
 static_assert(offsetof(RndPixelData, mFlags) == 48);
-static_assert(offsetof(RndPixelData, mUnknown72) == 72);
+static_assert(offsetof(RndPixelData, mTileMode) == 52);
+static_assert(offsetof(RndPixelData, mPitch) == 56);
+static_assert(offsetof(RndPixelData, mUnprocessedBufferSize) == 64);
+static_assert(offsetof(RndPixelData, mLegacyFormat) == 72);
 static_assert(sizeof(RndPixelData) == 80);

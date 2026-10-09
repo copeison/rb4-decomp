@@ -50,7 +50,7 @@ void ResizeRoutes(MicHwManager_FMOD::BusRouteList& routes, long count) {
 }  // namespace
 
 MicHwManager_FMOD::MicHwManager_FMOD()
-    : mUnknown8(false), mRoutes(), mBindFailed(false) {}
+    : mRoutes(), mBindFailed(false) {}
 
 // Reconstructed from eboot.elf at 0x275490.
 MicHwManager_FMOD::~MicHwManager_FMOD() {
@@ -138,7 +138,7 @@ FMOD::ChannelGroup* MicHwManager_FMOD::GetBusChannelGroup(int index) {
 
 // Reconstructed from eboot.elf at 0x275830.
 void MicHwManager_FMOD::_SetupMicArray(int numMics) {
-    gMicHwManager.ClearMics();
+    gMicHwManager._StartMicReaderThread();
     for (int index = 0; index < numMics; ++index) {
         gMicHwManager.AddMic(new Mic_FMOD(index));
     }
@@ -167,13 +167,13 @@ bool MicHwManager_FMOD::_IsValidMicName(const char* name) {
 // are released, and each connected GENERAL driver without a mic is attached
 // to a free one.
 void MicHwManager_FMOD::_CheckConnectsAndDisconnects() {
-    for (Mic** mic = gMicHwManager.mMicsBegin; mic != gMicHwManager.mMicsEnd; ++mic) {
+    for (Mic** mic = gMicHwManager.mMics.begin(); mic != gMicHwManager.mMics.end(); ++mic) {
         if ((*mic)->GetType() != kMicTypeFmod) {
             continue;
         }
         auto* fmodMic = static_cast<Mic_FMOD*>(*mic);
         if (fmodMic->mDriverName != Symbol("") && !fmodMic->CheckDeviceStillConnected()) {
-            gMicHwManager.MarkMicsChanged();
+            MarkMicsChanged();
         }
     }
 
@@ -195,7 +195,7 @@ void MicHwManager_FMOD::_CheckConnectsAndDisconnects() {
             continue;
         }
         bool attached = false;
-        for (Mic** mic = gMicHwManager.mMicsBegin; mic != gMicHwManager.mMicsEnd; ++mic) {
+        for (Mic** mic = gMicHwManager.mMics.begin(); mic != gMicHwManager.mMics.end(); ++mic) {
             if ((*mic)->GetType() == kMicTypeFmod &&
                 std::strcmp(static_cast<Mic_FMOD*>(*mic)->mDriverName.Str(), name) == 0) {
                 attached = true;
@@ -207,7 +207,7 @@ void MicHwManager_FMOD::_CheckConnectsAndDisconnects() {
         }
         auto* mic = static_cast<Mic_FMOD*>(gMicHwManager.GetFreeMic(kMicTypeFmod));
         if (mic != nullptr && mic->AttachToHardware(driver, Symbol(name))) {
-            gMicHwManager.MarkMicsChanged();
+            MarkMicsChanged();
         }
     }
 }

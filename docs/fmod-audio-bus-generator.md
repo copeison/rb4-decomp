@@ -72,6 +72,19 @@ rate as the frequency, inserts the DSP at `FMOD_CHANNELCONTROL_DSP_TAIL`
 (`-3`), and joins the mixer. The earlier reconstruction named this index
 `DSP_HEAD`; FMOD's head is `-1`.
 
+## Rendering
+
+The mixer calls `_PrepareToMakeSamples` (`0x2675A0`) and then
+`_MakeSamples` (`0x267790`) for each 128-sample block; the callable
+vtable's entries at `0x267780` and `0x267BA0` adjust `this`. Until the block
+buffer holds a rendered block, preparation advances the gain and mute ramps
+once per block, stops the voice when a fade marked to stop completes, and
+prepares the callback at the channel frequency, dropping a callback that
+declines. `_MakeSamples` renders the source into a view of the block's part
+of the buffer and applies the gain times the mute gain; the last block marks
+the buffer ready for `_DspProcess`. A voice that is not playing renders
+silence.
+
 ## Teardown
 
 `_StopChannel` at `0x267FB0` detaches the generator from the mixer, clears the

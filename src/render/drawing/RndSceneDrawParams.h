@@ -10,7 +10,11 @@ public:
     RndSceneDrawParams();  // Not reconstructed yet.
 
     // Field names are not in the reference map.
-    unsigned char mUnknown0[16];
+    // Not decoded yet. The scene drawer (0x41AA10) builds the parameters on
+    // its stack with a zeroed first word followed by a sub-object (built at
+    // 0x434A00) whose first word is an inline-storage pointer, so this
+    // holds that word and the sub-object's start. The name is a guess.
+    unsigned char mHeader[16];
     // Index of the partial-framerate scene's light-accumulation buffer.
     unsigned long mSceneContext;
 };

@@ -46,7 +46,10 @@ struct PS4SubmitDoneState {
 
 namespace {
 
-constexpr const char* kUnknownThreadName = "Unknown Thread!";
+// The name the inlined Thread constructor gives the submit thread before
+// _InitImpl creates it as "SubmitDoneThread". Name not in the reference
+// map.
+constexpr const char* kDefaultThreadName = "Unknown Thread!";
 constexpr const char* kEventQueueName = "EOP QUEUE";
 constexpr const char* kSubmitThreadName = "SubmitDoneThread";
 constexpr std::uint32_t kGnmEventId = 64;
@@ -115,7 +118,7 @@ RndInstanceData IdentityInstance() {
 PS4Device::PS4Device()
     : mSubmitToken(1),
       mDefaultVertexBuffer(nullptr) {
-    mSubmitThread.Init(kUnknownThreadName);
+    mSubmitThread.Init(kDefaultThreadName);
     auto* anchor = DeferredDeleteAnchor(mDeferredDeletes);
     mDeferredDeletes.mNext = anchor;
     mDeferredDeletes.mPrev = anchor;
@@ -170,7 +173,7 @@ int PS4Device::_GetGpuBlockingBehaviorImpl() const {
 }
 
 // Reconstructed from eboot.elf at 0x8D83E0.
-int PS4Device::_UnknownSlot14Impl() {
+int PS4Device::_GetDeviceStatusImpl() {
     return 0;
 }
 

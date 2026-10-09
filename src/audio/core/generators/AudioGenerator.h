@@ -316,9 +316,15 @@ public:
     virtual bool Poll() = 0;                          // slot 22
     virtual void Release() = 0;                       // slot 23
     virtual void* GetPluginData(const char* name);    // slot 24: 0xE5C0. Name not in the reference map.
-    virtual void Unknown25();                         // slot 25: 0xE5D0. Name not in the reference map.
-    virtual float Unknown26();                        // slot 26: 0xE5E0. Name not in the reference map.
-    virtual float Unknown27();                        // slot 27: 0xE5F0. Name not in the reference map.
+    // Slots 25-26 at 0xE5D0 and 0xE5E0: a scale defaulting to one that a
+    // Fusion play request sets and the music generators forward to their
+    // streams; the base ignores it. Its meaning is not established. Names not
+    // in the reference map.
+    virtual void SetPlayScale(float scale);
+    virtual float GetPlayScale();
+    // Slot 27 at 0xE5F0: zero here; MoggGenerator returns a value of its
+    // first stream. Name not in the reference map; the evidence is weak.
+    virtual float GetPrimaryStreamValue();
     virtual void _InitTypeId() = 0;                   // slot 28
     virtual void Kill() = 0;                          // slot 29
     virtual AudioGenerator* GetGeneratorOfType(Symbol type) = 0;  // slot 30
@@ -446,12 +452,15 @@ eastl::vector<EnumValueDesc> GetPlayArgsRouteValues();
 class SoundManager {
 public:
     AudioEmitterCom* GetDefault2DEmitter() const;
+    // The registered generator manager whose GetId matches, or null. At
+    // 0x8090. In the map.
+    AudioGeneratorManager* _GetManager(Symbol id);
     // Adds a generator manager and returns its index. The map has
     // _RegisterGeneratorManager(AudioGeneratorManager*, Symbol); this build
     // passes the manager's resource extension.
     int _RegisterGeneratorManager(AudioGeneratorManager* manager, Symbol ext);  // 0x7820
     // The generator with the handle, retained, or null when the handle is
-    // stale.
+    // stale or names no manager.
     AudioGenerator* LockIfOwned(unsigned int handle);  // 0x5FB0
     // Updates the FMOD systems, emitters and registered sounds once per frame.
     void Poll();  // 0x7560
@@ -459,6 +468,14 @@ public:
     // map's signature is DumpGeneratorStats(); the identification rests on
     // the pool counts printed.
     void DumpGeneratorStats(TextStream& stream);  // 0x8A30
+
+    // Field names are not in the reference map. The sound manager has not
+    // been reconstructed; mOpaque0 covers the fields before the managers.
+    unsigned char mOpaque0[72];
+    // Registered generator managers; a handle's bits 24-30 index them.
+    eastl::vector<AudioGeneratorManager*> mManagers;
 };
+
+static_assert(offsetof(SoundManager, mManagers) == 72);
 
 extern SoundManager theSoundManager;

@@ -20,7 +20,10 @@ public:
     void _SelectImpl(RndContext& context) override;  // 0x8E39C0
 
     // Field names are not in the reference map.
-    unsigned char mUnknown64[16];
+    // Sixteen bytes that neither the constructor (which clears 80-111) nor
+    // any PS4ShaderCBuffer method reads or writes; the size of a
+    // sce::Gnm::Buffer, which _SelectImpl builds on its stack instead.
+    unsigned char mReserved[16];
     void* mFrameData;
     void* mGpuData;
     unsigned long mGpuSize;

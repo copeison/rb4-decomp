@@ -90,8 +90,8 @@ with its 160-byte `Params`.
   passes and which is unused; its value is an `int`.
 - A timer is listed when it is selected, isolated, or worse than
   `gTimerThresholdMs` (0x19B03B8, 0.1) under expanded parents. Isolated
-  timers and timers with `mUnknown40` set come after "<isolated timers>" and
-  "<ambiguous parents>" headers. Threads sort with the main thread first,
+  timers and timers with `mAmbiguousParent` set come after
+  "<isolated timers>" and "<ambiguous parents>" headers. Threads sort with the main thread first,
   then the poll workers, then by name and handle.
 - `RndTimersOverlay::gSplitFrameTiming` (0x1AB1F04) doubles every timing
   column. It is separate from `RndFramerateOverlay::gSplitFrameTiming`.

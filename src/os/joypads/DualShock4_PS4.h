@@ -10,13 +10,20 @@ public:
     void Activate(int platformUserId, bool special);  // 0x8D02F0
 
 protected:
-    // The vtable and PhysicalController state. Name not in the reference map.
-    unsigned char mUnknown0[0x8];
+    // The vtable pointer. Name not in the reference map.
+    unsigned char mVtable[0x8];
     // Set by Activate (PhysicalController::GetPlatformUserId). Name not in
     // the reference map.
     int mPlatformUserId;
+    // PhysicalController and DualShock4Controller state that is not
+    // modelled. Name not in the reference map.
+    unsigned char mControllerState[0x1B4 - 0xC];
+    // The scePadOpen handle that Activate (0x8D02F0) stores. Name not in
+    // the reference map.
+    int mPadHandle;
+    // The pad readings and the rest of the controller state, not modelled.
     // Name not in the reference map.
-    unsigned char mUnknownC[0x2004 - 0xC];
+    unsigned char mPadState[0x2004 - 0x1B8];
 };
 
 static_assert(sizeof(DualShock4Controller) == 0x2004);

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <utility>
 #include <semaphore.h>
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
@@ -34,13 +35,46 @@ public:
 
     static constexpr int kMaxSegments = 8;
 
+    // Inlined into the EASTL growth of FmodBufferedStreamGenerator's reader
+    // vector at 0x26E420: every segment starts empty at frame -1.
+    StreamReader()
+        : mState(kStateIdle),
+          mSound(nullptr),
+          mStartFrame(0),
+          mBuffer(nullptr),
+          mBufferBytes(0),
+          mNumChannels(2),
+          mFramesRead(0),
+          mResult(0) {
+        for (Segment& segment : mSegments) {
+            segment.mStart = -1;
+            segment.mCount = 0;
+        }
+    }
+    // Moves the completion callback; the queue link starts unlinked. Inlined
+    // at 0x26E420.
+    StreamReader(StreamReader&& other)
+        : mState(other.mState),
+          mOnDone(std::move(other.mOnDone)),
+          mSound(other.mSound),
+          mStartFrame(other.mStartFrame),
+          mBuffer(other.mBuffer),
+          mBufferBytes(other.mBufferBytes),
+          mNumChannels(other.mNumChannels),
+          mFramesRead(other.mFramesRead),
+          mResult(other.mResult) {
+        for (int index = 0; index < kMaxSegments; ++index) {
+            mSegments[index] = other.mSegments[index];
+        }
+    }
+
     // Binds the sound, the destination and the completion callback. At
     // 0x263EC0.
     void Setup(
         FMOD::Sound* sound,
         int numChannels,
         short* buffer,
-        int unknown152,
+        int bufferBytes,
         const std::function<void()>& onDone);
     // Reads every segment into the buffer, padding short reads with
     // silence, and widens mono to stereo in place. At 0x263F70.
@@ -50,9 +84,9 @@ public:
     State mState;
     std::function<void()> mOnDone;
     FMOD::Sound* mSound;
-    void* mUnknown136;
+    int mStartFrame;  // First stream frame of the buffer; set by its owner.
     short* mBuffer;
-    int mUnknown152;
+    int mBufferBytes;
     int mNumChannels;
     int mFramesRead;
     int mResult;  // FMOD_RESULT of the last read.
@@ -98,7 +132,7 @@ public:
     NamedThread mThread;
     CritSec mCritSec;
     ReaderList mReaders;
-    int mUnknown184;
+    int mUnusedWord;  // Between the reader list and the semaphore; never accessed.
     sem_t mSemaphore;
 };
 

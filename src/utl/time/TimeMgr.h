@@ -15,10 +15,15 @@ public:
     public:
         // The clock's time in seconds.
         float Seconds() const;  // 0x25AB20
+        // The current time of the clock's first timebase, in seconds. The
+        // state holds 32-byte timebases; Seconds reads the third. At
+        // 0x25AC70. Name not in the reference map.
+        float DefaultTime() const;
 
         // Field names are not in the reference map.
         struct State {
-            unsigned char mUnknown0[64];
+            double mDefaultTime;  // Name not in the reference map.
+            unsigned char mOpaque8[56];  // The rest of the first timebases.
             double mSeconds;
         };
 
@@ -26,10 +31,10 @@ public:
     };
 
     // Field names are not in the reference map.
-    unsigned char mUnknown0[200];
+    unsigned char mOpaque0[200];  // Fields the debug overlays do not read.
     // Real time since startup; the overlay graphs plot against it.
     Hmx::Timer mRealTime;
-    unsigned char mUnknown224[16];
+    unsigned char mOpaque224[16];
     // The console overlay blinks its cursor with it.
     Clock mClock;
 };

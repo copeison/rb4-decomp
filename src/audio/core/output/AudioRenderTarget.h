@@ -108,7 +108,7 @@ public:
     // Slot 4 at 0x11284A0: the CPU timer registered under the key, or null.
     virtual void* GetTimer(unsigned long key);
     // Slot 5 at 0x11285D0: replaces the voice pool.
-    virtual void InitVoicePool(int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag);
+    virtual void InitVoicePool(int hardVoiceLimit, int softVoiceLimit, int numPitchShifters, bool skipVoiceDecoders);
     // Slot 6 at 0x11286A0.
     virtual void ConfigureVoicePool(int softVoiceLimit, int hardVoiceLimit);
     // Slots 7-9 share their code with FModSystem's GetVoicePool at 0x278C40
@@ -147,9 +147,9 @@ public:
     int mSampleRate;
     int mBufferSize;
     int mNumBuffers;
-    int mUnknown212;
+    int mMaxSoftwareChannels;  // The FMOD recording target passes its channel count here.
     int mNumRawSpeakers;
-    int mUnknown220;
+    int mUnusedWord;  // No recovered target reads or writes it.
     eastl::map<unsigned long, void*> mTimers;  // CPU timers keyed by source id.
 };
 

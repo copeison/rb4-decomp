@@ -22,7 +22,7 @@ void RndCpuTimersOverlay::PrintHelp(TextStream& stream) {
 
 // Reconstructed from eboot.elf at 0x6E2030. Every thread with a timer
 // table.
-void RndCpuTimersOverlay::_Unknown12(eastl::vector<ScePthread>& threads) {
+void RndCpuTimersOverlay::_GatherThreads(eastl::vector<ScePthread>& threads) {
     threads.reserve(thePerfMgr.mThreadTimers.size());
     for (PerfTimerMgr::ThreadTimers* entry : thePerfMgr.mThreadTimers) {
         threads.push_back(entry->mThread);
@@ -30,7 +30,7 @@ void RndCpuTimersOverlay::_Unknown12(eastl::vector<ScePthread>& threads) {
 }
 
 // Reconstructed from eboot.elf at 0x6E21E0.
-void RndCpuTimersOverlay::_Unknown13(
+void RndCpuTimersOverlay::_GatherThreadTimers(
     ScePthread thread,
     eastl::vector<PerfTimerBase*>& timers,
     unsigned int displayMode,

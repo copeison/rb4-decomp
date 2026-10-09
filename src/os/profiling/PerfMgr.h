@@ -3,9 +3,11 @@
 #include <_pthread.h>
 #include <cstddef>
 
+#include "os/threading/CritSec.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
 
+class DataArray;
 class PerfTimer;
 class PerfTimerBase;
 
@@ -30,11 +32,23 @@ public:
     // and GetTimer(unsigned long) (0x249B70).
     PerfTimer* GetTimer(Symbol name);  // 0x2499B0
 
-    // Field names are not in the reference map.
-    unsigned char mUnknown0[64];
+    // Field names are not in the reference map; the static constructor at
+    // 0x24A630 and PerfTimerMgr::Init(DataArray*) (0x249650) give them.
+    // Set by Init; GetTimer(unsigned long) returns null while it is clear.
+    bool mEnabled;
+    // Guards the tables; Lock and Unlock enter and leave it.
+    CritSec mCritSec;
+    // The timer configuration Init keeps a reference to; _ThreadInit
+    // (0x24A0B0) registers a timer for each of its entries.
+    DataArray* mConfig;
+    // The registered timer names; GetTimerIndex(Symbol) returns the index.
+    eastl::vector<Symbol> mTimerNames;
     eastl::vector<ThreadTimers*> mThreadTimers;
 };
 
+static_assert(offsetof(PerfTimerMgr, mCritSec) == 8);
+static_assert(offsetof(PerfTimerMgr, mConfig) == 24);
+static_assert(offsetof(PerfTimerMgr, mTimerNames) == 32);
 static_assert(offsetof(PerfTimerMgr, mThreadTimers) == 64);
 
 // The manager, at 0x19E7CD0. The map names the PerfMgr.o object

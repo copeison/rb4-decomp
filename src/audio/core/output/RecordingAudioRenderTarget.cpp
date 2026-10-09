@@ -41,7 +41,7 @@ RecordingAudioRenderTarget::RecordingAudioRenderTarget(
     Symbol name,
     const char* path,
     int bufferSize,
-    int unknown212,
+    int maxSoftwareChannels,
     int sampleRate,
     float gain,
     int speakerConfig)
@@ -60,7 +60,7 @@ RecordingAudioRenderTarget::RecordingAudioRenderTarget(
     mRecordThread.Init("Unknown Thread!");
     mBufferSize = bufferSize;
     mNumBuffers = 2;
-    mUnknown212 = unknown212;
+    mMaxSoftwareChannels = maxSoftwareChannels;
     mSampleRate = sampleRate;
     mMixer.SetOutputSampleRate(sampleRate);
     mNumRawSpeakers = GetNumSpeakers(speakerConfig);
@@ -96,12 +96,12 @@ void RecordingAudioRenderTarget::_CreateEmitter() {
     mEmitter = &component->mEmitter;
     mEmitter->Unknown26(true);
 
-    const bool savedFlag = gEntityThreadState.mUnknown8;
-    gEntityThreadState.mUnknown8 = false;
+    const bool savedFlag = gEntityThreadState.mEnterImmediately;
+    gEntityThreadState.mEnterImmediately = false;
     component->mRenderTarget = GetOutputTarget()->mName;
     mEntityResource->LoadResources();
     mEntityResource->EnterEntity(mEntityResource->mEntity);
-    gEntityThreadState.mUnknown8 = savedFlag;
+    gEntityThreadState.mEnterImmediately = savedFlag;
 }
 
 // Reconstructed from eboot.elf at 0x1128D30.

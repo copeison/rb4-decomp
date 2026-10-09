@@ -25,7 +25,6 @@ PS4ParticleBuffer::PS4ParticleBuffer(unsigned long numParticles, const char* nam
       mVertexStorage{nullptr, nullptr},
       mActiveBank(0),
       mBufferMask(0),
-      mUnknown332(0),
       mIndices(nullptr) {
     _CreateBuffers(numParticles);
 }

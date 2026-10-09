@@ -46,7 +46,10 @@ public:
         unsigned int mWidth;
         unsigned int mHeight;
         unsigned int mDepth;
-        unsigned int mUnknown108;
+        // Alignment padding before the 8-byte source pointer: the
+        // constructor skips it and the binary never reads it. Name not in
+        // the reference map.
+        unsigned int mPad108;
         // Array textures store their layer count here.
         union {
             void* mSourceData;

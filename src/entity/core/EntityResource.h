@@ -31,12 +31,22 @@ public:
 
 static_assert(offsetof(EntityResource, mEntity) == 48);
 
-// Per-thread entity state reached through the thread-local descriptor at
-// 0x19B03C8. RecordingAudioRenderTarget clears the flag while it loads its
-// entity. Names not in the reference map.
+class PollMgr;
+
+// Per-thread poll state reached through the thread-local descriptor at
+// 0x19B03C8, which utl/PollMgr.o creates; the map's build has a
+// TLSValue<ThreadPollContext> there. RecordingAudioRenderTarget clears the
+// flag while it loads its entity. Names not in the reference map.
 struct EntityThreadState {
-    void* mUnknown0;
-    bool mUnknown8;
+    // The poll manager the thread is polling for, set by the manager's
+    // select (0x24F900, 0x24F9B0) and cleared by its deselect (0x24FA90).
+    // Entities check it with the flag before deferring their enter and poll
+    // work (0xF53A0).
+    PollMgr* mPollMgr;
+    // While it and mPollMgr are set, an entity that becomes ready on this
+    // thread enters and polls at once (0xF53A0); TransEntityResource clears
+    // it around EnterEntity (0x1BB580).
+    bool mEnterImmediately;
 };
 
 extern thread_local EntityThreadState gEntityThreadState;

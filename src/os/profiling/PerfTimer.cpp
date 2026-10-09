@@ -17,7 +17,7 @@ float gTimerThresholdMs = 0.1F;
 PerfTimerBase::PerfTimerBase(Symbol name)
     : mName(name),
       mParent(nullptr),
-      mUnknown40(false),
+      mAmbiguousParent(false),
       mHasChildren(false),
       mExpanded(false),
       mIsolated(false),
@@ -29,15 +29,15 @@ PerfTimerBase::PerfTimerBase(Symbol name)
 PerfTimerBase::~PerfTimerBase() {}
 
 // Reconstructed from eboot.elf at 0x24B760. The parents are joined by
-// spaces; isolated timers and those with mUnknown40 set show only their own
-// name.
+// spaces; isolated timers and those with mAmbiguousParent set show only
+// their own name.
 void PerfTimerBase::UpdateFullName(int mode) {
     mFullName.erase();
     if (mIsolated) {
         mFullName << "!~ " << GetSortName(mode);
         return;
     }
-    if (mUnknown40) {
+    if (mAmbiguousParent) {
         mFullName << "~ " << GetSortName(mode);
         return;
     }

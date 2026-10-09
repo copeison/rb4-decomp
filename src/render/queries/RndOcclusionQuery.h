@@ -35,7 +35,9 @@ public:
     int mResults[4];
     int mFrame;
     unsigned int mResult;
-    unsigned int mUnknown44;
+    // Alignment padding before mLink; never read or written. Name not in
+    // the reference map.
+    unsigned int mPad;
     Link mLink;
 };
 

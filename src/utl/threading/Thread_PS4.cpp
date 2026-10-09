@@ -29,7 +29,7 @@ void Thread::Create(
     mEntry.mFunc = func;
     mEntry.mContext = context;
     mEntry.mResult = 0;
-    mUnknown88 = 0;
+    mReserved = 0;
     mProcessor = processor;
     mPriority = priority;
     mStackSize = std::max(stackSize, kMinimumStackSize);

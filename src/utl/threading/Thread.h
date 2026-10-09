@@ -55,7 +55,8 @@ public:
     SceKernelCpumask mAffinityMask;
     char mName[32];
     Entry mEntry;
-    unsigned long mUnknown88;
+    // Cleared by Create (0x25C3E0); nothing reads it.
+    unsigned long mReserved;
 };
 
 static_assert(sizeof(Thread::Entry) == 24);
@@ -91,7 +92,9 @@ public:
         unsigned int stackSize,
         SceKernelCpumask affinityMask);
 
-    unsigned char mUnknown0[8];  // Name not in the reference map.
+    // Never read or written by NamedThread's code; the owner pointer in
+    // mEntry reaches the thread name at +40. Name not in the reference map.
+    unsigned char mReserved[8];
     Thread mThread;              // Name not in the reference map.
     Entry mEntry;                // Name not in the reference map.
 };
@@ -105,17 +108,22 @@ namespace ThreadMap {
 
 constexpr long kProcessorCount = 6;  // Name not in the reference map.
 
-// View of the fields consumed from the engine's 0x210-byte task record.
+// View of the fields consumed from the engine's 0x210-byte task record,
+// whose table starts at 0x19B0410. Field names are not in the reference map.
 struct TaskDesc {
-    unsigned char mUnknown0[16];
+    const char* mName;  // Such as "audio_render".
+    // Nonzero in every record; the lookup at 0x258C60 returns it, and the
+    // "thread_call" setup (0x259D00) uses the record only when it is set.
+    unsigned long mEnabled;
     unsigned int mStackSize;
-    unsigned char mUnknown20[4];
+    unsigned char mPadding20[4];  // Zero in every record; never read.
     long mProcessor;
     Thread::ThreadPriority mPriority;
-    unsigned char mUnknown36[4];
+    unsigned char mPadding36[4];  // Zero in every record; never read.
     unsigned long mAffinityMask;
 };
 
+static_assert(offsetof(TaskDesc, mEnabled) == 8);
 static_assert(offsetof(TaskDesc, mStackSize) == 16);
 static_assert(offsetof(TaskDesc, mProcessor) == 24);
 static_assert(offsetof(TaskDesc, mPriority) == 32);

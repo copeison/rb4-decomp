@@ -143,7 +143,7 @@ void RndDebugFont::Init() {
 
     const Vector2i& resolution = TheRndDevice()->mSettings->mOutputResolution;
     gDebugFont->AddResolution(resolution);
-    gDebugFont->mUnknown8 = 1;
+    gDebugFont->mFlags = 1;
     gDebugFont->SetGlyphTileSizeInPixels(resolution, Vector2i{8, 8});
     gDebugFont->SetGlyphSpacingInPixels(resolution, Vector2i{1, 3});
     gDebugFont->SetGlyphHeightInPixels(resolution, 8);

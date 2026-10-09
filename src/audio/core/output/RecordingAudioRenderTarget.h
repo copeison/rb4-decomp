@@ -20,7 +20,7 @@ public:
         Symbol name,
         const char* path,
         int bufferSize,
-        int unknown212,
+        int maxSoftwareChannels,
         int sampleRate,
         float gain,
         int speakerConfig);

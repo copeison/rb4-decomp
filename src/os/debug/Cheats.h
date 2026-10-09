@@ -12,14 +12,41 @@ class CheatsManager : public MsgSink {
 public:
     DataNode Handle(DataArray* msg, bool warn) override;
 
-    // Field names are not in the reference map.
-    unsigned char mUnknown8[120];
+    // Field names are not in the reference map. The constructor (0x390540)
+    // and destructor (0x390710) give the layout.
+    // Two eastl::vectors (8 and 40), the cheat tables; Cheats.o in the map
+    // instantiates vectors of KeyCheat* and QuickJoyCheat*.
+    unsigned char mCheatTables[64];
+    // Gate the joypad cheats (OnMsg(ButtonDownMsg const&), 0x3911F0) and
+    // the keyboard cheats (OnMsg(KeyboardKeyMsg const&), 0x3914C0). Both
+    // start set; a keyboard-capturing helper clears the second while it is
+    // alive and its destructor (0x3A2EF0) sets it again.
+    bool mJoypadCheatsEnabled;
+    bool mKeyCheatsEnabled;
+    unsigned char mPadding74[6];  // Never read or written.
+    // An eastl::list of 32-byte nodes holding DataNodes (80) and a zeroed
+    // field (112); the map's eastl::list<CheatLog> fits it.
+    unsigned char mLog[40];
+    // Set by the constructor; no reader was found.
+    bool mReserved;
+    unsigned char mPadding121[7];  // Never read or written.
     // The cheat message RndCheatsOverlay prints; empty when there is none.
     String mMessage;
-    unsigned char mUnknown144[88];
+    // Not touched by the constructor or destructor; the map's
+    // ShowCheatMessage(char const*, float) suggests the message's display
+    // time. Weak.
+    unsigned char mMessageTime[8];
+    // The joypad and keyboard subscriptions, registered through
+    // JoypadSubscribe (0x39C7E0) and KeyboardSubscribe (0x3A1940) and
+    // unlinked by the destructor.
+    unsigned char mJoypadSubscription[40];
+    unsigned char mKeyboardSubscription[40];
 };
 
+static_assert(offsetof(CheatsManager, mLog) == 80);
+static_assert(offsetof(CheatsManager, mKeyCheatsEnabled) == 73);
 static_assert(offsetof(CheatsManager, mMessage) == 128);
+static_assert(offsetof(CheatsManager, mJoypadSubscription) == 152);
 static_assert(sizeof(CheatsManager) == 232);
 
 // Created by CheatsInit unless the "cheats" configuration disables cheats;

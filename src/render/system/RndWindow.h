@@ -26,7 +26,9 @@ public:
     virtual void Poll();            // slot 4 at 0x448820
     // Called as each frame starts drawing the window.
     virtual void CheckForResize();  // slot 5 at 0x448830
-    virtual bool _UnknownSlot6();   // slot 6 at 0x448840
+    // Returns true; neither PS4Window nor RndBufferedWindow overrides it
+    // and nothing in this build calls it, so the name is a guess.
+    virtual bool IsActive();        // slot 6 at 0x448840
 
     // The first collection's size, or zero without one. Names not in the
     // reference map.
@@ -36,7 +38,9 @@ public:
     unsigned int GetBufferInspectionMode() const;         // 0x4487C0
     void SetBufferInspectionMode(unsigned int mode);      // 0x4487E0
 
-    int mUnknown8;  // Name not in the reference map.
+    // -1 from the constructor; nothing in this build reads or changes it.
+    // Taken to be an unassigned window id. Name not in the reference map.
+    int mId;
 };
 
 static_assert(sizeof(RndWindow) == 16);

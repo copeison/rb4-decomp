@@ -85,8 +85,8 @@ void ReleaseFrameInterval(RndBufferCollection::FrameIntervalBuffers& buffers) {
     }
     Release(buffers.mPartialLightAccum);
     Release(buffers.mDepthStencil);
-    Release(buffers.mUnknown24);
-    Release(buffers.mUnknown32);
+    Release(buffers.mShadowDepth[0]);
+    Release(buffers.mShadowDepth[1]);
     Release(buffers.mGBufferColor);
     Release(buffers.mGBufferPixelNormals);
     Release(buffers.mGBufferVertexNormals);
@@ -126,15 +126,15 @@ RndBufferCollection::PartialFramerateData* NewPartialFramerateData() {
     auto* data = static_cast<RndBufferCollection::PartialFramerateData*>(
         operator new(sizeof(RndBufferCollection::PartialFramerateData)));
     *data = {};
-    for (auto& value : data->mUnknown0) {
+    for (auto& value : data->mLightCullResults) {
         value = -1;
     }
-    for (auto& value : data->mUnknown24) {
+    for (auto& value : data->mLightProbeCullResults) {
         value = -1;
     }
-    data->mUnknown40[2] = 33;
-    data->mUnknown40[3] = 0xFFFFFFFFU;
-    for (auto& value : data->mUnknown64) {
+    data->mShowHideContext[1] = 33;
+    data->mShadingMode = -1;
+    for (auto& value : data->mShadowCullResults) {
         value = -1;
     }
     return data;
@@ -241,7 +241,7 @@ RndBufferCollection::RndBufferCollection(unsigned int flags, int targetMode)
       mNextAttachment(0),
       mBackBuffer(nullptr),
       mLightAccum{},
-      mUnknown392(nullptr),
+      mFullResBlurredLightAccum(nullptr),
       mBlurredLightAccum{},
       mLightProbeAccum(nullptr),
       mAtmosphere{},
@@ -287,7 +287,7 @@ void RndBufferCollection::Destroy() {
     for (auto*& buffer : mBlurredLightAccum) {
         Release(buffer);
     }
-    Release(mUnknown392);
+    Release(mFullResBlurredLightAccum);
     Release(mLightProbeAccum);
     for (auto*& buffer : mAtmosphere) {
         Release(buffer);

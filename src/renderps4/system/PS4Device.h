@@ -57,7 +57,7 @@ public:
         FixedVector<RndWindow*, 6>& windows,
         bool offscreen) override;                          // slot 7 at 0x8D8300
     int _GetGpuBlockingBehaviorImpl() const override;      // slot 13 at 0x8D8590
-    int _UnknownSlot14Impl() override;                     // slot 14 at 0x8D83E0
+    int _GetDeviceStatusImpl() override;                   // slot 14 at 0x8D83E0
 
     void _InitDefaultVertexBuffers();                      // 0x8D7DB0
     void _InitIdentityInstanceBuffers();                   // 0x8D7EB0

@@ -18,8 +18,14 @@ public:
     static Symbol sClassName;  // 0x1A87640
 
     // Field names are not in the reference map.
-    unsigned char mUnknown23[65];
-    // Set to 2 for the backup light at 0x6BF5B6.
+    // RndLightCom's members, which RndLightCom does not declare yet. Its
+    // property registry (0x46D760) places "environments" at 24, "color" at
+    // 64, "intensity" at 80 and "illumination_type" at 84; byte 23 is
+    // padding.
+    unsigned char mLightComMembers[65];
+    // Set to 2 for the backup light at 0x6BF5B6. The RndLightCom registry
+    // names offset 88 "light_wrap", so this may be the light wrap rather
+    // than the intensity.
     float mIntensity;
 };
 

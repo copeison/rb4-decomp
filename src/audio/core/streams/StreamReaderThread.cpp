@@ -31,13 +31,13 @@ void StreamReader::Setup(
     FMOD::Sound* sound,
     int numChannels,
     short* buffer,
-    int unknown152,
+    int bufferBytes,
     const std::function<void()>& onDone) {
     mState = kStateIdle;
     mOnDone = onDone;
     mSound = sound;
     mBuffer = buffer;
-    mUnknown152 = unknown152;
+    mBufferBytes = bufferBytes;
     mNumChannels = numChannels;
 }
 

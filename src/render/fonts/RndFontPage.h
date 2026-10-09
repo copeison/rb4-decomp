@@ -34,8 +34,8 @@ public:
         unsigned long index,
         unsigned short character,
         int width,
-        int unknown8,
-        int unknown12,
+        int bearing,
+        int extent,
         const Vector2i& textureSize);  // 0x667380
     // Empty in this build.
     void Finalize();  // 0x6674B0

@@ -6,17 +6,16 @@ using AttributeInfo = RndVertexInterpreter::AttributeInfo;
 using Layout = AttributeInfo[RndVertexInterpreter::kNumAttributes];
 
 constexpr unsigned int kNumVertexTypes = 8;
-constexpr unsigned int kUnknownField = 0xFFFFFFFF;
 
 constexpr AttributeInfo Attribute(
     long offset,
     unsigned long numComponents,
     RndVertexDataType type) {
-    return {offset, numComponents, type, kUnknownField};
+    return {offset, numComponents, type, RndVertexInterpreter::kNoStream};
 }
 
 constexpr AttributeInfo Unused() {
-    return {-1, 0, kVertexDataInvalid, kUnknownField};
+    return {-1, 0, kVertexDataInvalid, RndVertexInterpreter::kNoStream};
 }
 
 constexpr unsigned int kAttributeStreams[RndVertexInterpreter::kNumAttributes] = {

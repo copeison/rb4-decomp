@@ -40,7 +40,7 @@ bool AudioBusGenerator::Setup(AudioBus* source, const PlayArgs& args, AudioBusCa
     mState = args.mStartPaused ? kStatePaused : kStatePlaying;
     mSource = source;
     mCallback = callback;
-    mUnknown264 = true;
+    mIsSetUp = true;
 
     if (mBuffer.mCleanupMode != AudioBufferBase::kCleanupFree && !mBuffer.mConfig.mInterleaved) {
         for (int channel = 0; channel < mBuffer.mNumChannels; ++channel) {

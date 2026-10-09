@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "render/meshes/RndDynamicGpuData.h"
 #include "utl/containers/Vector.h"
 
 class RndContext;
@@ -9,11 +10,14 @@ class RndTextureBase;
 
 // A Bink video's render resources: the decoded planes, the converted output
 // and Bink's color-space constants. The vtable is at 0x192AA28; its base
-// and slots are not recovered. Name and field names not in the reference
-// map, which has no Bink code.
-class BinkRenderVideo {
+// is RndDynamicGpuData, whose per-frame update copies the color-space
+// constants. Name and field names not in the reference map, which has no
+// Bink code.
+class BinkRenderVideo : public RndDynamicGpuData {
 public:
-    unsigned char mUnknown0[16];  // The vtable and base.
+    ~BinkRenderVideo() override;  // 0x5F30A0, 0x5F31F0
+    void _SyncDynamicGpuDataImpl(RndContext& context) override;  // 0x5F3330
+
     void* mBink;                  // The Bink handle.
     void* mDecodeState;           // 216 bytes, owned.
     // The plane textures, of which the alpha plane is optional, and the
@@ -61,7 +65,9 @@ public:
     eastl::vector<BinkRenderVideo*> mVideos;
     BinkRenderVideo* mConversions[4];
     unsigned int mWorkingBufferCount;
-    unsigned int mUnknown68;
+    // Tail padding: the initialization at 0x5F28C0 does not write it and
+    // nothing reads it.
+    unsigned int mPad68;
 };
 
 static_assert(offsetof(BinkRenderMgr, mConversions) == 32);

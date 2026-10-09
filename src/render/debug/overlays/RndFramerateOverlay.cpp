@@ -108,7 +108,7 @@ void RndFramerateOverlay::_HandleShowingChanged(bool showing) {
 // Reconstructed from eboot.elf at 0x6E2960. Both options are bools kept
 // by the overlay and reached through accessors. Each registration builds
 // a "prop" symbol that it does not use.
-void RndFramerateOverlay::_Unknown7(PropRegistry& registry) {
+void RndFramerateOverlay::_RegisterOptions(PropRegistry& registry) {
     bool type = false;
     BoolMetadata& cpu = TypeSpecificMetadata(
         registry.RegisterProp("show_cpu_average", -1, kPropertyBool, 0), type);

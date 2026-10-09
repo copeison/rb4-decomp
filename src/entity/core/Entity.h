@@ -9,13 +9,21 @@
 // layer table and the object API the renderer uses are modelled.
 class Entity {
 public:
-    // One layer's objects. The map names the type; the field names are not
-    // in the reference map.
+    // One layer's objects, held in the layer's PropArray<GameObject*>. The
+    // map names the type; the field names are not in the reference map.
     struct Layer {
-        unsigned char mUnknown0[8];
+        // The vtable of the object array (a PropArray).
+        const void* mObjectsVtable;
         GameObject** mObjects;
         int mNumObjects;
-        unsigned char mUnknown20[28];
+        // The rest of the object array: its capacity, element size, storage
+        // flag and type symbol.
+        unsigned char mObjectsStorage[20];
+        // Counts the objects created in the layer; Entity::CreateObject's
+        // id allocator (0xF0AD0) puts it in the top 16 bits of each new
+        // GameObjectId.
+        unsigned short mNextSerial;
+        unsigned char mPadding[6];  // Never read or written.
     };
 
     // Creates an object in the layer with room for the given number of
@@ -48,8 +56,14 @@ public:
         return mLayers[0].mObjects[0];
     }
 
-    // Field names are not in the reference map.
-    unsigned char mUnknown0[176];
+    // Field names are not in the reference map. The constructor (0xEBB70)
+    // installs the vtables of the MsgSource base at 0 and the PollDepBase
+    // base at 24; the map lists Entity::s_MsgSource_vtable and
+    // s_PollDepBase_vtable.
+    unsigned char mMsgSourceBase[24];
+    unsigned char mPollDepBase[144];
+    // The layer table is a PropArray<Entity::Layer>; this is its vtable.
+    const void* mLayersVtable;
     Layer* mLayers;
     unsigned int mNumLayers;
 };
@@ -57,5 +71,7 @@ public:
 static_assert(sizeof(Entity::Layer) == 48);
 static_assert(offsetof(Entity::Layer, mObjects) == 8);
 static_assert(offsetof(Entity::Layer, mNumObjects) == 16);
+static_assert(offsetof(Entity::Layer, mNextSerial) == 40);
+static_assert(offsetof(Entity, mLayersVtable) == 168);
 static_assert(offsetof(Entity, mLayers) == 176);
 static_assert(offsetof(Entity, mNumLayers) == 184);

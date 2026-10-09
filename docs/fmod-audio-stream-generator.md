@@ -65,14 +65,44 @@ gain and mute. Speed is stored at `+0x1D8` under the bus lock. `Init` at
 `0x26AFF0` prepares the bus for stereo 128-sample blocks at the engine sample
 rate.
 
-The decoder itself is not reconstructed yet. `Setup` at `0x26ADA0` opens the
-sound, builds a vector of `0xC0`-byte stream blocks and acquires the bus
-generator; `0x26BAD0` completes the open and submits every block to the
-stream reader. `SeekToMs` at `0x26BDC0` waits for idle blocks before
-resubmitting. `Process` at `0x26C720` renders the decoded PCM: its normal
-path interpolates linearly between interleaved 16-bit frames, and the
-synchronized path uses the six-point kernel at `0x26D940`. That kernel is
-reconstructed as `_InterpolateOptimal`: Olli Niemitalo's optimal 32x,
-six-point, fifth-order z-form interpolator, with float-rounded coefficients.
-The controls at `0x26DAB0`, `0x26DBA0` and `0x26DBD0` enable synchronization,
-set its target and disable it.
+A request is a `BufferedStreamPlayArgs`: the `PlayArgs` followed by the
+block size in frames (`+0x68`), the block count (`+0x6C`) and the number of
+blocks kept behind the play position (`+0x70`).
+
+`Setup` at `0x26ADA0` opens the stream without blocking, sizes an
+interleaved 16-bit `AudioBuffer<short>` for every block, gives each
+`StreamReader` its block (reader *i* starts at frame *i* times the block
+size) and takes a voice from the bus generator pool, which renders this
+generator's `AudioBus`. `_FinishOpen` at `0x26BAD0`, run by `Poll` until FMOD
+reports the stream ready, reads the format, marks mono readers and queues
+every reader on the manager's reader thread.
+
+`Process` at `0x26C720` stays silent until the start block has read, then
+resamples from the current block. Unsynced playback interpolates linearly
+at the speed times the stream-to-output rate ratio. While synced, it uses
+the six-point kernel at `0x26D940` (`_InterpolateOptimal`: Olli Niemitalo's
+optimal 32x, six-point, fifth-order z-form interpolator) and advances by
+`_GetSyncSpeed` (`0x26D8D0`): the smoothed target rate over the output rate,
+or zero once the target is reached. Reads wrap in the ring; at the end of
+the stream the last frame repeats. Crossing a block boundary moves to the
+neighbouring reader, and `_RefillBuffers` (`0x26C480`) then requeues the
+readers so up to half the ring is ahead of the current block and the rest
+behind it. A failed read or the end of the stream stops the bus generator.
+
+`SeekToMs` at `0x26BDC0` takes every queued reader off the thread, rebuilds
+the ring around the target and waits for the block at the target. Loop
+points (`0x26C0A0`, `0x26C0F0`) take effect at the next `Process`; only
+`_SetReaderPosition` (`0x26B650`) can split a block at the loop end, and no
+caller asks it to.
+
+`EnableSync` (`0x26DAB0`) starts following a target 30 ms (`0x19B4930`)
+ahead of the timeline; `SetSyncTargetMs` (`0x26DBA0`) moves it and
+`DisableSync` (`0x26DBD0`) stops. `_UpdateSync` (`0x26BC70`, inlined into
+`Poll`) measures the target's rate against the time manager's clock, clamps
+it to 20 times the stream rate and feeds a `DoubleExponentialSmoother`.
+None of these controls has a caller in this build.
+
+`Release` at `0x26C1B0` releases the bus generator, cancels the readers,
+frees the buffer and the sound and returns the voice to the pool. The empty
+functions at `0x26BD30`, `0x26D8B0` and `0x26D8C0` have no references and
+are not modelled.

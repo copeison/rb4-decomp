@@ -65,7 +65,9 @@ public:
         float mAverageSeconds;
         float mWorstSeconds;
         int mSampleCount;
-        unsigned int mUnknown28;
+        // Alignment padding before mCounters; only the whole-frame resets
+        // touch it.
+        unsigned int mPad;
         unsigned long mCounters[6];
     };
 
@@ -88,7 +90,9 @@ public:
         float _GetAverageMs(unsigned long frame) const override;     // 0x62D420
         float _GetWorstMs(unsigned long frame) const override;       // 0x62D440
 
-        unsigned int mUnknown52;
+        // Alignment padding after PerfTimerBase; never read or written on
+        // its own.
+        unsigned int mPad;
         Array<unsigned long> mQueryKeys[4];  // One per frame slot.
         Frame mFrames[2];
         Symbol mFullNameSym;
@@ -164,7 +168,13 @@ public:
     Array<StatBlock*> mStatBlocks;  // Sorted by name Symbol address.
     unsigned long mNextKey;
     unsigned long mFrameSlot;       // Frame slot receiving new queries.
-    unsigned char mUnknown88[8];
+    // Keeps a second history frame, so that the timings of the two halves
+    // of a split frame show side by side. The constructor clears it; the
+    // timer reset (0x62C970) clears 1 + mSplitFrameTiming frames and the
+    // CSV header printer (0x62CFA0) prints one "%s %d" column per frame.
+    // Name not in the reference map; compare
+    // RndTimersOverlay::gSplitFrameTiming.
+    bool mSplitFrameTiming;
     unsigned long mResolvedFrame;   // Index into Stat::mFrames.
     // Statistics are recorded while nonzero. The overlays that show GPU
     // timings count themselves in while they are shown.
@@ -174,7 +184,7 @@ public:
 
 static_assert(sizeof(RndGpuStatsMgr::Array<void*>) == 32);
 static_assert(sizeof(RndGpuStatsMgr::Frame) == 80);
-static_assert(offsetof(RndGpuStatsMgr::Stat, mUnknown52) == 52);
+static_assert(offsetof(RndGpuStatsMgr::Stat, mPad) == 52);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mQueryKeys) == 56);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mFrames) == 184);
 static_assert(offsetof(RndGpuStatsMgr::Stat, mFullNameSym) == 344);
@@ -185,6 +195,7 @@ static_assert(offsetof(RndGpuStatsMgr, mTotalBlock) == 32);
 static_assert(offsetof(RndGpuStatsMgr, mStatBlocks) == 40);
 static_assert(offsetof(RndGpuStatsMgr, mNextKey) == 72);
 static_assert(offsetof(RndGpuStatsMgr, mFrameSlot) == 80);
+static_assert(offsetof(RndGpuStatsMgr, mSplitFrameTiming) == 88);
 static_assert(offsetof(RndGpuStatsMgr, mResolvedFrame) == 96);
 static_assert(offsetof(RndGpuStatsMgr, mEnableCount) == 104);
 static_assert(offsetof(RndGpuStatsMgr, mCritSec) == 112);

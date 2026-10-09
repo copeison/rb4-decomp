@@ -60,7 +60,9 @@ public:
         bool mShadow = false;
         Hmx::Color mShadowColor = Hmx::Color::GetBlack();
         RndBlendMode mBlendMode = RndBlendMode::kSource;
-        unsigned int mUnknown44;  // Not set by the constructor.
+        // Alignment padding before mFont: no constructor sets it and the
+        // text functions never read it.
+        unsigned int mPad;
         // The font, or the debug font, unless styles are given.
         RndFont* mFont = nullptr;
         const RndTypesetter::Style* mStyles = nullptr;

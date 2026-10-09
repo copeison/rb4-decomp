@@ -27,7 +27,7 @@ public:
     int ResumeMixer() override;     // slot 3: 0x276140
     // Slot 5 at 0x276150.
     void InitVoicePool(
-        int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag) override;
+        int hardVoiceLimit, int softVoiceLimit, int numPitchShifters, bool skipVoiceDecoders) override;
     void ConfigureVoicePool(int softVoiceLimit, int hardVoiceLimit) override;  // slot 6: 0x276160
     FusionVoicePool* GetVoicePool() override;  // slot 7: 0x276170
     bool TryBeginMix() override;    // slot 8: 0x276180

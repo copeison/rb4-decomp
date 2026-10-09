@@ -25,7 +25,9 @@ private:
     char* mBuf;              // From MakeStringBuf.
     int mBufRemaining;       // Starts at 4096.
     char* mSavedFmtEnd;
-    void* mUnknown40;
+    // The format string's copy in the thread's nested 4096-byte format
+    // slots, made by the format parser at 0x247310.
+    char* mFmtCopy;
 };
 
 static_assert(sizeof(FormatString) == 48);

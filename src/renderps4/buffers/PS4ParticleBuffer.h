@@ -25,7 +25,10 @@ public:
     void* mVertexStorage[2];
     unsigned long mActiveBank;
     unsigned int mBufferMask;
-    unsigned int mUnknown332;
+    // Alignment padding at 348 before mIndices. The constructor's two
+    // 16-byte clears (0x140 and 0x14C) stop at 347, and no method reads or
+    // writes it. Name not in the reference map.
+    unsigned int mPad;
     unsigned short* mIndices;
 
 private:

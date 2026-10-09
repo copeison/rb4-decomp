@@ -19,13 +19,17 @@ public:
     // The byte offset in the component, or -1 for a property reached only
     // through its metadata's accessors.
     int mOffset;
-    unsigned int mUnknown4;
+    // Property flags, ~0 by default (PropInfo::PropInfo at 0x12DBE0).
+    // RegisterDynamicProp (0x180980) stores its int argument here, and the
+    // registry loader (0x181E90) passes the loaded value with 0x20 set.
+    unsigned int mFlags;
     PropertyType mType;
     unsigned long mCount;
     // Reference-counted through the map's PropInfo::PropMetadataPtr.
     PropMetadata* mMetadata;
 };
 
+static_assert(offsetof(PropInfo, mFlags) == 4);
 static_assert(offsetof(PropInfo, mType) == 8);
 static_assert(offsetof(PropInfo, mCount) == 16);
 static_assert(offsetof(PropInfo, mMetadata) == 24);

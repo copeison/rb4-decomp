@@ -153,14 +153,14 @@ void* AudioRenderTarget::GetTimer(unsigned long key) {
 // Reconstructed from eboot.elf at 0x11285D0. The pool comes from the small
 // block allocator; its voices are created once every limit is set.
 void AudioRenderTarget::InitVoicePool(
-    int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag) {
+    int hardVoiceLimit, int softVoiceLimit, int numPitchShifters, bool skipVoiceDecoders) {
     delete mVoicePool;
     mVoicePool = nullptr;
     mVoicePool = new FusionVoicePool(static_cast<float>(mSampleRate));
-    mVoicePool->SetUnknownFlag(unknownFlag);
+    mVoicePool->SetSkipVoiceDecoders(skipVoiceDecoders);
     mVoicePool->SetHardVoiceLimit(static_cast<unsigned int>(hardVoiceLimit));
     mVoicePool->SetSoftVoiceLimit(static_cast<unsigned int>(softVoiceLimit));
-    mVoicePool->SetUnknownCount(unknownCount);
+    mVoicePool->SetNumPitchShifters(numPitchShifters);
     mVoicePool->CreatePendingVoices();
 }
 

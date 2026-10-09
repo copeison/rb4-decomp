@@ -86,7 +86,7 @@ constexpr float kMsPerSecond = 1000.0F;
 RndGpuStatsMgr::Stat::Stat(Symbol name, Stat* parent)
     : PerfTimerBase(name), mQueryKeys{}, mFrames{}, mFullNameSym() {
     mParent = parent;
-    mUnknown40 = false;
+    mAmbiguousParent = false;
     UpdateFullName(kSortName);
     mFullNameSym = Symbol(mFullName.c_str());
     const DataArray* config = SystemConfig(Symbol("gpu_timer"))->FindArray(name, false);
@@ -136,7 +136,7 @@ RndGpuStatsMgr::RndGpuStatsMgr()
       mStatBlocks{},
       mNextKey(0),
       mFrameSlot(0),
-      mUnknown88{},
+      mSplitFrameTiming(false),
       mResolvedFrame(0),
       mEnableCount(0) {}
 

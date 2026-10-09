@@ -36,7 +36,12 @@ public:
         long mOffset;  // Negative when the layout lacks the attribute.
         unsigned long mNumComponents;
         RndVertexDataType mType;
-        unsigned int mUnknown20;
+        // The attribute's vertex stream. The default AttributeInfo
+        // (inlined at 0x442CB0) sets it to kNoStream, and no layout or
+        // reader in this build changes or reads it; streams come from
+        // GetAttributeStream instead. The name is inferred from that
+        // default and is uncertain.
+        unsigned int mStream;
     };
 
     // The attributes that share one vertex stream, merged. Name not in the
@@ -132,7 +137,11 @@ public:
     }
 
     // Field names are not in the reference map.
-    unsigned long mUnknown0;
+    // Set to 5 for every vertex type before the per-type layout is built
+    // (0x442CB0) and never read by the recovered code; most likely the
+    // serialization version that the map's Load and Save use. The name is
+    // uncertain.
+    unsigned long mVersion;
     unsigned long mStride;
     const AttributeInfo* mAttributes;
 };

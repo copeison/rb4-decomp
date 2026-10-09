@@ -108,24 +108,30 @@ struct CreateRadialSurfaceParams : public CreateMeshParams {
     CreateRadialSurfaceParams()
         : mSweepAngle(6.2831855F),
           mNumSegments(32),
-          mUnknown30{},
-          mUnknown40(0.0F),
-          mUnknown44(1.0F) {}
+          mReserved{},
+          mRangeStart(0.0F),
+          mRangeEnd(1.0F) {}
 
     // An angle within 1e-4 of 2*pi wraps to 0, closing the seam.
     float mSweepAngle;
     unsigned long mNumSegments;
-    // Not read by the builders reconstructed so far.
-    unsigned int mUnknown30[4];
-    float mUnknown40;
-    float mUnknown44;
+    // The members below are only set by this constructor (inlined into its
+    // callers, such as RndDrawUtl::Init's sphere at 0x3DF1FB); neither
+    // CreateRadialSurface (0x5DD5E0) nor ReshapeRadialSurface (0x5DF180)
+    // reads them. Names not in the reference map.
+    // Zeroed, never read.
+    unsigned int mReserved[4];
+    // A 0-to-1 range, presumably the span of the contour or of its texture
+    // coordinates. The names are uncertain.
+    float mRangeStart;
+    float mRangeEnd;
 };
 
 static_assert(offsetof(CreateRadialSurfaceParams, mSweepAngle) == 36);
 static_assert(offsetof(CreateRadialSurfaceParams, mNumSegments) == 40);
-static_assert(offsetof(CreateRadialSurfaceParams, mUnknown30) == 48);
-static_assert(offsetof(CreateRadialSurfaceParams, mUnknown40) == 64);
-static_assert(offsetof(CreateRadialSurfaceParams, mUnknown44) == 68);
+static_assert(offsetof(CreateRadialSurfaceParams, mReserved) == 48);
+static_assert(offsetof(CreateRadialSurfaceParams, mRangeStart) == 64);
+static_assert(offsetof(CreateRadialSurfaceParams, mRangeEnd) == 68);
 static_assert(sizeof(CreateRadialSurfaceParams) == 72);
 
 // Field names are not in the reference map.

@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 621 entries, most of the
+executable. The latest unresolved-symbol report contains 603 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -211,7 +211,8 @@ The latest focused commits, newest first, are:
 | `dd362e4` | Overlay draw, print and update methods, 2D line and text drawing |
 | `d198179` | Graph overlay drawing, timer list views, `DrawLines2D`, wide text and text measuring |
 | `ce8c8f0` | `RndTypesetter`, the text enums, font glyph and kerning lookup |
-| (this) | Audio core: generators, buses, mixer, render targets, stream reader thread |
+| `c3eb541` | Audio core: generators, buses, mixer, render targets, stream reader thread |
+| (this) | Audio buffers, WAV files, voice pool, mic core, buffered streams; inferred names replace the Unknown placeholders outside audio |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

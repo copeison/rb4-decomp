@@ -15,7 +15,11 @@ public:
         unsigned long mNumElements;
         const void* mInitialData;
         void* mGpuData;
-        unsigned int mUnknown32;
+        // Zeroed with the rest of the description by its initializer
+        // (0x636DA0) and never set or read otherwise: no creator in the
+        // binary fills it and neither RndComputeBuffer nor PS4ComputeBuffer
+        // reads it. Name not in the reference map.
+        unsigned int mReserved;
         unsigned int mFlags;
         const char* mName;
     };

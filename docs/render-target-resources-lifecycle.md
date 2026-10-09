@@ -101,10 +101,11 @@ GBuffer, linear depth, ambient occlusion, tiled-light buffers, and volumetric
 textures. It then clears the block count, extent, attachment cursor, and
 registered-resource count.
 
-The owner pointer at `0x188` and per-scene pointers at `0x18` and `0x20` are
-confirmed virtual resources but do not yet have feature identities. Their
-exact null-safe virtual teardown and slot clearing are retained behind narrow
-unclassified-resource adapters.
+The owner pointer at `0x188` (`mFullResBlurredLightAccum`, the unused
+full-resolution level ahead of the halved blurred light accumulation levels)
+and the per-scene pointers at `0x18` and `0x20` (`mShadowDepth`, named after
+the older map's `_AllocShadowDepthBuffers`) are never allocated or read in this
+build; teardown only releases and clears them.
 
 Three adjacent owner helpers complete the active-block controls:
 

@@ -35,7 +35,7 @@ public:
     // Field names are not in the reference map.
     DataArray* mData;
     // The message base's inline array and its seven nodes.
-    unsigned char mUnknown16[136];
+    unsigned char mInlineStorage[136];
 };
 
 static_assert(offsetof(KeyboardKeyMsg, mData) == 8);

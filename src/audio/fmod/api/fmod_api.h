@@ -134,10 +134,12 @@ constexpr FMOD_MODE FMOD_3D = 0x00000010;
 constexpr FMOD_MODE FMOD_CREATESTREAM = 0x00000080;
 constexpr FMOD_MODE FMOD_CREATESAMPLE = 0x00000100;
 constexpr FMOD_MODE FMOD_CREATECOMPRESSEDSAMPLE = 0x00000200;
+constexpr FMOD_MODE FMOD_OPENUSER = 0x00000400;
 constexpr FMOD_MODE FMOD_ACCURATETIME = 0x00004000;
 constexpr FMOD_MODE FMOD_NONBLOCKING = 0x00010000;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_MS = 0x01;
 constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_PCM = 0x02;
+constexpr FMOD_TIMEUNIT FMOD_TIMEUNIT_PCMBYTES = 0x04;
 constexpr FMOD_CHANNELMASK FMOD_CHANNELMASK_FRONT_LEFT = 0x01;
 constexpr FMOD_CHANNELMASK FMOD_CHANNELMASK_FRONT_RIGHT = 0x02;
 constexpr FMOD_CHANNELMASK FMOD_CHANNELMASK_STEREO =
@@ -165,11 +167,19 @@ constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
 constexpr FMOD_STUDIO_EVENT_CALLBACK_TYPE
     FMOD_STUDIO_EVENT_CALLBACK_ALL = 0xFFFFFFFF;
 
-// The engine never reads the members of the extended creation information;
-// it forwards the block that Studio returns.
+// Extended creation information. Mic_FMOD::Start fills the leading fields
+// for its record buffer; Studio's blocks are forwarded unread.
 struct alignas(8) FMOD_CREATESOUNDEXINFO {
-    std::uint8_t data[232];
+    std::int32_t cbsize;
+    std::uint32_t length;
+    std::uint32_t fileoffset;
+    std::int32_t numchannels;
+    std::int32_t defaultfrequency;
+    FMOD_SOUND_FORMAT format;
+    std::uint8_t remaining[208];
 };
+
+static_assert(sizeof(FMOD_CREATESOUNDEXINFO) == 232);
 
 struct FMOD_STUDIO_SOUND_INFO {
     const char* name_or_data;
@@ -485,6 +495,14 @@ public:
     FMOD_RESULT getLength(std::uint32_t* length, FMOD_TIMEUNIT lengthtype);
     FMOD_RESULT getDefaults(float* frequency, std::int32_t* priority);
     FMOD_RESULT seekData(std::uint32_t pcm);
+    FMOD_RESULT lock(
+        std::uint32_t offset,
+        std::uint32_t length,
+        void** ptr1,
+        void** ptr2,
+        std::uint32_t* len1,
+        std::uint32_t* len2);
+    FMOD_RESULT unlock(void* ptr1, void* ptr2, std::uint32_t len1, std::uint32_t len2);
     FMOD_RESULT readData(
         void* buffer,
         std::uint32_t length,

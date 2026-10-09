@@ -114,8 +114,11 @@ RndLightGlobals::RndLightGlobals()
       mInlineLightingData{},
       mTonemapShader(nullptr),
       mTonemapCShader(nullptr),
-      mUnknown200{},
-      mUnknown280{} {}
+      mProbeCaptureBuffers(nullptr),
+      mProbeCaptureTexture(nullptr),
+      mProbeDiffuseCaptureTexture(nullptr),
+      mProbeSpecularCaptureTexture(nullptr),
+      mFilterLightProbeCShader(nullptr) {}
 
 // Reconstructed from eboot.elf at 0x47EFA0. The vectors and the resource
 // references release themselves.
@@ -199,16 +202,16 @@ void RndLightGlobals::Terminate() {
     SafeDelete(mTiledLightsApplicationShader);
     SafeDelete(mTiledLightsInterpolationShader);
     SafeDelete(mTiledLightsStereoToMonoShader);
-    DeleteUnrecovered(mUnknown280[2]);
+    DeleteUnrecovered(mFilterLightProbeCShader);
     SafeDelete(mTonemapShader);
     SafeDelete(mTonemapCShader);
     SafeDelete(mTiledLightIdsCount);
-    DeleteUnrecovered(mUnknown200[0]);
-    DeleteUnrecovered(mUnknown200[1]);
+    DeleteUnrecovered(mProbeCaptureBuffers);
+    DeleteUnrecovered(mProbeCaptureTexture);
     DeleteAndClear(mProbeCaptureDownsampleTextures);
     DeleteAndClear(mProbeCaptureHelperTextures);
-    DeleteUnrecovered(mUnknown280[0]);
-    DeleteUnrecovered(mUnknown280[1]);
+    DeleteUnrecovered(mProbeDiffuseCaptureTexture);
+    DeleteUnrecovered(mProbeSpecularCaptureTexture);
     ReleaseResource(mErrorLightCookie);
     ReleaseResource(mSkinDiffusion);
     ReleaseResource(mInlineLightingTextures);

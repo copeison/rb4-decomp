@@ -83,8 +83,13 @@ public:
     unsigned long mCameraNearFarParams;
     unsigned long mCameraMiscParams;
     unsigned long mCameraViewExtents;
-    unsigned long mUnknown216;
-    unsigned long mUnknown224;
+    // Two more camera constant offsets that the constructor sets to -1 and
+    // _CreateCBufferConfigs never adds, so they stay -1; nothing reads them.
+    // Named after the camera transforms the shaders now fetch from
+    // gCameraRTSlicedData (GetCameraXfm, GetCameraXfmInverse); the names
+    // are uncertain.
+    unsigned long mCameraXfm;
+    unsigned long mCameraXfmInverse;
     unsigned long mCameraRTSlicedData;
     RndShaderCBufferConfig* mClipPlanesCBuffer;
     unsigned long mClipPlanes;
@@ -120,7 +125,10 @@ public:
     RndShaderRefineSceneMask* mRefineSceneMaskShader;
     RndShaderStencilSceneMask* mStencilSceneMaskShader;
     RndShaderTestPattern* mTestPatternShader;
-    void* mUnknown528;
+    // A shader slot that PreInit never fills in this build; Terminate still
+    // deletes it through its virtual destructor (0x641740). Its type is
+    // unknown.
+    void* mReservedShader;
     RndCShaderBlurClassify* mBlurClassifyCShader;
     RndCShaderCalcDepthRange* mCalcDepthRangeCShader;
     RndCShaderClearBuffer* mClearBufferCShader;

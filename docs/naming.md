@@ -18,6 +18,11 @@ supplies only names and module placement.
   - the code was added after the map's build;
   - the function was inlined;
   - the member is a data field.
+
+  The chosen name describes what the thing does, inferred from its body, its
+  callers, the strings it uses and the names of related code. Placeholders
+  such as `Unknown25`, `_Unknown12` or `mUnknown80` are not used. When the
+  evidence is weak, pick the best-supported name and say so in a comment.
 - When a signature in the binary differs from the map, follow the binary and
   add a comment giving the map's signature.
 - Code from the PS4 SDK and its standard library is used through the SDK

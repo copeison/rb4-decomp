@@ -54,15 +54,15 @@ void RndFontPage::SetGlyph(
     unsigned long index,
     unsigned short character,
     int width,
-    int unknown8,
-    int unknown12,
+    int bearing,
+    int extent,
     const Vector2i& textureSize) {
     RndFontGlyph& glyph = mGlyphs[index];
-    glyph.mUnknown2 = 0;
+    glyph.mPad = 0;
     glyph.mChar = character;
     glyph.mWidth = width;
-    glyph.mUnknown8 = unknown8;
-    glyph.mUnknown12 = unknown12;
+    glyph.mBearing = bearing;
+    glyph.mExtent = extent;
 
     const Vector2i& tileSize = mFont->GetSize(mResolution)->mGlyphTileSize;
     const int tilesPerRow = textureSize.x / tileSize.x;

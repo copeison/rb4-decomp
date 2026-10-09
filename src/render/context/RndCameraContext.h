@@ -65,9 +65,12 @@ struct RndCameraSettings {
         Frustum::Fov mFov;
     };
 
-    unsigned char mUnknown0[8];
+    // The component's vtable pointer; never read here.
+    unsigned char mVtable[8];
     GameObject* mOwner;
-    unsigned char mUnknown16[8];
+    // The rest of the Component base (its flags, with Component::mEnabled
+    // at 22); never read here.
+    unsigned char mComponentFlags[8];
     float mNearPlane;
     float mFarPlane;
     bool mOrthographic;
@@ -222,9 +225,11 @@ public:
     Vector2 mDepthRange;    // Minimum and maximum depth.
     Hmx::Rect mProjectionRect;
     Frustum mFrustum;
-    // Cleared whenever the derived state is rebuilt; the element type is
-    // not recovered.
-    FixedVector<Vector4, 4> mUnknown408;
+    // A cache of up to four 16-byte entries derived from the camera,
+    // emptied whenever the derived state is rebuilt. Nothing in this build
+    // adds to it or reads it, so the element type is not recovered and the
+    // name is a guess. Name not in the reference map.
+    FixedVector<Vector4, 4> mDerivedCache;
     bool mValid;  // Has a camera and a target.
     unsigned int mLodMask;
     bool mLodSettingsSet;
@@ -249,7 +254,7 @@ static_assert(offsetof(RndCameraContext, mViewportSize) == 12);
 static_assert(offsetof(RndCameraContext, mDepthRange) == 20);
 static_assert(offsetof(RndCameraContext, mProjectionRect) == 28);
 static_assert(offsetof(RndCameraContext, mFrustum) == 48);
-static_assert(offsetof(RndCameraContext, mUnknown408) == 408);
+static_assert(offsetof(RndCameraContext, mDerivedCache) == 408);
 static_assert(offsetof(RndCameraContext, mValid) == 496);
 static_assert(offsetof(RndCameraContext, mLodMask) == 500);
 static_assert(offsetof(RndCameraContext, mLodSettingsSet) == 504);

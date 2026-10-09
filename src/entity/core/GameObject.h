@@ -107,21 +107,29 @@ public:
         return reinterpret_cast<T*>(index->mCom);
     }
 
-    // Field names are not in the reference map. The table is the map's
-    // PropArray<GameObject::ComIndex>; only its storage and count are
-    // modelled.
+    // Field names are not in the reference map. The component table is the
+    // map's PropArray<GameObject::ComIndex>; only its storage and count are
+    // modelled. Entity::CreateObject's allocator (0xF0AD0) builds the object.
     Entity* mEntity;
-    unsigned char mUnknown8[48];
+    // A PropArray of 4-byte elements (vtable 0x18E68E8). The map's
+    // GameObject::PollComponentBefore(Symbol, Symbol) suggests the
+    // components' poll order; the evidence is weak.
+    unsigned char mPollOrder[40];
+    // The vtable of the component table (0x18E6938).
+    const void* mComsVtable;
     ComIndex* mComs;
     unsigned int mNumComs;
-    unsigned char mUnknown68[20];
+    // The rest of the component table: its capacity, element size (24),
+    // storage flag and type symbol.
+    unsigned char mComsStorage[20];
     GameObjectId mId;
-    unsigned char mUnknown92[4];
+    unsigned char mPadding[4];  // Never read or written.
     Symbol mName;
 };
 
 static_assert(sizeof(GameObject::ComIndex) == 24);
 static_assert(offsetof(GameObject::ComIndex, mBaseId) == 16);
+static_assert(offsetof(GameObject, mComsVtable) == 48);
 static_assert(offsetof(GameObject, mComs) == 56);
 static_assert(offsetof(GameObject, mNumComs) == 64);
 static_assert(offsetof(GameObject, mId) == 88);

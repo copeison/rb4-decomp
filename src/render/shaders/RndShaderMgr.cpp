@@ -192,8 +192,8 @@ RndShaderMgr::RndShaderMgr()
       mCameraNearFarParams(-1),
       mCameraMiscParams(-1),
       mCameraViewExtents(-1),
-      mUnknown216(-1),
-      mUnknown224(-1),
+      mCameraXfm(-1),
+      mCameraXfmInverse(-1),
       mCameraRTSlicedData(-1),
       mClipPlanesCBuffer(nullptr),
       mClipPlanes(-1),
@@ -229,7 +229,7 @@ RndShaderMgr::RndShaderMgr()
       mRefineSceneMaskShader(nullptr),
       mStencilSceneMaskShader(nullptr),
       mTestPatternShader(nullptr),
-      mUnknown528(nullptr),
+      mReservedShader(nullptr),
       mBlurClassifyCShader(nullptr),
       mCalcDepthRangeCShader(nullptr),
       mClearBufferCShader(nullptr),
@@ -683,7 +683,7 @@ void RndShaderMgr::Terminate() {
     Release(mRefineSceneMaskShader);
     Release(mStencilSceneMaskShader);
     Release(mTestPatternShader);
-    release_dynamic_resource(mUnknown528);
+    release_dynamic_resource(mReservedShader);
     Release(mBlurClassifyCShader);
     Release(mCalcDepthRangeCShader);
     Release(mClearBufferCShader);

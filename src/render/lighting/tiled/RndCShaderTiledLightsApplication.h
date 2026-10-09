@@ -15,15 +15,20 @@ struct RndTiledLightsComputeBuffer;
 // for it, accumulating into the light buffer. The vtable is at 0x1939070.
 class RndCShaderTiledLightsApplication : public RndShaderCompute {
 public:
-    // Field names are not in the reference map.
+    // Field names are not in the reference map. Bytes 16-56 are a copy of
+    // the first 41 bytes of the caller's RndSceneDrawParams
+    // (_AccumTiledDeferredLight copies them at 0x485776); Dispatch reads
+    // only mSceneContext from it.
     struct Params {
         const RndCameraContext* mCamera;
         RndBufferCollection* mBuffers;
-        unsigned char mUnknown16[16];
+        // RndSceneDrawParams::mHeader.
+        unsigned char mDrawParamsHeader[16];
         // Selects the light-accumulation buffer when the collection draws a
         // partial-framerate scene.
         unsigned long mSceneContext;
-        unsigned char mUnknown40[24];
+        // The rest of the copied draw parameters, then padding.
+        unsigned char mDrawParamsRest[24];
         // Point, spot and directional lights.
         RndTiledLightsComputeBuffer* mLightBuffers;
         RndComputeBuffer* mLightProbes;

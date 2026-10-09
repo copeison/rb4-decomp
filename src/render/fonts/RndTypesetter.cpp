@@ -593,7 +593,7 @@ bool RndTypesetter::_TryProcessWhitespace(
         params.mStyles[context.mStyleStack.back()].mFonts[result.mStyleSize].mFont;
     const RndFont::Size* size = font->GetSize(context.mResolution);
     int width;
-    if ((font->mUnknown8 & 1) != 0) {
+    if ((font->mFlags & 1) != 0) {
         width = size->mGlyphSpacing.x + size->mSpaceSize;
     } else if (size->mGlyphFixedWidth > 0) {
         width = size->mGlyphSpacing.x + size->mGlyphFixedWidth;
@@ -659,11 +659,11 @@ void RndTypesetter::_ProcessOneGlyph(
     if (context.mPrevChar != 0) {
         const RndFont* prevFont = context.mPrevFont;
         int prevSpacing = 0;
-        if (prevFont != nullptr && (prevFont->mUnknown8 & 1) == 0) {
+        if (prevFont != nullptr && (prevFont->mFlags & 1) == 0) {
             prevSpacing = prevFont->GetSize(context.mResolution)->mGlyphSpacing.x;
         }
         int spacing = 0;
-        if ((font->mUnknown8 & 1) == 0) {
+        if ((font->mFlags & 1) == 0) {
             spacing = size->mGlyphSpacing.x;
         }
         result.mEnd.x += prevSpacing < spacing ? spacing : prevSpacing;
@@ -687,7 +687,7 @@ void RndTypesetter::_ProcessOneGlyph(
         top = styleDesc.mFonts[result.mStyleSize].mVerticalOffset + alignedTop;
     }
     if (result.mEnd.x == 0) {
-        result.mEnd.x = glyph->mUnknown8;
+        result.mEnd.x = glyph->mBearing;
     }
 
     Glyph laidOut;
@@ -702,11 +702,11 @@ void RndTypesetter::_ProcessOneGlyph(
     laidOut.mLineTop = lineTop;
     laidOut.mCharIndex = static_cast<unsigned int>(charIndex);
     laidOut.mBreakBefore = false;
-    laidOut.mBearing = glyph->mUnknown8;
-    laidOut.mExtent = glyph->mUnknown12;
+    laidOut.mBearing = glyph->mBearing;
+    laidOut.mExtent = glyph->mExtent;
     result.mGlyphs.push_back(laidOut);
     result.mEnd.x += glyph->mWidth;
-    if ((font->mUnknown8 & 1) != 0) {
+    if ((font->mFlags & 1) != 0) {
         result.mEnd.x += size->mGlyphSpacing.x;
     }
     Line& line = context.mLines.back();
@@ -752,8 +752,8 @@ void RndTypesetter::_ProcessOneGlyph(
                     dot.mLineTop = y;
                     dot.mCharIndex = 0xFFFFFFFFU;
                     dot.mBreakBefore = false;
-                    dot.mBearing = period->mUnknown8;
-                    dot.mExtent = period->mUnknown12;
+                    dot.mBearing = period->mBearing;
+                    dot.mExtent = period->mExtent;
                     result.mGlyphs.push_back(dot);
                     result.mEnd.x += period->mWidth;
                     line.mWidth = result.mEnd.x;

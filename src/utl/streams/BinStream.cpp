@@ -42,9 +42,9 @@ void SwapValue(void* data, int size) {
 
 // Reconstructed from eboot.elf at 0x21A680.
 BinStream::BinStream(bool littleEndian, int platform)
-    : mUnknown8(-1),
-      mUnknown12(-1),
-      mUnknown16(false),
+    : mSkipStart(-1),
+      mSkipSize(-1),
+      mStreamFailed(false),
       mLittleEndian(littleEndian),
       mCrypto(nullptr),
       mPlatform(platform) {}

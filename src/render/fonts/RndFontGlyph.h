@@ -7,10 +7,14 @@
 // writes is recovered; field names are not in the reference map.
 struct RndFontGlyph {
     unsigned short mChar;
-    unsigned short mUnknown2;  // Zero.
+    // Padding that SetGlyph writes as zero; nothing reads it.
+    unsigned short mPad;
     int mWidth;
-    int mUnknown8;
-    int mUnknown12;
+    // The pixel offset a line starts at when this glyph begins it; the
+    // typesetter copies it into RndTypesetter::Glyph::mBearing.
+    int mBearing;
+    // Copied into RndTypesetter::Glyph::mExtent.
+    int mExtent;
     // Left, top, width and height, in texture coordinates. The width is
     // mWidth's and the height is the size's glyph height.
     float mUV[4];

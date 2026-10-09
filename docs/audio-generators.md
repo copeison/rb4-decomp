@@ -126,6 +126,13 @@ The platform-neutral generator code is reconstructed in
 `LinkedListSizeTracked` nodes and lists gained the inlined constructors and
 destructors that every owner's destructor repeats.
 
-Still undefined: `SoundManager` (`_RegisterGeneratorManager`,
-`LockIfOwned`), the `AudioBuffer` object, the FMOD platform's event
-queries, and `String`'s move constructor at `0x255280`.
+`SoundManager::LockIfOwned` (`0x5FB0`) and `_GetManager` (`0x8090`) are in
+`src/audio/core/system/SoundManager.cpp`; the handle's bits 24-30 index the
+registered managers at `+0x48`. The rest of the sound manager is still
+undefined, as are the FMOD platform's event queries and `String`'s move
+constructor at `0x255280`.
+
+Slots 25-27 are now `SetPlayScale`, `GetPlayScale` and
+`GetPrimaryStreamValue`. Only the Fusion and music generators override
+them: the scale defaults to one, a Fusion play request sets it and the music
+generators forward it to their streams. These names are weak.

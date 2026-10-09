@@ -122,9 +122,9 @@ bool App::Initialize(int argc, char** argv) {
     game_audio_register_types();
 
     RndInitParams options{};
-    options.mUnknown0 = true;
+    options.mReservedOption = true;
     options.mInitRendering = true;
-    options.mUnknown2 = true;
+    options.mInitOptionalShaders = true;
     Rnd::Init(options);
 
     ui_register_types();

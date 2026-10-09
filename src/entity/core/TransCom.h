@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "entity/core/GameObject.h"
 #include "math/matrix/Matrix3.h"
 #include "math/transform/Transform.h"
 #include "math/vector/Vector3.h"
@@ -41,16 +42,35 @@ public:
     // it.
     static Symbol sId;  // 0x19E46E8
 
-    // Field names are not in the reference map.
-    unsigned char mUnknown0[24];
+    // Field names are not in the reference map. The property registration
+    // (0x1AFFB0) builds a prototype whose fields give the defaults below.
+    // The Component base (vtable, owning object and flags).
+    unsigned char mComponentBase[24];
     LocalXfm mLocalXfm;
-    unsigned char mUnknown60[12];
+    // The parent object, or the invalid id (-1). The map has
+    // TransCom::SetTransParent(GameObjectId, bool); the poll (0x1B4140)
+    // reads it.
+    GameObjectId mTransParent;
+    // Zeroed by the prototype; no TransCom method reads it.
+    unsigned int mReserved;
+    // Which parent attributes are inherited: 0 the entire transform, 1 scale
+    // and rotation, 2 translation. Registered as "inherit_type".
+    int mInheritType;
+    // The low byte of a 32-bit flag word: 1 marks the local transform dirty.
     unsigned char mDirtyFlags;
-    unsigned char mUnknown73[7];
+    // The upper bytes of the flag word.
+    unsigned char mDirtyFlagsHigh[3];
+    // Makes the entity's parent object (Entity+304) the parent instead of
+    // mTransParent. Name inferred from its use in the poll (0x1B4140).
+    bool mUseEntityParent;
+    unsigned char mPadding[3];  // Never read or written.
     Transform mWorldXfm;
 };
 
 static_assert(offsetof(TransCom, mLocalXfm) == 24);
 static_assert(offsetof(TransCom::LocalXfm, mPos) == 24);
+static_assert(offsetof(TransCom, mTransParent) == 60);
+static_assert(offsetof(TransCom, mInheritType) == 68);
 static_assert(offsetof(TransCom, mDirtyFlags) == 72);
+static_assert(offsetof(TransCom, mUseEntityParent) == 76);
 static_assert(offsetof(TransCom, mWorldXfm) == 80);

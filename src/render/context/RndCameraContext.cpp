@@ -293,7 +293,7 @@ void RndCameraContext::_SyncDerived() {
     _CalcViewXfms();
     _CalcProjectionMatrices();
     _CalcPrimaryFrusta();
-    mUnknown408.mSize = 0;
+    mDerivedCache.mSize = 0;
     if (mLodSettingsSet) {
         _SyncLodData();
     }

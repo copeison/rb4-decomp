@@ -75,7 +75,7 @@ public:
     // with a property registry of its own at offset 0x6A0, to which the
     // framerate overlay adds its "show_cpu_average" and "show_gpu_average"
     // options. Name not in the reference map.
-    virtual void _Unknown7(PropRegistry& registry) {
+    virtual void _RegisterOptions(PropRegistry& registry) {
         static_cast<void>(registry);
     }
 

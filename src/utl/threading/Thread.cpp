@@ -33,7 +33,7 @@ void NamedThread::Init(const char* name) {
     mThread.mAffinityMask = 0;
     std::snprintf(mThread.mName, sizeof(mThread.mName), "%s", name);
     mThread.mEntry = {};
-    mThread.mUnknown88 = 0;
+    mThread.mReserved = 0;
     mEntry = {};
 }
 

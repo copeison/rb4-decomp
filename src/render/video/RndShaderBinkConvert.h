@@ -21,7 +21,9 @@ public:
         float mYScale[4];
         float mCRScale[4];
         float mCBScale[4];
-        float mUnknown80[4];  // Not read.
+        // Named after the plane order; the shader has no alpha-plane scale
+        // constant, and nothing writes or reads this one.
+        float mAScale[4];
         float mFullScale[4];
         float mFullOffset[4];
     };

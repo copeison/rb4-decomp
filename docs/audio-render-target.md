@@ -86,7 +86,41 @@ Slots 7 to 9 and 16 of the render target share their code with
 copies. The base `Update` at `0x11287B0` returns nothing; the source returns
 zero. The unused mixer stubs at `0x1127B60` and `0x1127B70` are not modelled.
 
-Still undefined: `FusionVoicePool`, `AudioBufferConfig` and
-`AudioBuffer<float>::Configure`, `WaveFile`, `TransEntityResource`,
-`BinStream::Write`, the emitter class symbol at `0x19C7770` and the entity
-thread state at `0x19B03C8`.
+Still undefined: `TransEntityResource`, `BinStream::Write`, the emitter
+class symbol at `0x19C7770` and the entity thread state at `0x19B03C8`.
+
+## Voice pool
+
+`FusionVoicePool` (`src/audio/core/fusion`, `0xA0400` to `0xA1AA0`) holds
+the Fusion sampler voices of a render target: an array of 784-byte
+`FusionVoice`s allocated under "FusionVoice", a vector of `SmbPitchShift`
+processors (`0x64070` bytes each, 1024-frame FFT, 4x oversampling) for
+keyzones that shift pitch, and the list of client samplers. While creation
+is deferred, the voices exist only while a sampler is registered. The hard
+limit is clamped to 1-256 and the soft limit to the hard one.
+
+`GetFreeVoice` (`0xA15C0`) releases voices already playing the request's
+id and takes a free voice or steals one: never one whose keyzone priority is
+zero or below the new keyzone's, otherwise the lowest priority, a released
+voice before a held one, the largest age and then the quieter envelope.
+`FastReleaseExcessVoices` (`0xA0DE0`) fast-releases voices over a sampler's
+limit, or over the soft limit, in the same order. The flag set at `0xA1250`
+stops each voice creating its own Mogg and XMA decoders.
+
+## Buffers and wave files
+
+`src/audio/core/buffers/AudioBuffer.cpp` is the map's `audio/AudioBuffer.o`
+(`0xD3D10` to `0xD40E0`): `AudioBufferConfig`, the ASCII level meter, the
+stripped `Print` traces and the 16-bit conversions. `Configure` is
+instantiated for float (`0x13720`) and 16-bit samples (`0x135B0`); owned data
+has a guard sample on each side, `0xFEDCF00D` converted to the sample type.
+
+`src/audio/core/formats` holds `WaveFile.cpp` (`0xD6240` to `0xD7920`:
+`WaveFile`, `WaveFileMarker`, `WaveFileData`, `WaveHeader` and
+`WaveFileWriter`), `Chunks.cpp` (`0xE2110` to `0xE29E0`: `ChunkHeader`,
+`IListChunk` and `IDataChunk`) and `ChunkIDs.cpp` (the tags set at
+`0xE2040`). A `WaveFile` read from a stream keeps its `IListChunk` to copy
+the samples out later; its markers pair the "cue " points, sorted by frame,
+with the "labl" texts of the "adtl" list. `PatchDataSize` writes a RIFF
+size that leaves out the marker chunks, and `WaveFileWriter`'s byte rate
+assumes one channel.

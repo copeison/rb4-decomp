@@ -16,6 +16,7 @@ public:
     // Each operator formats its value into a 1024-character buffer and
     // prints it.
     TextStream& operator<<(char c);              // 0x258560
+    TextStream& operator<<(int value);           // 0x258640
     TextStream& operator<<(const char* str);     // 0x2588E0
     TextStream& operator<<(unsigned long value);  // 0x2589D0
 };

@@ -39,15 +39,15 @@ RndContext::RndContext(bool disableComputeQueues)
       mInputSlotLimits{},
       mOutputSlotLimits{},
       mShadingMode(kShadingModeStandard),
-      mUnknown18972(-1),
-      mUnknown18976(-1),
+      mDebugMiscMode(-1),
+      mDebugMiscParam(-1),
       mActivePipe(0),
       mActiveComputeSlot(0),
       mCBuffers{},
-      mUnknown22304(false) {
+      mReservedFlag(false) {
     // The constructor also copies two 16-byte constants into +0x49E0..+0x4A18;
     // their values have not been recovered.
-    std::memset(mUnknown19096, 0xFF, sizeof(mUnknown19096));
+    std::memset(mSourceTextureSlots, 0xFF, sizeof(mSourceTextureSlots));
     if (mParticleSorts.capacity() < kReservedRecords) {
         mParticleSorts.reserve(kReservedRecords);
     }
@@ -265,10 +265,10 @@ void RndContext::BeginFrame(unsigned int flags) {
     RndCameraContext::SetDefaultShaderConstants(kTargetMode2D, *mCBuffers[1]);
     mBlendMode = RndBlendMode::kSource;
     mShadingMode = kShadingModeStandard;
-    mUnknown18972 = -1;
-    mUnknown18976 = -1;
+    mDebugMiscMode = -1;
+    mDebugMiscParam = -1;
     mActiveShaderStages = 0;
-    std::memset(mUnknown19096, 0xFF, sizeof(mUnknown19096));
+    std::memset(mSourceTextureSlots, 0xFF, sizeof(mSourceTextureSlots));
     for (auto& limit : mInputSlotLimits) {
         limit = 0;
     }

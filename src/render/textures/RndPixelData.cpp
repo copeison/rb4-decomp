@@ -179,8 +179,10 @@ RndPixelData::RndPixelData()
       mBufferSize(0),
       mMip(nullptr),
       mFlags(0),
-      mUnknown52{},
-      mUnknown72(nullptr) {}
+      mTileMode(0),
+      mPitch(0),
+      mUnprocessedBufferSize(0),
+      mLegacyFormat(nullptr) {}
 
 // Reconstructed from eboot.elf at 0x682960.
 RndPixelData::RndPixelData(const RndPixelData& other, bool keepPixels)
@@ -203,8 +205,8 @@ void RndPixelData::Free() {
     mMip = nullptr;
     mSize = {0, 0, 0};
     mFormat = -1;
-    operator delete(mUnknown72);
-    mUnknown72 = nullptr;
+    operator delete(mLegacyFormat);
+    mLegacyFormat = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x6829A0. Source pixels are copied under
@@ -212,7 +214,9 @@ void RndPixelData::Free() {
 // reused. Mip levels are copied recursively into pool allocations.
 void RndPixelData::CopyFrom(const RndPixelData& other, bool keepPixels) {
     mFlags = other.mFlags;
-    std::memcpy(mUnknown52, other.mUnknown52, sizeof(mUnknown52));
+    mTileMode = other.mTileMode;
+    mPitch = other.mPitch;
+    mUnprocessedBufferSize = other.mUnprocessedBufferSize;
     if (other.mBuffer != nullptr) {
         unsigned int heap = 0;
         MemPushTemp(heap, true, !keepPixels);

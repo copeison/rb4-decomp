@@ -104,7 +104,7 @@ RndDevice::RndDevice()
       mPrimitiveMeshes(nullptr),
       mAudioTextures(nullptr),
       mBuiltinCBuffers{},
-      mUnknown3792(nullptr),
+      mSourceTexture19(nullptr),
       mConsoleState() {
     gRndDevice = this;
 
@@ -133,14 +133,14 @@ RndDevice::~RndDevice() {
 
 void RndDevice::_ProcessDeferredDeletion() {}
 void RndDevice::_AcquireDeferredContextImpl(RndContext*) {}
-void RndDevice::_UnknownSlot9Impl() {}
+void RndDevice::ForceFlushResources() {}
 void RndDevice::_ReleaseDeferredContextImpl(RndContext*) {}
 void RndDevice::_ExecuteDeferredContextImpl(RndContext*) {}
 void RndDevice::_SetConsoleStateImpl(ConsoleState) {}
 int RndDevice::_GetGpuBlockingBehaviorImpl() const { return 0; }
-int RndDevice::_UnknownSlot14Impl() { return 0; }
+int RndDevice::_GetDeviceStatusImpl() { return 0; }
 RndDeviceMemoryUsage RndDevice::_GetMemoryUsageImpl() { return {}; }
-void RndDevice::_UnknownSlot16Impl() {}
+void RndDevice::_ResetDeviceStateImpl() {}
 
 // Reconstructed from eboot.elf at 0x3DDAE0.
 void RndDevice::Init(const RndInitParams& params) {

@@ -64,11 +64,16 @@ public:
     BinStream& operator>>(Symbol& symbol);
 
     // Data members are public so the layout asserts below can reach them.
-    // +8 and +12 are set to -1 and +16 to false at construction; no
-    // recovered code reads them. Names not in the reference map.
-    int mUnknown8;
-    int mUnknown12;
-    bool mUnknown16;
+    // Names not in the reference map.
+    // Set to -1 at construction and never read by the recovered code. The
+    // map's skip support (WriteSkipMark, ReadSkip, DoSkip) suggests the
+    // position and size of a pending skip block; the evidence is weak.
+    int mSkipStart;
+    int mSkipSize;
+    // Set when a read fails, such as a string longer than 0xFFFF bytes
+    // (0x21A4C0) or a memory stream without a buffer (0x21B560); the memory
+    // stream's Fail (0x21B9B0) returns it.
+    bool mStreamFailed;
     // Nonzero when values must be byte-swapped. The map names the constructor
     // parameter littleEndian.
     int mLittleEndian;

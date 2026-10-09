@@ -23,18 +23,18 @@ void RndGpuTimersOverlay::_HandleShowingChanged(bool showing) {
 }
 
 // Reconstructed from eboot.elf at 0x6E2FF0.
-bool RndGpuTimersOverlay::_Unknown11() {
+bool RndGpuTimersOverlay::_ShowsThreads() {
     return false;
 }
 
 // Reconstructed from eboot.elf at 0x6E3000. The statistics are listed under
 // the main thread.
-void RndGpuTimersOverlay::_Unknown12(eastl::vector<ScePthread>& threads) {
+void RndGpuTimersOverlay::_GatherThreads(eastl::vector<ScePthread>& threads) {
     threads.push_back(Thread::s_MainThreadID);
 }
 
 // Reconstructed from eboot.elf at 0x6E30C0.
-void RndGpuTimersOverlay::_Unknown13(
+void RndGpuTimersOverlay::_GatherThreadTimers(
     ScePthread thread,
     eastl::vector<PerfTimerBase*>& timers,
     unsigned int displayMode,
@@ -44,7 +44,7 @@ void RndGpuTimersOverlay::_Unknown13(
 }
 
 // Reconstructed from eboot.elf at 0x6E30E0.
-void RndGpuTimersOverlay::_Unknown14(TextStream& stream) {
+void RndGpuTimersOverlay::_PrintExtraHeaders(TextStream& stream) {
     TimerItemView::_PrintHeader(this, stream, "num_verts", 12, true);
     TimerItemView::_PrintHeader(this, stream, "num_prims", 12, true);
     TimerItemView::_PrintHeader(this, stream, "vs_invocs", 14, true);
@@ -54,7 +54,7 @@ void RndGpuTimersOverlay::_Unknown14(TextStream& stream) {
 
 // Reconstructed from eboot.elf at 0x6E3180. Each column lists the frames
 // in turn; the fourth counter is not shown.
-void RndGpuTimersOverlay::_Unknown15(
+void RndGpuTimersOverlay::_PrintExtraStats(
     TextStream& stream,
     const PerfTimerBase& timer,
     unsigned long numFrames) {

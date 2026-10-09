@@ -58,8 +58,10 @@ public:
     Symbol mName;
     String mFullName;
     PerfTimerBase* mParent;
-    // Shows the timer without its parents, after a "~ ".
-    bool mUnknown40;
+    // Set at the end of a frame (0x24A820) when the timer ran under more
+    // than one parent; the timer then shows without its parents, after a
+    // "~ ", and the timers overlay lists it under "<ambiguous parents>".
+    bool mAmbiguousParent;
     bool mHasChildren;
     bool mExpanded;
     // Shows the timer without its parents, after a "!~ ".
@@ -72,7 +74,7 @@ public:
 static_assert(offsetof(PerfTimerBase, mName) == 8);
 static_assert(offsetof(PerfTimerBase, mFullName) == 16);
 static_assert(offsetof(PerfTimerBase, mParent) == 32);
-static_assert(offsetof(PerfTimerBase, mUnknown40) == 40);
+static_assert(offsetof(PerfTimerBase, mAmbiguousParent) == 40);
 static_assert(offsetof(PerfTimerBase, mHasChildren) == 41);
 static_assert(offsetof(PerfTimerBase, mExpanded) == 42);
 static_assert(offsetof(PerfTimerBase, mIsolated) == 43);
@@ -81,28 +83,54 @@ static_assert(offsetof(PerfTimerBase, mBudgetCategory) == 48);
 static_assert(sizeof(PerfTimerBase) == 56);
 
 // A CPU timer (constructor 0x24A730, vtable 0x18EF3D8). The map's
-// os/PerfTimer.o has a PerfTimer that keeps the same per-frame history.
-// Only the history is declared; its accessors (slots 2-6 at 0x24B190,
-// 0x24B1A0, 0x24B1B0, 0x24AD90 and 0x24ADA0) read these fields, and the
-// number of history frames is not recovered.
+// os/PerfTimer.o has a PerfTimer that keeps the same per-frame history. Its
+// accessors (slots 2-6 at 0x24B190, 0x24B1A0, 0x24B1B0, 0x24AD90 and
+// 0x24ADA0) read the frames; the start at 0x368B20 and the end of frame at
+// 0x24A820 maintain them. The frame in use is the global at 0x19E7E60.
 class PerfTimer : public PerfTimerBase {
 public:
-    // One frame of history. Name not in the reference map; the field names
+    // One frame's timing. Name not in the reference map; the field names
     // are not either.
     struct Frame {
+        // The time stamp of the outermost start.
+        unsigned long mStartCycles;
+        // The cycles accumulated this frame; cleared at the end of a frame.
+        unsigned long mCycles;
+        // How deeply the timer is started; a negative value disables it.
+        int mDepth;
+        unsigned char mPadding12[4];  // Never read or written.
         float mMs;
         float mWorstMs;
         float mAverageMs;
-        unsigned char mUnknown12[12];
+        // mFrameNumber when mWorstMs was recorded; the worst time resets
+        // after a fixed number of frames.
+        int mWorstFrame;
+        // Counts the frames.
+        int mFrameNumber;
+        // The starts this frame; copied to mCount at the end of a frame.
+        int mPendingCount;
         int mCount;
         float mAverageCount;
-        unsigned char mUnknown32[40];
+        // The timer that was running when this one started, this frame.
+        PerfTimerBase* mFrameParent;
+        // Whether mFrameParent was set this frame and last frame.
+        bool mHasParent;
+        bool mHadParent;
+        // Whether the timer started under different parents this frame and
+        // last frame.
+        bool mParentAmbiguous;
+        bool mWasParentAmbiguous;
+        unsigned char mPadding68[4];  // Never read or written.
     };
 
-    // Field names are not in the reference map. The first field reuses the
-    // base's tail padding.
-    unsigned char mUnknown52[28];
+    // Field names are not in the reference map.
     Frame mFrames[2];
+    // Cleared by the timer's "enabled" setting; a disabled timer does not
+    // start.
+    bool mEnabled;
+    // The running timers of the thread, which a start pushes the timer
+    // onto.
+    eastl::vector<PerfTimerBase*>* mRunningTimers;
 };
 
 // Replaces `timers` with the non-null timers of `source`, their full names
@@ -121,6 +149,10 @@ void GatherSortedTimers(
 extern float gTimerThresholdMs;  // 0x19B03B8
 
 static_assert(sizeof(PerfTimer::Frame) == 72);
-static_assert(offsetof(PerfTimer::Frame, mAverageMs) == 8);
-static_assert(offsetof(PerfTimer::Frame, mCount) == 24);
-static_assert(offsetof(PerfTimer, mFrames) == 80);
+static_assert(offsetof(PerfTimer::Frame, mMs) == 24);
+static_assert(offsetof(PerfTimer::Frame, mAverageMs) == 32);
+static_assert(offsetof(PerfTimer::Frame, mCount) == 48);
+static_assert(offsetof(PerfTimer::Frame, mFrameParent) == 56);
+static_assert(offsetof(PerfTimer, mFrames) == 56);
+static_assert(offsetof(PerfTimer, mEnabled) == 200);
+static_assert(offsetof(PerfTimer, mRunningTimers) == 208);

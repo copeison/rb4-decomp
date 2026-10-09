@@ -103,10 +103,10 @@ public:
         unsigned short second) const;  // 0x65D690
 
     // Field names are not in the reference map. For a font with bit 0 of
-    // mUnknown8 set, the typesetter adds the glyph spacing after each glyph
+    // mFlags set, the typesetter adds the glyph spacing after each glyph
     // instead of between glyphs, and sizes spaces from the space size.
     Symbol mName;
-    int mUnknown8;
+    int mFlags;  // Name not in the reference map.
     eastl::vector<Size> mSizes;
 };
 
@@ -121,6 +121,6 @@ static_assert(offsetof(RndFont::Size, mNumPages) == 40);
 static_assert(offsetof(RndFont::Size, mPages) == 48);
 static_assert(offsetof(RndFont::Size, mKerningTable) == 56);
 static_assert(sizeof(RndFont::Size) == 88);
-static_assert(offsetof(RndFont, mUnknown8) == 8);
+static_assert(offsetof(RndFont, mFlags) == 8);
 static_assert(offsetof(RndFont, mSizes) == 16);
 static_assert(sizeof(RndFont) == 48);

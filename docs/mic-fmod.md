@@ -1,9 +1,36 @@
 # FMOD microphones
 
 The microphone classes belong to the `mic` module and live in `src/mic`.
-The engine's mic list (`MicHwManager`, at `0x19C8FC0`) and the `Mic` base
-class are not reconstructed; `src/mic/core` declares only what the FMOD
-classes use.
+This build's mic module differs from the map's: the mic list is a
+platform-neutral `MicHwManager` that owns the mics, and a single reader
+thread polls every mic.
+
+## MicHwManager
+
+`gMicHwManager` (`0x19C8FC0`, vtable `0x18E5070`, 128 bytes) is built by the
+static initializer at `0xA28D0`. It holds the mics, change listeners and
+platforms in three EASTL vectors under one lock (`0xA1C20` to `0xA2800`).
+`Poll` notifies the listeners after a change, polls the platforms and runs
+each mic's `Poll`. `Terminate` stops the reader thread, shuts the platforms
+down and deletes the mics. `CaptureMic` and `ReleaseMic` claim a mic through
+its in-use flag; their index check accepts the mic count itself.
+
+`MicReaderThread` (`0xA29E0` to `0xA2D00`) is a single "mic_reader" thread
+started by the first platform. Every 11 ms it runs each mic's
+`MicThreadPoll`, and every 100 passes the platforms' connection checks.
+
+`MicHwPlatform` is the base of `MicHwManager_FMOD`; its non-virtual wrappers
+at `0xA2D70` to `0xA2DE0` initialize, poll, shut down and check a platform.
+The name is not in the map.
+
+## Mic
+
+`Mic` (vtable `0x18E63E0`, 16,600 bytes, `0xE1530` to `0xE1B00`) keeps a
+recent ring of 8,192 samples for analysis and a continuous ring of 16,384
+for readers (`RingBuffer`, inline in this build). `Poll` (`0xE1810`) runs the
+platform's `_Poll`, which stores new samples, and, while analysis is on,
+runs the `PitchDetector` over the latest 8,192 samples and smooths its
+energy into a level that rises faster than it falls.
 
 ## MicHwManager_FMOD
 
@@ -19,8 +46,9 @@ failure unbinds the routes bound so far and sets a retry flag that `_Poll` at
 `0x2758A0` services. `SetBusVolume` multiplies the requested volume by the
 authored one; `SetBusMute` and `GetBusChannelGroup` complete the controls.
 
-`_SetupMicArray` at `0x275830` empties the mic list and adds one `Mic_FMOD`
-per slot.
+`_SetupMicArray` at `0x275830` starts the mic reader thread and adds one
+`Mic_FMOD` per slot. Earlier reconstructions read the first call as
+emptying the mic list.
 
 `_CheckConnectsAndDisconnects` at `0x275950` first asks every bound FMOD mic
 whether its driver is still connected. It then enumerates the connected
@@ -47,7 +75,16 @@ at 48 kHz.
 | 12 | `Stop` | `0x27BE70` |
 | 13 | Apply volume | `0x27BF40` |
 | 14 | Apply mute | `0x27BF60` |
-| 15 | `StopPlayback` | `0x27BF80` |
+| 15 | `_Poll` | `0x27BF80` |
+
+`Start` (`0x27BC50`) records into a looping half-second stereo user sound.
+`StartPlayback` (`0x27BB20`) also plays the mic through a Studio bus or a
+new event instance. `_Poll` copies the left channel of newly recorded frames
+into the rings. `MicThreadPoll` starts playback of the record buffer once
+the target latency is recorded, then measures how far playback trails
+recording, smooths it (0.97/0.03) and changes the playback frequency by 1%
+to keep it near the target; past the maximum latency it speeds up in
+proportion to the excess. A failed FMOD call detaches the mic.
 
 `AttachToHardware` at `0x27B780` binds a driver only while FMOD still reports
 the expected name, and takes its sample rate. `CheckDeviceStillConnected` at

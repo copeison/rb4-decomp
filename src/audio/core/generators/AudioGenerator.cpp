@@ -83,15 +83,15 @@ void* AudioGenerator::GetPluginData(const char*) {
 }
 
 // Reconstructed from eboot.elf at 0xE5D0.
-void AudioGenerator::Unknown25() {}
+void AudioGenerator::SetPlayScale(float) {}
 
 // Reconstructed from eboot.elf at 0xE5E0.
-float AudioGenerator::Unknown26() {
+float AudioGenerator::GetPlayScale() {
     return 1.0F;
 }
 
 // Reconstructed from eboot.elf at 0xE5F0.
-float AudioGenerator::Unknown27() {
+float AudioGenerator::GetPrimaryStreamValue() {
     return 0.0F;
 }
 

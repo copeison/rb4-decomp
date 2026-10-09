@@ -167,9 +167,9 @@ public:
         // display and sort modes, keeping the views of known timers and
         // headers. A timer is listed when it is selected, isolated, or worse
         // than gTimerThresholdMs under expanded parents; isolated timers and
-        // timers with mUnknown40 set come after a header. `keepSelection`
-        // tells whether `selected` is still listed. The map's signature is
-        // _GatherTimers().
+        // timers with mAmbiguousParent set come after a header.
+        // `keepSelection` tells whether `selected` is still listed. The map's
+        // signature is _GatherTimers().
         void _GatherTimers(
             TimerItemView* selected,
             unsigned int displayMode,
@@ -287,25 +287,25 @@ public:
     // Slots 11 to 15 are the source interface. Their names are not in the
     // reference map.
     // Slot 11 at 0x6E2250: whether the tree shows thread lines that fold.
-    virtual bool _Unknown11() {
+    virtual bool _ShowsThreads() {
         return true;
     }
     // Slot 12: appends the source's threads to `threads`.
-    virtual void _Unknown12(eastl::vector<ScePthread>& threads) = 0;
+    virtual void _GatherThreads(eastl::vector<ScePthread>& threads) = 0;
     // Slot 13: replaces `timers` with the thread's timers in the display
     // and sort modes.
-    virtual void _Unknown13(
+    virtual void _GatherThreadTimers(
         ScePthread thread,
         eastl::vector<PerfTimerBase*>& timers,
         unsigned int displayMode,
         int sortMode) = 0;
     // Slot 14 at 0x6E2260: prints extra column headers.
-    virtual void _Unknown14(TextStream& stream) {
+    virtual void _PrintExtraHeaders(TextStream& stream) {
         static_cast<void>(stream);
     }
     // Slot 15 at 0x6E2270: prints the extra columns of the timer's first
     // `numFrames` history frames.
-    virtual void _Unknown15(
+    virtual void _PrintExtraStats(
         TextStream& stream,
         const PerfTimerBase& timer,
         unsigned long numFrames) {
@@ -317,7 +317,7 @@ public:
     // The background tints for the line being printed. Out of line in the
     // map's build; inlined in this one.
     void SetSelectedItem(bool selected) {
-        mUnknown152 = selected;
+        mIsSelectedItem = selected;
     }
     void SetOverBudget(float overBudget) {
         mOverBudget = overBudget;
@@ -339,7 +339,7 @@ public:
     // Field names are not in the reference map.
     // Tints the background blue and halves the budget tint; set while the
     // selected line prints.
-    bool mUnknown152;
+    bool mIsSelectedItem;
     // How far over budget the timers are, tinting the background towards
     // red; the map's SetOverBudget(float) sets it.
     float mOverBudget;
@@ -367,7 +367,7 @@ static_assert(offsetof(RndTimersOverlay::TimedThreadListView, mSortMode) == 52);
 static_assert(offsetof(RndTimersOverlay::TimedThreadListView, mThreadKeys) == 56);
 static_assert(sizeof(RndTimersOverlay::TimedThreadListView) == 88);
 static_assert(offsetof(RndTimersOverlay, mThreadList) == 64);
-static_assert(offsetof(RndTimersOverlay, mUnknown152) == 152);
+static_assert(offsetof(RndTimersOverlay, mIsSelectedItem) == 152);
 static_assert(offsetof(RndTimersOverlay, mOverBudget) == 156);
 static_assert(sizeof(RndTimersOverlay) == 160);
 
@@ -381,8 +381,8 @@ public:
     ~RndCpuTimersOverlay() override;
 
     void PrintHelp(TextStream& stream) override;  // slot 4: 0x6E1FF0
-    void _Unknown12(eastl::vector<ScePthread>& threads) override;  // slot 12: 0x6E2030
-    void _Unknown13(
+    void _GatherThreads(eastl::vector<ScePthread>& threads) override;  // slot 12: 0x6E2030
+    void _GatherThreadTimers(
         ScePthread thread,
         eastl::vector<PerfTimerBase*>& timers,
         unsigned int displayMode,
@@ -402,17 +402,17 @@ public:
 
     void PrintHelp(TextStream& stream) override;        // slot 4: 0x6E2FC0
     void _HandleShowingChanged(bool showing) override;  // slot 6: 0x6E2FA0
-    bool _Unknown11() override;                          // slot 11: 0x6E2FF0
-    void _Unknown12(eastl::vector<ScePthread>& threads) override;  // slot 12: 0x6E3000
-    void _Unknown13(
+    bool _ShowsThreads() override;                          // slot 11: 0x6E2FF0
+    void _GatherThreads(eastl::vector<ScePthread>& threads) override;  // slot 12: 0x6E3000
+    void _GatherThreadTimers(
         ScePthread thread,
         eastl::vector<PerfTimerBase*>& timers,
         unsigned int displayMode,
         int sortMode) override;  // slot 13: 0x6E30C0
     // The "num_verts", "num_prims", "vs_invocs", "ps_invocs" and
     // "cs_invocs" columns.
-    void _Unknown14(TextStream& stream) override;  // slot 14: 0x6E30E0
-    void _Unknown15(
+    void _PrintExtraHeaders(TextStream& stream) override;  // slot 14: 0x6E30E0
+    void _PrintExtraStats(
         TextStream& stream,
         const PerfTimerBase& timer,
         unsigned long numFrames) override;  // slot 15: 0x6E3180

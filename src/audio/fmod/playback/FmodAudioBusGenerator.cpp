@@ -61,7 +61,7 @@ FmodAudioBusGenerator::FmodAudioBusGenerator(AudioBus* source)
       mStudioBus(nullptr),
       mEventInstance(nullptr),
       mEventCallbackDone(false),
-      mUnknown440(0),
+      mResetWord(0),
       mKilling(false) {}
 
 // Reconstructed from eboot.elf at 0x266F60, which tail-calls the base
@@ -236,6 +236,67 @@ FMOD_RESULT FmodAudioBusGenerator::_EventProgrammerCallback(
     }
     generator->mEventCallbackDone = true;
     return FMOD_OK;
+}
+
+// Reconstructed from eboot.elf at 0x2675A0 (0x267780 adjusts from the
+// AudioBusCallable base). Advances the gain and mute ramps once per block
+// until the block is rendered; a finished fade marked to stop stops the
+// voice. The callback is prepared at the channel frequency and dropped once
+// it declines.
+bool FmodAudioBusGenerator::_PrepareToMakeSamples(
+    int numSamples, float, int mixCount, int block, bool lastBlock) {
+    if (mState != kStatePlaying) {
+        return false;
+    }
+    if (mBuffer.mHasSamples) {
+        return true;
+    }
+    mGainRamp.Advance();
+    mMuteRamp.Advance();
+    if (mGainRamp.mProgress == 1.0F && mGainFadeMode == kPostFadeStop) {
+        mState = kStateStopping;
+        return false;
+    }
+    if (mCallback == nullptr) {
+        return false;
+    }
+    if (!mCallback->_PrepareToMakeSamples(numSamples, mFrequency, mixCount, block, lastBlock)) {
+        mCallback = nullptr;
+    }
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x267790 (0x267BA0 adjusts from the
+// AudioBusCallable base). Renders the source into this block's part of the
+// block buffer and applies the gain and mute; a voice that is not playing
+// renders silence. The last block marks the buffer ready for _DspProcess.
+bool FmodAudioBusGenerator::_MakeSamples(int numSamples, float, int, int block, bool lastBlock) {
+    AudioBuffer<float> view;
+    view.Configure(
+        AudioBufferConfig(mBuffer.mConfig.mNumChannels, numSamples, 0.0F, false), AudioBufferBase::kCleanupNone);
+    view.SetChannelData(mBuffer, block * numSamples);
+    bool result;
+    if (mState == kStatePlaying) {
+        result = true;
+        if (!mBuffer.mHasSamples) {
+            mSource->Process(view);
+            float gain = mMuteRamp.mValue * mGainRamp.mValue;
+            if (gain != 1.0F) {
+                for (int channel = 0; channel < view.mNumChannels; ++channel) {
+                    for (int frame = 0; frame < view.mNumFrames; ++frame) {
+                        view.mChannelData[channel][frame] *= gain;
+                    }
+                }
+            }
+            if (lastBlock) {
+                mBuffer.mHasSamples = true;
+            }
+        }
+    } else {
+        view.Clear();
+        result = mState != kStateStopped && mState != kStateStopping;
+    }
+    return result;
 }
 
 // Reconstructed from eboot.elf at 0x267BB0.
@@ -525,11 +586,7 @@ int FmodAudioBusGeneratorManager::GetIndex() {
 
 // Reconstructed from eboot.elf at 0x268520.
 Symbol FmodAudioBusGeneratorManager::GetId() {
-    static Symbol sId("");
-    if (sId == Symbol("")) {
-        sId = Symbol("FmodAudioBusGeneratorManager");
-    }
-    return sId;
+    return Id();
 }
 
 // Reconstructed from eboot.elf at 0x2685C0.

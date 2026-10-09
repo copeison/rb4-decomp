@@ -71,6 +71,8 @@ public:
 
     // Slot 3 at 0x2553B0.
     void reserve(unsigned long capacity) override;
+    // Reserves the length and terminates the text there. At 0x255AB0.
+    void resize(unsigned long length);
 
 private:
     void FreeText();  // Name not in the reference map.

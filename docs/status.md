@@ -736,6 +736,21 @@
   render targets and their registry, and `StreamReaderThread` (see
   [audio-generators.md](audio-generators.md) and
   [audio-render-target.md](audio-render-target.md)).
+- [x] Finish the audio and microphone targets: `FusionVoicePool`,
+  `AudioBuffer`, `WaveFile` and the RIFF chunk readers,
+  `FmodBufferedStreamGenerator`, the bus generator's block rendering, the
+  `Mic` and `MicHwManager` bases with the mic reader thread, the remaining
+  `Mic_FMOD` members and the sound manager's generator lookups (see
+  [audio-render-target.md](audio-render-target.md),
+  [fmod-audio-stream-generator.md](fmod-audio-stream-generator.md) and
+  [mic-fmod.md](mic-fmod.md)).
+- [x] Reconstruct the audio buffers, WAV files and RIFF chunks,
+  `FusionVoicePool`, the microphone core (`Mic`, `MicHwManager`,
+  `MicReaderThread`) and `FmodBufferedStreamGenerator`.
+- [x] Replace the `Unknown` placeholder names outside the audio module with
+  names inferred from the binary (see [naming.md](naming.md)).
+- [ ] Replace the remaining audio placeholders (the `AudioEmitterCom` slots,
+  `PlayArgs` fields and the `Unknown4` callable slot).
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

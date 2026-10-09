@@ -5,7 +5,7 @@
 #include "render/fonts/RndFontPage.h"
 
 // Reconstructed from eboot.elf at 0x65D1F0.
-RndFont::RndFont() : mUnknown8(0) {}
+RndFont::RndFont() : mFlags(0) {}
 
 // Reconstructed from eboot.elf at 0x65D220.
 RndFont::~RndFont() {

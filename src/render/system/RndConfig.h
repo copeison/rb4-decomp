@@ -54,7 +54,10 @@ public:
     std::int64_t mMaxSpotLights = 32;
     std::int64_t mMaxDirectionalLights = 16;
     std::int64_t mMaxLightProbes = 128;
-    bool mUnknown96 = true;
+    // Never read in this build, and not loaded from the rnd config; the
+    // name is a guess from its place after the light-probe limit. Name not
+    // in the reference map.
+    bool mUseLightProbes = true;
     std::uint8_t mReserved97[7]{};
 
     std::int64_t mMaxPartialFramerateScenes = 0;
@@ -114,7 +117,7 @@ static_assert(offsetof(RndConfig, mMaxPointLights) == 64);
 static_assert(offsetof(RndConfig, mMaxSpotLights) == 72);
 static_assert(offsetof(RndConfig, mMaxDirectionalLights) == 80);
 static_assert(offsetof(RndConfig, mMaxLightProbes) == 88);
-static_assert(offsetof(RndConfig, mUnknown96) == 96);
+static_assert(offsetof(RndConfig, mUseLightProbes) == 96);
 static_assert(offsetof(RndConfig, mMaxPartialFramerateScenes) == 104);
 static_assert(offsetof(RndConfig, mMaxShadowContribBuffers) == 112);
 static_assert(offsetof(RndConfig, mShadowSoftenTileSize) == 120);

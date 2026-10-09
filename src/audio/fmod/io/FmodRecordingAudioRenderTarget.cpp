@@ -79,9 +79,9 @@ int FmodRecordingAudioRenderTarget::ResumeMixer() {
 
 // Reconstructed from eboot.elf at 0x276150.
 void FmodRecordingAudioRenderTarget::InitVoicePool(
-    int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag) {
+    int hardVoiceLimit, int softVoiceLimit, int numPitchShifters, bool skipVoiceDecoders) {
     mFModSystem.AudioRenderTarget::InitVoicePool(
-        hardVoiceLimit, softVoiceLimit, unknownCount, unknownFlag);
+        hardVoiceLimit, softVoiceLimit, numPitchShifters, skipVoiceDecoders);
 }
 
 // Reconstructed from eboot.elf at 0x276160.

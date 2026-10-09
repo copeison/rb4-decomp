@@ -55,7 +55,9 @@ enum class RndPrimitive : unsigned int {
 // GPU timing results for one statistic. Name not in the reference map.
 struct RndGpuStatSample {
     float mSeconds;
-    unsigned int mUnknown4;
+    // Alignment padding before mCounters; only the whole-sample zeroing
+    // touches it.
+    unsigned int mPad;
     unsigned long mCounters[6];
 };
 
@@ -268,8 +270,12 @@ public:
     };
     ClipPlane mClipPlanes[4];
     RndShadingMode mShadingMode;
-    int mUnknown18972;
-    int mUnknown18976;
+    // The debug view and its argument that the debug shading setter
+    // (0x6BD450) last selected with kShadingModeDebugMisc; both are written
+    // as floats into a constant buffer when they change, and BeginFrame
+    // resets them to -1. Names not in the reference map.
+    int mDebugMiscMode;
+    int mDebugMiscParam;
     // 0 records on the graphics context, 1 on a compute context.
     int mActivePipe;
     unsigned long mActiveComputeSlot;
@@ -278,10 +284,25 @@ public:
     // Global constant buffers created by Init; the last three are the
     // per-draw buffers of 16, 32, and 64 elements.
     RndShaderCBuffer* mCBuffers[9];
-    unsigned char mUnknown19096[3168];
-    unsigned char mUnknown22264[8];
+    // For each of the 33 material texture sources and each program type,
+    // the texture and sampler slots a shader declared that source at, or
+    // ~0. The material texture binder (0x4FE850) records them for sources 2
+    // and 3, whose textures are bound later through 0x6BD390; BeginFrame
+    // resets them. Name not in the reference map.
+    struct SourceTextureSlots {
+        unsigned long mTextureSlot;
+        unsigned long mSamplerSlot;
+    };
+    SourceTextureSlots mSourceTextureSlots[33][kNumShaderProgramTypes];
+    // The scene drawer (0x41AA10 and the passes it calls) reads the first
+    // word and passes it with its address to its draw callbacks; nothing
+    // in this build writes it. Name not in the reference map, and its
+    // meaning is uncertain.
+    unsigned char mSceneDrawId[8];
     eastl::vector<RndGpuStatScope> mGpuStatScopes;
-    bool mUnknown22304;
+    // Cleared by the constructor and otherwise never read or written.
+    // Name not in the reference map.
+    bool mReservedFlag;
 };
 
 static_assert(offsetof(RndContext, mTargetMode) == 0x10);
@@ -304,10 +325,13 @@ static_assert(offsetof(RndContext, mActivePipe) == 0x4A24);
 static_assert(offsetof(RndContext, mActiveComputeSlot) == 0x4A28);
 static_assert(offsetof(RndContext, mParticleSorts) == 18992);
 static_assert(offsetof(RndContext, mCBuffers) == 0x4A50);
-static_assert(offsetof(RndContext, mUnknown19096) == 19096);
-static_assert(offsetof(RndContext, mUnknown22264) == 0x56F8);
+static_assert(sizeof(RndContext::SourceTextureSlots) == 16);
+static_assert(offsetof(RndContext, mDebugMiscMode) == 18972);
+static_assert(offsetof(RndContext, mDebugMiscParam) == 18976);
+static_assert(offsetof(RndContext, mSourceTextureSlots) == 19096);
+static_assert(offsetof(RndContext, mSceneDrawId) == 0x56F8);
 static_assert(offsetof(RndContext, mGpuStatScopes) == 0x5700);
-static_assert(offsetof(RndContext, mUnknown22304) == 22304);
+static_assert(offsetof(RndContext, mReservedFlag) == 22304);
 static_assert(sizeof(RndContext) == 0x5728);
 
 // Times the GPU work recorded during its lifetime under a named statistic.

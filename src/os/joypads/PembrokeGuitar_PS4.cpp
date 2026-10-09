@@ -41,7 +41,7 @@ struct ExtControllerInformation {
     std::uint8_t mConnectedCount;
     std::int32_t mConnected;
     std::int32_t mDeviceClass;
-    std::uint8_t mUnknown[8];
+    std::uint8_t mReserved[8];  // The SDK's reserved bytes.
 };
 
 static_assert(sizeof(SpecialPadOpenParam) == 6);
@@ -130,7 +130,7 @@ bool PembrokeGuitarController::SetCalbertMode(JoypadCalbertMode mode) {
     ScopedCritSecPtr lock(JoypadControllerCritSec());
 
     mCalbertMode = mode;
-    mUnknown2008 = 0;
+    mCalbertState = 0;
     mCalbertValues.mNumValues = 0;
 
     const SpecialPadOpenParam& param =

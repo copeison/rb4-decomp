@@ -11,7 +11,6 @@ RndTextureBase::Description::Description()
       mWidth(0),
       mHeight(0),
       mDepth(0),
-      mUnknown108(0),
       mSourceData(nullptr),
       mSourceSize(0),
       mKeepPixelData(false),

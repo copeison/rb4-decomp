@@ -241,7 +241,7 @@ void RndShader::Init() {
         }
         break;
     case 1:
-        if (!params.mUnknown2) {
+        if (!params.mInitOptionalShaders) {
             return;
         }
         break;

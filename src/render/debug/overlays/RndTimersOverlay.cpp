@@ -14,7 +14,7 @@
 namespace {
 
 // Background colors. Names not in the reference map.
-const Hmx::Color sUnknown152Color(0.0F, 0.5F, 1.0F, 0.5F);  // 0x1AB1F10
+const Hmx::Color sSelectedItemColor(0.0F, 0.5F, 1.0F, 0.5F);  // 0x1AB1F10
 const Hmx::Color sOverBudgetColor(1.0F, 0.0F, 0.0F, 0.8F);  // 0x1AB1F20
 
 // The keyboard's arrow keys. Names not in the reference map.
@@ -38,7 +38,7 @@ bool RndTimersOverlay::gSplitFrameTiming = false;
 RndTimersOverlay::RndTimersOverlay(const char* name, unsigned int flags)
     : RndOverlayTextBase(name, flags | kFlagKeyboard | kFlagHasHelp | kFlagStripedLines),
       mThreadList(this),
-      mUnknown152(false),
+      mIsSelectedItem(false),
       mOverBudget(0.0F) {}
 
 // Reconstructed from eboot.elf at 0x6E78C0 (deleting variant at 0x6E78F0).
@@ -47,7 +47,7 @@ RndTimersOverlay::~RndTimersOverlay() {}
 // Reconstructed from eboot.elf at 0x6E7930.
 void RndTimersOverlay::GetThreads(eastl::vector<ScePthread>& threads) {
     threads.clear();
-    _Unknown12(threads);
+    _GatherThreads(threads);
 }
 
 // Reconstructed from eboot.elf at 0x6E7940. An unknown thread leaves the
@@ -77,7 +77,7 @@ void RndTimersOverlay::_Update() {
 void RndTimersOverlay::TimedThreadListView::Update() {
     const bool wasEmpty = mThreads.empty();
     mThreadKeys.clear();
-    mOwner->_Unknown12(mThreadKeys);
+    mOwner->_GatherThreads(mThreadKeys);
 
     bool added = false;
     for (ScePthread thread : mThreadKeys) {
@@ -114,9 +114,9 @@ void RndTimersOverlay::TimedThreadListView::Update() {
 
     if (mSelectedThread == nullptr && !mThreads.empty()) {
         mSelectedThread = &mThreads.front();
-        mSelectedItem = mOwner->_Unknown11() ? nullptr : mSelectedThread->FirstItem();
+        mSelectedItem = mOwner->_ShowsThreads() ? nullptr : mSelectedThread->FirstItem();
     }
-    if (mSelectedThread != nullptr && mSelectedItem == nullptr && !mOwner->_Unknown11()) {
+    if (mSelectedThread != nullptr && mSelectedItem == nullptr && !mOwner->_ShowsThreads()) {
         mSelectedItem = mSelectedThread->FirstItem();
     }
     _UpdateScroll();
@@ -155,7 +155,7 @@ void RndTimersOverlay::TimedThreadListView::SelectPrevItem() {
     if (thread != nullptr) {
         if (mSelectedItem != nullptr) {
             mSelectedItem = thread->mItems.prev(*mSelectedItem);
-            if (mSelectedItem != nullptr || mOwner->_Unknown11()) {
+            if (mSelectedItem != nullptr || mOwner->_ShowsThreads()) {
                 return;
             }
         }
@@ -168,7 +168,7 @@ void RndTimersOverlay::TimedThreadListView::SelectPrevItem() {
     }
     if (!mThreads.empty()) {
         mSelectedThread = &mThreads.front();
-        mSelectedItem = mOwner->_Unknown11() ? nullptr : mSelectedThread->FirstItem();
+        mSelectedItem = mOwner->_ShowsThreads() ? nullptr : mSelectedThread->FirstItem();
     }
 }
 
@@ -190,7 +190,7 @@ void RndTimersOverlay::TimedThreadListView::ExpandItem() {
 // Inlined into HandleKeyboardMsg. Folds the selected timer, or else moves
 // to its parent and folds that, or else folds the thread.
 void RndTimersOverlay::TimedThreadListView::CollapseItem() {
-    const bool threadsFold = mOwner->_Unknown11();
+    const bool threadsFold = mOwner->_ShowsThreads();
     ThreadTimersListView* thread = mSelectedThread;
     if (thread == nullptr) {
         return;
@@ -335,9 +335,9 @@ void RndTimersOverlay::TimedThreadListView::Draw(TextStream& stream) {
 Hmx::Color RndTimersOverlay::_GetBackgroundColor() const {
     float amount = mOverBudget;
     Hmx::Color color;
-    if (mUnknown152) {
+    if (mIsSelectedItem) {
         amount *= 0.5F;
-        color = sUnknown152Color;
+        color = sSelectedItemColor;
     } else {
         color = RndOverlayTextBase::_GetBackgroundColor();
     }
@@ -352,20 +352,20 @@ Hmx::Color RndTimersOverlay::_GetBackgroundColor() const {
 
 // Reconstructed from eboot.elf at 0x6E88E0. A timer is indented once per
 // parent up to the first isolated one, and once more when it or a parent is
-// isolated or has mUnknown40 set. The name is the full sort name while the
-// "show_timer_sort_names" script variable is set.
+// isolated or has mAmbiguousParent set. The name is the full sort name while
+// the "show_timer_sort_names" script variable is set.
 void RndTimersOverlay::TimerItemView::_UpdateText() {
     switch (mType) {
     case kTypeTimer: {
         mText.erase();
         const PerfTimerBase* timer = mTimer;
-        bool indent = timer->mUnknown40;
+        bool indent = timer->mAmbiguousParent;
         bool isolated = timer->mIsolated;
         if (!isolated) {
             for (const PerfTimerBase* parent = timer->mParent; parent != nullptr;
                  parent = parent->mParent) {
                 mText << "  ";
-                indent = indent || parent->mUnknown40;
+                indent = indent || parent->mAmbiguousParent;
                 isolated = parent->mIsolated;
                 if (isolated) {
                     break;
@@ -469,7 +469,7 @@ void RndTimersOverlay::TimerItemView::DrawHeader(
     _PrintHeader(overlay, stream, "count", 8, true);
     _PrintHeader(overlay, stream, "avg count", 10, true);
     _PrintHeader(overlay, stream, "budget", 12, false);
-    overlay->_Unknown14(stream);
+    overlay->_PrintExtraHeaders(stream);
     stream << "\n";
 }
 
@@ -532,7 +532,7 @@ void RndTimersOverlay::TimerItemView::Draw(
         } else {
             _PrintPadded(mOwner, stream, "<none>", 12);
         }
-        mOwner->_Unknown15(stream, *timer, numFrames);
+        mOwner->_PrintExtraStats(stream, *timer, numFrames);
     }
     stream << "\n";
     mOwner->SetSelectedItem(false);
@@ -592,7 +592,7 @@ void RndTimersOverlay::ThreadTimersListView::_UpdateTimers(
     unsigned int displayMode,
     int sortMode,
     bool* keepSelection) {
-    if (mOwner->_Unknown11() && !mExpanded) {
+    if (mOwner->_ShowsThreads() && !mExpanded) {
         _ClearTimers();
     } else {
         _GatherTimers(selected, displayMode, sortMode, keepSelection);
@@ -609,7 +609,7 @@ void RndTimersOverlay::ThreadTimersListView::_GatherTimers(
     bool* keepSelection) {
     *keepSelection = selected != nullptr && selected->mType != TimerItemView::kTypeTimer;
     const unsigned long numFrames = gSplitFrameTiming ? 2 : 1;
-    mOwner->_Unknown13(mThread, mTimers, displayMode, sortMode);
+    mOwner->_GatherThreadTimers(mThread, mTimers, displayMode, sortMode);
 
     ItemList oldItems;
     oldItems.splice(mItems);
@@ -658,7 +658,7 @@ void RndTimersOverlay::ThreadTimersListView::_GatherTimers(
         if (timer->mIsolated ||
             (selected != nullptr && selected->mType == TimerItemView::kTypeIsolatedHeader)) {
             header = TimerItemView::kTypeIsolatedHeader;
-        } else if (timer->mUnknown40) {
+        } else if (timer->mAmbiguousParent) {
             header = TimerItemView::kTypeAmbiguousHeader;
         }
         if (header != TimerItemView::kTypeTimer && !headerAdded[header]) {
@@ -688,7 +688,7 @@ void RndTimersOverlay::ThreadTimersListView::Draw(
     TimerItemView* selectedItem,
     LineRange& lines) {
     StackString<32> prefix;
-    if (mOwner->_Unknown11()) {
+    if (mOwner->_ShowsThreads()) {
         if (lines.mLine >= lines.mFirst) {
             StackString<64> name(Thread::ThreadIdToName(mThread));
             if (*name.c_str() == '\0') {
@@ -707,7 +707,7 @@ void RndTimersOverlay::ThreadTimersListView::Draw(
             return;
         }
     }
-    if (mOwner->_Unknown11() && !mExpanded) {
+    if (mOwner->_ShowsThreads() && !mExpanded) {
         return;
     }
 
@@ -757,7 +757,7 @@ RndTimersOverlay::TimedThreadListView::~TimedThreadListView() {
 // Inlined into _UpdateScroll. A folded thread takes its own line.
 unsigned long RndTimersOverlay::TimedThreadListView::_NumLines(
     ThreadTimersListView& view) const {
-    if (mOwner->_Unknown11() && !view.mExpanded) {
+    if (mOwner->_ShowsThreads() && !view.mExpanded) {
         return 1;
     }
     return 1 + view.mItems.size();
@@ -786,10 +786,10 @@ void RndTimersOverlay::TimedThreadListView::_UpdateScroll() {
             line += _NumLines(view);
             continue;
         }
-        const bool threadsFold = mOwner->_Unknown11();
+        const bool threadsFold = mOwner->_ShowsThreads();
         if (!threadsFold || mSelectedItem != nullptr) {
             line += threadsFold ? 1 : 0;
-            if (!mOwner->_Unknown11() || view.mExpanded) {
+            if (!mOwner->_ShowsThreads() || view.mExpanded) {
                 ++line;
                 for (auto& item : view.mItems) {
                     if (&item == mSelectedItem) {

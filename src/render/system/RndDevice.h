@@ -27,10 +27,14 @@ class RndPrimitiveMeshes;
 // Startup options copied into the device by Init. The game builds them in
 // its startup code. Field names are not in the reference map.
 struct RndInitParams {
-    bool mUnknown0;
+    // Set by the startup code; nothing in this build reads it.
+    bool mReservedOption;
     bool mInitRendering;  // Load the default resources and shaders.
-    bool mUnknown2;
-    unsigned long mUnknown8;
+    // Loads the shaders whose _GetLoadOption is 1, as mInitRendering does
+    // for option 0; no shader in this build selects it.
+    bool mInitOptionalShaders;
+    // Zeroed by the startup code; nothing in this build reads it.
+    unsigned long mReserved;
 };
 
 static_assert(sizeof(RndInitParams) == 16);
@@ -67,18 +71,26 @@ public:
     virtual void _EndFrameImpl(
         FixedVector<RndWindow*, 6>& windows,
         bool offscreen) = 0;                               // slot 7
-    // Slots 8 to 10 and 14 to 16 are not in the reference map.
+    // Slots 8, 10 and 14 to 16 are not in the reference map. Nothing in
+    // this build calls slots 9, 14 or 16 and PS4Device gives slots 9 and
+    // 16 no body, so their names are inferred. Slot 9 is taken to be the
+    // map's ForceFlushResources(): a virtual whose base body is empty, that
+    // the map emits ahead of _GetGpuBlockingBehaviorImpl, and the only
+    // empty void slot before it.
     virtual void _AcquireDeferredContextImpl(RndContext* context);  // slot 8 at 0x3DEF60
-    virtual void _UnknownSlot9Impl();                      // slot 9 at 0x3DEF70
+    virtual void ForceFlushResources();                    // slot 9 at 0x3DEF70
     virtual void _ReleaseDeferredContextImpl(RndContext* context);  // slot 10 at 0x3DEF80
     virtual void _ExecuteDeferredContextImpl(RndContext* context);  // slot 11 at 0x3DEF90
     // The map's signature is
     // _SetConsoleStateImpl(ConsoleState, ConsoleState).
     virtual void _SetConsoleStateImpl(ConsoleState state);  // slot 12 at 0x3DEFA0
     virtual int _GetGpuBlockingBehaviorImpl() const;       // slot 13 at 0x3DEFB0
-    virtual int _UnknownSlot14Impl();                      // slot 14 at 0x3DEFC0
+    // Returns 0 in the base and in PS4Device. Name not in the reference
+    // map; inferred from its place between the GPU and memory queries.
+    virtual int _GetDeviceStatusImpl();                    // slot 14 at 0x3DEFC0
     virtual RndDeviceMemoryUsage _GetMemoryUsageImpl();    // slot 15 at 0x3DEFD0
-    virtual void _UnknownSlot16Impl();                     // slot 16 at 0x3DEFF0
+    // An empty hook. Name not in the reference map; a guess.
+    virtual void _ResetDeviceStateImpl();                  // slot 16 at 0x3DEFF0
 
     // The map's signature is Init(RndInitParams*).
     void Init(const RndInitParams& params);                // 0x3DDAE0
@@ -155,7 +167,11 @@ public:
     RndShaderCBuffer* mBuiltinCBuffers[4];
     CritSec mPendingFreeCritSec;
     eastl::vector<RndMaterialRuntimeData*> mPendingFrees;
-    void* mUnknown3792;
+    // The texture that material texture source 19 binds; the binder
+    // (0x4FE850) falls back to the default error texture while it is
+    // null, and nothing in this build sets it. Name not in the reference
+    // map.
+    void* mSourceTexture19;
     ConsoleState mConsoleState;
 };
 
@@ -193,7 +209,7 @@ static_assert(offsetof(RndDevice, mGpuStats) == 3584);
 static_assert(offsetof(RndDevice, mBuiltinCBuffers) == 3712);
 static_assert(offsetof(RndDevice, mPendingFreeCritSec) == 3744);
 static_assert(offsetof(RndDevice, mPendingFrees) == 3760);
-static_assert(offsetof(RndDevice, mUnknown3792) == 3792);
+static_assert(offsetof(RndDevice, mSourceTexture19) == 3792);
 static_assert(offsetof(RndDevice, mConsoleState) == 3800);
 
 // The active device, set by the constructor and cleared by the destructor.

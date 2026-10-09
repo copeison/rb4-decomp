@@ -20,7 +20,7 @@ public:
     void PrintHelp(TextStream& stream) override;                 // slot 4: 0x6E2940
     void _HandleShowingChanged(bool showing) override;           // slot 6: 0x6E2910
     // Adds the "show_cpu_average" and "show_gpu_average" options.
-    void _Unknown7(PropRegistry& registry) override;             // slot 7: 0x6E2960
+    void _RegisterOptions(PropRegistry& registry) override;             // slot 7: 0x6E2960
     void _Print(TextStream& stream) override;                    // slot 8: 0x6E2A60
     Hmx::Color _GetBackgroundColor() const override;             // slot 10: 0x6E2CA0
 

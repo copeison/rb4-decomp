@@ -89,14 +89,22 @@ public:
     ResourcePtr<Resource> mSkinDiffusion;
     RndTonemapShader* mTonemapShader;
     RndCShaderTonemap* mTonemapCShader;
-    // Released through their virtual destructors; their types are not
-    // recovered yet.
-    void* mUnknown200[2];
+    // The members below are released through their virtual destructors;
+    // the light-probe capture (0x498A90) uses them. Their types are kept
+    // opaque. Names not in the reference map.
+    // The RndBufferCollection the probe capture renders into.
+    void* mProbeCaptureBuffers;
+    // The cube render target whose six faces the capture draws.
+    void* mProbeCaptureTexture;
     eastl::vector<RndTextureBase*> mProbeCaptureDownsampleTextures;
     eastl::vector<RndTextureBase*> mProbeCaptureHelperTextures;
-    // Released through their virtual destructors; their types are not
-    // recovered yet.
-    void* mUnknown280[3];
+    // The filtered capture: the diffuse cube, then the specular cube whose
+    // six mips are filtered from 128 down. The probe keeps copies of both.
+    void* mProbeDiffuseCaptureTexture;
+    void* mProbeSpecularCaptureTexture;
+    // The RndCShaderFilterLightProbe compute shader that filters the
+    // capture into the two cubes above.
+    void* mFilterLightProbeCShader;
 };
 
 static_assert(offsetof(RndLightGlobals, mSpotlightMesh) == 8);
@@ -111,9 +119,10 @@ static_assert(offsetof(RndLightGlobals, mInlineLightingTextures) == 152);
 static_assert(offsetof(RndLightGlobals, mInlineLightingData) == 160);
 static_assert(offsetof(RndLightGlobals, mSkinDiffusion) == 176);
 static_assert(offsetof(RndLightGlobals, mTonemapShader) == 184);
-static_assert(offsetof(RndLightGlobals, mUnknown200) == 200);
+static_assert(offsetof(RndLightGlobals, mProbeCaptureBuffers) == 200);
 static_assert(
     offsetof(RndLightGlobals, mProbeCaptureDownsampleTextures) == 216);
 static_assert(offsetof(RndLightGlobals, mProbeCaptureHelperTextures) == 248);
-static_assert(offsetof(RndLightGlobals, mUnknown280) == 280);
+static_assert(offsetof(RndLightGlobals, mProbeDiffuseCaptureTexture) == 280);
+static_assert(offsetof(RndLightGlobals, mFilterLightProbeCShader) == 296);
 static_assert(sizeof(RndLightGlobals) == 304);

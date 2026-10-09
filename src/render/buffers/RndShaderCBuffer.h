@@ -50,7 +50,10 @@ public:
     unsigned int mFlags;
     unsigned int mIndex;
     unsigned int mStageMask;
-    unsigned int mUnknown28;
+    // Alignment padding before mConfigNumElements; the constructor
+    // (0x639FF0) and the PS4 buffer never read or write it. Name not in the
+    // reference map.
+    unsigned int mPad;
     unsigned long mConfigNumElements;
     unsigned long mNumElements;
     void* mData;

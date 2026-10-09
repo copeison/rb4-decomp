@@ -9,7 +9,7 @@
 // not in the reference map.
 class Condition {
 public:
-    Condition() : mUnknown0(nullptr), mMutex(nullptr) {}
+    Condition() : mReserved(nullptr), mMutex(nullptr) {}
     ~Condition() {
         Destroy();
     }
@@ -35,7 +35,10 @@ public:
         scePthreadCondSignal(&mCond);
     }
 
-    void* mUnknown0;
+    // Cleared by the constructor (for example at 0x251273 for the poll
+    // manager's conditions); nothing reads it. Name not in the reference
+    // map.
+    void* mReserved;
     ScePthreadMutex* mMutex;
     ScePthreadCond mCond;
 };

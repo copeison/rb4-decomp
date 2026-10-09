@@ -77,7 +77,7 @@ public:
     FMOD::Studio::EventInstance* mEventInstance;
     bool mEventCallbackDone;
     float mFrequency;
-    std::atomic<int> mUnknown440;
+    std::atomic<int> mResetWord;  // Zeroed by the constructor and pool setup; never read.
     bool mKilling;
 };
 
@@ -88,13 +88,24 @@ static_assert(offsetof(FmodAudioBusGenerator, mStudioBus) == 416);
 static_assert(offsetof(FmodAudioBusGenerator, mEventInstance) == 424);
 static_assert(offsetof(FmodAudioBusGenerator, mEventCallbackDone) == 432);
 static_assert(offsetof(FmodAudioBusGenerator, mFrequency) == 436);
-static_assert(offsetof(FmodAudioBusGenerator, mUnknown440) == 440);
+static_assert(offsetof(FmodAudioBusGenerator, mResetWord) == 440);
 static_assert(offsetof(FmodAudioBusGenerator, mKilling) == 444);
 static_assert(sizeof(FmodAudioBusGenerator) == 448);
 
 // Pool of FmodAudioBusGenerator voices. The vtable is at 0x18F0370.
 class FmodAudioBusGeneratorManager : public AudioGeneratorManager {
 public:
+    // The manager's id, interned on first use. Inlined into GetId at
+    // 0x268520 and FmodBufferedStreamGenerator::_AcquireBusGenerator at
+    // 0x26B490, which share its static. Name not in the reference map.
+    static Symbol Id() {
+        static Symbol sId("");
+        if (sId == Symbol("")) {
+            sId = Symbol("FmodAudioBusGeneratorManager");
+        }
+        return sId;
+    }
+
     AudioGenerator* Play(const PlayArgs& args) override;  // slot 0: 0x268500
     void Init() override;                  // slot 3: 0x268480
     int GetIndex() override;               // slot 6: 0x268510

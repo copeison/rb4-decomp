@@ -21,16 +21,22 @@ public:
     void _ProcessScePadData(ScePadData* data, int count);  // 0x8D2EA0
 
     JoypadCalbertMode mCalbertMode;  // Name not in the reference map.
-    // Cleared by SetCalbertMode. Name not in the reference map.
-    int mUnknown2008;
-    unsigned char mUnknown200C[4];   // Name not in the reference map.
+    // The game thread's copy of mPendingCalbertState, taken by the
+    // slot-17 virtual at 0x8D31D0 (the map's _PostGameThreadRead). Cleared
+    // by SetCalbertMode and by Reset (0x8D2A10). Name not in the reference
+    // map; its meaning is not recovered beyond that.
+    int mCalbertState;
+    // The pad thread's side of mCalbertState; only Reset writes it in the
+    // recovered code. Name not in the reference map.
+    int mPendingCalbertState;
     CalbertValues mCalbertValues;    // Name not in the reference map.
     // Detected guitar model. Name not in the reference map.
     JoypadType mType;
 };
 
 static_assert(offsetof(PembrokeGuitarController, mCalbertMode) == 0x2004);
-static_assert(offsetof(PembrokeGuitarController, mUnknown2008) == 0x2008);
+static_assert(offsetof(PembrokeGuitarController, mCalbertState) == 0x2008);
+static_assert(offsetof(PembrokeGuitarController, mPendingCalbertState) == 0x200C);
 static_assert(offsetof(PembrokeGuitarController, mCalbertValues) == 0x2010);
 static_assert(offsetof(PembrokeGuitarController, mType) == 0x2114);
 static_assert(sizeof(PembrokeGuitarController) == 0x2118);

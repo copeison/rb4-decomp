@@ -10,7 +10,9 @@ public:
     static RndOverlayOptionsCom* sInstance;
 
     // Field names are not in the reference map.
-    unsigned char mUnknown0[23];
+    // The unreconstructed Component base: its vtable, owner and flags,
+    // ending with Component::mEnabled at 22.
+    unsigned char mComponentBase[23];
     // Set when an overlay registers or unregisters; _Init (0x5F9AD0)
     // clears it as it rebuilds the overlay options.
     bool mOverlaysChanged;

@@ -48,7 +48,9 @@ public:
         bool HandleKeyboardMsg(const KeyboardKeyMsg& msg);  // 0x11AF1C0
 
         // The editor's members. Field names are not in the reference map.
-        unsigned char mUnknown8[560];
+        // The state of the unreconstructed line editor base (0x11AECB0):
+        // its history and tab-completion buffers.
+        unsigned char mEditorState[560];
         // The kind of output being printed; ConsoleDebugReflection tags
         // each new line with it.
         int mOutputType;

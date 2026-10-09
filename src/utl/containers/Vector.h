@@ -93,7 +93,8 @@ public:
         return mpBegin[index];
     }
 
-    // Relocates the elements by copy-construction into new storage.
+    // Relocates the elements by move-construction into new storage, as
+    // EASTL's uninitialized_move does.
     void reserve(unsigned long count) {
         if (count <= capacity()) {
             return;
@@ -102,7 +103,7 @@ public:
             static_cast<T*>(mAllocator.allocate(count * sizeof(T)));
         auto* output = storage;
         for (auto* input = mpBegin; input != mpEnd; ++input, ++output) {
-            new (output) T(*input);
+            new (output) T(std::move(*input));
         }
         DestroyElements();
         Free();

@@ -24,7 +24,9 @@ public:
     // Field names are not in the reference map.
     sce::Gnm::Buffer mVertexBuffers[RndVertexInterpreter::kNumStreams];
     unsigned int mBufferMask;
-    unsigned int mUnknown132;
+    // Alignment padding before mData; never read or written. Name not in
+    // the reference map.
+    unsigned int mPad;
     unsigned char* mData;
     unsigned long mStride;
     unsigned long mCapacity;
