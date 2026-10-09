@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `PS4Context` resource signals, waits and label ring |
+| (this) | `RndCShaderClearBuffer::Select` and `Dispatch` |
+| `591894c` | `PS4Context` resource signals, waits and label ring |
 | `da75c56` | `PS4Context` sampler, shader-deactivation, deselect-all and counter-copy on the Gnm SDK |
 | `cc007e5` | `PS4RenderStateUtl` builders and the `PS4Context` blend, depth-stencil, raster and write-mask setters |
 | `2ccadc2` | `PS4Context` GPU statistics with an `eastl::map` model |
