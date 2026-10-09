@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/core/shaders/render_shader.h"
+
 namespace rb4 {
 
 struct RenderComputeBufferDescriptor {
@@ -14,6 +16,8 @@ struct RenderComputeBufferDescriptor {
     std::uint32_t flags;
     const char* name;
 };
+
+struct RenderContext;
 
 struct RenderComputeBuffer {
     void* implementation;
@@ -48,5 +52,12 @@ void render_compute_buffer_initialize_backend(RenderComputeBuffer& buffer);
 void render_delete_compute_buffer_storage(RenderComputeBuffer& buffer);
 std::uint32_t render_compute_buffer_type(
     const RenderComputeBuffer& buffer);
+
+void render_compute_buffer_bind(
+    const RenderComputeBuffer& buffer,
+    RenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags);
 
 }  // namespace rb4

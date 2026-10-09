@@ -3,7 +3,7 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct test shader draws` milestone, which added
+`decomp: reconstruct dof sprite draw` milestone, which added
 more pass draw functions on top of compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Test-pattern and render-test-simple draws |
+| (this) | DOF sprite draw and per-stage binding |
+| `45a942c` | Test-pattern and render-test-simple draws |
 | `9c93567` | Single-texture linearize-depth, refine-mask, sphere-map draws |
 | `2537e18` | Downsample draw |
 | `d0cdc60` | Output-conversion draw and sRGB conversion |
@@ -426,9 +427,11 @@ it. Each one belongs in its pass's domain folder:
 
 - blur at `0x634BB0`, a 3.8 KB function with an auto-vectorized Gaussian
   weight loop that needs raw-assembly reading;
-- 37 further callers of `render_primary_shader_bind`. List them by
+- 36 further callers of `render_primary_shader_bind`. List them by
   cross-referencing `0x638920` in IDA; several still lack IDA function
-  definitions (`0x5F8E78`, `0x6F345E`, `0x6F3ED8`).
+  definitions (`0x5F8DF0`, a single-texture draw for a shader outside the built-in set,
+  and `0x6F3E80`, the render-test compute dispatch, are now defined but not
+  reconstructed).
 
 Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared
 helpers in `render/resources/shaders/shader_draw_state.h` cover texture

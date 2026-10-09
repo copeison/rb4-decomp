@@ -447,6 +447,8 @@
 - [x] Reconstruct the single-texture linearize-depth, refine-scene-mask,
   and display-sphere-map draw functions.
 - [x] Reconstruct the test-pattern and render-test-simple draw functions.
+- [x] Reconstruct the DOF sprite draw and generalize draw-time binding to
+  per-stage context slot limits and compute-buffer stage binds.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

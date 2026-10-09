@@ -12,7 +12,14 @@ struct RenderComputeBufferDispatch {
     void (*destruct)(RenderComputeBuffer& buffer);
     void (*release_dynamic)(RenderComputeBuffer& buffer);
     std::uint32_t (*type)(const RenderComputeBuffer& buffer);
-    void (*reserved_methods[7])();
+    // Slots 3-8 bind the buffer for the vertex, hull, domain, geometry,
+    // pixel, and compute stages.
+    void (*bind_stage[6])(
+        const RenderComputeBuffer& buffer,
+        RenderContext& context,
+        std::uint32_t slot,
+        std::uint32_t flags);
+    void (*reserved_72)();
     void (*initialize_backend)(RenderComputeBuffer& buffer);
 };
 
@@ -24,6 +31,7 @@ RenderComputeBufferDispatch kBaseComputeBufferDispatch{
     render_compute_buffer_delete,
     render_compute_buffer_type,
     {},
+    nullptr,
     nullptr,
 };
 
@@ -96,6 +104,16 @@ void render_compute_buffer_initialize_backend(RenderComputeBuffer& buffer) {
 // Reconstructed from eboot.elf at 0x636DB0.
 std::uint32_t render_compute_buffer_type(const RenderComputeBuffer&) {
     return UINT32_MAX;
+}
+
+void render_compute_buffer_bind(
+    const RenderComputeBuffer& buffer,
+    RenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags) {
+    dispatch(buffer).bind_stage[static_cast<std::size_t>(stage)](
+        buffer, context, slot, flags);
 }
 
 }  // namespace rb4

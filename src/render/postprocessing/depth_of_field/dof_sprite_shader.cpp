@@ -7,6 +7,7 @@
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -107,6 +108,23 @@ void render_dof_sprite_shader_construct(void* shader) {
     auto* fields = shader_fields(shader);
     fields[0] = -1;
     fields[1] = -1;
+}
+
+// Reconstructed from eboot.elf at 0x6F3390. Binds the bokeh texture to the
+// pixel stage and the sprite buffer to the vertex stage, which expands each
+// sprite through the geometry program.
+void render_dof_sprite_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& bokeh,
+    RenderComputeBuffer& sprites) {
+    constexpr std::uint32_t kVertexStage = 0;
+    constexpr std::uint32_t kPixelStage = 4;
+    auto* fields = shader_fields(shader);
+    render_shader_bind_texture(context, bokeh, kPixelStage, fields[0], 0);
+    render_shader_bind_buffer(context, sprites, kVertexStage, fields[1], 0);
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    render_primary_shader_bind(primary_shader(shader), context, keys);
 }
 
 }  // namespace rb4

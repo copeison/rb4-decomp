@@ -4,6 +4,7 @@
 
 namespace rb4 {
 
+struct RenderComputeBuffer;
 struct RenderContext;
 struct RenderTexture;
 
@@ -59,5 +60,10 @@ void render_display_sphere_map_shader_draw(
     void* shader,
     RenderContext& context,
     RenderTexture& texture);
+void render_dof_sprite_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& bokeh,
+    RenderComputeBuffer& sprites);
 
 }  // namespace rb4

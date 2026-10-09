@@ -113,7 +113,8 @@ namespace {
 constexpr std::size_t kSliceModeOffset = 0x10;
 constexpr std::size_t kActiveShaderStagesOffset = 0x4960;
 constexpr std::size_t kShadingModeOffset = 0x4A18;
-constexpr std::size_t kTextureSlotLimitOffset = 0x4988;
+constexpr std::size_t kInputSlotLimitOffset = 0x4968;
+constexpr std::size_t kOutputSlotLimitOffset = 0x4998;
 constexpr std::size_t kConstantBufferPoolOffset = 0x4A80;
 
 template <typename Value>
@@ -136,8 +137,18 @@ std::int32_t render_context_shading_mode(const RenderContext& context) {
     return context_field<std::int32_t>(context, kShadingModeOffset);
 }
 
-std::uint64_t& render_context_texture_slot_limit(RenderContext& context) {
-    return context_field<std::uint64_t>(context, kTextureSlotLimitOffset);
+std::uint64_t& render_context_input_slot_limit(
+    RenderContext& context,
+    std::uint32_t stage) {
+    return context_field<std::uint64_t>(
+        context, kInputSlotLimitOffset + stage * sizeof(std::uint64_t));
+}
+
+std::uint64_t& render_context_output_slot_limit(
+    RenderContext& context,
+    std::uint32_t stage) {
+    return context_field<std::uint64_t>(
+        context, kOutputSlotLimitOffset + stage * sizeof(std::uint64_t));
 }
 
 RenderConstantBuffer* render_context_constant_buffer(

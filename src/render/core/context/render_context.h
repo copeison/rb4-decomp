@@ -98,8 +98,14 @@ std::int32_t render_context_slice_mode(const RenderContext& context);
 std::uint8_t& render_context_active_shader_stages(RenderContext& context);
 // +0x4A18: active debug shading mode.
 std::int32_t render_context_shading_mode(const RenderContext& context);
-// +0x4988: one past the highest texture slot bound this draw.
-std::uint64_t& render_context_texture_slot_limit(RenderContext& context);
+// +0x4968 and +0x4998: per shader stage, one past the highest input and
+// output resource slot bound this draw.
+std::uint64_t& render_context_input_slot_limit(
+    RenderContext& context,
+    std::uint32_t stage);
+std::uint64_t& render_context_output_slot_limit(
+    RenderContext& context,
+    std::uint32_t stage);
 // +0x4A80: per-draw constant buffers of 16, 32, 64, ... elements.
 RenderConstantBuffer* render_context_constant_buffer(
     RenderContext& context,

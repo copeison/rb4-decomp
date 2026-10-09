@@ -1,5 +1,6 @@
 #include "render/resources/shaders/shader_draw_state.h"
 
+#include "render/core/buffers/render_compute_buffer.h"
 #include "render/core/buffers/render_constant_buffer.h"
 #include "render/core/context/render_context.h"
 #include "render/core/shaders/render_shader.h"
@@ -17,31 +18,63 @@ namespace {
 constexpr std::uint64_t kSmallestConstantBufferElements = 16;
 constexpr std::size_t kConstantElementSize = 16;
 
+std::int64_t current_frame_epoch() {
+    return static_cast<std::int64_t>(
+        render_system_core_state(*render_system_instance()).frame_epoch);
+}
+
+void raise_limit(std::uint64_t& limit, std::uint64_t slot) {
+    if (limit < slot + 1) {
+        limit = slot + 1;
+    }
+}
+
 }  // namespace
+
+void render_shader_bind_texture(
+    RenderContext& context,
+    RenderTexture& texture,
+    std::uint32_t stage,
+    std::uint64_t slot,
+    std::uint32_t flags) {
+    texture.frame_stamp = current_frame_epoch();
+    raise_limit(render_context_input_slot_limit(context, stage), slot);
+    // The original leaves the border-color argument unspecified (a stale
+    // register); backends consult it only for border address modes.
+    render_texture_bind(
+        texture,
+        context,
+        static_cast<RenderShaderStage>(stage),
+        static_cast<std::uint32_t>(slot),
+        flags,
+        nullptr);
+}
+
+void render_shader_bind_buffer(
+    RenderContext& context,
+    RenderComputeBuffer& buffer,
+    std::uint32_t stage,
+    std::uint64_t slot,
+    std::uint32_t flags) {
+    buffer.frame_stamp = current_frame_epoch();
+    raise_limit(render_context_input_slot_limit(context, stage), slot);
+    render_compute_buffer_bind(
+        buffer,
+        context,
+        static_cast<RenderShaderStage>(stage),
+        static_cast<std::uint32_t>(slot),
+        flags);
+}
 
 void render_shader_bind_pixel_texture(
     RenderContext& context,
     RenderTexture* texture,
     std::uint64_t slot,
     std::uint32_t flags) {
-    if (texture == nullptr) {
-        return;
+    constexpr std::uint32_t kPixelStage = 4;
+    if (texture != nullptr) {
+        render_shader_bind_texture(context, *texture, kPixelStage, slot, flags);
     }
-    texture->frame_stamp = static_cast<std::int64_t>(
-        render_system_core_state(*render_system_instance()).frame_epoch);
-    auto& limit = render_context_texture_slot_limit(context);
-    if (limit < slot + 1) {
-        limit = slot + 1;
-    }
-    // The original leaves the border-color argument unspecified (a stale
-    // register); backends consult it only for border address modes.
-    render_texture_bind(
-        *texture,
-        context,
-        RenderShaderStage::kPixel,
-        static_cast<std::uint32_t>(slot),
-        flags,
-        nullptr);
 }
 
 RenderConstantBuffer& render_shader_select_constant_buffer(

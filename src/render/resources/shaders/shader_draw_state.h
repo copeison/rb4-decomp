@@ -5,12 +5,28 @@
 
 namespace rb4 {
 
+struct RenderComputeBuffer;
 struct RenderConstantBuffer;
 struct RenderContext;
 struct RenderShaderParameterBinding;
 struct RenderTexture;
 
 // Helpers for the patterns that built-in pass draw functions inline.
+
+// Stamps the resource with the frame epoch, raises the context's input-slot
+// limit for the stage past the slot, and binds it.
+void render_shader_bind_texture(
+    RenderContext& context,
+    RenderTexture& texture,
+    std::uint32_t stage,
+    std::uint64_t slot,
+    std::uint32_t flags);
+void render_shader_bind_buffer(
+    RenderContext& context,
+    RenderComputeBuffer& buffer,
+    std::uint32_t stage,
+    std::uint64_t slot,
+    std::uint32_t flags);
 
 // Stamps the texture with the frame epoch, raises the context's texture-slot
 // limit past the slot, and binds the texture to the pixel stage. Null
