@@ -21,7 +21,7 @@ evidence supports them.
   block-size validation, FFT-plan creation, and source assertions.
 - `render_load_default_lighting` at `0x6BEF40` is descriptive. It is supported
   by the scene path and the lighting objects accessed after loading it.
-- `render_apply_default_lighting_mode` at `0x6BFA60` is supported by the two
+- `RndDefaults::_SyncEnabledLights` at `0x6BFA60` is supported by the two
   object-ID lists and the mode comparisons against `0` and `1`.
 
 ## Embedded third-party code

@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert the GPU statistics to RndGpuStatsMgr` milestone, the
-twelfth step of the conversion to the reference map's original names, classes, and module
+`decomp: convert the default resources to RndDefaults` milestone, the
+thirteenth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -12,7 +12,7 @@ microphone subsystems are converted; the rest of the renderer and the game
 code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **157 C++ translation units**. It creates
+The current PS4 object build compiles **153 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
 executable. The latest unresolved-symbol report contains 663 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
@@ -206,6 +206,7 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
+| (this) | Default resources converted to `RndDefaults` |
 | `80d6619` | GPU statistics converted to `RndGpuStatsMgr` |
 | `4e0a874` | Resource manager converted to `RndShaderMgr` |
 | `0fd029c` | Shader system (`RndShader`, configuration classes, 35 built-in shader subclasses) converted |

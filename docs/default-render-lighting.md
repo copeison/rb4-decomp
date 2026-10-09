@@ -45,7 +45,7 @@ After loading, the function disables every authored `RndLightCom` and
 - `default_probe` is enabled immediately and retained as the default probe.
 
 The directional and spot lists hold four-byte scene object IDs rather than raw
-pointers. `render_apply_default_lighting_mode` resolves each ID through the
+pointers. `RndDefaults::_SyncEnabledLights` resolves each ID through the
 scene and enables only the selected list.
 
 ## Scale behavior

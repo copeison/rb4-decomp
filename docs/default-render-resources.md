@@ -1,6 +1,6 @@
 # Default render resources
 
-`render_initialize_default_resources` at `0x6BDCA0` owns the renderer's
+`RndDefaults::Init` at `0x6BDCA0` owns the renderer's
 fallback scene objects. Its initialization order is:
 
 1. Allocate and retain a 784-byte `RndSceneResource`.
@@ -16,10 +16,10 @@ fallback scene objects. Its initialization order is:
 The small helper at `0x6BEBC0` repeats the camera sequence exactly: it creates
 an object in collection zero, names it `default_cam`, attaches an
 `RndCameraCom`, and stores the component pointer at owner offset `0x1A0`.
-`src/render/resources/camera/default_camera.cpp` expresses this as a reusable helper because the
+`src/render/defaults/RndDefaults.cpp` expresses this as a reusable helper because the
 same sequence is inlined in the main initializer.
 
-`src/render/resources/system/default_render_resources.cpp` now reconstructs
+`src/render/defaults/RndDefaults.cpp` now reconstructs
 this full ordering. It accepts the effective rendering flag directly and also
 checks the binary's global force-enable hook. Each compute buffer now uses the
 typed 48-byte common descriptor directly: a four-byte stride, one element, the
@@ -27,18 +27,18 @@ buffer index as initial data, zero flags, and the shared name. The two
 finalization calls remain narrow scene-resource boundaries.
 
 The texture-family loop at `0x6BDE60` is reconstructed separately in
-`src/render/resources/textures/default_textures.cpp`, using the typed common
+`src/render/defaults/RndDefaults.cpp`, using the typed common
 texture factories for every shape.
 
 ## Per-frame and shutdown paths
 
-`render_poll_default_resources` at `0x6BFA00` forwards the resource poll to the
+`RndDefaults::Poll` at `0x6BFA00` forwards the resource poll to the
 primary scene and the separate lighting scene when present. The shared helper
 at `0xFD8B0` invokes virtual slot `0x90`; its use in `sound_manager_update` for
 every active sound scene confirms that this is the normal per-frame resource
 poll rather than a renderer-only callback.
 
-`render_release_default_resources` at `0x6BF860` releases the two scene
+`RndDefaults::Terminate` at `0x6BF860` releases the two scene
 resources, clears material and lighting references and both light-ID lists,
 releases all 49 texture resources, and finally releases the two compute
 buffers. The cleaned source also clears the camera pointer with the other
