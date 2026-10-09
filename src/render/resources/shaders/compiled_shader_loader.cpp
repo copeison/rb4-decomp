@@ -21,14 +21,13 @@ std::uint32_t read_u32(BinStream& stream) {
 }
 
 // Reconstructed from eboot.elf at 0x63C2B0. Each compiled-object record
-// starts with a discarded 32-bit field followed by the 64-bit owner value
-// forwarded to render_shader_initialize.
-void* read_object_owner(BinStream& stream) {
+// starts with a discarded 32-bit field followed by its 64-bit permutation key.
+std::uint64_t read_permutation_key(BinStream& stream) {
     std::uint32_t discarded = 0;
     bin_stream_read_endian(stream, &discarded, sizeof(discarded));
-    void* owner = nullptr;
-    bin_stream_read_endian(stream, &owner, sizeof(owner));
-    return owner;
+    std::uint64_t key = 0;
+    bin_stream_read_endian(stream, &key, sizeof(key));
+    return key;
 }
 
 void release_objects(RenderManagedObjectArray& objects) {
@@ -89,7 +88,7 @@ void render_compiled_shader_objects_resize(
 
 // Reconstructed from eboot.elf at 0x63B2B0. The cache stores a version and a
 // stage count, then six stage-indexed groups of compiled-object records. Each
-// record carries an owner value and a binary size; non-empty binaries are read
+// record carries a permutation key and a binary size; non-empty binaries are read
 // directly from the stream by the platform shader initializer.
 bool render_compiled_shader_objects_load(
     RenderManagedObjectArray (&objects)[kRenderShaderStageCount],
@@ -112,7 +111,7 @@ bool render_compiled_shader_objects_load(
         render_compiled_shader_objects_resize(stage_objects, count);
 
         for (std::size_t index = 0; index < count; ++index) {
-            auto* owner = read_object_owner(stream);
+            const auto key = read_permutation_key(stream);
             const auto binary_size = read_u32(stream);
 
             // The original compares the active render API with itself; the
@@ -130,7 +129,7 @@ bool render_compiled_shader_objects_load(
                 render_create_shader(static_cast<RenderShaderStage>(stage));
             bin_stream_tell(stream);
             auto* object = reinterpret_cast<RenderManagedObject*>(shader);
-            if (!render_shader_initialize(*shader, owner, binary, metadata)) {
+            if (!render_shader_initialize(*shader, key, binary, metadata)) {
                 if (object != nullptr) {
                     object->dispatch->release_dynamic(object);
                 }

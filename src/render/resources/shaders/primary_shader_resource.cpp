@@ -5,10 +5,11 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/core/context/render_context.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
+#include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
-#include "render/resources/shaders/primary_shader_adapters.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -288,5 +289,51 @@ bool render_primary_shader_returns_true(void*) {
 
 // Reconstructed from eboot.elf at 0x63E820.
 void render_primary_shader_bind_nothing(void*, void*) {}
+
+// Reconstructed from eboot.elf at 0x638920. Selects the HX_NUM_RT_SLICES
+// value for the context's slice mode, writes it into the global half of every
+// program key, and binds the matching compiled objects. Single-slice draws
+// drop the geometry program unless the shader declares one. A failed bind
+// falls back through dispatch slot 8.
+bool render_primary_shader_bind(
+    RenderPrimaryShaderResource& shader,
+    RenderContext& context,
+    std::uint64_t (&keys)[kRenderShaderProgramKeyCount]) {
+    // Table at 0x12A99A0, indexed by slice mode.
+    constexpr std::uint32_t kSliceCounts[] = {1, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1};
+    constexpr std::int32_t kGeometryProgramBit = 0x4;
+
+    if (!shader.compiled) {
+        render_primary_shader_initialize_backend(shader);
+    }
+
+    const auto mode = render_context_slice_mode(context);
+    std::uint32_t slices = 0;
+    if (mode == -1) {
+        slices = 1;
+    } else if (static_cast<std::uint32_t>(mode) <
+               sizeof(kSliceCounts) / sizeof(*kSliceCounts)) {
+        slices = kSliceCounts[mode];
+    }
+
+    const auto& binding = shader.render_target_slice_binding;
+    const auto field = static_cast<std::uint64_t>(
+        (slices - binding.first_value) << binding.bit_offset) << 32;
+    const auto mask = static_cast<std::uint64_t>(binding.shifted_mask) << 32;
+    for (auto& key : keys) {
+        key = (key & ~mask) | field;
+    }
+
+    auto variant = shader.variant;
+    if (slices == 1 && !shader.dispatch->uses_geometry_program(&shader)) {
+        variant &= ~kGeometryProgramBit;
+    }
+    if (render_compiled_shader_objects_bind(
+            shader.compiled_objects, context, variant, keys)) {
+        return true;
+    }
+    shader.dispatch->bind_fallback(&shader, &context);
+    return false;
+}
 
 }  // namespace rb4

@@ -436,6 +436,8 @@
   layout hash used to validate compiled-shader caches.
 - [x] Reconstruct primary-shader backend initialization, compiled-cache
   validation and loading, and its recursive critical section.
+- [x] Reconstruct the primary-shader permutation bind, compiled-object
+  stage binding, context stage unbinding, and the error-shader fallback bind.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

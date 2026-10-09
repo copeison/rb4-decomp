@@ -54,9 +54,9 @@ RenderShader* render_create_shader(RenderShaderStage stage) {
 // Reconstructed from eboot.elf at 0x642270.
 void render_shader_construct(RenderShader& shader) {
     set_base_dispatch(shader);
-    shader.owner = nullptr;
+    shader.permutation_key = 0;
     shader.initialized = false;
-    shader.variant_index = -1;
+    shader.last_bound_frame = -1;
     shader.metadata = nullptr;
 }
 
@@ -72,10 +72,10 @@ void render_shader_delete(RenderShader& shader) {
 // Reconstructed from eboot.elf at 0x6422C0.
 bool render_shader_initialize(
     RenderShader& shader,
-    void* owner,
+    std::uint64_t permutation_key,
     const RenderShaderBinary* binary,
     void* metadata) {
-    shader.owner = owner;
+    shader.permutation_key = permutation_key;
     shader.metadata = metadata;
     render_shader_release(shader);
 
@@ -95,6 +95,11 @@ void render_shader_release(RenderShader& shader) {
 
     dispatch(shader).release(shader);
     shader.initialized = false;
+}
+
+// Binds a compiled stage program through its dispatch slot 3.
+void render_shader_bind(const RenderShader& shader, RenderContext& context) {
+    dispatch(shader).bind(shader, context);
 }
 
 }  // namespace rb4

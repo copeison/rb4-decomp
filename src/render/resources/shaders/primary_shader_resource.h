@@ -11,6 +11,8 @@
 
 namespace rb4 {
 
+struct RenderContext;
+
 struct RenderPrimaryShaderResource {
     struct Dispatch {
         void (*destruct)(RenderPrimaryShaderResource* shader);
@@ -77,6 +79,10 @@ void render_primary_shader_prepare(RenderPrimaryShaderResource& shader);
 void render_primary_shader_finalize(RenderPrimaryShaderResource& shader);
 void render_primary_shader_initialize_backend(
     RenderPrimaryShaderResource& shader);
+bool render_primary_shader_bind(
+    RenderPrimaryShaderResource& shader,
+    RenderContext& context,
+    std::uint64_t (&keys)[kRenderShaderProgramKeyCount]);
 void render_primary_shader_register(RenderPrimaryShaderResource& shader);
 void render_primary_shader_clear_compiled_objects(
     RenderPrimaryShaderResource& shader);

@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/core/context/render_context.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -165,6 +166,32 @@ void render_basic_shader_construct(void* shader) {
     field(shader, 376) = 0;
     field(shader, 384) = -1;
     field(shader, 392) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x63E6C0. Binds the error shader with the
+// requested geometry type in the vertex key and the context's shading mode in
+// the pixel key.
+void render_error_shader_bind(
+    void* shader,
+    void* context,
+    std::int32_t geometry_type) {
+    constexpr std::size_t kVertexKey = 0;
+    constexpr std::size_t kPixelKey = 3;
+    auto& render_context = *static_cast<RenderContext*>(context);
+    const auto& geometry = binding(shader, 0);
+    const auto& shading = binding(shader, 1);
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    keys[kVertexKey] = static_cast<std::uint64_t>(static_cast<std::int64_t>(
+        static_cast<std::int32_t>(
+            static_cast<std::uint32_t>(geometry_type - geometry.first_value)
+            << geometry.bit_offset)));
+    keys[kPixelKey] = static_cast<std::uint64_t>(static_cast<std::int64_t>(
+        static_cast<std::int32_t>(
+            static_cast<std::uint32_t>(
+                render_context_shading_mode(render_context) -
+                shading.first_value)
+            << shading.bit_offset)));
+    render_primary_shader_bind(primary_shader(shader), render_context, keys);
 }
 
 }  // namespace rb4

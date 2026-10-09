@@ -3,13 +3,13 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct primary shader backend initialization` milestone, which
-completed compiled-shader cache loading. The working tree was clean when the
+`decomp: reconstruct primary shader permutation bind` milestone, which
+completed compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
-The current PS4 object build compiles **182 C++ translation units**. It creates
+The current PS4 object build compiles **183 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 590 unique entries,
+executable. The latest unresolved-symbol report contains 589 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Primary-shader backend initialization and cache loading |
+| (this) | Primary-shader permutation bind and error-shader fallback |
+| `d7172aa` | Primary-shader backend initialization and cache loading |
 | `5a02e7f` | Shader permutation enumeration and layout hash |
 | `8075c64` | All eleven primary-shader dispatch slots |
 | `b689eaa` | Shader cache validation hashes |
@@ -413,17 +414,21 @@ The remaining boundaries on this path are engine services, declared in
 | `0x37AA30`, `0x37AAF0` | `engine_heap_scope_begin/end` | Thread-local heap mode |
 | `0x256410` | `engine_integer_text` | Interned small-integer text |
 | `0x367C50`, `0x117B560` | stream checksum and SHA-1 reset | `FileStream` checksums |
-| `0x63E6C0` | `render_error_shader_bind` | Default slot-8 fallback |
 
-The next rendering milestone is the permutation bind at `0x638920`. Every
-pass's draw function calls it, for example bloom at `0x6346E0`, blur at
-`0x634BB0`, and output conversion at `0x636840`. It selects compiled objects
-by permutation key and binds them on a render context. The error-shader bind
-at `0x63E6C0` is its smallest caller. After that, reconstruct the per-pass
-draw functions in their domain folders.
+The permutation bind (`0x638920`) is now source-owned too. The next rendering
+milestones are the per-pass draw functions that build program keys and call
+it. Each one belongs in its pass's domain folder:
+
+- bloom at `0x6346E0`;
+- blur at `0x634BB0`;
+- output conversion at `0x636840`;
+- downsample at `0x636080`.
+
+They also write constant-block members into a constant buffer chosen from the
+context's array at `+0x4A80` before binding.
 
 The final executable link also depends on many engine functions and matching
-FMOD libraries. The 590-entry unresolved report is a work queue, not a list of
+FMOD libraries. The 589-entry unresolved report is a work queue, not a list of
 compile failures. Prioritize dependencies that sit on reconstructed runtime
 paths and collapse groups of related adapters rather than adding arbitrary
 stubs.

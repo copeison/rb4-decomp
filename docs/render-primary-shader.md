@@ -99,3 +99,21 @@ FNV-1a, with every byte sign-extended:
 Compute permutations are not hashed. Enumeration (`0x63D100`) walks the global
 registry first, then the stage registry; hull and domain share registry 2.
 Enabled (global) records pack into the high 32 bits of the key.
+
+## Permutation binding
+
+`render_primary_shader_bind` (`0x638920`) takes five 64-bit program keys,
+indexed by variant program bit (vertex, tessellation, geometry, pixel,
+compute). It first initializes the backend if needed. The context's slice mode
+at `+0x10` maps through `{1, 2, 6, 1, ...}` to an `HX_NUM_RT_SLICES` value; -1
+means one slice and out-of-range modes mean zero. That value goes into the
+global half of every key. Single-slice draws drop the geometry program unless
+slot 10 reports one.
+
+`render_compiled_shader_objects_bind` (`0x63B500`) then updates the context's
+active-stage byte at `+0x4960`. Stages that are no longer used are unbound
+through context slot 28. For each used stage, it binary-searches that stage's
+compiled objects by permutation key, stamps the render-system frame epoch, and
+calls the program's bind slot. Any miss fails the bind, and the shader's slot-8
+fallback runs. For most shaders that fallback binds the error shader
+(`0x63E6C0`) with the context's shading mode at `+0x4A18`.

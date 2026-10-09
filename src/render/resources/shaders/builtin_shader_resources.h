@@ -1,8 +1,14 @@
 #pragma once
 
+#include <cstdint>
+
 namespace rb4 {
 
 void render_error_shader_construct(void* shader);
+void render_error_shader_bind(
+    void* shader,
+    void* context,
+    std::int32_t geometry_type);
 void render_basic_shader_construct(void* shader);
 void render_bink_convert_shader_construct(void* shader);
 void render_bloom_shader_construct(void* shader);

@@ -37,7 +37,9 @@ struct RenderContextVtable {
         RenderContext* context,
         std::size_t resource_count,
         const RenderContextSubmissionResource* resources);
-    void* reserved_176[9];
+    void* reserved_176[6];
+    void (*unbind_shader_stage)(RenderContext* context, std::uint32_t stage);
+    void* reserved_232[2];
     void (*begin_gpu_stat)(RenderContext* context, std::uint64_t query_id);
     void (*end_gpu_stat)(RenderContext* context, std::uint64_t query_id);
     RenderGpuStatistics (*resolve_gpu_stat)(
@@ -60,6 +62,7 @@ static_assert(sizeof(RenderGpuStatScope) == 16);
 static_assert(sizeof(RenderGpuStatistics) == 56);
 static_assert(
     offsetof(RenderContextVtable, prepare_submission_resources) == 168);
+static_assert(offsetof(RenderContextVtable, unbind_shader_stage) == 224);
 static_assert(offsetof(RenderContextVtable, begin_gpu_stat) == 248);
 static_assert(offsetof(RenderContextVtable, end_gpu_stat) == 256);
 static_assert(offsetof(RenderContextVtable, resolve_gpu_stat) == 264);
@@ -86,5 +89,16 @@ void render_context_end_gpu_stat(
 RenderGpuStatistics render_context_resolve_gpu_stat(
     RenderContext& context,
     std::uint64_t query_id);
+
+// Fields of the common context beyond its modeled 16-byte prefix.
+// +0x10: render-target slice mode; -1 selects a single slice.
+std::int32_t render_context_slice_mode(const RenderContext& context);
+// +0x4960: bit per shader stage with a bound program.
+std::uint8_t& render_context_active_shader_stages(RenderContext& context);
+// +0x4A18: active debug shading mode.
+std::int32_t render_context_shading_mode(const RenderContext& context);
+void render_context_unbind_shader_stage(
+    RenderContext& context,
+    std::uint32_t stage);
 
 }  // namespace rb4
