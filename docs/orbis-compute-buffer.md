@@ -21,14 +21,16 @@ common destructor at
 `0x636D50` also frees the object. Virtual slot 2 returns the unsigned sentinel
 `0xFFFFFFFF`.
 
-Backend initialization at `0x8E3350` first releases both GPU banks. Flag bit
+Backend initialization at `0x8E3350` (`PS4ComputeBuffer::_SyncStaticImpl`)
+first releases both GPU banks. Flag bit
 `0x10` selects two banks; otherwise one bank is created. Each bank receives a
-16-byte Gnm buffer descriptor using the authored element count and stride.
+`sce::Gnm::Buffer` from `initAsRegularBuffer(base, stride, count)`.
 When no external GPU address is supplied, the backend allocates
-`element_count * stride` bytes under the `ComputeBuffer` name and copies the
-initial CPU data when present. Flag bit 3 supplies the special initial counter
-value when there is no CPU data. Flags 0 or 3 select resource memory type
-`109`; other buffers use type `16`.
+`element_count * stride` bytes from the `"gpu"` heap under the `ComputeBuffer`
+name (8-byte alignment with flag 3, otherwise 4) and copies the
+initial CPU data when present. Flag bit 3 seeds the buffer with the indirect-argument
+words `{0, 0, 0, 1}` (`0x12D1730`) when there is no CPU data. Flags 0 or 3 select `kResourceMemoryTypeGC`
+(`0x6D`); other buffers use `kResourceMemoryTypeRO` (`0x10`).
 
 The descriptor banks occupy offsets 80 and 96, their allocations occupy 112
 and 120, and the active bank index is at 128. The update method at `0x8E3510`
@@ -36,8 +38,11 @@ flips that index and copies the current CPU staging range into the selected
 allocation.
 
 Binding methods at `0x8E3580` through `0x8E37CF` route the active descriptor
-to every engine shader stage. Vertex binding updates both the Gnm export and
-vertex stages. Pixel and compute methods use flag bit 0 to choose read/write
+to every engine shader stage. Each binding is a one-slot `GfxContext::setBuffers` or
+`setRwBuffers`, which the SDK inlines into the CUE's single-slot `setBuffer`
+or `setRwBuffer`; the compute pipe uses `ComputeContext::setBuffers` or
+`setRwBuffers`. Vertex binding updates both the ES and VS stages, hull binding
+the HS stage and domain binding the LS stage. Pixel and compute methods use flag bit 0 to choose read/write
 instead of read-only binding. Compute binding also selects the graphics CUE or
 standalone compute context from the active command mode.
 

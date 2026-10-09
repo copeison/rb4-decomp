@@ -575,6 +575,7 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct `PS4ComputeBuffer::_SyncStaticImpl` and its stage selects.
 - [x] Reconstruct the four `PS4ShaderProgram*` classes with
   `RndShaderCompilerBlob` and the Gnmx shader parser and fetch-shader
   generators; model `PS4Context`'s 18 `ComputeContext`s; reconstruct

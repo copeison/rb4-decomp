@@ -39,16 +39,6 @@ public:
     sce::Gnm::Buffer mBuffers[2];
     void* mStorage[2];
     unsigned long mActiveBank;
-
-private:
-    // Stand-ins for code inlined into _SyncStaticImpl and the stage selects;
-    // not yet reconstructed. Names not in the reference map.
-    void _AllocateStorage();
-    void _Select(
-        RndContext& context,
-        RndShaderProgramType type,
-        unsigned long slot,
-        unsigned int flags) const;
 };
 
 static_assert(offsetof(PS4ComputeBuffer, mBuffers) == 80);
