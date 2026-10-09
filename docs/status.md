@@ -414,6 +414,8 @@
   shaders with their debug constants, permutations, and sampled resources.
 - [x] Reconstruct the error and basic fallback shaders, their geometry/shading
   permutations, texture modes, constants, and sampled resources.
+- [x] Reconstruct the bloom graphics shader, half-size and hue-preservation
+  permutations, three sampled bloom inputs, and bloom/overbright constants.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
