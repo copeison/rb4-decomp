@@ -1,6 +1,7 @@
 #include "audio/fmod/resources/FmodAudioStreamResource.h"
 
 #include <cstdio>
+#include <cstring>
 #include <map>
 #include <unistd.h>
 
@@ -35,6 +36,15 @@ bool StreamFileExists(const char* path) {
     const bool exists = !file->Fail();
     delete file;
     return exists;
+}
+
+// Returns the part of a path after its last separator, as 0x2453D0 does.
+const char* FileName(const char* path) {
+    const char* name = path + std::strlen(path);
+    while (name > path && name[-1] != '/' && name[-1] != '\\') {
+        --name;
+    }
+    return name;
 }
 
 // Converts backslashes to slashes in place, as 0x2448D0 does.
@@ -207,10 +217,11 @@ void FmodAudioStreamResource::StopAsyncProcess(bool wait) {
     } while (process != nullptr);
 }
 
-// Reconstructed from eboot.elf at 0x271B20.
+// Reconstructed from eboot.elf at 0x271B20. Streams are registered by file
+// name, which is what playback requests name.
 void FmodAudioStreamResource::_Register() {
     CritSecTracker tracker(&gStreamCritSec);
-    gStreams[Symbol(mFile.Str()).Str()] = this;
+    gStreams[Symbol(FileName(mFile.Str())).Str()] = this;
 }
 
 // Reconstructed from eboot.elf at 0x271830. Every entry for this resource is
