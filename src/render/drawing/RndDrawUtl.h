@@ -2,7 +2,7 @@
 
 #include "math/color/Color.h"
 #include "math/geometry/Rect.h"
-#include "render/system/render_runtime_adapters.h"
+#include "render/materials/RndMaterialCom.h"
 
 class RndContext;
 class RndTextureBase;
@@ -34,6 +34,10 @@ public:
         bool mKeepShader = false;  // Draws with the selected shader.
         bool mKeepState = false;   // Keeps the blend, depth and cull state.
     };
+
+    // Builds the shared sphere, box and other meshes the drawing helpers use.
+    static void Init();  // 0x3DF170
+    static void Terminate();  // 0x3DF820
 
     // Draws the quad with an identity view-projection. A quad covering the
     // whole target is drawn as one oversized triangle.

@@ -6,14 +6,14 @@
 
 // The registry of debug overlays. Every RndOverlay links itself into one
 // static list on construction. The list operations and the layout constants
-// are reconstructed; Init and DrawAll are declared from the map but not
-// located.
+// are reconstructed; Init and DrawAll are declared from the map.
 class RndOverlayMgr {
 public:
     // Name not in the reference map.
     using OverlayList = LinkedList::List<RndOverlay, RndOverlay::ListNode>;
 
-    static void Init();
+    // Creates the built-in overlays.
+    static void Init();  // 0x5F9150
     static void DrawAll(RndContext& context);
 
     static int GetMarginInPixels();           // 0x5F9210

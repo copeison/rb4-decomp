@@ -1,13 +1,28 @@
 #include "render/defaults/RndDefaults.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
+#include "entity/core/Entity.h"
+#include "entity/core/GameObject.h"
+#include "entity/core/TransCom.h"
 #include "math/color/Color.h"
+#include "math/transform/Transform.h"
+#include "math/vector/Vector3.h"
 #include "math/vector/Vector3i.h"
+#include "os/files/File.h"
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
+#include "render/context/RndCameraCom.h"
+#include "render/lighting/lights/RndLightCom.h"
+#include "render/lighting/lights/RndLightDirectionalCom.h"
+#include "render/lighting/lights/RndLightProbeCom.h"
+#include "render/lighting/lights/RndLightSpotCom.h"
+#include "render/materials/RndMaterialCom.h"
+#include "render/scene/RndSceneCom.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndPixelCanvas.h"
 #include "render/textures/RndPixelDataCube.h"
@@ -30,11 +45,6 @@ constexpr const char* kDefaultDirectional = "default_directional";
 constexpr const char* kDefaultShadowedSpot = "default_spot_with_shadows";
 constexpr const char* kDefaultProbe = "default_probe";
 constexpr const char* kBackupDirectional = "default_directional_light";
-
-constexpr float kProbeFalloffStartScale = 2.0f;
-constexpr float kProbeFalloffEndScale = 3.0f;
-constexpr float kSpotFalloffStartScale = 1.0f;
-constexpr float kSpotFalloffEndScale = 2.0f;
 
 constexpr const char* kDefaultUnlitShader =
     "../../system/data/shared/shadergraph/default_unlit.sgraph";
@@ -236,93 +246,39 @@ void ReleaseTextureFamily(RndDefaults::TextureFamily& family) {
     ReleaseTexture(family.mTextureArrayCube);
 }
 
-void ReplaceSceneResource(
-    RndSceneResource*& destination,
-    RndSceneResource* replacement) {
-    if (destination != nullptr) {
-        rnd_scene_resource_release(destination);
-    }
-    destination = replacement;
+Vector3 Cross(const Vector3& a, const Vector3& b) {
+    return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-RndMaterial* CreateMaterialObject(RndScene& scene, const char* objectName) {
-    auto* object = rnd_scene_create_object(scene, objectName);
-    if (object == nullptr) {
-        return nullptr;
-    }
+// A zero vector stays zero.
+Vector3 Normalize(const Vector3& v) {
+    const float length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    const float scale = length != 0.0f ? 1.0f / length : 0.0f;
+    return {scale * v.x, scale * v.y, scale * v.z};
+}
 
-    auto* material = rnd_object_add_material(*object);
-    if (material == nullptr) {
-        return nullptr;
-    }
-
-    rnd_material_set_sharing_type(
-        *material, *object, RndMaterialSharingType::kUnique);
+// Creates an object named for a default material and gives it a material
+// that is never shared. Inlined six times into
+// RndDefaults::_CreateMaterials (0x6BEC50). Name not in the reference map.
+RndMaterialCom* CreateMaterialObject(Entity* entity, const char* name) {
+    GameObject* object = entity->CreateObject(0, 0);
+    object->SetName(Symbol(name));
+    auto* material = reinterpret_cast<RndMaterialCom*>(
+        object->CreateComponent(RndMaterialCom::sClassName, false));
+    material->SetSharingType(*object, RndMaterialSharing::kUnique);
     return material;
-}
-
-RndMaterial* CreateDefaultMaterial(
-    RndScene& scene,
-    const char* objectName,
-    const char* shaderGraph) {
-    auto* material = CreateMaterialObject(scene, objectName);
-    if (material != nullptr) {
-        rnd_material_set_shader_graph(*material, shaderGraph);
-    }
-    return material;
-}
-
-RndMaterial* CreateDefaultMaterial(
-    RndScene& scene,
-    const char* objectName,
-    const char* shaderGraph,
-    RndBlendMode blendMode) {
-    auto* material = CreateMaterialObject(scene, objectName);
-    if (material != nullptr) {
-        rnd_material_set_blend_mode(*material, blendMode);
-        rnd_material_set_shader_graph(*material, shaderGraph);
-    }
-    return material;
-}
-
-void DisableAuthoredLighting(RndScene& scene) {
-    const auto objectCount = rnd_scene_object_count(scene);
-    for (std::size_t index = 0; index < objectCount; ++index) {
-        auto* object = rnd_scene_object_at(scene, index);
-        if (object == nullptr) {
-            continue;
-        }
-
-        if (auto* light = rnd_object_light(*object)) {
-            rnd_light_set_enabled(*light, false);
-        }
-        if (auto* probe = rnd_object_light_probe(*object)) {
-            rnd_light_probe_set_enabled(*probe, false);
-        }
-    }
-}
-
-void SetLightListEnabled(
-    RndScene& scene,
-    const std::vector<RndObjectId>& objectIds,
-    bool enabled) {
-    for (const auto id : objectIds) {
-        auto* object = rnd_scene_find_object(scene, id);
-        if (object == nullptr) {
-            continue;
-        }
-
-        auto* light = rnd_object_light(*object);
-        if (light != nullptr) {
-            rnd_light_set_enabled(*light, enabled);
-        }
-    }
 }
 
 }  // namespace
 
+// The backup directional light's forward axis. It sits in the object's
+// zero-initialized data, and nothing in this build writes it. Name not in
+// the reference map.
+static Vector3 sBackupLightDirection;  // 0x1AB007C
+
+// Inlined into RndDevice's constructor at 0x6BDB30 in this build.
 RndDefaults::RndDefaults()
-    : mSceneResource(nullptr),
+    : mSceneResource(),
       mTextures(),
       mComputeBuffers(),
       mCamera(nullptr),
@@ -332,51 +288,38 @@ RndDefaults::RndDefaults()
       mTextMaterial(nullptr),
       mParticleMaterial(nullptr),
       mDecalMaterial(nullptr),
-      mLightingResource(nullptr),
-      mSceneSettings(nullptr),
+      mLightingResource(),
+      mLightMgr(nullptr),
       mLightProbe(nullptr),
       mLightingType(kDefaultLightingDirectional),
       mLightingScale(100.0f) {
 }
 
-// Reconstructed from eboot.elf at 0x6BDC20.
+// Reconstructed from eboot.elf at 0x6BDC20. The members release the light
+// lists and the two scene resources.
 RndDefaults::~RndDefaults() {
-    if (mLightingResource != nullptr) {
-        rnd_scene_resource_release(mLightingResource);
-    }
-    if (mSceneResource != nullptr) {
-        rnd_scene_resource_release(mSceneResource);
-    }
 }
 
 // Reconstructed from eboot.elf at 0x6BDCA0.
-void RndDefaults::Init(bool initRendering) {
-    if (!initRendering && !render_force_default_resources()) {
+void RndDefaults::Init(const RndInitParams& params) {
+    if (!params.mInitRendering && !gResourcePrecacheMode) {
         return;
     }
 
-    ReplaceSceneResource(mSceneResource, rnd_scene_resource_create());
-    if (mSceneResource == nullptr) {
-        return;
-    }
-
-    auto* scene = rnd_scene_resource_scene(*mSceneResource);
-    if (scene == nullptr) {
-        return;
-    }
-
+    mSceneResource = new RndSceneResource();
+    Entity* entity = mSceneResource->CreateEntity();
     _CreateTextures();
     _CreateComputeBuffers();
-    _CreateCamera(*scene);
-    _CreateMaterials(*scene);
+    _CreateCamera(entity);
+    _CreateMaterials(entity);
     if (!_LoadLighting()) {
-        _CreateBackupLighting(*scene);
+        _CreateBackupLighting(entity);
     }
 
-    rnd_scene_resource_finalize_contents(*mSceneResource);
-    rnd_scene_resource_finalize(*mSceneResource);
-    if (mLightingResource != nullptr) {
-        rnd_scene_resource_finalize(*mLightingResource);
+    mSceneResource->LoadResources();
+    mSceneResource->EnterEntity(mSceneResource->mEntity);
+    if (mLightingResource) {
+        mLightingResource->EnterEntity(mLightingResource->mEntity);
     }
 }
 
@@ -408,80 +351,89 @@ void RndDefaults::_CreateComputeBuffers() {
 
 // Reconstructed from eboot.elf at 0x6BEBC0 and the equivalent inlined sequence
 // in Init at 0x6BDCA0.
-void RndDefaults::_CreateCamera(RndScene& scene) {
-    auto* object = rnd_scene_create_object(scene, "default_cam");
-    mCamera = object == nullptr ? nullptr : rnd_object_add_camera(*object);
+void RndDefaults::_CreateCamera(Entity* entity) {
+    GameObject* object = entity->CreateObject(0, 0);
+    object->SetName(Symbol("default_cam"));
+    mCamera = reinterpret_cast<RndCameraCom*>(
+        object->CreateComponent(RndCameraCom::sClassName, false));
 }
 
 // Reconstructed from eboot.elf at 0x6BEC50.
-void RndDefaults::_CreateMaterials(RndScene& scene) {
-    mUnlitMaterial = CreateDefaultMaterial(
-        scene, "default_mat_unlit", kDefaultUnlitShader);
-    mAdditiveMaterial = CreateDefaultMaterial(
-        scene,
-        "default_mat_add",
-        kDefaultUnlitShader,
-        RndBlendMode::kAdd);
-    mLitMaterial = CreateDefaultMaterial(
-        scene, "default_mat_lit", kDefaultLitShader);
-    mTextMaterial = CreateDefaultMaterial(
-        scene, "default_text_mat", kDefaultTextShader);
-    mParticleMaterial = CreateDefaultMaterial(
-        scene,
-        "default_particle_mat",
-        kDefaultParticleShader,
-        RndBlendMode::kAdd);
-    mDecalMaterial = CreateDefaultMaterial(
-        scene,
-        "default_decal_mat",
-        kDefaultDecalShader,
-        RndBlendMode::kSource);
+void RndDefaults::_CreateMaterials(Entity* entity) {
+    mUnlitMaterial = CreateMaterialObject(entity, "default_mat_unlit");
+    mUnlitMaterial->SetShaderGraphFile(kDefaultUnlitShader);
+
+    mAdditiveMaterial = CreateMaterialObject(entity, "default_mat_add");
+    mAdditiveMaterial->SetBlendMode(RndBlendMode::kAdd);
+    mAdditiveMaterial->SetShaderGraphFile(kDefaultUnlitShader);
+
+    mLitMaterial = CreateMaterialObject(entity, "default_mat_lit");
+    mLitMaterial->SetShaderGraphFile(kDefaultLitShader);
+
+    mTextMaterial = CreateMaterialObject(entity, "default_text_mat");
+    mTextMaterial->SetShaderGraphFile(kDefaultTextShader);
+
+    mParticleMaterial = CreateMaterialObject(entity, "default_particle_mat");
+    mParticleMaterial->SetBlendMode(RndBlendMode::kAdd);
+    mParticleMaterial->SetShaderGraphFile(kDefaultParticleShader);
+
+    mDecalMaterial = CreateMaterialObject(entity, "default_decal_mat");
+    mDecalMaterial->SetBlendMode(RndBlendMode::kSource);
+    mDecalMaterial->SetShaderGraphFile(kDefaultDecalShader);
 }
 
 // Reconstructed from eboot.elf at 0x6BEF40.
 bool RndDefaults::_LoadLighting() {
-    ReplaceSceneResource(
-        mLightingResource, _LoadSceneResource(kDefaultLightingScene));
-    if (mLightingResource == nullptr) {
+    mLightingResource = Resource::GetOrLoad<RndSceneResource>(
+        ResourcePath(kDefaultLightingScene), false);
+    if (!mLightingResource) {
         return false;
     }
 
-    auto* scene = rnd_scene_resource_scene(*mLightingResource);
-    if (scene == nullptr) {
-        ReplaceSceneResource(mLightingResource, nullptr);
+    Entity* entity = mLightingResource->mEntity;
+    RndLightMgrCom* lightMgr =
+        entity->GetRoot()->GetCom<RndSceneCom>()->GetLightMgr();
+    if (lightMgr == nullptr) {
+        mLightingResource = nullptr;
         return false;
     }
 
-    mSceneSettings = rnd_scene_settings(*scene);
-    if (mSceneSettings == nullptr) {
-        ReplaceSceneResource(mLightingResource, nullptr);
-        return false;
-    }
-
+    mLightMgr = lightMgr;
     mDirectionalLights.clear();
     mShadowedSpotLights.clear();
-    DisableAuthoredLighting(*scene);
 
-    auto* directional = rnd_scene_find_object(*scene, kDefaultDirectional);
+    // Only the lights picked out below stay on.
+    for (GameObject* object = entity->BeginObject(); object != nullptr;
+         object = entity->NextObject(object, Symbol())) {
+        if (auto* light = object->GetBaseCom<RndLightCom>()) {
+            light->mEnabled = false;
+        }
+        if (auto* probe = object->GetCom<RndLightProbeCom>()) {
+            probe->mEnabled = false;
+        }
+    }
+
+    GameObject* directional =
+        entity->TryGetObject(Symbol(kDefaultDirectional), false);
     if (directional != nullptr
-        && rnd_object_directional_light(*directional) != nullptr) {
-        mDirectionalLights.push_back(rnd_object_id(*directional));
+        && directional->GetCom<RndLightDirectionalCom>() != nullptr) {
+        mDirectionalLights.push_back(directional->mId);
     }
 
-    auto* spot = rnd_scene_find_object(*scene, kDefaultShadowedSpot);
-    if (spot != nullptr && rnd_object_spot_light(*spot) != nullptr) {
-        _SyncSpotlight(*spot);
-        mShadowedSpotLights.push_back(rnd_object_id(*spot));
+    GameObject* spot = entity->TryGetObject(Symbol(kDefaultShadowedSpot), false);
+    if (spot != nullptr && spot->GetCom<RndLightSpotCom>() != nullptr) {
+        _SyncSpotlight(spot);
+        mShadowedSpotLights.push_back(spot->mId);
     }
 
-    auto* probe = rnd_scene_find_object(*scene, kDefaultProbe);
-    mLightProbe = probe == nullptr ? nullptr : rnd_object_light_probe(*probe);
-    if (mLightProbe != nullptr) {
-        rnd_light_probe_set_enabled(*mLightProbe, true);
-        rnd_light_probe_set_falloff_start(
-            *mLightProbe, mLightingScale * kProbeFalloffStartScale);
-        rnd_light_probe_set_falloff_end(
-            *mLightProbe, mLightingScale * kProbeFalloffEndScale);
+    GameObject* probe = entity->TryGetObject(Symbol(kDefaultProbe), false);
+    if (probe != nullptr) {
+        mLightProbe = probe->GetCom<RndLightProbeCom>();
+        if (mLightProbe != nullptr) {
+            mLightProbe->mEnabled = true;
+            mLightProbe->SetFalloffStart(mLightingScale + mLightingScale);
+            mLightProbe->SetFalloffEnd(mLightingScale * 3.0f);
+        }
     }
 
     _SyncEnabledLights();
@@ -489,38 +441,38 @@ bool RndDefaults::_LoadLighting() {
 }
 
 // Reconstructed from eboot.elf at 0x6BF4F0.
-void RndDefaults::_CreateBackupLighting(RndScene& scene) {
-    mSceneSettings = rnd_scene_settings(scene);
+void RndDefaults::_CreateBackupLighting(Entity* entity) {
+    mLightMgr = entity->GetRoot()->GetCom<RndSceneCom>()->GetLightMgr();
 
-    auto* object = rnd_scene_create_object(scene, kBackupDirectional);
-    if (object == nullptr) {
-        return;
-    }
+    GameObject* object = entity->CreateObject(0, 0);
+    object->SetName(Symbol(kBackupDirectional));
+    auto* light = reinterpret_cast<RndLightDirectionalCom*>(
+        object->CreateComponent(RndLightDirectionalCom::sClassName, false));
+    light->mIntensity = 2.0f;
 
-    auto* light = rnd_object_add_directional_light(*object);
-    if (light == nullptr) {
-        return;
-    }
+    // Face the light along the backup direction with Z kept up.
+    TransCom* trans = object->GetCom<TransCom>();
+    Transform xfm = Transform::sID;
+    xfm.m.y = sBackupLightDirection;
+    xfm.m.x = Normalize(Cross(xfm.m.y, Vector3::sZ));
+    xfm.m.z = Cross(xfm.m.x, xfm.m.y);
+    trans->SetLocalXfm(xfm);
 
-    rnd_light_directional_set_intensity(*light, 2.0f);
-    rnd_object_set_default_directional_light_transform(*object);
-    mDirectionalLights.push_back(rnd_object_id(*object));
+    mDirectionalLights.push_back(object->mId);
     _SyncEnabledLights();
 }
 
-// Reconstructed from eboot.elf at 0x6BF860.
+// Reconstructed from eboot.elf at 0x6BF860. The camera is left set.
 void RndDefaults::Terminate() {
-    ReplaceSceneResource(mSceneResource, nullptr);
-    ReplaceSceneResource(mLightingResource, nullptr);
-
-    mCamera = nullptr;
+    mSceneResource = nullptr;
+    mLightingResource = nullptr;
     mUnlitMaterial = nullptr;
     mAdditiveMaterial = nullptr;
     mLitMaterial = nullptr;
     mTextMaterial = nullptr;
     mParticleMaterial = nullptr;
     mDecalMaterial = nullptr;
-    mSceneSettings = nullptr;
+    mLightMgr = nullptr;
     mLightProbe = nullptr;
     mDirectionalLights.clear();
     mShadowedSpotLights.clear();
@@ -531,74 +483,63 @@ void RndDefaults::Terminate() {
     for (auto*& buffer : mComputeBuffers) {
         if (buffer != nullptr) {
             delete buffer;
-            buffer = nullptr;
         }
+        buffer = nullptr;
     }
 }
 
 // Reconstructed from eboot.elf at 0x6BFA00.
 void RndDefaults::Poll() {
-    if (mSceneResource != nullptr) {
-        rnd_scene_resource_poll(*mSceneResource);
+    if (mSceneResource) {
+        mSceneResource->PollEntity(mSceneResource->mEntity);
     }
-    if (mLightingResource != nullptr) {
-        rnd_scene_resource_poll(*mLightingResource);
+    if (mLightingResource) {
+        mLightingResource->PollEntity(mLightingResource->mEntity);
     }
 }
 
 // Reconstructed from eboot.elf at 0x6BFA60.
 void RndDefaults::_SyncEnabledLights() {
-    if (mLightingResource == nullptr) {
-        return;
+    const ResourcePtr<RndSceneResource> scene =
+        mLightingResource ? mLightingResource : mSceneResource;
+    for (const GameObjectId& id : mDirectionalLights) {
+        Entity* entity = scene->mEntity;
+        entity->GetObject(id)->GetExistingBaseCom<RndLightCom>()->mEnabled =
+            mLightingType == kDefaultLightingDirectional;
     }
-
-    auto* scene = rnd_scene_resource_scene(*mLightingResource);
-    if (scene == nullptr) {
-        return;
+    for (const GameObjectId& id : mShadowedSpotLights) {
+        Entity* entity = scene->mEntity;
+        entity->GetObject(id)->GetExistingBaseCom<RndLightCom>()->mEnabled =
+            mLightingType == kDefaultLightingShadowedSpot;
     }
-
-    SetLightListEnabled(
-        *scene,
-        mDirectionalLights,
-        mLightingType == kDefaultLightingDirectional);
-    SetLightListEnabled(
-        *scene,
-        mShadowedSpotLights,
-        mLightingType == kDefaultLightingShadowedSpot);
 }
 
-// Reconstructed from eboot.elf at 0x6BFD40.
-void RndDefaults::_SyncSpotlight(RndObject& object) {
-    auto* light = rnd_object_spot_light(object);
-    if (light == nullptr) {
-        return;
-    }
+// Reconstructed from eboot.elf at 0x6BFD40. The light is placed on its
+// local Z axis at the lighting scale.
+void RndDefaults::_SyncSpotlight(GameObject* object) {
+    RndLightSpotCom* light = object->GetCom<RndLightSpotCom>();
+    light->SetFalloffStart(mLightingScale);
+    light->SetFalloffEnd(mLightingScale + mLightingScale);
 
-    rnd_light_spot_set_falloff_start(
-        *light, mLightingScale * kSpotFalloffStartScale);
-    rnd_light_spot_set_falloff_end(
-        *light, mLightingScale * kSpotFalloffEndScale);
-    rnd_object_reset_transform_with_scaled_position(object, mLightingScale);
+    TransCom* trans = object->GetCom<TransCom>();
+    Transform xfm = Transform::sID;
+    xfm.v.x = mLightingScale * xfm.m.z.x;
+    xfm.v.y = mLightingScale * xfm.m.z.y;
+    xfm.v.z = mLightingScale * xfm.m.z.z;
+    trans->SetLocalXfm(xfm);
 }
 
 // Reconstructed from eboot.elf at 0x6BFEA0.
 float RndDefaults::GetLightingShadowOffset() const {
-    if (mLightingResource == nullptr || mShadowedSpotLights.empty()) {
+    if (mShadowedSpotLights.empty()) {
         return 0.0f;
     }
 
-    auto* scene = rnd_scene_resource_scene(*mLightingResource);
-    if (scene == nullptr) {
-        return 0.0f;
-    }
-
-    auto* object = rnd_scene_find_object(*scene, mShadowedSpotLights.front());
-    if (object == nullptr) {
-        return 0.0f;
-    }
-
-    auto* light = rnd_object_spot_light(*object);
-    return light == nullptr ? 0.0f : rnd_light_spot_shadow_offset(*light);
+    const ResourcePtr<RndSceneResource> scene =
+        mLightingResource ? mLightingResource : mSceneResource;
+    return scene->mEntity->GetObject(mShadowedSpotLights.front())
+        ->GetExistingCom<RndLightSpotCom>()
+        ->mShadowOffset;
 }
 
 // Reconstructed from eboot.elf at 0x6C00F0.
@@ -629,11 +570,6 @@ RndTextureBase* RndDefaults::GetTexture(
     default:
         return nullptr;
     }
-}
-
-// Reconstructed from eboot.elf at 0x6C0160.
-RndSceneResource* RndDefaults::_LoadSceneResource(const char* path) {
-    return resource_manager_load_scene(path, false);
 }
 
 // Inlined into _CreateTextures in this build. Pixels in alternating 8x8x8

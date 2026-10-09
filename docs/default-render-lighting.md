@@ -71,3 +71,29 @@ its object ID to the directional list, and applies the active lighting mode.
 Its transform construction remains in IDA until the involved math types and
 global basis vectors are recovered. The high-level fallback path is now in the
 cleaned source; a narrow transform adapter contains that remaining math detail.
+
+## Entity and component APIs
+
+The adapter functions (`rnd_scene_*`, `rnd_object_*`, `rnd_light_*`,
+`rnd_material_*`) are retired. `RndDefaults` now uses the engine's entity
+system directly:
+- `Entity`, `GameObject` and `EntityResource` in `src/entity/core`;
+- `RndSceneResource` and `RndSceneCom` in `src/render/scene`;
+- the light components in `src/render/lighting/lights`;
+- `RndMaterialCom` and `RndCameraCom`.
+
+Scene resources are loaded with `Resource::GetOrLoad<RndSceneResource>` and
+held by reference-counted `ResourcePtr`s. The field at `+480` is the scene's
+`RndLightMgrCom`, and the light lists hold `GameObjectId`s.
+
+Every component class has two symbols built from its name. The binary uses
+the second for component creation and base-class lookups; the source calls it
+`sClassName`, which is not in the map.
+
+`Rnd::Init` (`0x402C30`) and `Rnd::Terminate` (`0x402D30`) call the
+renderer's subsystems in binary order. The terminating flag is a static local
+in `Terminate`.
+
+The default-texture table is still laid out per default type in the source.
+`GetTexture` and `Terminate` show it is stored by shape first, so that layout
+needs correcting.

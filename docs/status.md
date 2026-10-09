@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Retire the render runtime adapters in favour of the entity, scene, light,
+  material and camera component APIs, and reconstruct `Rnd::Init` and
+  `Terminate` and the default lighting setup.
 - [x] Reconstruct the audio-analysis slots and `RndAudioTextures`'s rebuild,
   update and width query.
 - [x] Reconstruct `RndContext::SetRenderTargets` and the GPU-stat timer base and

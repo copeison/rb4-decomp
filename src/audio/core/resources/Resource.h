@@ -27,9 +27,17 @@ static_assert(offsetof(ResourceMetaData, mParent) == 80);
 class ResourcePath {
 public:
     ResourcePath() : mPath("") {}
+    // Resolves the engine path. Inlined by its users, for example
+    // RndDefaults::_LoadLighting at 0x6BEF7C.
+    explicit ResourcePath(const char* path) : mPath("") {
+        FileResolvePath(mPath, path);
+    }
 
     Symbol mPath;  // Name not in the reference map.
 };
+
+template <class T>
+class ResourcePtr;
 
 // Reference-counted engine resource. The map places it in the entity module;
 // until that module is reconstructed, only the members the FMOD resources use
@@ -62,6 +70,18 @@ public:
     void SetFile(ResourcePath path, bool unknown);
     // Looks up a loaded resource. At 0x1AB8E0.
     static Resource* Get(ResourcePath path);
+    // Returns the resource at the path, loading it as the class with the id
+    // when it is not loaded. The map's signature is
+    // GetOrLoad(ResourcePath, Symbol); this build adds the flag.
+    static ResourcePtr<Resource> GetOrLoad(
+        ResourcePath path,
+        Symbol type,
+        bool unknown);  // 0x1ABA50
+    // The typed form, instantiated where it is used: RndSceneResource's at
+    // 0x6C0160. The map's signature is GetOrLoad<T>(ResourcePath); this
+    // build adds the flag.
+    template <class T>
+    static ResourcePtr<T> GetOrLoad(ResourcePath path, bool unknown);
 
     // Field names are not in the reference map.
     ResourcePath mPath;
@@ -93,6 +113,29 @@ public:
         }
     }
     ResourcePtr& operator=(const ResourcePtr&) = delete;
+    // Takes a reference to the new resource before releasing the old one,
+    // as RndDefaults::Init does at 0x6BDCEC.
+    ResourcePtr& operator=(T* resource) {
+        if (resource != nullptr) {
+            resource->AddRef();
+        }
+        if (mResource != nullptr) {
+            mResource->ReleaseRef();
+        }
+        mResource = resource;
+        return *this;
+    }
+    // Takes over the other reference, as RndDefaults::_LoadLighting does at
+    // 0x6BEF90.
+    ResourcePtr& operator=(ResourcePtr&& other) {
+        T* const resource = other.mResource;
+        other.mResource = nullptr;
+        if (mResource != nullptr) {
+            mResource->ReleaseRef();
+        }
+        mResource = resource;
+        return *this;
+    }
 
     T* operator->() const {
         return mResource;
@@ -106,3 +149,12 @@ public:
 
     T* mResource;  // Name not in the reference map.
 };
+
+// The class's T::Id() is evaluated before the lookup; the binary repeats
+// the evaluation for an assertion compiled out of this build.
+template <class T>
+ResourcePtr<T> Resource::GetOrLoad(ResourcePath path, bool unknown) {
+    ResourcePtr<T> resource;
+    resource = static_cast<T*>(GetOrLoad(path, T::Id(), unknown).Get());
+    return resource;
+}

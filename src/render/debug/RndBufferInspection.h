@@ -27,8 +27,9 @@ public:
     // One thumbnail of a layout. The layout is not recovered.
     struct ThumbnailLayoutEntry;
 
-    static void Init();
-    static void Terminate();
+    // Creates and registers the inspection shader.
+    static void Init();       // 0x6B54A0
+    static void Terminate();  // 0x6B54E0
     static RndShader* GetShader();
     static void Draw(RndContext& context, RndBufferInspectionMode mode);
 

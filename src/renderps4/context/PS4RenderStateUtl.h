@@ -4,7 +4,7 @@
 #include <gnm/sampler.h>
 
 #include "render/context/RndContext.h"
-#include "render/system/render_runtime_adapters.h"
+#include "render/materials/RndMaterialCom.h"
 
 // Builders that turn engine render-state enums into Gnm hardware state.
 namespace PS4RenderStateUtl {

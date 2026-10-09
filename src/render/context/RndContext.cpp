@@ -5,6 +5,7 @@
 #include "math/vector/Vector4.h"
 #include "os/platform/PlatformMgr.h"
 #include "render/buffers/RndShaderCBuffer.h"
+#include "render/materials/RndMaterialCom.h"
 #include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndConfig.h"

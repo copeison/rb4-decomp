@@ -12,6 +12,12 @@ public:
     Debug();
     ~Debug() override;                    // slots 0-1: 0x35BB60, 0x35BC00
     void Print(const char* str) override;  // slot 2: 0x35CA80
+
+    // Appends the callback to the list run at exit. Inlined into its users,
+    // for example Rnd::Init at 0x402CE0, where it pushes onto the list at
+    // TheDebug + 0x48; the list is not modelled. Name not in the reference
+    // map, which has RemoveExitCallback(void (*)()).
+    void AddExitCallback(void (*callback)());
 };
 
 // The global debug stream, at 0x19FDB40.
