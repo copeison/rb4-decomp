@@ -25,6 +25,11 @@ sce::Gnm::DataFormat GetDataFormat(int dataFormat);  // 0x8E1790
 // Depth textures are depth targets, render targets color targets, and the
 // rest flat textures.
 sce::GpuAddress::SurfaceType GetSurfaceType(const RndPixelFormat& format);  // 0x8E1820
+// The depth and stencil formats of a depth data format. The map has
+// GetZFormat(RndPixelFormat const&); this build passes the data format. The
+// stencil helper is not in the map.
+sce::Gnm::ZFormat GetZFormat(int dataFormat);              // 0x8E17C0
+sce::Gnm::StencilFormat GetStencilFormat(int dataFormat);  // 0x8E17F0
 
 // Instance data occupies the nine vertex streams after the mesh streams.
 // Name not in the reference map.

@@ -222,6 +222,34 @@ sce::Gnm::DataFormat PS4RenderUtl::GetDataFormat(int dataFormat) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x8E17C0.
+sce::Gnm::ZFormat PS4RenderUtl::GetZFormat(int dataFormat) {
+    switch (dataFormat) {
+    case 53:  // Depth_UNorm16
+    case 54:  // Depth_UNorm16_Stencil_UInt8
+        return sce::Gnm::kZFormat16;
+    case 56:  // Depth_Float32_Stencil_UInt8
+        return sce::Gnm::kZFormat32Float;
+    default:
+        (void)RndDataFormatName(dataFormat);
+        return sce::Gnm::kZFormatInvalid;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8E17F0.
+sce::Gnm::StencilFormat PS4RenderUtl::GetStencilFormat(int dataFormat) {
+    switch (dataFormat) {
+    case 53:  // Depth_UNorm16
+        return sce::Gnm::kStencilInvalid;
+    case 54:  // Depth_UNorm16_Stencil_UInt8
+    case 56:  // Depth_Float32_Stencil_UInt8
+        return sce::Gnm::kStencil8;
+    default:
+        (void)RndDataFormatName(dataFormat);
+        return sce::Gnm::kStencilInvalid;
+    }
+}
+
 // Reconstructed from eboot.elf at 0x8E1820.
 sce::GpuAddress::SurfaceType PS4RenderUtl::GetSurfaceType(const RndPixelFormat& format) {
     if (format.mUsage == kTextureUsageDepth) {

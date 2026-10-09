@@ -17,18 +17,26 @@ mip-chain faces. Construction publishes the first face's shared mip properties
 and selects resource index two. The Orbis subclass adds five pointers for the
 texture view, two allocations, color target, and depth target.
 
-Backend initialization at `0x8E6CE0` has separate color and depth paths. Color
-cubes create a 32-byte Gnm texture descriptor, allocate tiled storage, upload
-every available mip for all six faces, and optionally create a 64-byte render
-target view. Depth cubes create a 52-byte depth-target descriptor, allocate its
-depth and optional stencil surfaces, then create the matching 32-byte texture
-view. Both paths select resource memory type `109`.
+Backend initialization at `0x8E6CE0` (`PS4TextureCube::_SyncStaticImpl`)
+has separate color and depth paths, inlined from the helpers the
+reconstruction calls `_SyncRegular` and `_SyncDepthStencil`:
+- **Color cubes** build a `kTextureTypeCubemap` `TextureSpec`, allocate the
+  tiled storage from the `"gpu"` heap, and tile every mip of all six faces
+  (slice = face). A render-target cube adds a `sce::Gnm::RenderTarget` from
+  `RenderTarget::initFromTexture` and uses `kResourceMemoryTypeGC`; other
+  cubes use `kResourceMemoryTypeRO`.
+- **Depth cubes** build a six-slice `DepthRenderTargetSpec` from
+  `PS4RenderUtl::GetZFormat` and `GetStencilFormat` (`0x8E17C0`, `0x8E17F0`).
+  They allocate the Z and stencil surfaces, view them through
+  `Texture::initFromDepthRenderTarget(target, true)`, and use
+  `kResourceMemoryTypeGC`.
 
 The final object fields contain the Gnm texture descriptor, primary and
 secondary allocations, color-target descriptor, and depth-target descriptor.
 Accessors at `0x8E7270` and `0x8E7280` expose the color and depth target views.
-Destruction at `0x8E6BE0` defers GPU allocations through the Orbis render
-system, releases the descriptor objects, and then invokes the common cube
+Destruction at `0x8E6BE0` defers the render target's CMASK and color
+surfaces (`getCmaskAddress`, `getBaseAddress`) and both allocations through
+`PS4Device::DeferredDelete`, releases the descriptor objects, and then invokes the common cube
 texture destructor. The deleting destructor follows at `0x8E6CC0`.
 
 The six virtual methods at `0x8E71A0` through `0x8E725F` forward the single

@@ -36,20 +36,20 @@ public:
         return mDepthTarget;
     }
 
-    // Field names are not in the reference map.
+    // Field names are not in the reference map. A depth cube keeps its
+    // depth and stencil surfaces in mStorage and mStencilStorage.
     sce::Gnm::Texture* mGpuTexture;
     void* mStorage;
-    void* mStorage2;
+    void* mStencilStorage;
     sce::Gnm::RenderTarget* mRenderTarget;
     sce::Gnm::DepthRenderTarget* mDepthTarget;
 
 private:
-    // Stand-ins for code inlined into _SyncStaticImpl and the destructor; not
-    // yet reconstructed. Names not in the reference map.
+    // Both are inlined into _SyncStaticImpl. The map has them on
+    // PS4Texture2D and PS4TextureArray2D only. Names not in the reference
+    // map.
     void _SyncDepthStencil();
     void _SyncRegular();
-    static void* TargetMetadata(const sce::Gnm::RenderTarget& target);
-    static void* TargetSurface(const sce::Gnm::RenderTarget& target);
 };
 
 static_assert(offsetof(PS4TextureCube, mGpuTexture) == 792);
