@@ -3,8 +3,10 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
+#include "utl/containers/VectorAdapter.h"
 
 class RndContext;
+struct RndInstanceData;
 
 // Particle vertex buffer. The base vtable is at 0x1939A20.
 class RndParticleBuffer {
@@ -15,15 +17,17 @@ public:
     RndParticleBuffer(unsigned long numParticles, const char* name);  // 0x6EB000
     virtual ~RndParticleBuffer() {}  // slots 0-1: 0x6ECB80, 0x6ECB90
 
-    // Slot 2. The map has _DrawBatchImpl(RndContext&,
-    // VectorAdapter<RndInstanceData> const&); the instance list type has not
-    // been recovered.
-    virtual void _DrawBatchImpl(RndContext& context, const void* instances) = 0;
+    // Slot 2.
+    virtual void _DrawBatchImpl(
+        RndContext& context,
+        const VectorAdapter<RndInstanceData>& instances) = 0;
 
     // Generates the frame's particle vertices at 0x6EBD70. The map has
     // _FillVertexBuffer(RndContext const&, RndCameraContext const&, void*);
     // this build passes no camera context.
     void _FillVertexBuffer(RndContext& context, void* vertices);
+    // Records the draw statistics; empty in this build.
+    void _UpdateStats(RndContext& context);  // 0x6ECB60
 
     DELETE_OVERLOAD
 

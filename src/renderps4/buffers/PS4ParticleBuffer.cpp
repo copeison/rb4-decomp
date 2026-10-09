@@ -1,4 +1,11 @@
 #include "renderps4/buffers/PS4ParticleBuffer.h"
+
+#include <cstring>
+
+#include "math/transform/Transform.h"
+#include "render/meshes/RndMesh.h"
+#include "renderps4/context/PS4Context.h"
+#include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/system/PS4Device.h"
 
 namespace {
@@ -50,16 +57,70 @@ void PS4ParticleBuffer::_UpdateBuffer(RndContext& context) {
     _FillVertexBuffer(context, mVertexStorage[mActiveBank]);
 }
 
-// Reconstructed from eboot.elf at 0x8E2E10.
-void PS4ParticleBuffer::_DrawBatchImpl(RndContext& context, const void* instances) {
+// Reconstructed from eboot.elf at 0x8E2E10. The particles carry their own
+// world positions, so one instance record holds the identity transforms and
+// the first instance's parameters. The binary copies mParams[1] from
+// Vector4::sZero (0x1B5D268).
+void PS4ParticleBuffer::_DrawBatchImpl(
+    RndContext& context,
+    const VectorAdapter<RndInstanceData>& instances) {
     _UpdateBuffer(context);
-
-    const auto numParticles = mNumActive;
-    if (numParticles == 0) {
+    if (mNumActive == 0) {
         return;
     }
 
-    _SelectVertexStreams(context);
-    _SelectInstanceStreams(context, instances);
-    _DrawIndexed(context, static_cast<unsigned int>(kIndicesPerParticle * numParticles));
+    auto& ps4 = static_cast<PS4Context&>(context);
+    for (unsigned int stream = 0; stream < RndVertexInterpreter::kNumStreams; ++stream) {
+        const auto* buffer = (mBufferMask & (1U << stream)) != 0
+            ? &mVertexBuffers[mActiveBank][stream]
+            : &gPS4Device->mDefaultVertexDescs[stream];
+        ps4._ActiveGfxContext().setVertexBuffers(
+            sce::Gnm::kShaderStageVs, stream, 1, buffer);
+    }
+
+    const auto& xfm = Transform::sID;
+    const auto& normal = Hmx::Matrix3::sID;
+    RndInstanceData instance;
+    instance.mXfm[0][0] = xfm.m.x.x;
+    instance.mXfm[0][1] = xfm.m.y.x;
+    instance.mXfm[0][2] = xfm.m.z.x;
+    instance.mXfm[0][3] = xfm.v.x;
+    instance.mXfm[1][0] = xfm.m.x.y;
+    instance.mXfm[1][1] = xfm.m.y.y;
+    instance.mXfm[1][2] = xfm.m.z.y;
+    instance.mXfm[1][3] = xfm.v.y;
+    instance.mXfm[2][0] = xfm.m.x.z;
+    instance.mXfm[2][1] = xfm.m.y.z;
+    instance.mXfm[2][2] = xfm.m.z.z;
+    instance.mXfm[2][3] = xfm.v.z;
+    instance.mNormalXfm[0][0] = normal.x.x;
+    instance.mNormalXfm[0][1] = normal.y.x;
+    instance.mNormalXfm[0][2] = normal.z.x;
+    instance.mNormalXfm[1][0] = normal.x.y;
+    instance.mNormalXfm[1][1] = normal.y.y;
+    instance.mNormalXfm[1][2] = normal.z.y;
+    instance.mNormalXfm[2][0] = normal.x.z;
+    instance.mNormalXfm[2][1] = normal.y.z;
+    instance.mNormalXfm[2][2] = normal.z.z;
+    instance.mPackedState = 0;
+    std::memcpy(instance.mParams[0], instances.mData[0].mParams[0], sizeof(instance.mParams[0]));
+    std::memset(instance.mParams[1], 0, sizeof(instance.mParams[1]));
+
+    auto& gfx = ps4._ActiveGfxContext();
+    auto* uploaded = static_cast<RndInstanceData*>(gfx.allocateFromCommandBuffer(
+        sizeof(RndInstanceData), sce::Gnm::kEmbeddedDataAlignment4));
+    sce::Gnm::Buffer buffers[PS4RenderUtl::kNumInstanceStreams];
+    PS4RenderUtl::InitializeInstanceBuffer(buffers, uploaded, 1);
+    *uploaded = instance;
+    gfx.setVertexBuffers(
+        sce::Gnm::kShaderStageVs,
+        RndVertexInterpreter::kNumStreams,
+        PS4RenderUtl::kNumInstanceStreams,
+        buffers);
+
+    ps4.SetupDraw(RndPrimitive::kTriangles);
+    const auto numIndices = static_cast<unsigned int>(kIndicesPerParticle * mNumActive);
+    gfx.setIndexSize(sce::Gnm::kIndexSize16);
+    gfx.drawIndex(numIndices, mIndices);
+    _UpdateStats(context);
 }

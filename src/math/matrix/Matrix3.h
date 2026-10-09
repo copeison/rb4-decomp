@@ -12,6 +12,8 @@ public:
     Vector3 x;
     Vector3 y;
     Vector3 z;
+
+    static const Matrix3 sID;  // 0x19E65E0
 };
 
 static_assert(offsetof(Matrix3, y) == 12);

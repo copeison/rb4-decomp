@@ -13,7 +13,9 @@ public:
     PS4ParticleBuffer(unsigned long numParticles, const char* name);  // 0x8E2AA0
     ~PS4ParticleBuffer() override;  // 0x8E2D30, 0x8E2D80
 
-    void _DrawBatchImpl(RndContext& context, const void* instances) override;  // 0x8E2E10
+    void _DrawBatchImpl(
+        RndContext& context,
+        const VectorAdapter<RndInstanceData>& instances) override;  // 0x8E2E10
 
     // Reconstructed from eboot.elf at 0x8E2DE0 and inlined at 0x8E2E43.
     void _UpdateBuffer(RndContext& context);
@@ -27,14 +29,10 @@ public:
     unsigned short* mIndices;
 
 private:
-    // Stand-ins for code inlined into the constructor and _DrawBatchImpl
-    // (the map's _CreateBuffers); not yet reconstructed. Names not in the
-    // reference map.
+    // Stand-ins for code inlined into the constructor (the map's
+    // _CreateBuffers); not yet reconstructed. Names not in the reference map.
     void _AllocateVertexStream(unsigned int stream, unsigned long size, const char* name);
     unsigned short* _AllocateIndexStream(unsigned long size, const char* name);
-    void _SelectVertexStreams(RndContext& context) const;
-    void _SelectInstanceStreams(RndContext& context, const void* instances) const;
-    void _DrawIndexed(RndContext& context, unsigned int numIndices) const;
 };
 
 static_assert(offsetof(PS4ParticleBuffer, mVertexBuffers) == 64);

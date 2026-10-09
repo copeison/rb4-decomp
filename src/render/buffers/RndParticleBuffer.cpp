@@ -22,3 +22,6 @@ RndParticleBuffer::RndParticleBuffer(unsigned long numParticles, const char* nam
       mWorldSpace(true),
       mHasRotation(false),
       mName(name) {}
+
+// Reconstructed from eboot.elf at 0x6ECB60.
+void RndParticleBuffer::_UpdateStats(RndContext&) {}

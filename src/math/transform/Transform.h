@@ -10,6 +10,8 @@ class Transform {
 public:
     Hmx::Matrix3 m;
     Vector3 v;
+
+    static const Transform sID;  // 0x19E666C
 };
 
 static_assert(offsetof(Transform, v) == 36);
