@@ -5,6 +5,7 @@
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
 #include "render/resources/names/render_resource_name.h"
+#include "render/resources/shaders/shader_source_hash.h"
 
 namespace rb4 {
 
@@ -15,52 +16,20 @@ constexpr std::uint64_t kTypeRegisterCounts[] = {
     1, 1, 1, 1, 3, 3, 4, 4,
 };
 
-constexpr const char* kTypeNames[] = {
-    "bool", "int", "int2", "int3", "int4",
-    "uint", "uint2", "uint3", "uint4",
-    "float", "float2", "float3", "float4",
-    "float3x3", "float3x4", "float4x3", "float4x4",
-};
-
 void append_hash(std::uint32_t& hash, const char* text) {
-    while (*text != '\0') {
-        hash = (hash ^ static_cast<std::uint8_t>(*text)) * 0x01000193U;
-        ++text;
-    }
+    render_shader_source_hash_append(hash, text);
 }
 
 void append_unsigned_hash(std::uint32_t& hash, std::uint64_t value) {
-    char digits[20];
-    auto* end = digits + sizeof(digits);
-    auto* cursor = end;
-    do {
-        *--cursor = static_cast<char>('0' + value % 10);
-        value /= 10;
-    } while (value != 0);
-    while (cursor != end) {
-        const char character[2] = {*cursor++, '\0'};
-        append_hash(hash, character);
-    }
+    render_shader_source_hash_append_unsigned(hash, value);
 }
 
 void append_signed_hash(std::uint32_t& hash, std::int32_t value) {
-    if (value < 0) {
-        append_hash(hash, "-");
-        append_unsigned_hash(
-            hash,
-            static_cast<std::uint64_t>(-
-                static_cast<std::int64_t>(value)));
-        return;
-    }
-    append_unsigned_hash(hash, static_cast<std::uint32_t>(value));
+    render_shader_source_hash_append_signed(hash, value);
 }
 
 const char* type_name(RenderShaderConstantType type) {
-    const auto index = static_cast<std::uint32_t>(type);
-    if (index >= sizeof(kTypeNames) / sizeof(*kTypeNames)) {
-        return "";
-    }
-    return kTypeNames[index];
+    return render_shader_constant_type_name(static_cast<std::uint32_t>(type));
 }
 
 void append_array_suffix(

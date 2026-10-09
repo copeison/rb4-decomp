@@ -428,6 +428,8 @@
   the Park-Miller stream cipher, and the compiled-shader cache object loader.
 - [x] Reconstruct the engine file wrappers, the complete `BinStream` base
   dispatch and endian/cipher I/O, and the 592-byte `FileStream`.
+- [x] Reconstruct the compiled-shader cache validators: backend-state
+  declaration hashing, source-file hashing, and global define matching.
 - [ ] Extend source-owned primary-shader dispatches from 7 to the binary's 11
   slots, including permutation validators and per-shader slot 8/9 overrides.
 - [x] Reconstruct all built-in graphics-shader constructors, including their

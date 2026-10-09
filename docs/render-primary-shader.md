@@ -47,6 +47,13 @@ when the size is zero. The shader's backend name is the metadata. The original
 compares the active render API with itself before loading, so the seek-skip
 branch for foreign records is unreachable on this build.
 
+The validator's hash inputs are now source-owned. They are the backend-state
+declaration hash (`0x6446A0`), the source-file hash (`0x6456C0`), and the
+define matcher (`0x63EB70`). Generated text is never materialized: it is
+streamed into an FNV-1a hashing text stream that sign-extends each byte.
+Earlier constant-block hashing zero-extended bytes; it now shares the
+corrected helper.
+
 The backend initializer at `0x638430` and its cache validator at `0x638A40`
 remain unreconstructed. The validator opens the cache as a 592-byte
 `FileStream` (`0x2443A0`). It compares the record count and the shader's slot-6
