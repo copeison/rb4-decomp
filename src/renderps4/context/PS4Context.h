@@ -271,28 +271,6 @@ private:
     void _EmitComputeResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
     void _RemoveResourceSignalGroup(const volatile std::uint32_t* label);
 
-    // Shader stages, samplers and resource tables. Names not in the
-    // reference map; not yet reconstructed.
-    void _BindComputeRwBuffer(std::uint32_t slot, const sce::Gnm::Buffer* buffer);
-    void _CopyGdsToMemory(
-        std::uint32_t gdsOffset,
-        void* destination,
-        std::size_t size,
-        bool blocking);
-    void _BindGraphicsSampler(
-        RndShaderProgramType stage,
-        std::uint32_t slot,
-        const sce::Gnm::Sampler& sampler);
-    void _BindComputeSampler(std::uint32_t slot, const sce::Gnm::Sampler& sampler);
-    void _ClearVertexShader();
-    void _ClearGeometryShader();
-    void _ClearPixelShader();
-    void _ClearComputeShader();
-    bool _GraphicsResourcesActive() const;
-    void _ClearGnmRwTextures(RndShaderProgramType stage);
-    void _ClearGnmTextures(RndShaderProgramType stage);
-    void _ClearGnmBuffers(RndShaderProgramType stage);
-
 public:
     // Layout is modeled only where the offsets are known. Field names are
     // not in the reference map. The first range starts in RndContext's tail

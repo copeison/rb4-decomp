@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct `PS4Context::_SetSamplerImpl`, `_DeactivateShaderProgramTypeImpl`,
+  the deselect-all calls and `_CopyBufferCounter` on the Gnm SDK.
 - [x] Reconstruct the `PS4RenderStateUtl` blend, depth-stencil, stencil and
   primitive-setup builders and the `PS4Context` state setters.
 - [x] Reconstruct the `PS4Context` GPU statistics and timestamp pool, with an

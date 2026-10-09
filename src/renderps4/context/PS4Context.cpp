@@ -58,6 +58,18 @@ constexpr std::size_t kComputeCommandBufferSize = 0x3FFFFC;
 constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
 constexpr unsigned int kNumShaderStages = 6;
+// The Gnm stage of each engine stage (vertex, hull, domain, geometry,
+// pixel, compute), as the table at 0x12D19D0. Name not in the reference map.
+constexpr sce::Gnm::ShaderStage kGnmShaderStages[kNumShaderStages] = {
+    sce::Gnm::kShaderStageVs,
+    sce::Gnm::kShaderStageHs,
+    sce::Gnm::kShaderStageLs,
+    sce::Gnm::kShaderStageGs,
+    sce::Gnm::kShaderStagePs,
+    sce::Gnm::kShaderStageCs,
+};
+constexpr unsigned int kNumRwTextureSlots = 128;
+constexpr unsigned int kNumSourceSlots = 16;
 constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr int kTimestampAlignment = 8;
 constexpr std::size_t kInitialLabelCapacity = 32;
@@ -506,35 +518,33 @@ void PS4Context::SetCbEnabled(bool enabled) {
 
 // Shader resources -----------------------------------------------------------
 
-// Reconstructed from eboot.elf at 0x8E9810. The map has
-// _DeselectAllReadWriteTexturesImpl(unsigned int, unsigned long const*).
+// Reconstructed from eboot.elf at 0x8E9810. Clears all 128 read-write
+// texture slots of each selected stage; only the graphics pipe records it.
 void PS4Context::_DeselectAllReadWriteTexturesImpl(unsigned int stages) {
-    if (!_GraphicsResourcesActive()) {
+    if (mActivePipe != 0) {
         return;
     }
-
+    auto& gfx = _ActiveGfxContext();
     for (unsigned int index = 0; index < kNumShaderStages; ++index) {
-        if ((stages & (1U << index)) == 0) {
-            continue;
+        if ((stages & (1U << index)) != 0) {
+            gfx.setRwTextures(kGnmShaderStages[index], 0, kNumRwTextureSlots, nullptr);
         }
-        _ClearGnmRwTextures(static_cast<RndShaderProgramType>(index));
     }
 }
 
 // Reconstructed from eboot.elf at 0x8E9940. The map has
-// _DeselectAllSourceTexturesImpl(unsigned int, unsigned long const*).
+// _DeselectAllSourceTexturesImpl(unsigned int, unsigned long const*). Clears
+// the first 16 texture and buffer slots of each selected stage.
 void PS4Context::_DeselectAllSourceTexturesImpl(unsigned int stages) {
-    if (!_GraphicsResourcesActive()) {
+    if (mActivePipe != 0) {
         return;
     }
-
     for (unsigned int index = 0; index < kNumShaderStages; ++index) {
-        if ((stages & (1U << index)) == 0) {
-            continue;
+        if ((stages & (1U << index)) != 0) {
+            const auto stage = kGnmShaderStages[index];
+            _ActiveGfxContext().setTextures(stage, 0, kNumSourceSlots, nullptr);
+            _ActiveGfxContext().setBuffers(stage, 0, kNumSourceSlots, nullptr);
         }
-        const auto stage = static_cast<RndShaderProgramType>(index);
-        _ClearGnmTextures(stage);
-        _ClearGnmBuffers(stage);
     }
 }
 
@@ -545,9 +555,10 @@ void PS4Context::_CopyBufferCounter(
     const RndComputeBuffer& dest) {
     const auto& ps4Source = static_cast<const PS4ComputeBuffer&>(source);
     const auto& ps4Dest = static_cast<const PS4ComputeBuffer&>(dest);
-    _BindComputeRwBuffer(0, &ps4Source.ActiveBuffer());
-    _CopyGdsToMemory(0, ps4Dest.ActiveStorage(), sizeof(std::uint32_t), true);
-    _BindComputeRwBuffer(0, nullptr);
+    auto& gfx = _ActiveGfxContext();
+    gfx.setRwBuffers(sce::Gnm::kShaderStageCs, 0, 1, &ps4Source.ActiveBuffer());
+    gfx.readAppendConsumeCounters(ps4Dest.ActiveStorage(), 0, 0, 1);
+    gfx.setRwBuffers(sce::Gnm::kShaderStageCs, 0, 1, nullptr);
 }
 
 // Reconstructed from eboot.elf at 0x8EA830. Hull, domain and geometry
@@ -561,37 +572,43 @@ void PS4Context::_SetSamplerImpl(
     PS4RenderStateUtl::InitSampler(
         sampler, static_cast<PS4RenderStateUtl::WrapMode>(wrap), filter);
     switch (type) {
-    case kShaderProgramVertex:
-    case kShaderProgramPixel:
-        _BindGraphicsSampler(type, slot, sampler);
-        break;
     case kShaderProgramCompute:
-        _BindComputeSampler(slot, sampler);
+        if (mActivePipe == 1) {
+            _ActiveComputeContext().setSamplers(static_cast<int>(slot), 1, &sampler);
+        } else if (mActivePipe == 0) {
+            _ActiveGfxContext().setSamplers(sce::Gnm::kShaderStageCs, slot, 1, &sampler);
+        }
         break;
-    case kShaderProgramHull:
-    case kShaderProgramDomain:
-    case kShaderProgramGeometry:
+    case kShaderProgramPixel:
+        _ActiveGfxContext().setSamplers(sce::Gnm::kShaderStagePs, slot, 1, &sampler);
+        break;
+    case kShaderProgramVertex:
+        _ActiveGfxContext().setSamplers(sce::Gnm::kShaderStageVs, slot, 1, &sampler);
+        break;
+    default:
         break;
     }
 }
 
-// Reconstructed from eboot.elf at 0x8EA920.
+// Reconstructed from eboot.elf at 0x8EA920. Clearing the pixel shader also
+// turns color-buffer writes off.
 void PS4Context::_DeactivateShaderProgramTypeImpl(RndShaderProgramType type) {
+    auto& gfx = _ActiveGfxContext();
     switch (type) {
     case kShaderProgramVertex:
-        _ClearVertexShader();
+        gfx.setVsShader(nullptr, 0, nullptr);
         break;
     case kShaderProgramGeometry:
-        _ClearGeometryShader();
+        gfx.setGsVsShaders(nullptr);
         break;
     case kShaderProgramPixel:
-        _ClearPixelShader();
+        gfx.setPsShader(nullptr);
+        SetCbEnabled(false);
         break;
     case kShaderProgramCompute:
-        _ClearComputeShader();
+        gfx.setCsShader(nullptr);
         break;
-    case kShaderProgramHull:
-    case kShaderProgramDomain:
+    default:
         break;
     }
 }

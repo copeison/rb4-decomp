@@ -24,3 +24,12 @@ each selected stage. `0x8E9940` clears all 128 read-only texture slots and all
 128 read-only buffer slots. Both operate only while the graphics context owns
 resource state; standalone compute recording maintains its resources in the
 selected compute context instead.
+
+The reconstruction calls the SDK directly. `_SetSamplerImpl` (`0x8EA830`)
+uses one-slot `setSamplers` on the active graphics or compute context.
+`_DeactivateShaderProgramTypeImpl` (`0x8EA920`) binds null vertex, GS/VS,
+pixel or compute shaders; clearing the pixel shader also calls
+`SetCbEnabled(false)`. The deselect-all calls (`0x8E9810`, `0x8E9940`) clear
+128 read-write texture slots, or 16 texture and 16 buffer slots, of each
+selected stage through the stage table at `0x12D19D0`. `_CopyBufferCounter`
+(`0x8EA740`) uses `Gnmx::readAppendConsumeCounters` (`0x10ED6A0`).
