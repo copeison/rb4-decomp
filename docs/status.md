@@ -575,6 +575,11 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Fold `src/render/platform/orbis` into the PS4 classes: the context and
+  synchronization code into `PS4Context`, the video output into `PS4Device`
+  and `PS4Window`, and the mesh, buffer, and shader helpers into
+  `PS4MeshTyped`, `PS4RenderUtl`, `PS4TransientBuffer`, and the new
+  `RndVertexInterpreter`.
 - [x] Convert the render settings to `RndConfig` and the platform
   configurations to `RndCapabilities`.
 - [x] Convert the lighting resources to `RndLightGlobals`, the debug commands

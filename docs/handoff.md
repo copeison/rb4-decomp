@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`RndConfig` and `RndCapabilities` conversion, the fifteenth step of the
-conversion to the reference map's original names, classes, and module
+folding of `src/render/platform/orbis` into the PS4 classes, the
+sixteenth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -12,9 +12,9 @@ microphone subsystems are converted; the rest of the renderer and the game
 code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **153 C++ translation units**. It creates
+The current PS4 object build compiles **141 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 663 entries, most of the
+executable. The latest unresolved-symbol report contains 662 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Render settings and capabilities converted to `RndConfig` and `RndCapabilities` |
+| (this) | `src/render/platform/orbis` folded into `PS4Context`, `PS4Device`, `PS4Window`, `PS4MeshTyped`, `PS4RenderUtl` |
+| `592987d` | Render settings and capabilities converted to `RndConfig` and `RndCapabilities` |
 | `1081c74` | `RndLightGlobals`, `RndCommands`, `Rnd::Init`/`Terminate`, `PS4TransientBuffer`, `PS4RenderStateUtl` |
 | `d857895` | Default resources converted to `RndDefaults` |
 | `80d6619` | GPU statistics converted to `RndGpuStatsMgr` |
