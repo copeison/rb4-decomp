@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "utl/containers/Vector.h"
 #include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
 
@@ -103,6 +104,15 @@ public:
     unsigned char mUnknown52[28];
     Frame mFrames[2];
 };
+
+// Replaces `timers` with the non-null timers of `source`, their full names
+// rebuilt for the sort mode, in case-insensitive order of the full names.
+// The display mode is unused. Name not in the reference map.
+void GatherSortedTimers(
+    const eastl::vector<PerfTimerBase*>& source,
+    eastl::vector<PerfTimerBase*>& timers,
+    unsigned int displayMode,
+    int sortMode);  // 0x24ADB0
 
 static_assert(sizeof(PerfTimer::Frame) == 72);
 static_assert(offsetof(PerfTimer::Frame, mAverageMs) == 8);

@@ -52,12 +52,37 @@ overlays down the screen, with each one returning the line it ended on.
 `RndBufferInspectionShader`'s constructor (0x6B5FA0) and `_InitConfigImpl`
 (0x6B6860) are reconstructed too.
 
+### Overlay drawing
+
+Each overlay's `Draw`, `_Print`, `_Update` and keyboard handler is
+reconstructed, together with `RndDrawUtl::DrawLine2D` (0x3DFC50), the narrow
+`DrawText2D` (0x3E49C0) and `RndBufferInspectionShader::Select` (0x6B6050)
+with its 160-byte `Params`.
+
+- `RndTimersOverlay` shows each thread's timers as a tree. Its
+  `TimedThreadListView` holds one `ThreadTimersListView` per thread, and that
+  holds one `TimerItemView` per timer. In the binary, `HandleKeyboardMsg`
+  (0x6E7D40) inlines the map's `SelectNextItem`, `SelectPrevItem`,
+  `ExpandItem` and `CollapseItem`; the source keeps them as methods.
+- The CPU and GPU timer overlays fill vtable slots 12 to 15: list the threads,
+  gather a thread's timers, then print a header and each timer's stats.
+- `RndTimerGraphOverlay` keeps a sample series per thread and per timer,
+  trims samples older than the graph window, and assigns palette colours by
+  use count.
+- `RndFramerateOverlay` registers its "show CPU/GPU average" options in slot 7
+  (`PropRegistry`) through file-local accessors.
+- `RndDevice` slot 15 is `_GetMemoryUsageImpl` (an invented name). It returns
+  the local and non-local memory in use.
+
 ## Not yet reconstructed
 
 These are declared only:
-- the overlays' `Draw`, `_Print` and `_Update` methods;
-- `RndDrawUtl::DrawLine2D` and `DrawText2D`;
-- `RndBufferInspectionShader::Select`.
+- the graph base's `_FitAxes`, `_DrawSeries`, `_DrawAxes` and `_DrawLegend`;
+- `TimerItemView::DrawHeader` and `_PrintStat`,
+  `ThreadTimersListView::_GatherTimers` and `IsBefore`, and
+  `TimedThreadListView::Draw`;
+- `RndDrawUtl::DrawLines2D` and the wide `DrawText2D`. The binary's wide
+  `DrawText2D` takes a viewport-size argument that the map's signature lacks.
 
 ## Fonts
 

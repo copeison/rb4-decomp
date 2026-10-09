@@ -23,6 +23,13 @@ void MemOrPoolFree(unsigned long size, void* allocation, const char* name);
 long MemFindHeap(const char* name);
 void MemPushHeap(long heap);
 void MemPopHeap();
+// The heap's size in bytes.
+unsigned long MemHeapSize(unsigned long heap);  // 0x37BBB0
+
+class FixedString;
+
+// Appends the heap report to `out`. The memory overlay passes -3.
+void MemPrintOverview(int heap, FixedString& out);  // 0x37B350
 
 // Thread-local temporary-heap scope at 0x37AA30 and 0x37AAF0. The map has
 // MemPushTemp() and MemPopTemp() in this position; this build saves the

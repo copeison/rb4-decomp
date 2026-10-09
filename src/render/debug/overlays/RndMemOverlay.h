@@ -11,8 +11,6 @@ public:
     // Slots 0-1: 0x6E5520, 0x6E5530.
     ~RndMemOverlay() override;
 
-    // Not reconstructed: it formats the heap report into a 2048-character
-    // stack string and queries the render device and FMOD.
     void _Print(TextStream& stream) override;  // slot 8: 0x6E5550
 };
 

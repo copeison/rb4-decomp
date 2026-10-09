@@ -1,10 +1,41 @@
 #include "render/debug/RndBufferInspectionShader.h"
 
+#include <cmath>
+#include <limits>
+
+#include "render/buffers/RndComputeBuffer.h"
+#include "render/buffers/RndShaderCBuffer.h"
+#include "render/defaults/RndDefaults.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
+#include "render/textures/RndTexture1D.h"
+#include "render/textures/RndTexture2D.h"
+#include "render/textures/RndTexture3D.h"
+#include "render/textures/RndTextureArray1D.h"
+#include "render/textures/RndTextureArray2D.h"
+#include "render/textures/RndTextureArrayCube.h"
 #include "render/textures/RndTextureBase.h"
+#include "render/textures/RndTextureCube.h"
+
+namespace {
+
+// Rounds half away from zero, saturating at the int range. Name not in the
+// reference map.
+int RoundToInt(float value) {
+    if (value > 0.0F) {
+        value += 0.5F;
+        return value < 2147483648.0F ? static_cast<int>(value)
+                                     : std::numeric_limits<int>::max();
+    }
+    value -= 0.5F;
+    return value > -2147483648.0F ? static_cast<int>(value)
+                                  : std::numeric_limits<int>::min();
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x6B5FA0.
 RndBufferInspectionShader::RndBufferInspectionShader()
@@ -182,4 +213,169 @@ void RndBufferInspectionShader::_InitConfigImpl(
         "gLightIds", "Uint2As32", 0, kShaderProgramPixel);
     mLightIdRanges = resources.AddComputeBufferCustomTyped(
         "gLightIdRanges", "CSLightIdRange", 0, kShaderProgramPixel);
+}
+
+// Reconstructed from eboot.elf at 0x6B6050. The 2D compute mode shows its
+// buffer as the smallest square that holds it. The array modes that show
+// every element pass the element count; the maximum overdraws come from
+// the device's settings. Each shape of texture is bound at its slot, the
+// 2D texture at the stencil or unsampled slot in those modes; the tiled
+// lighting modes bind the light ID ranges, and the light IDs as well in
+// the two modes that read them.
+void RndBufferInspectionShader::Select(RndContext& context, Params& params) {
+    constexpr unsigned long kPixelKey = 3;
+    constexpr int kTexMode1DArrayAll = 4;
+    constexpr int kTexMode2DArrayAll = 6;
+    constexpr int kTexModeCubeArrayAll = 8;
+    constexpr int kTexMode2DNoSampler = 9;
+    constexpr int kTexModeStencil = 15;
+    constexpr int kTexModeCompute2D = 19;
+    constexpr int kTexModeTiledLightingOverdraw = 20;
+    constexpr int kTexModeDepthTiledLightingOverdraw = 21;
+    constexpr int kTexModeBothEyesTiledLightingOverdraw = 22;
+    constexpr int kTexModeBothEyesDepthTiledLightingOverdraw = 23;
+
+    const RndConfig* settings = TheRndDevice()->mSettings;
+    RndShaderCBuffer& buffer = RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
+    auto member = [&buffer](unsigned long offset) {
+        return static_cast<float*>(RndShaderDrawUtl::GetCBufferMember(buffer, offset));
+    };
+
+    member(mBufferDisplayMode)[0] = static_cast<float>(params.mDisplayMode);
+    buffer.mSyncPending = true;
+
+    int auxWidth;
+    int auxHeight;
+    if (params.mTexMode == kTexModeCompute2D && params.mComputeBuffer != nullptr) {
+        const unsigned long count = params.mComputeBuffer->mDesc.mNumElements;
+        auxWidth = RoundToInt(std::sqrt(static_cast<float>(count)));
+        auxHeight = auxWidth;
+    } else {
+        auxWidth = params.mAuxDims[0];
+        auxHeight = params.mAuxDims[1];
+    }
+    float* auxDims = member(mAuxDims);
+    auxDims[0] = static_cast<float>(auxWidth);
+    auxDims[1] = static_cast<float>(auxHeight);
+    buffer.mSyncPending = true;
+
+    float arraySize = 1.0F;
+    switch (params.mTexMode) {
+    case kTexModeCubeArrayAll:
+        if (params.mTextureArrayCube != nullptr) {
+            arraySize = static_cast<float>(params.mTextureArrayCube->mCubes.size());
+        }
+        break;
+    case kTexMode2DArrayAll:
+        if (params.mTextureArray2D != nullptr) {
+            arraySize = static_cast<float>(params.mTextureArray2D->mPixels.size());
+        }
+        break;
+    case kTexMode1DArrayAll:
+        if (params.mTextureArray1D != nullptr) {
+            arraySize = static_cast<float>(params.mTextureArray1D->mPixels.size());
+        }
+        break;
+    default:
+        break;
+    }
+    float* arrayParams = member(mTextureArrayParams);
+    arrayParams[0] = static_cast<float>(params.mArrayElement);
+    arrayParams[1] = arraySize;
+    arrayParams[2] = static_cast<float>(params.mArrayParamZ);
+    buffer.mSyncPending = true;
+
+    float* tint = member(mTint);
+    tint[0] = params.mTint.red;
+    tint[1] = params.mTint.green;
+    tint[2] = params.mTint.blue;
+    tint[3] = params.mTint.alpha;
+    member(mDiscardPadPixels)[0] = params.mDiscardPadPixels ? 1.0F : 0.0F;
+    member(mBufferInspectionDepthFrac)[0] = params.mDepthFrac;
+    float* stencilParams = member(mStencilParams);
+    stencilParams[0] = static_cast<float>(params.mStencilParams[0]);
+    stencilParams[1] = static_cast<float>(params.mStencilParams[1]);
+    float* lightTileCounts = member(mLightTileCounts);
+    lightTileCounts[0] = static_cast<float>(params.mLightTileCounts[0]);
+    lightTileCounts[1] = static_cast<float>(params.mLightTileCounts[1]);
+    float* maxOverdraw = member(mMaxOverdraw);
+    maxOverdraw[0] =
+        static_cast<float>(static_cast<unsigned long>(settings->mMaxLightingOverdraw));
+    maxOverdraw[1] =
+        static_cast<float>(static_cast<unsigned long>(settings->mMaxLightProbeOverdraw));
+    RndShaderDrawUtl::CommitCBuffer(buffer, context, mCBufferSize);
+
+    const RndDefaults& defaults = TheRndDevice()->mDefaults;
+    auto select = [&context](RndShaderResource* resource, unsigned long slot, unsigned int flags) {
+        resource->Select(context, kShaderProgramPixel, slot, flags, 0);
+    };
+    auto orError = [](RndTextureBase* texture, RndTextureBase* error) {
+        return texture != nullptr ? texture : error;
+    };
+    select(
+        orError(params.mTexture1D, defaults.mTextures1D[kDefaultTextureError]), mTexture1D, 0);
+    RndTextureBase* texture2D =
+        orError(params.mTexture2D, defaults.mTextures2D[kDefaultTextureError]);
+    if (params.mTexMode == kTexMode2DNoSampler) {
+        select(texture2D, mTexture2DNoSampler, RndShaderResource::kSelectNoSampler);
+    } else if (params.mTexMode == kTexModeStencil) {
+        select(texture2D, mStencilBuffer, RndShaderResource::kSelectStencil);
+    } else {
+        select(texture2D, mTexture2D, 0);
+    }
+    select(
+        orError(params.mTexture3D, defaults.mTextures3D[kDefaultTextureError]), mTexture3D, 0);
+    select(
+        orError(params.mTextureArray1D, defaults.mTexturesArray1D[kDefaultTextureError]),
+        mTextureArray1D,
+        0);
+    select(
+        orError(params.mTextureArray2D, defaults.mTexturesArray2D[kDefaultTextureError]),
+        mTextureArray2D,
+        0);
+    select(
+        orError(params.mTextureCube, defaults.mTexturesCube[kDefaultTextureError]),
+        mTextureCube,
+        0);
+    select(
+        orError(params.mTextureArrayCube, defaults.mTexturesArrayCube[kDefaultTextureError]),
+        mTextureArrayCube,
+        0);
+    select(
+        orError(params.mTexture2DRTSliced, defaults.mTextures2D[kDefaultTextureError]),
+        mTexture2DRTSliced,
+        RndShaderResource::kSelectRTSliced);
+    if (params.mTextureArray2DRTSliced != nullptr) {
+        select(
+            params.mTextureArray2DRTSliced,
+            mTextureArray2DRTSliced,
+            RndShaderResource::kSelectRTSliced);
+    }
+
+    switch (params.mTexMode) {
+    case kTexModeCompute2D:
+        if (params.mComputeBuffer != nullptr) {
+            select(params.mComputeBuffer, mComputeBuffer2D, 0);
+        }
+        break;
+    case kTexModeTiledLightingOverdraw:
+    case kTexModeBothEyesTiledLightingOverdraw:
+        if (params.mComputeBuffer != nullptr && params.mLightIds != nullptr) {
+            select(params.mComputeBuffer, mLightIdRanges, 0);
+            select(params.mLightIds, mLightIds, 0);
+        }
+        break;
+    case kTexModeDepthTiledLightingOverdraw:
+    case kTexModeBothEyesDepthTiledLightingOverdraw:
+        if (params.mComputeBuffer != nullptr) {
+            select(params.mComputeBuffer, mLightIdRanges, 0);
+        }
+        break;
+    default:
+        break;
+    }
+
+    RndShaderKeyGroup keys{};
+    keys.mKeys[kPixelKey] = mTexMode.SetValue(0, static_cast<unsigned int>(params.mTexMode));
+    _SelectShaderCollection(context, keys);
 }

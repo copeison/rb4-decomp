@@ -1,5 +1,7 @@
 #include "render/drawing/RndDrawUtl.h"
 
+#include <cstring>
+
 #include "render/context/RndContext.h"
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndMeshUtl.h"
@@ -7,6 +9,8 @@
 #include "render/shaders/RndShaderBasic.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndDevice.h"
+#include "utl/containers/FixedVector.h"
+#include "utl/text/UTF8.h"
 
 namespace {
 
@@ -131,6 +135,16 @@ void RndDrawUtl::Terminate() {
     SafeDelete(gTruncatedRoundedConeMesh);
 }
 
+// Reconstructed from eboot.elf at 0x3DFC50.
+void RndDrawUtl::DrawLine2D(
+    RndContext& context,
+    const Segment2D& segment,
+    const Line2DParams& params) {
+    FixedVector<Segment2D, 1> segments;
+    segments.push_back(segment);
+    DrawLines2D(context, VectorAdapter<Segment2D>{segments.begin(), segments.size()}, params);
+}
+
 // Reconstructed from eboot.elf at 0x3E0C50. The left and top edges are
 // converted to clip space by mode; the right and bottom edges are first
 // brought to pixels.
@@ -252,4 +266,21 @@ void RndDrawUtl::DrawQuad2D(RndContext& context, Quad2DParams& params) {
     context._DrawPrimitivesImpl(
         RndPrimitive::kTriangleStrip, RndVertexColorTex::kType, vertices, count);
     context.SetUsingIdentityViewProjection(identity);
+}
+
+// Reconstructed from eboot.elf at 0x3E49C0. The wide copy lives on the
+// stack.
+void RndDrawUtl::DrawText2D(
+    RndContext& context,
+    const char* text,
+    const Vector2& position,
+    Text2DParams& params,
+    Hmx::Rect* bounds,
+    Vector2* end) {
+    const unsigned long length = std::strlen(text);
+    auto* buffer = static_cast<unsigned short*>(
+        __builtin_alloca((length + 1) * sizeof(unsigned short)));
+    const unsigned short* wide = CharToWideChar(text, buffer, length + 1);
+    const Vector2 viewportSize = context.mViewportSize;
+    DrawText2D(context, wide, position, viewportSize, params, bounds, end);
 }

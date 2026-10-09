@@ -1,8 +1,11 @@
 #include "render/debug/overlays/RndFramerateOverlay.h"
 
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropRegistry.h"
 #include "os/joypads/Keyboard.h"
 #include "os/profiling/PerfMgr.h"
 #include "os/profiling/PerfTimer.h"
+#include "render/debug/RndOverlayMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "utl/text/HmxSnprintf.h"
@@ -13,6 +16,41 @@ namespace {
 // reference map.
 void CountGpuStatsUser(bool add) {
     TheRndDevice()->mGpuStats.mEnableCount += add ? 1UL : -1UL;
+}
+
+// The overlay, looked up by name. Name not in the reference map.
+RndFramerateOverlay* FramerateOverlay() {
+    return static_cast<RndFramerateOverlay*>(RndOverlayMgr::GetOverlay(Symbol("framerate")));
+}
+
+// The accessors of the overlay's options. Names not in the reference map.
+
+// Reconstructed from eboot.elf at 0x6E2CC0.
+bool GetShowCpuAverage(const PropAccessorArgs& args) {
+    static_cast<void>(args);
+    return FramerateOverlay()->mShowCpuAverage;
+}
+
+// Reconstructed from eboot.elf at 0x6E2D10.
+void SetShowCpuAverage(const PropAccessorArgs& args) {
+    FramerateOverlay()->mShowCpuAverage = *static_cast<const bool*>(args.mValue);
+}
+
+// Reconstructed from eboot.elf at 0x6E2D70.
+bool GetShowGpuAverage(const PropAccessorArgs& args) {
+    static_cast<void>(args);
+    return FramerateOverlay()->mShowGpuAverage;
+}
+
+// Reconstructed from eboot.elf at 0x6E2DC0. Toggles as the 'G' key does.
+void SetShowGpuAverage(const PropAccessorArgs& args) {
+    RndFramerateOverlay* overlay = FramerateOverlay();
+    if (overlay->mShowGpuAverage != *static_cast<const bool*>(args.mValue)) {
+        overlay->mShowGpuAverage = !overlay->mShowGpuAverage;
+        if (overlay->mShowing) {
+            CountGpuStatsUser(overlay->mShowGpuAverage);
+        }
+    }
 }
 
 }  // namespace
@@ -65,6 +103,25 @@ void RndFramerateOverlay::_HandleShowingChanged(bool showing) {
     if (mShowGpuAverage) {
         CountGpuStatsUser(mShowing);
     }
+}
+
+// Reconstructed from eboot.elf at 0x6E2960. Both options are bools kept
+// by the overlay and reached through accessors. Each registration builds
+// a "prop" symbol that it does not use.
+void RndFramerateOverlay::_Unknown7(PropRegistry& registry) {
+    bool type = false;
+    BoolMetadata& cpu = TypeSpecificMetadata(
+        registry.RegisterProp("show_cpu_average", -1, kPropertyBool, 0), type);
+    static_cast<void>(Symbol("prop"));
+    cpu.mGetter = GetShowCpuAverage;
+    cpu.mSetter = SetShowCpuAverage;
+
+    bool gpuType = false;
+    BoolMetadata& gpu = TypeSpecificMetadata(
+        registry.RegisterProp("show_gpu_average", -1, kPropertyBool, 0), gpuType);
+    static_cast<void>(Symbol("prop"));
+    gpu.mGetter = GetShowGpuAverage;
+    gpu.mSetter = SetShowGpuAverage;
 }
 
 // Reconstructed from eboot.elf at 0x6E2A60.

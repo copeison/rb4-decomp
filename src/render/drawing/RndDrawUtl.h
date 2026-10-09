@@ -7,6 +7,7 @@
 #include "math/geometry/Segment.h"
 #include "math/vector/Vector2.h"
 #include "render/materials/RndMaterialCom.h"
+#include "utl/containers/VectorAdapter.h"
 
 class RndContext;
 class RndTextureBase;
@@ -83,9 +84,15 @@ public:
         RndContext& context,
         const Segment2D& segment,
         const Line2DParams& params);  // 0x3DFC50
+    // Draws the segments as one line list with an identity view-projection
+    // and the basic shader.
+    static void DrawLines2D(
+        RndContext& context,
+        const VectorAdapter<Segment2D>& segments,
+        const Line2DParams& params);  // 0x3DFCB0
     // Draws the text at `position` within the context's viewport. `bounds`
     // and `end` receive the text's rectangle and the position after it
-    // when given.
+    // when given. Widens the text and draws it through the wide overload.
     static void DrawText2D(
         RndContext& context,
         const char* text,
@@ -93,6 +100,17 @@ public:
         Text2DParams& params,
         Hmx::Rect* bounds,
         Vector2* end);  // 0x3E49C0
+    // The wide overload lays the text out in `viewportSize`; the map's
+    // signature is DrawText2D(RndContext&, unsigned short const*, Vector2
+    // const&, RndDrawUtl::Text2DParams&, Hmx::Rect*, Vector2*).
+    static void DrawText2D(
+        RndContext& context,
+        const unsigned short* text,
+        const Vector2& position,
+        const Vector2& viewportSize,
+        Text2DParams& params,
+        Hmx::Rect* bounds,
+        Vector2* end);  // 0x3E4A70
     // Lays the text out as DrawText2D would in a viewport of
     // `viewportSize`, without drawing it. Name not in the reference map.
     static void MeasureText2D(

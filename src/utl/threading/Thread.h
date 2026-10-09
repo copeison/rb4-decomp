@@ -41,6 +41,10 @@ public:
     // the reference map.
     static void SetCurrentName(const char* name);
 
+    // The main thread, recorded when it first registers its name. At
+    // 0x19E8810.
+    static ScePthread s_MainThreadID;
+
     // Field names are not in the reference map.
     ScePthread mHandle;
     long mProcessor;

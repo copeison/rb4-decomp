@@ -139,7 +139,7 @@ void RndDevice::_ExecuteDeferredContextImpl(RndContext*) {}
 void RndDevice::_SetConsoleStateImpl(ConsoleState) {}
 int RndDevice::_GetGpuBlockingBehaviorImpl() const { return 0; }
 int RndDevice::_UnknownSlot14Impl() { return 0; }
-RndDeviceSlot15Result RndDevice::_UnknownSlot15Impl() { return {}; }
+RndDeviceMemoryUsage RndDevice::_GetMemoryUsageImpl() { return {}; }
 void RndDevice::_UnknownSlot16Impl() {}
 
 // Reconstructed from eboot.elf at 0x3DDAE0.

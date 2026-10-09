@@ -723,6 +723,9 @@
 - [x] Reconstruct the debug overlay constructors, `RndOverlayMgr::Poll` and
   `DrawAll`, and the buffer inspection shader's constructor and config (see
   [render-subsystems.md](render-subsystems.md)).
+- [x] Reconstruct the overlays' draw, print, update and keyboard methods,
+  `RndDrawUtl::DrawLine2D` and `DrawText2D`, and
+  `RndBufferInspectionShader::Select`.
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

@@ -1,5 +1,8 @@
 #include "render/debug/overlays/RndTimersOverlay.h"
 
+#include "os/profiling/PerfMgr.h"
+#include "os/profiling/PerfTimer.h"
+
 // Reconstructed from eboot.elf at 0x6E1F90.
 RndCpuTimersOverlay::RndCpuTimersOverlay() : RndTimersOverlay("cpu_timers", 0) {}
 
@@ -15,4 +18,26 @@ void RndCpuTimersOverlay::PrintHelp(TextStream& stream) {
               "  collapse_all_timers:     collapses all timers\n"
               "  toggle_entity_timers:    toggles per-entity timers on/off (on by default)\n"
               "  toggle_component_timers: toggles per-component timers on/off (off by default)\n";
+}
+
+// Reconstructed from eboot.elf at 0x6E2030. Every thread with a timer
+// table.
+void RndCpuTimersOverlay::_Unknown12(eastl::vector<ScePthread>& threads) {
+    threads.reserve(thePerfMgr.mThreadTimers.size());
+    for (PerfTimerMgr::ThreadTimers* entry : thePerfMgr.mThreadTimers) {
+        threads.push_back(entry->mThread);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6E21E0.
+void RndCpuTimersOverlay::_Unknown13(
+    ScePthread thread,
+    eastl::vector<PerfTimerBase*>& timers,
+    unsigned int displayMode,
+    int sortMode) {
+    for (PerfTimerMgr::ThreadTimers* entry : thePerfMgr.mThreadTimers) {
+        if (entry->mThread == thread) {
+            GatherSortedTimers(*entry->mTimers, timers, displayMode, sortMode);
+        }
+    }
 }

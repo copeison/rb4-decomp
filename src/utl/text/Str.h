@@ -96,6 +96,11 @@ private:
 
 static_assert(sizeof(StackString<256>) == 280);
 
+// Writes the value in decimal with comma thousands separators into
+// `buffer` and returns it. The map's signature is PrintIntWithCommas(char*,
+// unsigned long, long); this build takes the value first.
+char* PrintIntWithCommas(long value, char* buffer, unsigned long size);  // 0x2562F0
+
 // Interned decimal text for small integers at 0x256410. Negative values map
 // to "-1"; non-negative values index the table at 0x18EF6F0.
 const char* IntToStaticString(int value);

@@ -35,12 +35,17 @@ struct RndInitParams {
 
 static_assert(sizeof(RndInitParams) == 16);
 
-// Value returned by vtable slot 15. Name not in the reference map.
-struct RndDeviceSlot15Result {
-    void* mUnknown0;
-    void* mUnknown8;
-    void* mUnknown16;
+// The video memory in use, from vtable slot 15. The memory overlay shows
+// both counts in thousands of bytes. Name not in the reference map; the
+// field names are not either.
+struct RndDeviceMemoryUsage {
+    bool mValid;  // Clear when the device does not report its memory.
+    long mLocalUsed;
+    long mNonlocalUsed;
 };
+
+static_assert(offsetof(RndDeviceMemoryUsage, mLocalUsed) == 8);
+static_assert(sizeof(RndDeviceMemoryUsage) == 24);
 
 // Render device: owns the immediate and deferred contexts, the main window,
 // frame timing, the per-platform settings, the default resources, and the
@@ -72,7 +77,7 @@ public:
     virtual void _SetConsoleStateImpl(ConsoleState state);  // slot 12 at 0x3DEFA0
     virtual int _GetGpuBlockingBehaviorImpl() const;       // slot 13 at 0x3DEFB0
     virtual int _UnknownSlot14Impl();                      // slot 14 at 0x3DEFC0
-    virtual RndDeviceSlot15Result _UnknownSlot15Impl();    // slot 15 at 0x3DEFD0
+    virtual RndDeviceMemoryUsage _GetMemoryUsageImpl();    // slot 15 at 0x3DEFD0
     virtual void _UnknownSlot16Impl();                     // slot 16 at 0x3DEFF0
 
     // The map's signature is Init(RndInitParams*).

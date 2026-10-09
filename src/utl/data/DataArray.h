@@ -127,3 +127,7 @@ inline DataNode& DataNode::operator=(const DataNode& other) {
     mType = other.mType;
     return *this;
 }
+
+// Executes the array's nodes from `firstNode` on as commands and returns
+// the last result; an array too short gives an int zero.
+DataNode DataExecuteBlock(DataArray* array, unsigned long firstNode);  // 0x21EDA0

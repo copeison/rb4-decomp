@@ -7,6 +7,7 @@
 #include "utl/text/Symbol.h"
 
 class KeyboardKeyMsg;
+class PropRegistry;
 class RndContext;
 class TextStream;
 
@@ -71,11 +72,11 @@ public:
         static_cast<void>(showing);
     }
     // Slot 7 at 0x6D1710. RndOverlayOptionsCom's _Init (0x5F9AD0) calls it
-    // with an object of its own at offset 0x6A0, to which the framerate
-    // overlay adds its "show_cpu_average" and "show_gpu_average" options.
-    // The parameter's type is not recovered. Name not in the reference map.
-    virtual void _Unknown7(void* options) {
-        static_cast<void>(options);
+    // with a property registry of its own at offset 0x6A0, to which the
+    // framerate overlay adds its "show_cpu_average" and "show_gpu_average"
+    // options. Name not in the reference map.
+    virtual void _Unknown7(PropRegistry& registry) {
+        static_cast<void>(registry);
     }
 
     // Shows or hides the overlay, notifying _HandleShowingChanged on a

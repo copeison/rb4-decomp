@@ -130,6 +130,22 @@ public:
         mpEnd = mpBegin;
     }
 
+    // Moves the later elements down over the range.
+    T* erase(T* first, T* last) {
+        auto* output = first;
+        for (auto* input = last; input != mpEnd; ++input, ++output) {
+            *output = std::move(*input);
+        }
+        for (auto* element = output; element != mpEnd; ++element) {
+            element->~T();
+        }
+        mpEnd = output;
+        return first;
+    }
+    T* erase(T* position) {
+        return erase(position, position + 1);
+    }
+
     // Grows by default-constructing new elements, or shrinks by destroying
     // trailing ones.
     void resize(unsigned long count) {

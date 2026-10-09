@@ -75,18 +75,92 @@ public:
         return iterator(&mHead);
     }
 
+    bool empty() const {
+        return mHead.mNext == &mHead;
+    }
+    unsigned long size() const {
+        unsigned long count = 0;
+        for (const Node* node = mHead.mNext; node != &mHead; node = node->mNext) {
+            ++count;
+        }
+        return count;
+    }
+    T& front() {
+        return *Access::FromNode(mHead.mNext);
+    }
+    T& back() {
+        return *Access::FromNode(mHead.mPrev);
+    }
+    // The neighbours of an element, or null at the ends.
+    T* next(T& item) {
+        Node* node = Access::ToNode(item).mNext;
+        return node != &mHead ? Access::FromNode(node) : nullptr;
+    }
+    T* prev(T& item) {
+        Node* node = Access::ToNode(item).mPrev;
+        return node != &mHead ? Access::FromNode(node) : nullptr;
+    }
+
     void push_back(T& item) {
-        Node& node = Access::ToNode(item);
-        node.mPrev = mHead.mPrev;
-        node.mNext = &mHead;
-        mHead.mPrev->mNext = &node;
-        mHead.mPrev = &node;
+        InsertBefore(Access::ToNode(item), mHead);
     }
     void remove(T& item) {
         Access::ToNode(item).Remove();
     }
 
+    // Sorts the list with the comparison, as the map's SortInternal does.
+    template <class Cmp>
+    void sort(Cmp cmp) {
+        SortInternal(cmp, &mHead, &mHead, static_cast<long>(size()));
+    }
+
+    // Quicksorts the `count` elements after `before` and before `end`
+    // around their middle element. The map's signature takes the
+    // comparison by reference; it is empty and passed by value here.
+    template <class Cmp>
+    static void SortInternal(Cmp cmp, Node* before, Node* end, long count) {
+        while (count >= 2) {
+            Node* node = before->mNext;
+            unsigned long left = static_cast<unsigned long>(count) >> 1;
+            Node* pivot = node;
+            for (unsigned long i = 0; i < left; ++i) {
+                pivot = pivot->mNext;
+            }
+            T& pivotItem = *Access::FromNode(pivot);
+            Node* last = end->mPrev;
+            while (node != pivot) {
+                Node* next = node->mNext;
+                if (cmp(pivotItem, *Access::FromNode(node))) {
+                    --left;
+                    node->Remove();
+                    InsertBefore(*node, *end);
+                }
+                node = next;
+            }
+            Node* moved = last->mNext;
+            for (node = pivot->mNext; node != moved;) {
+                Node* next = node->mNext;
+                if (cmp(*Access::FromNode(node), pivotItem)) {
+                    ++left;
+                    node->Remove();
+                    InsertBefore(*node, *pivot);
+                }
+                node = next;
+            }
+            SortInternal(cmp, before, pivot, static_cast<long>(left));
+            count = count - 1 - static_cast<long>(left);
+            before = pivot;
+        }
+    }
+
 private:
+    static void InsertBefore(Node& node, Node& position) {
+        node.mPrev = position.mPrev;
+        node.mNext = &position;
+        position.mPrev->mNext = &node;
+        position.mPrev = &node;
+    }
+
     Node mHead;
 };
 

@@ -6,6 +6,7 @@
 #include "os/profiling/PerfTimer.h"
 #include "os/threading/CritSec.h"
 #include "utl/containers/Std.h"
+#include "utl/containers/Vector.h"
 #include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
 
@@ -125,6 +126,12 @@ public:
     // Returns zero in this build; the GPU timer graph uses it as its
     // budget. Name not in the reference map.
     float GetBudget(Symbol name);  // 0x62C610
+    // Replaces `timers` with the statistics, ordered for the GPU timers
+    // overlay's display and sort modes. Name not in the reference map.
+    void GatherTimers(
+        unsigned int displayMode,
+        int sortMode,
+        eastl::vector<PerfTimerBase*>& timers);  // 0x62C150
     // Not located in this build.
     float GetMs(Symbol name);
     float GetWorstMs(Symbol name, unsigned long frames);

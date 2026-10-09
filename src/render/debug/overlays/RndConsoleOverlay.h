@@ -23,6 +23,26 @@ public:
         explicit ConsoleInput(RndConsoleOverlay* owner);
         // Slots 0-1: 0x6E1210, 0x6E1CC0.
         virtual ~ConsoleInput();
+        // Slots 2 to 5 implement the editor's pure accessors for the input
+        // line and the cursor. Slots 6 and 7 (0x6E1910, 0x6E1930) pass the
+        // owner to TheDebug and are not declared. Names not in the
+        // reference map.
+        // Slot 2 at 0x6E1D00.
+        virtual const char* _GetText() const {
+            return mText.c_str();
+        }
+        // Slot 3 at 0x6E1D10.
+        virtual void _SetText(const char* text) {
+            mText = text;
+        }
+        // Slot 4 at 0x6E1D90: the cursor's index in the input line.
+        virtual unsigned long _GetCursor() const {
+            return mCursor;
+        }
+        // Slot 5 at 0x6E1DA0.
+        virtual void _SetCursor(unsigned long cursor) {
+            mCursor = cursor;
+        }
 
         // The editor's key handling.
         bool HandleKeyboardMsg(const KeyboardKeyMsg& msg);  // 0x11AF1C0
@@ -33,8 +53,8 @@ public:
         // each new line with it.
         int mOutputType;
         RndConsoleOverlay* mOwner;
-        String mUnknown584;
-        void* mUnknown600;
+        String mText;  // The input line.
+        unsigned long mCursor;
     };
 
     // Keeps the last lines of the debug output for _Print. The map's
@@ -81,8 +101,7 @@ public:
     // Slots 0-1: 0x6E1070, 0x6E1250.
     ~RndConsoleOverlay() override;
 
-    // Draws the output, then the input line with a blinking cursor. Not
-    // reconstructed.
+    // Draws the output, then the input line with a blinking cursor.
     int Draw(RndContext& context, int y) override;               // slot 2: 0x6E1270
     bool HandleKeyboardMsg(const KeyboardKeyMsg& msg) override;  // slot 3: 0x6E1700
     void PrintHelp(TextStream& stream) override;                 // slot 4: 0x6E1710
@@ -99,6 +118,8 @@ public:
 
 static_assert(offsetof(RndConsoleOverlay::ConsoleInput, mOutputType) == 568);
 static_assert(offsetof(RndConsoleOverlay::ConsoleInput, mOwner) == 576);
+static_assert(offsetof(RndConsoleOverlay::ConsoleInput, mText) == 584);
+static_assert(offsetof(RndConsoleOverlay::ConsoleInput, mCursor) == 600);
 static_assert(sizeof(RndConsoleOverlay::ConsoleInput) == 608);
 static_assert(sizeof(RndConsoleOverlay::ConsoleDebugReflection::Line) == 24);
 static_assert(offsetof(RndConsoleOverlay::ConsoleDebugReflection, mLines) == 8);
