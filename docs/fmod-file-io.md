@@ -1,57 +1,35 @@
-# FMOD file I/O bridge
+# FMOD file I/O
 
-The game supplies FMOD with its own file callbacks rather than letting FMOD
-open package files directly. The cleaned implementation is in
-`src/audio/fmod/io/fmod_file_io.cpp`; their entry points run from `0x27A1C0` through
-`0x27A850`.
+FMOD reads packaged files through the engine's file system. The callbacks
+installed by `FModSystem` are in `src/audio/fmod/io/FmodFileWrapper.cpp`; the
+map has no object for them, and the names follow the reader thread's name,
+`FmodFileWrapper`.
 
 ## Synchronous callbacks
 
-`fmod_file_open` allocates a 40-byte wrapper in the executable, stores the
-requested path, creates a recursive mutex named `hx crit sec`, and opens the
-engine file in mode 2. A successful open prepares the file object and reports
-its 32-bit size to FMOD. A failed engine open destroys the wrapper and returns
-`FMOD_ERR_FILE_NOTFOUND`.
+`FmodFileOpen` at `0x27A5A0` allocates a 40-byte `FmodFileWrapper` holding
+the path, a recursive `CritSec` and the engine file. `FmodFileWrapper::Open`
+at `0x279FE0` opens the file in mode 2, prepares it for streaming through
+`File` slot 17, and reports its 32-bit size. A failed open frees the wrapper
+and returns `FMOD_ERR_FILE_NOTFOUND`.
 
-Read and seek operations hold the wrapper mutex. Reads return
-`FMOD_ERR_FILE_EOF` when the engine returns fewer bytes than FMOD requested;
-seeks are absolute and report success after dispatching to the engine file.
-Every callback that receives a null wrapper returns
-`FMOD_ERR_INVALID_PARAM`. Close releases the engine file, destroys the mutex,
-and frees the wrapper.
-
-The underlying virtual file adapters are now named in IDA:
-
-| Address | Name | Behavior |
-| --- | --- | --- |
-| `0x378940` | `FileOpen` | Opens an engine file with a numeric mode. |
-| `0x378960` | `FileClose` | Dispatches the virtual destructor/close operation. |
-| `0x378A10` | `FileRead` | Reads bytes into a caller buffer. |
-| `0x378A50` | `FileSeek` | Seeks to a position and origin. |
-| `0x378A90` | `FileSize` | Returns the file size. |
+Reads and seeks hold the wrapper lock. A short read returns
+`FMOD_ERR_FILE_EOF`; seeks are absolute. A null wrapper returns
+`FMOD_ERR_INVALID_PARAM`. Close releases the engine file and the wrapper.
 
 ## Asynchronous reader
 
-The initializer at `0x27A1C0` creates a condition variable and starts a worker
-named `FmodFileWrapper` using the `stream_reader` platform thread settings.
-Those settings now flow through the shared 136-byte engine thread wrapper:
-the affinity record supplies stack size at `+0x10`, processor at `+0x18`,
-priority at `+0x20`, and the additional CPU mask at `+0x28`. Shutdown joins
-the embedded 96-byte pthread runtime directly.
-Requests use the 56-byte FMOD 1.10.04 `FMOD_ASYNCREADINFO` layout. The observed
-offsets are preserved with compile-time assertions in `fmod_api.h`.
+`FmodFileWrapperStartReader` at `0x27A1C0` creates the condition named
+`Condition` and starts the `FmodFileWrapper` thread with the `stream_reader`
+task settings. Requests use the 56-byte `FMOD_ASYNCREADINFO` layout.
 
-`fmod_file_async_read` inserts each request into an ascending priority queue.
-The worker removes from the back, so the highest numeric priority runs first.
-Insertion before an existing equal priority means equal-priority requests
-remain first-in, first-out when removed from the back.
+`FmodFileAsyncRead` inserts each request before the first queued request of
+equal or higher priority, and the worker takes requests from the back, so the
+highest priority runs first and equal priorities stay first-in, first-out.
+For each request the worker seeks, reads, and calls the completion callback
+with `FMOD_OK`, `FMOD_ERR_FILE_EOF` or, for a missing handle,
+`FMOD_ERR_FILE_BAD`.
 
-For each request, the worker seeks to `offset`, reads `sizebytes` into
-`buffer`, stores the byte count, and calls the request's completion callback
-with `FMOD_OK` or `FMOD_ERR_FILE_EOF`. A missing handle is translated to
-`FMOD_ERR_FILE_BAD` before the asynchronous completion callback runs.
-
-Cancellation removes a request that is still queued. If the worker is already
-processing that request, cancellation waits on the same condition variable
-until its completion callback has returned. Shutdown marks the worker for
-exit, wakes it, joins it, and destroys the condition variable.
+Cancelling a queued request removes it; cancelling the running request waits
+until it completes. `FmodFileWrapperStopReader` at `0x27A460` wakes the
+worker, joins it and destroys the condition.

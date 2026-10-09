@@ -43,6 +43,8 @@ name in `tools/ps4_symbol_names.csv`. A name is accepted only when its hash and
 library both match an executable import. The generated import table marks these
 rows with `name_source=hashed-symbol`.
 
-The names make the primary startup path readable enough to reconstruct. See
-`docs/audio-initialization.md` for the recovered module, settings, callback,
-and custom DSP sequence.
+The declarations in `src/audio/fmod/api/fmod_api.h` match these imports,
+including their const qualification, so the relocatable link names the real
+FMOD symbols. See [fmod-system.md](fmod-system.md) for the startup sequence
+and [fmod-audio-bus-generator.md](fmod-audio-bus-generator.md) for the DSP
+insertion index (`FMOD_CHANNELCONTROL_DSP_TAIL`).
