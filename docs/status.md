@@ -420,6 +420,8 @@
   mask/classification permutations, weighted-offset array, and four textures.
 - [x] Reconstruct the output-conversion graphics shader, HMD-mask, BT.2020,
   and perceptual-quantizer permutations, minimum intensity, and both textures.
+- [x] Reconstruct the Bink conversion graphics shader, alpha-plane
+  permutation, four YCrCbA plane textures, and scale/offset constants.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
