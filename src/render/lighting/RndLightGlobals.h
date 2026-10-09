@@ -7,7 +7,20 @@
 
 class RndComputeBuffer;
 class RndMesh;
-class RndShader;
+class RndCShaderTiledLightsApplication;
+class RndCShaderTiledLightsCull;
+class RndCShaderTiledLightsInterpolation;
+class RndCShaderTiledLightsStereoToMono;
+class RndCShaderTonemap;
+class RndLightDirectionalDeferredShader;
+class RndLightPointDeferredShader;
+class RndLightProbeDeferredAccumShader;
+class RndLightProbeDeferredShader;
+class RndLightSpotDeferredShader;
+class RndShaderLightDirectionalShadowGen;
+class RndShaderLightPointShadowGen;
+class RndShaderLightSpotShadowGen;
+class RndTonemapShader;
 class RndTextureBase;
 struct RndInitParams;
 
@@ -38,8 +51,8 @@ public:
     void _InitLightSpotMesh();  // 0x47FDE0
     // Not reconstructed yet.
     void _InitMeshes();  // 0x47F1C0
-    // Not reconstructed yet. Creates and registers the lighting shaders; the
-    // last four slots of mShaders only when a render option is set.
+    // Creates and registers the lighting and tonemap shaders; the tiled
+    // compute shaders only on platforms with async compute.
     void _InitShaders();  // 0x47F300
 
     // Field names are not in the reference map.
@@ -49,9 +62,19 @@ public:
     float mSphereScale;
     unsigned long mPrimaryGroupSize;
     unsigned long mSecondaryGroupSize;
-    RndShader* mShaders[8];
+    RndLightDirectionalDeferredShader* mDirectionalShader;
+    RndShaderLightDirectionalShadowGen* mDirectionalShadowGenShader;
+    RndLightPointDeferredShader* mPointShader;
+    RndShaderLightPointShadowGen* mPointShadowGenShader;
+    RndLightSpotDeferredShader* mSpotShader;
+    RndShaderLightSpotShadowGen* mSpotShadowGenShader;
+    RndLightProbeDeferredShader* mProbeShader;
+    RndLightProbeDeferredAccumShader* mProbeAccumShader;
     RndComputeBuffer* mTiledLightIdsCount;
-    RndShader* mOptionalShaders[4];
+    RndCShaderTiledLightsCull* mTiledLightsCullShader;
+    RndCShaderTiledLightsApplication* mTiledLightsApplicationShader;
+    RndCShaderTiledLightsInterpolation* mTiledLightsInterpolationShader;
+    RndCShaderTiledLightsStereoToMono* mTiledLightsStereoToMonoShader;
     // Lazily loaded error_light_cookie.png.
     ResourcePtr<Resource> mErrorLightCookie;
     // inline_lighting_textures.entity.
@@ -60,7 +83,8 @@ public:
     void* mInlineLightingData[2];
     // skin_diffusion.bmp.
     ResourcePtr<Resource> mSkinDiffusion;
-    RndShader* mMoreShaders[2];
+    RndTonemapShader* mTonemapShader;
+    RndCShaderTonemap* mTonemapCShader;
     // Released through their virtual destructors; their types are not
     // recovered yet.
     void* mUnknown200[2];
@@ -75,14 +99,14 @@ static_assert(offsetof(RndLightGlobals, mSpotlightMesh) == 8);
 static_assert(offsetof(RndLightGlobals, mSphereScale) == 16);
 static_assert(offsetof(RndLightGlobals, mPrimaryGroupSize) == 24);
 static_assert(offsetof(RndLightGlobals, mSecondaryGroupSize) == 32);
-static_assert(offsetof(RndLightGlobals, mShaders) == 40);
+static_assert(offsetof(RndLightGlobals, mDirectionalShader) == 40);
 static_assert(offsetof(RndLightGlobals, mTiledLightIdsCount) == 104);
-static_assert(offsetof(RndLightGlobals, mOptionalShaders) == 112);
+static_assert(offsetof(RndLightGlobals, mTiledLightsCullShader) == 112);
 static_assert(offsetof(RndLightGlobals, mErrorLightCookie) == 144);
 static_assert(offsetof(RndLightGlobals, mInlineLightingTextures) == 152);
 static_assert(offsetof(RndLightGlobals, mInlineLightingData) == 160);
 static_assert(offsetof(RndLightGlobals, mSkinDiffusion) == 176);
-static_assert(offsetof(RndLightGlobals, mMoreShaders) == 184);
+static_assert(offsetof(RndLightGlobals, mTonemapShader) == 184);
 static_assert(offsetof(RndLightGlobals, mUnknown200) == 200);
 static_assert(
     offsetof(RndLightGlobals, mProbeCaptureDownsampleTextures) == 216);

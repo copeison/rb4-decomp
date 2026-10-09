@@ -37,6 +37,11 @@ public:
     static constexpr unsigned int kSelectReadWrite = 1;
     // Binds a render-target-sliced view. Name not in the reference map.
     static constexpr unsigned int kSelectRTSliced = 2;
+    // Binds a depth-stencil texture's stencil plane. Name not in the
+    // reference map.
+    static constexpr unsigned int kSelectStencil = 4;
+    // Binds a texture without its sampler. Name not in the reference map.
+    static constexpr unsigned int kSelectNoSampler = 0x10;
 
     // Stamps the resource with the frame epoch, raises the context's input-
     // or, for read-write binds, output-slot limit for the stage past the

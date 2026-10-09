@@ -3,6 +3,21 @@
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/meshes/RndMesh.h"
 #include "render/shaders/RndShader.h"
+#include "render/lighting/deferred/RndLightDirectionalDeferredShader.h"
+#include "render/lighting/deferred/RndLightPointDeferredShader.h"
+#include "render/lighting/deferred/RndLightProbeDeferredAccumShader.h"
+#include "render/lighting/deferred/RndLightProbeDeferredShader.h"
+#include "render/lighting/deferred/RndLightSpotDeferredShader.h"
+#include "render/lighting/shadows/RndShaderLightDirectionalShadowGen.h"
+#include "render/lighting/shadows/RndShaderLightPointShadowGen.h"
+#include "render/lighting/shadows/RndShaderLightSpotShadowGen.h"
+#include "render/lighting/tiled/RndCShaderTiledLightsApplication.h"
+#include "render/lighting/tiled/RndCShaderTiledLightsCull.h"
+#include "render/lighting/tiled/RndCShaderTiledLightsInterpolation.h"
+#include "render/lighting/tiled/RndCShaderTiledLightsStereoToMono.h"
+#include "render/postprocessing/tonemap/RndCShaderTonemap.h"
+#include "render/postprocessing/tonemap/RndTonemapShader.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
 
 namespace {
@@ -23,6 +38,14 @@ void DeleteUnrecovered(void*& object) {
         (*static_cast<UnrecoveredOwnerVtable**>(object))->mDelete(object);
     }
     object = nullptr;
+}
+
+// Creates a shader and registers it with the shader manager.
+template <class T>
+T* Create() {
+    auto* shader = new T;
+    shader->_Register();
+    return shader;
 }
 
 template <class T>
@@ -67,11 +90,22 @@ RndLightGlobals::RndLightGlobals()
       mSphereScale(-1.0F),
       mPrimaryGroupSize(16),
       mSecondaryGroupSize(8),
-      mShaders{},
+      mDirectionalShader(nullptr),
+      mDirectionalShadowGenShader(nullptr),
+      mPointShader(nullptr),
+      mPointShadowGenShader(nullptr),
+      mSpotShader(nullptr),
+      mSpotShadowGenShader(nullptr),
+      mProbeShader(nullptr),
+      mProbeAccumShader(nullptr),
       mTiledLightIdsCount(nullptr),
-      mOptionalShaders{},
+      mTiledLightsCullShader(nullptr),
+      mTiledLightsApplicationShader(nullptr),
+      mTiledLightsInterpolationShader(nullptr),
+      mTiledLightsStereoToMonoShader(nullptr),
       mInlineLightingData{},
-      mMoreShaders{},
+      mTonemapShader(nullptr),
+      mTonemapCShader(nullptr),
       mUnknown200{},
       mUnknown280{} {}
 
@@ -84,6 +118,27 @@ void RndLightGlobals::Init() {
     _InitMeshes();
     _InitShaders();
     _InitBuffers();
+}
+
+// Reconstructed from eboot.elf at 0x47F300.
+void RndLightGlobals::_InitShaders() {
+    constexpr std::uint32_t kAsyncComputeFeature = 0x10;
+    mDirectionalShader = Create<RndLightDirectionalDeferredShader>();
+    mDirectionalShadowGenShader = Create<RndShaderLightDirectionalShadowGen>();
+    mPointShader = Create<RndLightPointDeferredShader>();
+    mPointShadowGenShader = Create<RndShaderLightPointShadowGen>();
+    mSpotShader = Create<RndLightSpotDeferredShader>();
+    mSpotShadowGenShader = Create<RndShaderLightSpotShadowGen>();
+    mProbeShader = Create<RndLightProbeDeferredShader>();
+    mProbeAccumShader = Create<RndLightProbeDeferredAccumShader>();
+    mTonemapShader = Create<RndTonemapShader>();
+    if ((TheRndDevice()->mCapabilities[kPlatformPS4].mFeatureFlags & kAsyncComputeFeature) != 0) {
+        mTiledLightsCullShader = Create<RndCShaderTiledLightsCull>();
+        mTiledLightsApplicationShader = Create<RndCShaderTiledLightsApplication>();
+        mTiledLightsInterpolationShader = Create<RndCShaderTiledLightsInterpolation>();
+        mTiledLightsStereoToMonoShader = Create<RndCShaderTiledLightsStereoToMono>();
+        mTonemapCShader = Create<RndCShaderTonemap>();
+    }
 }
 
 // Reconstructed from eboot.elf at 0x47F500.
@@ -104,15 +159,21 @@ void RndLightGlobals::_InitBuffers() {
 void RndLightGlobals::Terminate() {
     SafeDelete(mSphereMesh);
     SafeDelete(mSpotlightMesh);
-    for (auto*& shader : mShaders) {
-        SafeDelete(shader);
-    }
-    for (auto*& shader : mOptionalShaders) {
-        SafeDelete(shader);
-    }
+    SafeDelete(mDirectionalShader);
+    SafeDelete(mDirectionalShadowGenShader);
+    SafeDelete(mPointShader);
+    SafeDelete(mPointShadowGenShader);
+    SafeDelete(mSpotShader);
+    SafeDelete(mSpotShadowGenShader);
+    SafeDelete(mProbeShader);
+    SafeDelete(mProbeAccumShader);
+    SafeDelete(mTiledLightsCullShader);
+    SafeDelete(mTiledLightsApplicationShader);
+    SafeDelete(mTiledLightsInterpolationShader);
+    SafeDelete(mTiledLightsStereoToMonoShader);
     DeleteUnrecovered(mUnknown280[2]);
-    SafeDelete(mMoreShaders[0]);
-    SafeDelete(mMoreShaders[1]);
+    SafeDelete(mTonemapShader);
+    SafeDelete(mTonemapCShader);
     SafeDelete(mTiledLightIdsCount);
     DeleteUnrecovered(mUnknown200[0]);
     DeleteUnrecovered(mUnknown200[1]);

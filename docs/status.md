@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the deferred-light, shadow-generation, tiled-light and tonemap
+  shaders (`docs/render-lighting-shaders.md`) and `RndLightGlobals::_InitShaders`.
 - [x] Reconstruct `Hmx::Timer` in `src/utl/time/Timer.cpp` and
   `RndPixelData::LoadBuffers`; `BinkRenderMgr::PrepareFrame` clears the camera
   with `RndContext::SetCamera(nullptr)`.

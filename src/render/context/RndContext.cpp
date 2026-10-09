@@ -255,3 +255,13 @@ void RndContext::_SyncClipPlanes(unsigned int mask) {
         device->mBuiltinCBuffers[1]->_SelectImpl(*this);
     }
 }
+
+// Reconstructed from eboot.elf at 0x6BDA00.
+RndScopedGpuStatBlock::RndScopedGpuStatBlock(RndContext& context, const char* name)
+    : mContext(context),
+      mKey(TheRndDevice()->mGpuStats.BeginStatBlock(context, name)) {}
+
+// Reconstructed from eboot.elf at 0x6BDA30.
+RndScopedGpuStatBlock::~RndScopedGpuStatBlock() {
+    TheRndDevice()->mGpuStats.EndStatBlock(mContext, mKey);
+}

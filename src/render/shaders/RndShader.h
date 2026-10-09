@@ -12,6 +12,7 @@ class RndShaderResourceConfig;
 
 // Stage masks a shader declares. Names not in the reference map.
 enum RndShaderStages : int {
+    kShaderStagesVertexPixel = 0x09,
     kShaderStagesGraphics = 0x0D,  // Vertex, geometry, and pixel.
     kShaderStagesCompute = 0x10,
 };

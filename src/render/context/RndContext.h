@@ -225,6 +225,11 @@ public:
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
+    // Makes the camera constants come from the given camera context, or
+    // from the context's own cameras when null, and resyncs them when it
+    // changes. The binary stores the context in mUnknown18776, which
+    // _SyncCameraCBuffer reads. Not reconstructed yet.
+    void SetCameraCBufferOverrideContext(const RndCameraContext* camera);  // 0x6BD370
     // Wireframe shading also draws lines with depth bias.
     void SetShadingMode(RndShadingMode mode);  // 0x6BD5D0
     // Selects the camera constants for the current view-projection mode.
@@ -309,6 +314,19 @@ static_assert(offsetof(RndContext, mUnknown22264) == 0x56F8);
 static_assert(offsetof(RndContext, mGpuStatScopes) == 0x5700);
 static_assert(offsetof(RndContext, mUnknown22304) == 22304);
 static_assert(sizeof(RndContext) == 0x5728);
+
+// Times the GPU work recorded during its lifetime under a named statistic.
+class RndScopedGpuStatBlock {
+public:
+    RndScopedGpuStatBlock(RndContext& context, const char* name);  // 0x6BDA00
+    ~RndScopedGpuStatBlock();                                       // 0x6BDA30
+
+    // Field names are not in the reference map.
+    RndContext& mContext;
+    long mKey;  // From RndGpuStatsMgr::BeginStatBlock.
+};
+
+static_assert(sizeof(RndScopedGpuStatBlock) == 16);
 
 static_assert(sizeof(RndContext::RenderTargetParams) == 288);
 static_assert(offsetof(RndContext::RenderTargetParams, mTargets) == 48);
