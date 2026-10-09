@@ -4,13 +4,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "render/frame/render_extent.h"
-#include "render/system/render_platform.h"
-
-// The engine's platform enumeration. It is reconstructed as
-// rb4::RenderPlatform until the platform tables are converted. Name in the
-// reference map; the alias is not.
-using HxPlatform = rb4::RenderPlatform;
+#include "math/vector/Vector2i.h"
+#include "os/platform/PlatformMgr.h"
 
 // The renderer's capabilities on one platform: its supported output
 // resolutions, its resource tier and feature flags. RndDevice embeds one per
@@ -21,7 +16,7 @@ public:
     void InitForPlatform(HxPlatform platform);  // 0x6B99B0
     bool CheckMinimumRequirements() const;  // 0x6B9FE0
 
-    std::vector<rb4::RenderExtent> mResolutions;
+    std::vector<Vector2i> mResolutions;
     std::uint64_t mResourceTier;
     std::uint32_t mFeatureFlags;
     std::uint32_t mReserved44;

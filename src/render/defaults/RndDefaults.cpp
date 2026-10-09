@@ -8,7 +8,7 @@
 #include "math/vector/Vector3i.h"
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
-#include "render/textures/render_data_format.h"
+#include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndPixelCanvas.h"
 #include "render/textures/RndPixelDataCube.h"
 #include "render/textures/RndTexture1D.h"
@@ -72,7 +72,7 @@ constexpr std::array<DefaultTextureSpec, kNumDefaultTextureTypes>
         {"Error Normal", 64, 3, {1.0F, 0.0F, 0.0F, 1.0F}, {0.0F, 1.0F, 0.0F, 1.0F}, true},
     }};
 
-constexpr RenderDataFormatDescriptor kDefaultTextureFormat{
+constexpr RndDataFormatInfo kDefaultTextureFormat{
     32,
     4,
     0,
@@ -385,7 +385,7 @@ void RndDefaults::Init(bool initRendering) {
 // Reconstructed from eboot.elf at 0x6BDE60.
 void RndDefaults::_CreateTextures() {
     const auto dataFormat =
-        render_data_format_resolve(kDefaultTextureFormat, 7);
+        RndFindSupportedDataFormat(kDefaultTextureFormat, kPlatformPS4);
     for (std::size_t index = 0; index < kDefaultTextureSpecs.size(); ++index) {
         CreateTextureFamily(
             mTextures[index], kDefaultTextureSpecs[index], dataFormat);

@@ -10,7 +10,7 @@ struct ScreenshotRenderTarget;
 
 ScreenshotRenderTarget* screenshot_recreate_render_target(
     ScreenshotRenderTarget* previous,
-    RenderExtent extent,
+    Vector2i extent,
     const char* name);
 void screenshot_bind_render_target(
     ScreenshotRenderTarget& target,

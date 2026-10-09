@@ -1,6 +1,6 @@
 #include "render/system/RndInit.h"
 
-#include "render/system/render_platform.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 
 // The callees below are not identified yet. Names not in the reference map.
@@ -18,8 +18,8 @@ void RndDependentsTerminate();
 void Rnd::Init(const RndInitParams& params) {
     RndDevice& device = *PlatformCreateDevice();
 
-    (void)rb4::orbis_render_api();
-    (void)rb4::render_api_for_platform(rb4::RenderPlatform::kPlayStation4);
+    (void)PlatformGfxApi();
+    (void)RndGfxApiForPlatform(kPlatformPS4);
     device.Init(params);
     device.mDefaults.Init(params.mInitRendering);
     RndLightingPostInit(device, params);

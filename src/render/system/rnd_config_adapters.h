@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/frame/render_extent.h"
+#include "math/vector/Vector2i.h"
 
 namespace rb4 {
 
@@ -20,7 +20,7 @@ void config_read_int32(
 void config_read_extent(
     const DataConfig& config,
     const char* key,
-    RenderExtent& destination);
+    Vector2i& destination);
 const DataConfig* config_find_block(
     const DataConfig& config,
     const char* key);

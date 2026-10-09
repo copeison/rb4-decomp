@@ -14,7 +14,7 @@
 #include "render/system/RndConfig.h"
 #include "render/system/RndCapabilities.h"
 #include "render/system/RndDevice.h"
-#include "render/textures/render_data_format.h"
+#include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndTextureArray1D.h"
 #include "render/textures/RndPixelCanvas.h"
 #include "render/textures/RndPixelData.h"
@@ -605,7 +605,7 @@ void RndShaderMgr::Init() {
     constexpr std::uint32_t kFunctionCount = 4;
     constexpr std::uint32_t kSampleCount = 128;
     constexpr float kSampleStep = 1.0F / 127.0F;
-    constexpr RenderDataFormatDescriptor kFunctionTableFormat{
+    constexpr RndDataFormatInfo kFunctionTableFormat{
         32,
         10,
         2,
@@ -628,7 +628,7 @@ void RndShaderMgr::Init() {
     };
 
     const auto data_format =
-        render_data_format_resolve(kFunctionTableFormat, 7);
+        RndFindSupportedDataFormat(kFunctionTableFormat, kPlatformPS4);
     const Vector3i extent{static_cast<int>(kSampleCount), 1, 1};
     std::array<Hmx::Color, kSampleCount> pixels;
     for (std::uint32_t function_index = 0;

@@ -2,11 +2,13 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 
 #include "utl/options/Option.h"
 #include "render/system/RndCapabilities.h"
 #include "render/system/RndDevice.h"
 #include "render/system/rnd_config_adapters.h"
+#include "os/platform/platform_adapters.h"
 
 using namespace rb4;
 
@@ -23,14 +25,13 @@ bool PlatformSupportsAsyncCompute() {
     return (CurrentCapabilities().mFeatureFlags & kAsyncComputeFeature) != 0;
 }
 
-RenderExtent PlatformDefaultResolution() {
+Vector2i PlatformDefaultResolution() {
     return CurrentCapabilities().mResolutions.back();
 }
 
-bool PlatformSupportsResolution(RenderExtent resolution) {
+bool PlatformSupportsResolution(Vector2i resolution) {
     for (const auto& supported : CurrentCapabilities().mResolutions) {
-        if (supported.width == resolution.width &&
-            supported.height == resolution.height) {
+        if (supported.x == resolution.x && supported.y == resolution.y) {
             return true;
         }
     }
@@ -166,8 +167,25 @@ std::int32_t RndConfig::ActiveVSyncMode() const {
     return mVSyncEnabled ? mVSyncMode : 0;
 }
 
+// Reconstructed from eboot.elf at 0x4414A0.
+HxGfxApi RndGfxApiForPlatform(HxPlatform platform) {
+    const auto* configured_name =
+        render_configured_api_name(PlatformSymbol(platform));
+    if (configured_name == nullptr) {
+        return kGfxApiNull;
+    }
+
+    for (std::uint32_t index = 0; index < kNumGfxApis; ++index) {
+        const auto api = static_cast<HxGfxApi>(index);
+        if (std::strcmp(configured_name, GfxApiSymbol(api)) == 0) {
+            return api;
+        }
+    }
+    return kGfxApiNull;
+}
+
 // Reconstructed from eboot.elf at 0x441940.
-bool ParseResolution(const char* text, RenderExtent& extent) {
+bool ParseResolution(const char* text, Vector2i& extent) {
     if (text == nullptr) {
         return false;
     }
@@ -179,8 +197,10 @@ bool ParseResolution(const char* text, RenderExtent& extent) {
     }
 
     if (*separator != 'x') {
-        extent.height = static_cast<std::uint32_t>(first_value);
-        extent.width = 16 * extent.height / 9;
+        // The binary computes the width unsigned.
+        extent.y = static_cast<int>(first_value);
+        extent.x = static_cast<int>(
+            16 * static_cast<std::uint32_t>(extent.y) / 9);
         return true;
     }
 
@@ -189,8 +209,8 @@ bool ParseResolution(const char* text, RenderExtent& extent) {
         return false;
     }
 
-    extent.width = static_cast<std::uint32_t>(first_value);
-    extent.height = static_cast<std::uint32_t>(second_value);
+    extent.x = static_cast<int>(first_value);
+    extent.y = static_cast<int>(second_value);
     return true;
 }
 
@@ -236,7 +256,7 @@ RndConfig::RndConfig() {
     mOutputResolution = PlatformDefaultResolution();
     if (const auto* override_text =
             OptionStr(gOptionArgs, "resolution", nullptr)) {
-        RenderExtent override_resolution{};
+        Vector2i override_resolution{};
         if (ParseResolution(override_text, override_resolution) &&
             PlatformSupportsResolution(mOutputResolution)) {
             mOutputResolution = override_resolution;

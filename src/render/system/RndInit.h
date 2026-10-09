@@ -1,5 +1,7 @@
 #pragma once
 
+#include "os/platform/PlatformMgr.h"
+
 class RndDevice;
 struct RndInitParams;
 
@@ -14,4 +16,7 @@ void Init(const RndInitParams& params);  // 0x402C30
 void Terminate();                        // 0x402D30
 // Creates the platform device. Defined by each platform's Init object.
 RndDevice* PlatformCreateDevice();
+// The platform's graphics API. Defined by each platform's Init object. Name
+// not in the reference map.
+HxGfxApi PlatformGfxApi();
 }  // namespace Rnd

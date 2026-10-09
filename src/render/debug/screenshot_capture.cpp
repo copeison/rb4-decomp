@@ -13,11 +13,11 @@ constexpr const char* kScreenshotPath = "../screenshots/screenshot.png";
 
 bool g_screenshot_pending = false;
 ScreenshotRenderTarget* g_screenshot_target = nullptr;
-RenderExtent g_screenshot_extent;
+Vector2i g_screenshot_extent;
 std::uint32_t g_screenshot_draw_mode = 0;
 std::uint32_t g_screenshot_debug_view = 0;
 
-RenderExtent extent_for_resolution(
+Vector2i extent_for_resolution(
     const RndWindow& owner,
     ScreenshotResolution resolution) {
     switch (resolution) {
@@ -37,8 +37,8 @@ RenderExtent extent_for_resolution(
     return {};
 }
 
-bool extents_match(RenderExtent left, RenderExtent right) {
-    return left.width == right.width && left.height == right.height;
+bool extents_match(Vector2i left, Vector2i right) {
+    return left.x == right.x && left.y == right.y;
 }
 
 }  // namespace
@@ -77,7 +77,7 @@ void screenshot_capture_frame(
     RndWindow& owner,
     ScreenshotResolution resolution) {
     const auto extent = extent_for_resolution(owner, resolution);
-    if (extent.empty()) {
+    if (extent.x == 0 || extent.y == 0) {
         return;
     }
 

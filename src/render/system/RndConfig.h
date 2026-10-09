@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/frame/render_extent.h"
+#include "math/vector/Vector2i.h"
+#include "os/platform/PlatformMgr.h"
 #include "render/debug/screenshot_capture.h"
 
 // Render quality level read from the rnd config. Name not in the reference
@@ -32,8 +33,8 @@ public:
     // reference map.
     std::int32_t ActiveVSyncMode() const;
 
-    rb4::RenderExtent mContentResolution{1920, 1080};
-    rb4::RenderExtent mPcWindowResolution{1280, 720};
+    Vector2i mContentResolution{1920, 1080};
+    Vector2i mPcWindowResolution{1280, 720};
     bool mPcFullscreen = false;
     std::uint8_t mReserved17[3]{};
     std::int32_t mVSyncMode = 0;
@@ -61,7 +62,7 @@ public:
     std::int64_t mShadowSoftenTileSize = 16;
     std::int64_t mMaskTileSize = 16;
 
-    rb4::RenderExtent mOutputResolution{1920, 1080};
+    Vector2i mOutputResolution{1920, 1080};
     bool mResolutionOverridden = false;
     std::uint8_t mReserved145[3]{};
     RndQualityLevel mQualityLevel = RndQualityLevel::kMedium;
@@ -130,7 +131,11 @@ static_assert(sizeof(RndConfig) == 232);
 
 // Parses "<width>x<height>", or "<height>" for a 16:9 resolution. Name not
 // in the reference map.
-bool ParseResolution(const char* text, rb4::RenderExtent& extent);  // 0x441940
+bool ParseResolution(const char* text, Vector2i& extent);  // 0x441940
+
+// The graphics API the platform's config block selects, or kGfxApiNull.
+// Name not in the reference map.
+HxGfxApi RndGfxApiForPlatform(HxPlatform platform);  // 0x4414A0
 
 // Names not in the reference map.
 const char* RndQualityLevelName(RndQualityLevel level);  // 0x442520
