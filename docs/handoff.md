@@ -2,14 +2,14 @@
 
 ## Snapshot
 
-This document describes the repository at commit
-`ab29d144623b692131bf4bdb78ea8b164bd692b8` on branch `main`, after the
-`decomp: reconstruct basic shaders` milestone. The working tree was clean when
-the snapshot was taken.
+This document describes the repository on branch `main` after commit
+`30cdd55` (`decomp: reconstruct test shaders and retire shader adapters`),
+which completed source ownership of every built-in shader dispatch. The
+working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **169 C++ translation units**. It creates
+The current PS4 object build compiles **173 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 590 unique entries,
+executable. The latest unresolved-symbol report contains 584 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -196,6 +196,11 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
+| `30cdd55` | Test-pattern and render-test-simple shaders; shader adapter files deleted |
+| `55550d8` | Bink conversion shader |
+| `025da37` | Output-conversion shader |
+| `0c5132a` | Blur shader |
+| `b197f28` | Bloom shader |
 | `ab29d14` | Basic and error shader dispatches |
 | `53961ae` | Debug display shader trio |
 | `4c3b48a` | Refine/stencil scene-mask shaders |
@@ -209,9 +214,12 @@ The latest focused commits, newest first, are:
 | `3a708cf` | Blur-classification compute shader |
 | `648da08` | Signed-distance compute shader pair |
 
-The IDA database was saved after each associated rename pass.
+The IDA database was saved after each rename pass through `ab29d14` and after
+the bloom pass in `b197f28`. The later four milestones were reconstructed from
+raw ELF disassembly because IDA Python access was unavailable; their rename
+pass is listed under **Pending IDA database work**.
 
-## Last active milestone in depth
+## Basic and error shader milestone in depth
 
 The last implementation milestone was the reconstruction of the basic and
 error fallback shaders in commit `ab29d144623b692131bf4bdb78ea8b164bd692b8`
@@ -345,38 +353,77 @@ The documentation-only handoff commit `138662f` followed that implementation
 commit. Therefore, a later dirty working tree should be treated as new work,
 not as residue from the basic/error shader milestone.
 
-## Immediate remaining shader work
+## Built-in shader adapters are complete
 
-Six built-in dispatch adapters remain in
-`src/render/resources/shaders/builtin_shader_adapters.h`:
+All 35 built-in shader constructors and every class-specific dispatch are now
+source-owned. `builtin_shader_adapters.h` and `builtin_shader_resources.cpp`
+were deleted; `builtin_shader_resources.h` still declares the constructors for
+the resource manager. The final six live at:
 
-| Constructor | Address | Recommended domain |
-| --- | ---: | --- |
-| `render_bink_convert_shader_construct` | `0x5F4980` | `src/render/resources/video` |
-| `render_bloom_shader_construct` | `0x634640` | `src/render/postprocessing/bloom` |
-| `render_blur_shader_construct` | `0x634AE0` | `src/render/postprocessing/blur` |
-| `render_output_conversion_shader_construct` | `0x6367A0` | `src/render/postprocessing/output` |
-| `render_test_pattern_shader_construct` | `0x6452E0` | `src/render/core/debug` |
-| `render_test_shader_construct` | `0x642500` | `src/render/core/debug` |
+| Shader | Source |
+| --- | --- |
+| Bloom | `src/render/postprocessing/bloom/bloom_shader.cpp` |
+| Blur | `src/render/postprocessing/blur/blur_shader.cpp` |
+| Output conversion | `src/render/postprocessing/output/output_conversion_shader.cpp` |
+| Bink conversion | `src/render/resources/video/bink_convert_shader.cpp` |
+| Test pattern, render-test-simple | `src/render/core/debug/render_test_shaders.cpp` |
 
-For each one:
+### Dispatch tables have 11 slots
 
-1. Decompile the constructor and recover its dispatch-table address.
-2. Inspect all seven dispatch entries and define missing leaf functions only
-   after verifying their boundaries.
-3. Reconstruct a source-owned dispatch and exact constructor state.
-4. Reuse or extend `shader_backend_state` only when IDA proves a new binding
-   layout. Do not approximate a helper with a superficially similar one.
-5. Remove the matching declaration and constructor body from the shared
-   adapter/constructor files.
-6. Rename the verified IDA methods and save the database.
-7. Compile directly for quick feedback, then run the full 5.500 build.
-8. Confirm the removed adapter is absent from `undefined-symbols.txt`, update
-   both tracking documents, and make a focused commit.
+The binary's primary-shader dispatch tables have 11 slots, not 7. Slots 7-10
+hold a permutation validator, a fallback hook, and two zero-returning queries,
+and several shaders override them. Source dispatches still model only the first
+seven, because no reconstructed caller uses the later slots yet. Details and
+known overrides are in [render-builtin-shaders.md](render-builtin-shaders.md).
+Extend every source dispatch when the backend loader below is reconstructed.
 
-After these six, remove any helper in `builtin_shader_resources.cpp` that has
-become unused and verify that `builtin_shader_adapters.h` can be deleted or
-reduced to genuinely unresolved behavior.
+### Raw-ELF fallback when IDA Python is unavailable
+
+The ELF has no section headers, so `orbis-objdump -d` prints nothing. Cut bytes
+from the loadable program segment and disassemble them as raw x86-64 instead:
+`orbis-objdump -D -b binary -m i386:x86-64 -M intel --adjust-vma=<start>`.
+Dispatch tables are filled by `R_X86_64_RELATIVE` relocations (type `8`), so
+read a table by scanning for 24-byte relocation records whose offset falls
+inside it; the addend is the slot target. This matched IDA exactly for the
+blur table.
+
+### Pending IDA database work
+
+Apply and save these when IDA Python access is available. Each needs a
+function created at the listed boundaries before it is renamed.
+
+| Address | Name | End |
+| ---: | --- | ---: |
+| `0x634B80` | `blur_shader_destruct` | existing |
+| `0x634B90` | `blur_shader_delete` | `0x634BAC` |
+| `0x635AF0` | `blur_shader_backend_path` | `0x635AF8` |
+| `0x635B00` | `blur_shader_initialize_support_objects` | `0x635EF7` |
+| `0x635F00` | `blur_shader_validate_permutation` | `0x635FA5` |
+| `0x635FB0` | `blur_shader_source_identifier` | `0x635FB8` |
+| `0x636810` | `output_conversion_shader_destruct` | `0x636815` |
+| `0x636820` | `output_conversion_shader_delete` | `0x63683C` |
+| `0x636A50` | `output_conversion_shader_backend_path` | `0x636A58` |
+| `0x636A60` | `output_conversion_shader_initialize_support_objects` | `0x636BE1` |
+| `0x636BF0` | `output_conversion_shader_validate_permutation` | `0x636C35` |
+| `0x636C40` | `output_conversion_shader_source_identifier` | `0x636C48` |
+| `0x5F49E0` | `bink_convert_shader_destruct` | `0x5F49E5` |
+| `0x5F49F0` | `bink_convert_shader_delete` | `0x5F4A0C` |
+| `0x5F4C90` | `bink_convert_shader_backend_path` | `0x5F4C98` |
+| `0x5F4CA0` | `bink_convert_shader_initialize_support_objects` | `0x5F4E6E` |
+| `0x5F4E70` | `bink_convert_shader_source_identifier` | `0x5F4E78` |
+| `0x5F4E80` | `bink_convert_shader_slot9` | `0x5F4E83` |
+| `0x6453F0` | `test_pattern_shader_destruct` | `0x6453F5` |
+| `0x645400` | `test_pattern_shader_delete` | `0x64541C` |
+| `0x645530` | `test_pattern_shader_backend_path` | `0x645538` |
+| `0x645540` | `test_pattern_shader_initialize_support_objects` | `0x6455AE` |
+| `0x6455B0` | `test_pattern_shader_source_identifier` | `0x6455B8` |
+| `0x642550` | `render_test_simple_shader_destruct` | `0x642555` |
+| `0x642560` | `render_test_simple_shader_delete` | `0x64257C` |
+| `0x6426B0` | `render_test_simple_shader_backend_path` | `0x6426B8` |
+| `0x6426C0` | `render_test_simple_shader_initialize_support_objects` | `0x64279C` |
+| `0x6427A0` | `render_test_simple_shader_source_identifier` | `0x6427A8` |
+
+Some of these may already be defined functions; check before undefining.
 
 ## Important deeper blocker
 
@@ -384,12 +431,22 @@ reduced to genuinely unresolved behavior.
 Its helper near `0x638A40` participates in compiled-shader cache loading,
 source-hash and platform validation, and backend object construction. This is
 central runtime behavior and should not be replaced with a shallow success
-stub. Finish the small built-in dispatches first, then reconstruct this path
-from its callers, cache record layout, resource arrays, and platform shader
-factories.
+stub. Reconstruct this path from its callers, cache record layout, resource
+arrays, and platform shader factories. It is now the next rendering milestone.
+
+Raw disassembly shows its outline. It takes a global mutex (`0x1AAB720`) with a
+nesting counter (`0x1AAB718`) and returns early when the compiled flag at `+0xC`
+is set. It stores the backend path (slot 3) at `+0xD0` and builds a path
+with `0x255080`, `0x1AF950`, and `0x1AD8B0`. It then calls `0x638A40` with a
+flag derived from the global byte `0x19E4558`. On a miss, it snapshots the
+16-byte records at render-system `+0xCA0` and calls `render_platform_name(7)`
+(`0x363030`) between source-identifier queries. It retries `0x638A40` and sets
+the compiled flag. `0x638680` writes the auto-generated `%s/%sConfig.hlsl` from
+the constant registry (`0x63D6E0`), constant block (`0x63A8C0`), and backend
+state (`0x6446A0`).
 
 The final executable link also depends on many engine functions and matching
-FMOD libraries. The 590-entry unresolved report is a work queue, not a list of
+FMOD libraries. The 584-entry unresolved report is a work queue, not a list of
 compile failures. Prioritize dependencies that sit on reconstructed runtime
 paths and collapse groups of related adapters rather than adding arbitrary
 stubs.
