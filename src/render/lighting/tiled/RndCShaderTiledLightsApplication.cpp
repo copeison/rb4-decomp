@@ -102,8 +102,7 @@ void RndCShaderTiledLightsApplication::Dispatch(
         key, static_cast<unsigned int>(context.mShadingMode));
     _SelectShaderCollection(context, keys);
 
-    const auto* previousCamera =
-        reinterpret_cast<const RndCameraContext*>(context.mUnknown18776);
+    const auto* previousCamera = context.mCameraCBufferOverride;
     context.SetCameraCBufferOverrideContext(params.mCamera);
 
     auto& buffers = *params.mBuffers;

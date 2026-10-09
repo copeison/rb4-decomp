@@ -13,8 +13,8 @@ void RndDrawUtl::DrawQuad2D(RndContext& context, Quad2DParams& params) {
     const bool identity = context.mUsingIdentityViewProjection;
     context.SetUsingIdentityViewProjection(true);
 
-    const float width = context.mRenderTargetWidth;
-    const float height = context.mRenderTargetHeight;
+    const float width = context.mViewportSize.x;
+    const float height = context.mViewportSize.y;
     const auto& rect = params.mRect;
     float left;
     float top;

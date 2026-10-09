@@ -46,9 +46,7 @@ public:
     bool _UsesShaderKeyImpl(RndShaderProgramType type, RndShaderKey key) const override;  // slot 7 at 0x6D9E00
 
     // Binds the lights, the depth ranges and the output lists, fills the
-    // tile and camera constants, and dispatches over the tiles. Not
-    // reconstructed yet: it reads camera-context fields whose layout is not
-    // recovered.
+    // tile and camera constants, and dispatches over the tiles.
     void Dispatch(RndContext& context, Params& params);  // 0x6D8AF0
 
     // Field names are not in the reference map.

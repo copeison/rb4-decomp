@@ -34,9 +34,8 @@ public:
         RndShaderResourceConfig& resources) override;  // slot 4 at 0x6DAC40
 
     // Binds both eyes' lists and this eye's outputs, fills the eye and
-    // frustum constants, and dispatches over the tiles. Not reconstructed
-    // yet: it reads camera-context fields whose layout is not recovered.
-    // Name not in the reference map.
+    // frustum constants, and dispatches over the tiles. Name not in the
+    // reference map.
     void Dispatch(RndContext& context, const Params& params);  // 0x6DA5D0
 
     // Field names are not in the reference map.

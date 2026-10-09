@@ -4,6 +4,8 @@
 #include <cstdint>
 
 #include "math/color/Color.h"
+#include "math/vector/Vector2.h"
+#include "render/context/RndCameraContext.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
@@ -19,14 +21,6 @@ enum class RndBlendMode : std::int32_t;
 struct RndResourceBarrier;
 
 enum RndVertexType : unsigned int;
-
-// What kind of texture a render-target binding draws into. The name is the
-// map's; the enumerators are not in the reference map.
-enum RndTargetMode : int {
-    kTargetModeNone = -1,
-    kTargetMode2D = 0,    // 2D textures and slices of 2D arrays.
-    kTargetModeCube = 2,  // Cube textures.
-};
 
 // Where a context records: the graphics ring or a compute queue. The name
 // is the map's; the enumerators are not in the reference map.
@@ -53,24 +47,6 @@ enum class RndPrimitive : unsigned int {
     kTriangles = 3,
     kTriangleStrip = 4,
 };
-
-// Camera and projection state, built by the constructor at 0x3D8170 and
-// embedded twice in the context. The name is inferred from the map's
-// RndCameraContext; its layout has not been recovered.
-class RndCameraContext {
-public:
-    RndCameraContext();
-
-    // Forgets the camera and its target. Not reconstructed yet.
-    void Clear();  // 0x3D88C0
-    // Writes the constants of a context without a camera for the target
-    // mode. Not reconstructed yet.
-    static void SetDefaultShaderConstants(RndTargetMode mode, RndShaderCBuffer& cbuffer);  // 0x3D9BC0
-
-    unsigned char mUnknown[9312];
-};
-
-static_assert(sizeof(RndCameraContext) == 9312);
 
 // GPU timing results for one statistic. Name not in the reference map.
 struct RndGpuStatSample {
@@ -219,21 +195,20 @@ public:
     // bool); this build passes the compute slot.
     void SetActivePipeline(RndPipeline pipeline, unsigned long computeSlot);  // 0x6BD8A0
     // Sets the camera of the main view and copies it to the second; the
-    // stereo target modes then refresh its target info. Not reconstructed
-    // yet.
+    // stereo target modes then refresh its target info.
     void SetCamera(const GameObject* camera);  // 0x6BD220
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
     // Makes the camera constants come from the given camera context, or
     // from the context's own cameras when null, and resyncs them when it
-    // changes. The binary stores the context in mUnknown18776, which
-    // _SyncCameraCBuffer reads. Not reconstructed yet.
+    // changes.
     void SetCameraCBufferOverrideContext(const RndCameraContext* camera);  // 0x6BD370
     // Wireframe shading also draws lines with depth bias.
     void SetShadingMode(RndShadingMode mode);  // 0x6BD5D0
-    // Selects the camera constants for the current view-projection mode.
-    // Not yet reconstructed.
+    // Writes the camera constants of the override camera, or of the
+    // context's cameras for the current view-projection mode, then syncs
+    // and selects the camera constant buffer.
     void _SyncCameraCBuffer();  // 0x6BCCD0
     // Resets the per-frame state, lets the platform start its frame, and
     // selects the default constant buffers. Name not in the reference map;
@@ -254,18 +229,18 @@ public:
     bool mDisableComputeQueues;
     int mMode;
     RndTargetMode mTargetMode;
-    FixedVector<void*, 8> mUnknown24;
-    // Set by the map's SetCameraCBufferOverrideContext.
-    const RndCameraContext* mCameraCBufferOverride;
-    unsigned char mUnknown120[8];
-    // Size of the bound render targets, in pixels.
-    float mRenderTargetWidth;
-    float mRenderTargetHeight;
-    unsigned char mUnknown136[4];
-    float mUnknown140;
+    // The bound color and depth targets and the viewport, set by
+    // SetRenderTargets (0x6BC730).
+    FixedVector<RndTextureBase*, 8> mColorTargets;
+    RndTextureBase* mDepthTarget;
+    Vector2 mViewportOrigin;
+    Vector2 mViewportSize;  // In pixels.
+    Vector2 mDepthRange;    // Minimum and maximum depth.
+    // The main view's camera, and its copy for the second eye.
     RndCameraContext mCameras[2];
     bool mUsingIdentityViewProjection;
-    unsigned long mUnknown18776;
+    // Set by SetCameraCBufferOverrideContext.
+    const RndCameraContext* mCameraCBufferOverride;
     unsigned char mActiveShaderStages;  // A bit per stage with a program.
     RndBlendMode mBlendMode;
     unsigned long mInputSlotLimits[kNumShaderProgramTypes];
@@ -294,10 +269,14 @@ public:
 };
 
 static_assert(offsetof(RndContext, mTargetMode) == 0x10);
-static_assert(offsetof(RndContext, mUnknown24) == 24);
+static_assert(offsetof(RndContext, mColorTargets) == 24);
+static_assert(offsetof(RndContext, mDepthTarget) == 112);
+static_assert(offsetof(RndContext, mViewportOrigin) == 120);
+static_assert(offsetof(RndContext, mDepthRange) == 136);
 static_assert(offsetof(RndContext, mCameras) == 144);
 static_assert(offsetof(RndContext, mUsingIdentityViewProjection) == 18768);
-static_assert(offsetof(RndContext, mRenderTargetWidth) == 128);
+static_assert(offsetof(RndContext, mViewportSize) == 128);
+static_assert(offsetof(RndContext, mCameraCBufferOverride) == 18776);
 static_assert(offsetof(RndContext, mActiveShaderStages) == 0x4960);
 static_assert(offsetof(RndContext, mBlendMode) == 0x4964);
 static_assert(offsetof(RndContext, mInputSlotLimits) == 0x4968);

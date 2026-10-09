@@ -13,6 +13,8 @@
 namespace {
 
 constexpr unsigned long kReservedRecords = 2000;
+// Constant elements of each render-target slice's camera constants.
+constexpr unsigned long kCameraSliceElements = 10;
 
 }  // namespace
 
@@ -24,14 +26,12 @@ RndContext::RndContext(bool disableComputeQueues)
       mDisableComputeQueues(disableComputeQueues),
       mMode(disableComputeQueues ? 0 : -1),
       mTargetMode(kTargetModeNone),
-      mCameraCBufferOverride(nullptr),
-      mUnknown120{},
-      mRenderTargetWidth(0.0F),
-      mRenderTargetHeight(0.0F),
-      mUnknown136{},
-      mUnknown140(1.0F),
+      mDepthTarget(nullptr),
+      mViewportOrigin{0.0F, 0.0F},
+      mViewportSize{0.0F, 0.0F},
+      mDepthRange{0.0F, 1.0F},
       mUsingIdentityViewProjection(false),
-      mUnknown18776(0),
+      mCameraCBufferOverride(nullptr),
       mActiveShaderStages(0),
       mBlendMode(RndBlendMode::kSource),
       mInputSlotLimits{},
@@ -117,10 +117,10 @@ void RndContext::_ReselectGlobalCBuffers() {
     device->mBuiltinCBuffers[2]->_SelectImpl(*this);
     device->mBuiltinCBuffers[3]->_SelectImpl(*this);
 
-    auto* camera = mUnknown24.mSize != 0 || mCameraCBufferOverride != nullptr
+    auto* renderTarget = mColorTargets.mSize != 0 || mDepthTarget != nullptr
         ? mCBuffers[0]
         : device->mBuiltinCBuffers[0];
-    camera->_SelectImpl(*this);
+    renderTarget->_SelectImpl(*this);
 
     const bool clipped = mClipPlanes[0].mEnabled || mClipPlanes[1].mEnabled ||
         mClipPlanes[2].mEnabled || mClipPlanes[3].mEnabled;
@@ -135,9 +135,76 @@ void RndContext::SetUsingIdentityViewProjection(bool identity) {
         return;
     }
     mUsingIdentityViewProjection = identity;
-    if (mUnknown18776 == 0) {
+    if (mCameraCBufferOverride == nullptr) {
         _SyncCameraCBuffer();
     }
+}
+
+// Reconstructed from eboot.elf at 0x6BD220. The stereo and per-eye target
+// modes draw the second eye with a copy of the camera.
+void RndContext::SetCamera(const GameObject* camera) {
+    if (!mCameras[0].SetCamera(camera)) {
+        return;
+    }
+    mCameras[1] = mCameras[0];
+    if (mTargetMode == kTargetModeStereo || mTargetMode == kTargetModeLeftEye ||
+        mTargetMode == kTargetModeRightEye) {
+        mCameras[1].SetRenderTargetInfo(
+            kTargetModeStereo, mCameras[1].mViewportSize, mCameras[1].mDepthRange);
+    }
+    if (mCameraCBufferOverride == nullptr) {
+        _SyncCameraCBuffer();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BD370.
+void RndContext::SetCameraCBufferOverrideContext(const RndCameraContext* camera) {
+    if (mCameraCBufferOverride != camera) {
+        mCameraCBufferOverride = camera;
+        _SyncCameraCBuffer();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BCCD0. A context without a valid camera
+// writes the defaults; the identity view-projection keeps the camera's other
+// constants. Nothing is synced without a target.
+void RndContext::_SyncCameraCBuffer() {
+    RndTargetMode mode;
+    if (mCameraCBufferOverride != nullptr) {
+        mCameraCBufferOverride->SetViewProjectionShaderConstants(*mCBuffers[1]);
+        mCameraCBufferOverride->SetOtherShaderConstants(*mCBuffers[1]);
+        mCameraCBufferOverride->SetStereoViewProjectionShaderConstants(*mCBuffers[1]);
+        mCameraCBufferOverride->SetStereoOtherShaderConstants(*mCBuffers[1]);
+        mode = mCameraCBufferOverride->mTargetMode;
+    } else {
+        mode = mTargetMode;
+        if (!mCameras[0].mValid) {
+            RndCameraContext::SetDefaultShaderConstants(mode, *mCBuffers[1]);
+        } else {
+            if (mUsingIdentityViewProjection) {
+                RndCameraContext::SetIdentityViewProjectionShaderConstants(mode, *mCBuffers[1]);
+            } else {
+                mCameras[0].SetViewProjectionShaderConstants(*mCBuffers[1]);
+                mCameras[1].SetStereoViewProjectionShaderConstants(*mCBuffers[1]);
+            }
+            mCameras[0].SetOtherShaderConstants(*mCBuffers[1]);
+            mCameras[1].SetStereoOtherShaderConstants(*mCBuffers[1]);
+        }
+    }
+    if (mode == kTargetModeNone) {
+        return;
+    }
+
+    const unsigned long numSlices = RndTargetModeSlices(mode);
+    auto* cbuffer = mCBuffers[1];
+    if (cbuffer->mSyncPending) {
+        cbuffer->_SyncImpl(
+            *this,
+            0,
+            TheRndDevice()->mShaderMgr.mCameraRTSlicedData + numSlices * kCameraSliceElements);
+        cbuffer->mSyncPending = false;
+    }
+    mCBuffers[1]->_SelectImpl(*this);
 }
 
 // Reconstructed from eboot.elf at 0x6BD5D0.
@@ -176,17 +243,15 @@ void RndContext::SetActivePipeline(RndPipeline pipeline, unsigned long computeSl
 // Reconstructed from eboot.elf at 0x6BC3B0.
 void RndContext::BeginFrame(unsigned int flags) {
     mTargetMode = kTargetModeNone;
-    mUnknown24.mSize = 0;
-    mCameraCBufferOverride = nullptr;
-    std::memset(mUnknown120, 0, sizeof(mUnknown120));
-    mRenderTargetWidth = 0.0F;
-    mRenderTargetHeight = 0.0F;
-    std::memset(mUnknown136, 0, sizeof(mUnknown136));
-    mUnknown140 = 1.0F;
+    mColorTargets.mSize = 0;
+    mDepthTarget = nullptr;
+    mViewportOrigin = Vector2{0.0F, 0.0F};
+    mViewportSize = Vector2{0.0F, 0.0F};
+    mDepthRange = Vector2{0.0F, 1.0F};
     mCameras[0].Clear();
     mCameras[1].Clear();
     mUsingIdentityViewProjection = false;
-    mUnknown18776 = 0;
+    mCameraCBufferOverride = nullptr;
     RndCameraContext::SetDefaultShaderConstants(kTargetMode2D, *mCBuffers[1]);
     mBlendMode = RndBlendMode::kSource;
     mShadingMode = kShadingModeStandard;

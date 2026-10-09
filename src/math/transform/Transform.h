@@ -16,3 +16,6 @@ public:
 
 static_assert(offsetof(Transform, v) == 36);
 static_assert(sizeof(Transform) == 48);
+
+// Composes the two transforms into the result.
+void Multiply(const Transform& a, const Transform& b, Transform& result);  // 0x2187E0

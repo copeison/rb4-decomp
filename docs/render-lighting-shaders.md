@@ -43,18 +43,16 @@ a float; in this build it takes the base's `Params`.
 
 ## Not reconstructed
 
-- `RndCShaderTiledLightsCull::Dispatch` (`0x6D8AF0`) and
-  `RndCShaderTiledLightsStereoToMono::Dispatch` (`0x6DA5D0`) read
-  `RndCameraContext` fields whose layout is not recovered, so they are only
-  declared.
 - `RndLightGlobals::_InitMeshes` builds the "lighting_sphere" mesh with
   `RndMeshUtl::CreateSphere`, which is not reconstructed yet.
 
+The two tiled-light dispatches that read the camera are reconstructed on top of
+`RndCameraContext` (`docs/render-camera-context.md`).
+
 ## Open questions
 
-- `RndContext::SetCameraCBufferOverrideContext` (`0x6BD370`) writes the field
-  at `+18776`, which `_SyncCameraCBuffer` reads as the camera override. This
-  suggests the field the source calls `mCameraCBufferOverride` (`+112`) is
-  something else.
-- Default textures are fetched through `RndDefaults::GetTexture`; the
-  `TextureFamily` layout in `RndDefaults.h` looks transposed.
+Default textures are fetched through `RndDefaults::GetTexture`. Two things
+there look wrong:
+- the `TextureFamily` layout in `RndDefaults.h` looks transposed;
+- with the scene mask off, the tiled dispatches bind a default that the
+  current layout calls the black 3D texture.
