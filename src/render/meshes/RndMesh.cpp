@@ -19,10 +19,11 @@ RndMesh::RndMesh(const char* name)
       mKeepFaces(false),
       mVertexUsageFlags(0),
       mFaceUsageFlags(0),
-      mUnknown92{~0U, ~0U, ~0U, ~0U},
       mPendingSync(0),
       mLastUseFrame(~0UL),
-      mName(name) {}
+      mName(name) {
+    std::memset(&mBoundingSphere, 0xFF, sizeof(mBoundingSphere));
+}
 
 // Reconstructed from eboot.elf at 0x5C2930.
 void RndMesh::SetKeepMeshData(bool keep) {

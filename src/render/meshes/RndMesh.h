@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 
+#include "math/geometry/Sphere.h"
 #include "os/memory/MemMgr.h"
 #include "render/meshes/RndDynamicGpuData.h"
 #include "render/meshes/RndVertex.h"
@@ -97,7 +98,8 @@ public:
     bool mKeepFaces;
     unsigned int mVertexUsageFlags;
     unsigned int mFaceUsageFlags;
-    unsigned int mUnknown92[4];
+    // Set by the RndMeshUtl builders; starts as all-ones bit patterns.
+    Sphere mBoundingSphere;
     std::atomic<unsigned int> mPendingSync;
     unsigned long mLastUseFrame;
     const char* mName;
@@ -108,6 +110,8 @@ static_assert(offsetof(RndMesh, mMgr) == 16);
 static_assert(offsetof(RndMesh, mFaces) == 24);
 static_assert(offsetof(RndMesh, mNumFaces) == 64);
 static_assert(offsetof(RndMesh, mKeepMeshData) == 80);
+static_assert(offsetof(RndMesh, mKeepFaces) == 81);
+static_assert(offsetof(RndMesh, mBoundingSphere) == 92);
 static_assert(offsetof(RndMesh, mPendingSync) == 108);
 static_assert(offsetof(RndMesh, mLastUseFrame) == 112);
 static_assert(sizeof(RndMesh) == 128);

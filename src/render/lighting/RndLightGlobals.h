@@ -47,9 +47,10 @@ public:
     ResourcePath GetSkinDiffusionTexPath();  // 0x47FCD0
 
     void _InitBuffers();  // 0x47F500
-    // Not reconstructed yet.
+    // Builds the spotlight volume and encodes per-vertex blend weights in
+    // its vertex colors.
     void _InitLightSpotMesh();  // 0x47FDE0
-    // Not reconstructed yet.
+    // Builds the point-light sphere and the spotlight volume.
     void _InitMeshes();  // 0x47F1C0
     // Creates and registers the lighting and tonemap shaders; the tiled
     // compute shaders only on platforms with async compute.
@@ -58,10 +59,13 @@ public:
     // Field names are not in the reference map.
     RndMesh* mSphereMesh;     // "lighting_sphere"
     RndMesh* mSpotlightMesh;  // Created by _InitLightSpotMesh.
-    // Derived by _InitMeshes from the sphere's tessellation.
+    // Derived by _InitMeshes from the sphere's tessellation: the factor by
+    // which the circumscribed sphere mesh exceeds the unit sphere.
     float mSphereScale;
-    unsigned long mPrimaryGroupSize;
-    unsigned long mSecondaryGroupSize;
+    // The spotlight volume's segments around its axis, and its cap
+    // segments (the cap uses half of them).
+    unsigned long mSpotlightSegments;
+    unsigned long mSpotlightCapSegments;
     RndLightDirectionalDeferredShader* mDirectionalShader;
     RndShaderLightDirectionalShadowGen* mDirectionalShadowGenShader;
     RndLightPointDeferredShader* mPointShader;
@@ -97,8 +101,8 @@ public:
 
 static_assert(offsetof(RndLightGlobals, mSpotlightMesh) == 8);
 static_assert(offsetof(RndLightGlobals, mSphereScale) == 16);
-static_assert(offsetof(RndLightGlobals, mPrimaryGroupSize) == 24);
-static_assert(offsetof(RndLightGlobals, mSecondaryGroupSize) == 32);
+static_assert(offsetof(RndLightGlobals, mSpotlightSegments) == 24);
+static_assert(offsetof(RndLightGlobals, mSpotlightCapSegments) == 32);
 static_assert(offsetof(RndLightGlobals, mDirectionalShader) == 40);
 static_assert(offsetof(RndLightGlobals, mTiledLightIdsCount) == 104);
 static_assert(offsetof(RndLightGlobals, mTiledLightsCullShader) == 112);

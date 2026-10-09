@@ -1,7 +1,10 @@
 #include "render/lighting/RndLightGlobals.h"
 
 #include "render/buffers/RndComputeBuffer.h"
+#include "math/scalar/Trig.h"
 #include "render/meshes/RndMesh.h"
+#include "render/meshes/RndMeshTyped.h"
+#include "render/meshes/RndMeshUtl.h"
 #include "render/shaders/RndShader.h"
 #include "render/lighting/deferred/RndLightDirectionalDeferredShader.h"
 #include "render/lighting/deferred/RndLightPointDeferredShader.h"
@@ -23,6 +26,11 @@
 namespace {
 
 constexpr const char* kTiledLightIdsCountName = "Tiled Light Ids Count";
+
+constexpr float kPi = 3.1415927F;
+constexpr float kHalfPi = 1.5707964F;
+constexpr float kQuarterPi = 0.78539819F;
+constexpr float kTwoPi = 6.2831855F;
 
 // The first two vtable slots of an owner whose type is not recovered yet.
 // Name not in the reference map.
@@ -88,8 +96,8 @@ RndLightGlobals::RndLightGlobals()
     : mSphereMesh(nullptr),
       mSpotlightMesh(nullptr),
       mSphereScale(-1.0F),
-      mPrimaryGroupSize(16),
-      mSecondaryGroupSize(8),
+      mSpotlightSegments(16),
+      mSpotlightCapSegments(8),
       mDirectionalShader(nullptr),
       mDirectionalShadowGenShader(nullptr),
       mPointShader(nullptr),
@@ -118,6 +126,26 @@ void RndLightGlobals::Init() {
     _InitMeshes();
     _InitShaders();
     _InitBuffers();
+}
+
+// Reconstructed from eboot.elf at 0x47F1C0. The sphere is circumscribed
+// around the unit sphere; mSphereScale is the radius of the sphere that
+// encloses the mesh.
+void RndLightGlobals::_InitMeshes() {
+    RndMeshUtl::CreateSphereParams params;
+    params.mName = "lighting_sphere";
+    params.mVertexType = kVertexPosOnly;
+    params.mFlags = RndMeshUtl::kCreateMeshCircumscribe;
+    params.mNumSegments = 16;
+    params.mRadius = 1.0F;
+    params.mNumRings = 8;
+    mSphereMesh = RndMeshUtl::CreateSphere(params);
+
+    mSphereScale =
+        1.0F / Sine(kHalfPi / static_cast<float>(params.mNumRings) + kHalfPi);
+    mSphereScale /=
+        Sine(kPi / static_cast<float>(params.mNumSegments) + kHalfPi);
+    _InitLightSpotMesh();
 }
 
 // Reconstructed from eboot.elf at 0x47F300.
@@ -186,6 +214,88 @@ void RndLightGlobals::Terminate() {
     ReleaseResource(mInlineLightingTextures);
     mInlineLightingData[0] = nullptr;
     mInlineLightingData[1] = nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x47FDE0. The volume is a truncated
+// rounded cone with a 45-degree half-angle, a top radius of 0.5 and a length
+// of 2. After building it, every vertex is moved onto the unit circle of its
+// sweep angle at z = 0 (the top vertices scaled toward the axis), and the
+// vertex color records where the vertex lies: green 1 with blue rising over
+// the cap, red falling from 1 along the side, and zero across the top.
+void RndLightGlobals::_InitLightSpotMesh() {
+    RndMeshUtl::CreateTruncatedRoundedConeParams params;
+    params.mCone.SetAngleTopRadiusAndLength(kQuarterPi, 0.5F, 2.0F);
+    params.mName = "spotlight";
+    params.mVertexType = kVertexColor;
+    params.mNumSegments = mSpotlightSegments;
+    params.mNumTopSegments = 1;
+    params.mNumSideSegments = 1;
+    params.mNumCapSegments = mSpotlightCapSegments;
+    params.mFlags = RndMeshUtl::kCreateMeshNoSync;
+    auto* mesh = static_cast<RndMeshTyped<RndVertexColor>*>(
+        RndMeshUtl::CreateTruncatedRoundedCone(params));
+    mSpotlightMesh = mesh;
+
+    const unsigned long numSegments = params.mNumSegments;
+    const unsigned long numCapRings = params.mNumCapSegments / 2;
+    const unsigned long stride = numSegments + 1;
+    for (unsigned long segment = 0; segment <= numSegments; ++segment) {
+        float angle = 0.0F;
+        if (segment != 0 && segment != numSegments) {
+            angle = segment / static_cast<float>(numSegments) * kTwoPi;
+        }
+        const float cosine = Sine(angle + kHalfPi);
+        const float sine = Sine(angle);
+        RndVertexColor* verts = mesh->mVerts.mpBegin;
+
+        unsigned long index = segment;
+        for (unsigned long ring = 0; ring < numCapRings; ++ring, index += stride) {
+            RndVertexColor& vertex = verts[index];
+            vertex.mPos[0] = cosine;
+            vertex.mPos[1] = sine;
+            vertex.mPos[2] = 0.0F;
+            vertex.mColor[0] = 0.0F;
+            vertex.mColor[1] = 1.0F;
+            vertex.mColor[2] = ring / static_cast<float>(numCapRings);
+            vertex.mColor[3] = 0.0F;
+        }
+
+        const unsigned long numSide = params.mNumSideSegments;
+        for (unsigned long ring = 0; ring <= numSide; ++ring, index += stride) {
+            float weight = 1.0F;
+            if (ring >= 2) {
+                weight = 1.0F - (ring - 1) / static_cast<float>(numSide);
+            }
+            RndVertexColor& vertex = verts[index];
+            vertex.mPos[0] = cosine;
+            vertex.mPos[1] = sine;
+            vertex.mPos[2] = 0.0F;
+            vertex.mColor[0] = weight;
+            vertex.mColor[1] = 0.0F;
+            vertex.mColor[2] = 0.0F;
+            vertex.mColor[3] = 0.0F;
+        }
+
+        const unsigned long numTop = params.mNumTopSegments;
+        for (unsigned long ring = 0; ring <= numTop; ++ring, index += stride) {
+            float scale = 1.0F;
+            if (ring >= 2) {
+                scale = 0.0F;
+                if (ring - 1 != numTop) {
+                    scale = 1.0F - (ring - 1) / static_cast<float>(numTop);
+                }
+            }
+            RndVertexColor& vertex = verts[index];
+            vertex.mPos[0] = scale * cosine;
+            vertex.mPos[1] = scale * sine;
+            vertex.mPos[2] = 0.0F;
+            vertex.mColor[0] = 0.0F;
+            vertex.mColor[1] = 0.0F;
+            vertex.mColor[2] = 0.0F;
+            vertex.mColor[3] = 0.0F;
+        }
+    }
+    mesh->SyncStatic();
 }
 
 // Reconstructed from eboot.elf at 0x47FD60.

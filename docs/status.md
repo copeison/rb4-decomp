@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the `RndMeshUtl` builders (`docs/render-mesh-builders.md`),
+  `RndLightGlobals::_InitMeshes` and `_InitLightSpotMesh`, and the default box
+  and cylinder meshes.
 - [x] Reconstruct `RndCameraContext` (`docs/render-camera-context.md`),
   `RndContext::SetCamera`, `_SyncCameraCBuffer` and the camera-dependent tiled
   dispatches; name the context's colour, depth and viewport fields.

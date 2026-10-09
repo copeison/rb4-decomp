@@ -43,8 +43,8 @@ a float; in this build it takes the base's `Params`.
 
 ## Not reconstructed
 
-- `RndLightGlobals::_InitMeshes` builds the "lighting_sphere" mesh with
-  `RndMeshUtl::CreateSphere`, which is not reconstructed yet.
+- `RndLightGlobals::_InitMeshes` is now reconstructed; see
+  `docs/render-mesh-builders.md`.
 
 The two tiled-light dispatches that read the camera are reconstructed on top of
 `RndCameraContext` (`docs/render-camera-context.md`).

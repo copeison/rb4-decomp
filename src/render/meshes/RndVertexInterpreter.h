@@ -1,7 +1,13 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 
+#include "math/scalar/Half.h"
+#include "math/vector/Vector2.h"
+#include "math/vector/Vector3.h"
+#include "math/vector/Vector4.h"
 #include "render/meshes/RndVertex.h"
 
 // Storage type of one vertex attribute. Enumerator names are not in the
@@ -46,6 +52,27 @@ public:
     static constexpr unsigned int kNumStreams = 8;
     static constexpr unsigned int kNoStream = 0xFFFFFFFF;
 
+    // Attribute indices, in the order above. Names not in the reference
+    // map.
+    static constexpr unsigned int kPositionAttribute = 0;
+    static constexpr unsigned int kNormalAttribute = 1;
+    static constexpr unsigned int kTangentAttribute = 2;
+    static constexpr unsigned int kBitangentAttribute = 3;
+    static constexpr unsigned int kColorAttribute = 4;
+    static constexpr unsigned int kFirstUVAttribute = 5;
+    static constexpr unsigned int kWeightsAttribute = 7;
+    static constexpr unsigned int kBonesAttribute = 8;
+
+    // Writes a value in an attribute's storage type. The map's helper also
+    // reads values back; only the writers the mesh builders call are
+    // reconstructed. The binary keeps the out-of-line copies as COMDAT
+    // functions at the addresses on the specializations below.
+    template <typename T>
+    class _AttributeValueHelper {
+    public:
+        static void Set(const AttributeInfo& info, const T& value, void* data);
+    };
+
     // Returns null for an unknown type.
     static const RndVertexInterpreter* GetInstance(RndVertexType type);  // 0x4430C0, 0x4435E0
 
@@ -54,6 +81,41 @@ public:
     static unsigned int GetAttributeStream(unsigned int attribute);  // 0x442A80
     bool UsesStream(unsigned int stream) const;                      // 0x443720
     StreamLayout GetStreamLayout(unsigned int stream) const;         // 0x443880
+
+    // The number of UV sets. The binary's interpreter caches it at +0x118
+    // when it is initialized (the map's _CountUVs); this build's interpreter
+    // record derives it from the attribute table. Name not in the reference
+    // map.
+    unsigned long GetNumUVs() const {
+        unsigned long count = mAttributes[kFirstUVAttribute].mOffset != -1 ? 1 : 0;
+        if (mAttributes[kFirstUVAttribute + 1].mOffset != -1) {
+            ++count;
+        }
+        return count;
+    }
+
+    // Rounds half away from zero, saturating at the int range, then clamps
+    // into the 16-bit normalized ranges. Names not in the reference map.
+    static int _RoundToInt(float value) {
+        if (value > 0.0F) {
+            value += 0.5F;
+            return value < 2147483648.0F ? static_cast<int>(value)
+                                         : std::numeric_limits<int>::max();
+        }
+        value -= 0.5F;
+        return value > -2147483648.0F ? static_cast<int>(value)
+                                      : std::numeric_limits<int>::min();
+    }
+    static std::int16_t _ToSNorm16(float value) {
+        const int rounded = _RoundToInt(value * 32767.0F);
+        const int clamped = rounded > 32767 ? 32767 : (rounded > -32767 ? rounded : -32767);
+        return static_cast<std::int16_t>(clamped);
+    }
+    static std::uint16_t _ToUNorm16(float value) {
+        const int rounded = _RoundToInt(value * 65535.0F);
+        const int clamped = rounded > 0xFFFF ? 0xFFFF : (rounded > 0 ? rounded : 0);
+        return static_cast<std::uint16_t>(clamped);
+    }
 
     // Field names are not in the reference map.
     unsigned long mUnknown0;
@@ -65,3 +127,93 @@ static_assert(sizeof(RndVertexInterpreter::AttributeInfo) == 24);
 static_assert(offsetof(RndVertexInterpreter, mStride) == 8);
 static_assert(offsetof(RndVertexInterpreter, mAttributes) == 16);
 static_assert(sizeof(RndVertexInterpreter) == 24);
+
+// Two-component values are stored as floats or halves; other storage types
+// are left untouched.
+template <>
+inline void RndVertexInterpreter::_AttributeValueHelper<Vector2>::Set(
+    const AttributeInfo& info,
+    const Vector2& value,
+    void* data) {
+    if (info.mType == kVertexDataFloat16) {
+        auto* halves = static_cast<Half*>(data);
+        halves[0].Set(value.x);
+        halves[1].Set(value.y);
+    } else if (info.mType == kVertexDataFloat32) {
+        auto* floats = static_cast<float*>(data);
+        floats[0] = value.x;
+        floats[1] = value.y;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4479C0.
+template <>
+inline void RndVertexInterpreter::_AttributeValueHelper<Vector3>::Set(
+    const AttributeInfo& info,
+    const Vector3& value,
+    void* data) {
+    switch (info.mType) {
+    case kVertexDataSNorm16: {
+        auto* shorts = static_cast<std::int16_t*>(data);
+        shorts[0] = _ToSNorm16(value.x);
+        shorts[1] = _ToSNorm16(value.y);
+        shorts[2] = _ToSNorm16(value.z);
+        break;
+    }
+    case kVertexDataFloat16: {
+        auto* halves = static_cast<Half*>(data);
+        halves[0].Set(value.x);
+        halves[1].Set(value.y);
+        halves[2].Set(value.z);
+        break;
+    }
+    case kVertexDataFloat32: {
+        auto* floats = static_cast<float*>(data);
+        floats[0] = value.x;
+        floats[1] = value.y;
+        floats[2] = value.z;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x447B80.
+template <>
+inline void RndVertexInterpreter::_AttributeValueHelper<Vector4>::Set(
+    const AttributeInfo& info,
+    const Vector4& value,
+    void* data) {
+    switch (info.mType) {
+    case kVertexDataFloat32:
+        *static_cast<Vector4*>(data) = value;
+        break;
+    case kVertexDataFloat16: {
+        auto* halves = static_cast<Half*>(data);
+        halves[0].Set(value.x);
+        halves[1].Set(value.y);
+        halves[2].Set(value.z);
+        halves[3].Set(value.w);
+        break;
+    }
+    case kVertexDataUNorm16: {
+        auto* shorts = static_cast<std::uint16_t*>(data);
+        shorts[0] = _ToUNorm16(value.x);
+        shorts[1] = _ToUNorm16(value.y);
+        shorts[2] = _ToUNorm16(value.z);
+        shorts[3] = _ToUNorm16(value.w);
+        break;
+    }
+    case kVertexDataSNorm16: {
+        auto* shorts = static_cast<std::int16_t*>(data);
+        shorts[0] = _ToSNorm16(value.x);
+        shorts[1] = _ToSNorm16(value.y);
+        shorts[2] = _ToSNorm16(value.z);
+        shorts[3] = _ToSNorm16(value.w);
+        break;
+    }
+    default:
+        break;
+    }
+}

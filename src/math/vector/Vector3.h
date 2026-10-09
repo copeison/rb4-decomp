@@ -7,6 +7,11 @@ public:
     float x;
     float y;
     float z;
+
+    // The unit axes.
+    static Vector3 sX;  // 0x19B0340
+    static Vector3 sY;  // 0x19B034C
+    static Vector3 sZ;  // 0x19B0358
 };
 
 static_assert(sizeof(Vector3) == 12);
