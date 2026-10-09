@@ -4,6 +4,9 @@
 
 namespace rb4 {
 
+struct RenderContext;
+struct RenderTexture;
+
 void render_error_shader_construct(void* shader);
 void render_error_shader_bind(
     void* shader,
@@ -43,5 +46,18 @@ void render_signed_distance_compute_shader_construct(void* shader);
 void render_signed_distance_classify_compute_shader_construct(void* shader);
 void render_test_shader_construct(void* shader);
 void render_test_compute_shader_construct(void* shader);
+
+void render_linearize_depth_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& depth);
+void render_refine_scene_mask_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& unrefined_mask);
+void render_display_sphere_map_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& texture);
 
 }  // namespace rb4

@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct downsample draw` milestone, which added the third
-pass draw function on top of compiled-shader loading and binding. The working tree was clean when the
+`decomp: reconstruct single-texture shader draws` milestone, which added
+more pass draw functions on top of compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
 The current PS4 object build compiles **185 C++ translation units**. It creates
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Downsample draw |
+| (this) | Single-texture linearize-depth, refine-mask, sphere-map draws |
+| `2537e18` | Downsample draw |
 | `d0cdc60` | Output-conversion draw and sRGB conversion |
 | `b94af4c` | Bloom draw and shared pass-draw helpers |
 | `0139c87` | Primary-shader permutation bind and error-shader fallback |
@@ -422,7 +423,12 @@ The permutation bind (`0x638920`) is now source-owned too. The next rendering
 milestones are the per-pass draw functions that build program keys and call
 it. Each one belongs in its pass's domain folder:
 
-- blur at `0x634BB0`, a 3.8 KB function.
+- blur at `0x634BB0`, a 3.8 KB function with an auto-vectorized Gaussian
+  weight loop that needs raw-assembly reading;
+- 39 further callers of `render_primary_shader_bind`. List them by
+  cross-referencing `0x638920` in IDA; several still lack IDA function
+  definitions (`0x5F8E78`, `0x642680`, `0x645507`, `0x6F345E`,
+  `0x6F3ED8`).
 
 Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared
 helpers in `render/resources/shaders/shader_draw_state.h` cover texture

@@ -9,6 +9,7 @@
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -164,6 +165,14 @@ void render_stencil_scene_mask_shader_construct(void* shader) {
     fields[0] = -1;
     fields[1] = -1;
     fields[2] = 0;
+}
+
+// Reconstructed from eboot.elf at 0x6423C0.
+void render_refine_scene_mask_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& unrefined_mask) {
+    render_shader_draw_with_pixel_texture(shader, context, unrefined_mask, 288);
 }
 
 }  // namespace rb4

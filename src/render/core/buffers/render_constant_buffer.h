@@ -73,7 +73,6 @@ void render_delete_constant_buffer_storage(RenderConstantBuffer& buffer);
 void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer);
 void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer);
 
-
 void render_constant_buffer_update_range(
     RenderConstantBuffer& buffer,
     RenderContext& context,

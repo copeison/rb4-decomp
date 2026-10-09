@@ -9,6 +9,7 @@
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -231,6 +232,14 @@ void render_display_texture_cube_shader_construct(void* shader) {
     shader_field(shader, 392) = -1;
     shader_field(shader, 400) = -1;
     shader_field(shader, 408) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x6F42D0.
+void render_display_sphere_map_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& texture) {
+    render_shader_draw_with_pixel_texture(shader, context, texture, 288);
 }
 
 }  // namespace rb4

@@ -7,6 +7,7 @@
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -103,6 +104,14 @@ void render_linearize_depth_shader_construct(void* shader) {
     render_primary_shader_construct(primary_shader(shader));
     *static_cast<void**>(shader) = &kLinearizeDepthShaderDispatch;
     depth_texture_binding(shader) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x63EFD0.
+void render_linearize_depth_shader_draw(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& depth) {
+    render_shader_draw_with_pixel_texture(shader, context, depth, 288);
 }
 
 }  // namespace rb4

@@ -263,7 +263,6 @@ std::int32_t render_texture_default_filter_mode(
     return (kFilterModeOneKinds & kind_bit) != 0 ? 1 : -1;
 }
 
-
 void render_texture_bind(
     const RenderTexture& texture,
     RenderContext& context,

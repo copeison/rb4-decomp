@@ -45,4 +45,12 @@ std::uint64_t render_shader_parameter_binding_apply(
     const RenderShaderParameterBinding& binding,
     std::uint32_t value);
 
+// Draw used by single-texture graphics shaders: binds the texture to the pixel
+// stage at the slot and binds the shader with default permutation keys.
+void render_shader_draw_with_pixel_texture(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& texture,
+    std::uint64_t slot);
+
 }  // namespace rb4

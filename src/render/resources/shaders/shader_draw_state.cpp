@@ -6,6 +6,8 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/core/textures/render_texture.h"
+#include "render/resources/shaders/compiled_shader_objects.h"
+#include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -81,6 +83,17 @@ std::uint64_t render_shader_parameter_binding_apply(
         (value - binding.first_value) << binding.bit_offset);
     return (key & ~static_cast<std::uint64_t>(binding.shifted_mask)) |
         static_cast<std::uint64_t>(static_cast<std::int64_t>(field));
+}
+
+void render_shader_draw_with_pixel_texture(
+    void* shader,
+    RenderContext& context,
+    RenderTexture& texture,
+    std::uint64_t slot) {
+    render_shader_bind_pixel_texture(context, &texture, slot);
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    render_primary_shader_bind(
+        *static_cast<RenderPrimaryShaderResource*>(shader), context, keys);
 }
 
 }  // namespace rb4

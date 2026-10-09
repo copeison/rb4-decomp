@@ -184,7 +184,6 @@ std::int32_t render_texture_default_address_mode(
 std::int32_t render_texture_default_filter_mode(
     std::uint32_t resource_kind);
 
-
 void render_texture_bind(
     const RenderTexture& texture,
     RenderContext& context,

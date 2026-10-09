@@ -83,7 +83,6 @@ void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer) {
     render_release(&buffer);
 }
 
-
 void render_constant_buffer_update_range(
     RenderConstantBuffer& buffer,
     RenderContext& context,
