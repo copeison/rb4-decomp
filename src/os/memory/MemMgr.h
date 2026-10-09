@@ -17,6 +17,13 @@ void MemFree(void* allocation);
 void* MemOrPoolAlloc(unsigned long size, const char* name, int unknown);
 void MemOrPoolFree(unsigned long size, void* allocation, const char* name);
 
+// Named heaps. MemFindHeap (0x37BA70) returns the heap's index or -1;
+// MemPushHeap (0x37A920) and MemPopHeap (0x37A9B0) select the calling
+// thread's current heap.
+long MemFindHeap(const char* name);
+void MemPushHeap(long heap);
+void MemPopHeap();
+
 // Thread-local temporary-heap scope at 0x37AA30 and 0x37AAF0. The map has
 // MemPushTemp() and MemPopTemp() in this position; this build saves the
 // calling thread's mode word (+0x84 in its heap state) into `saved` and, when

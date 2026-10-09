@@ -29,10 +29,8 @@ public:
     unsigned short* mIndices;
 
 private:
-    // Stand-ins for code inlined into the constructor (the map's
-    // _CreateBuffers); not yet reconstructed. Names not in the reference map.
-    void _AllocateVertexStream(unsigned int stream, unsigned long size, const char* name);
-    unsigned short* _AllocateIndexStream(unsigned long size, const char* name);
+    // Inlined into the constructor.
+    void _CreateBuffers(unsigned long numParticles);
 };
 
 static_assert(offsetof(PS4ParticleBuffer, mVertexBuffers) == 64);

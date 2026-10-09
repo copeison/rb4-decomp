@@ -5,8 +5,8 @@
 #include "math/transform/Transform.h"
 #include "render/meshes/RndMesh.h"
 #include "renderps4/context/PS4Context.h"
-#include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/system/PS4Device.h"
+#include "renderps4/system/PS4RenderUtl.h"
 
 namespace {
 
@@ -14,26 +14,55 @@ constexpr unsigned long kVertexBytesPerParticle = 208;
 constexpr unsigned long kIndexBytesPerParticle = 12;
 constexpr unsigned int kIndicesPerParticle = 6;
 constexpr const char* kAllocationName = "ParticleBuffer";
+constexpr int kGpuAlignment = 4;
 
 }  // namespace
 
-// Reconstructed from eboot.elf at 0x8E2AA0. Each particle is a quad drawn
-// as two triangles.
+// Reconstructed from eboot.elf at 0x8E2AA0. The vertex descriptors are
+// left uninitialized until _CreateBuffers fills them.
 PS4ParticleBuffer::PS4ParticleBuffer(unsigned long numParticles, const char* name)
     : RndParticleBuffer(numParticles, name),
-      mVertexBuffers{},
       mVertexStorage{nullptr, nullptr},
       mActiveBank(0),
       mBufferMask(0),
       mUnknown332(0),
       mIndices(nullptr) {
-    const auto vertexBytes = kVertexBytesPerParticle * numParticles;
-    _AllocateVertexStream(0, vertexBytes, kAllocationName);
-    _AllocateVertexStream(1, vertexBytes, kAllocationName);
+    _CreateBuffers(numParticles);
+}
 
-    auto* indices =
-        _AllocateIndexStream(kIndexBytesPerParticle * numParticles, kAllocationName);
-    for (unsigned int particle = 0; particle < numParticles; ++particle) {
+// Inlined into the constructor at 0x8E2AA0. Each particle is a quad of four
+// vertices drawn as two triangles. Both vertex banks and the indices are
+// allocated from the "gpu" heap.
+void PS4ParticleBuffer::_CreateBuffers(unsigned long numParticles) {
+    MemFree(mVertexStorage[0]);
+    mVertexStorage[0] = nullptr;
+    MemFree(mVertexStorage[1]);
+    mVertexStorage[1] = nullptr;
+    MemFree(mIndices);
+    mIndices = nullptr;
+
+    for (unsigned int bank = 0; bank < 2; ++bank) {
+        static long sGpuHeap = MemFindHeap("gpu");
+        MemPushHeap(sGpuHeap);
+        mVertexStorage[bank] = MemAlloc(
+            kVertexBytesPerParticle * numParticles, kAllocationName, kGpuAlignment);
+        MemPopHeap();
+        PS4RenderUtl::InitializeVertexBuffers(
+            mVertexBuffers[bank],
+            mVertexStorage[bank],
+            mBufferMask,
+            static_cast<unsigned int>(4 * numParticles),
+            *RndVertexInterpreter::GetInstance(kVertexParticle));
+    }
+
+    static long sGpuHeap = MemFindHeap("gpu");
+    MemPushHeap(sGpuHeap);
+    mIndices = static_cast<unsigned short*>(MemAlloc(
+        kIndexBytesPerParticle * numParticles, kAllocationName, kGpuAlignment));
+    MemPopHeap();
+
+    auto* indices = mIndices;
+    for (unsigned long particle = 0; particle < numParticles; ++particle) {
         const auto base = static_cast<unsigned short>(particle * 4);
         *indices++ = base;
         *indices++ = static_cast<unsigned short>(base + 1);
