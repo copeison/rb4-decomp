@@ -1,3 +1,4 @@
+#include "render/system/RndInit.h"
 #include "renderps4/system/PS4Device.h"
 
 // Reconstructed from eboot.elf at 0x8D5DF0.
