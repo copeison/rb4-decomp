@@ -17,6 +17,10 @@ public:
     static void InitExtendedFonts();  // 0x65CAF0
     // Releases the extended fonts. Name not in the reference map.
     static void TerminateExtendedFonts();  // 0x65CE70
+    // Whether any extended font slot exists, enabled or not. The typesetter
+    // then tries a style's fallback for a missing glyph. Name not in the
+    // reference map.
+    static bool HasExtendedFonts();  // 0x65CEC0
 
     // The glyphs of the printable ASCII characters and a final block glyph,
     // one bit per pixel, eight bytes to a 64-pixel row of the texture.

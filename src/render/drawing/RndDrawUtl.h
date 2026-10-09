@@ -67,18 +67,16 @@ public:
         unsigned long mNumStyles = 0;  // Styles also enable markup.
         float mScale = 1.0F;     // Pixels per font pixel.
         float mRotation = 0.0F;  // Radians.
-        // Passed to the typesetter. The graph overlay sets mUnknown84 to 1
-        // for its axis labels, and mUnknown80 to 2 or 0 by the label's
-        // side, so they are likely alignments.
-        int mUnknown80 = 0;
-        int mUnknown84 = 0;
-        // The typesetter's fit mode; nonzero wraps the text at mWrapWidth,
-        // and mode 4 also fits it to mWrapHeight. Both are in the
-        // coordinate mode's units.
-        int mWrapMode = 0;
+        // Where the text sits against the position, vertically and
+        // horizontally.
+        RndTextAlignment mAlignment = kTextAlignTop;
+        RndTextJustification mJustification = kTextJustifyLeft;
+        // How the text fits mWrapWidth, and for wrap and shrink also
+        // mWrapHeight. Both are in the coordinate mode's units.
+        RndTextFitMode mFitMode = kTextFitModeNone;
         float mWrapWidth = 0.0F;
         float mWrapHeight = 0.0F;
-        int mUnknown100 = 0;  // Passed to the typesetter.
+        RndFontStyleSize mStyleSize = kFontStyleSizeRegular;  // The first size tried.
     };
 
     // Builds the shared sphere, box and other meshes the drawing helpers use.
@@ -151,9 +149,10 @@ static_assert(offsetof(RndDrawUtl::Text2DParams, mStyles) == 56);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mNumStyles) == 64);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mScale) == 72);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mRotation) == 76);
-static_assert(offsetof(RndDrawUtl::Text2DParams, mUnknown80) == 80);
-static_assert(offsetof(RndDrawUtl::Text2DParams, mUnknown84) == 84);
-static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapMode) == 88);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mAlignment) == 80);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mJustification) == 84);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mFitMode) == 88);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapWidth) == 92);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapHeight) == 96);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mStyleSize) == 100);
 static_assert(sizeof(RndDrawUtl::Text2DParams) == 104);

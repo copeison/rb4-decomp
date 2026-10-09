@@ -96,7 +96,7 @@ int RndConsoleOverlay::Draw(RndContext& context, int y) {
     RndDrawUtl::Text2DParams params;
     params.mCoordinateMode = RndDrawUtl::kCoordinatePixels;
     params.mColor = sInputColor;
-    params.mWrapMode = 1;
+    params.mFitMode = kTextFitModeWordWrap;
     params.mWrapWidth = context.mViewportSize.x +
                         static_cast<float>(RndOverlayMgr::GetMarginInPixels()) * -2.0F;
     Vector2 position = {

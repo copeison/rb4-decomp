@@ -233,3 +233,8 @@ void RndDebugFont::InitExtendedFonts() {
 void RndDebugFont::TerminateExtendedFonts() {
     gExtendedFonts.clear();
 }
+
+// Reconstructed from eboot.elf at 0x65CEC0.
+bool RndDebugFont::HasExtendedFonts() {
+    return !gExtendedFonts.empty();
+}

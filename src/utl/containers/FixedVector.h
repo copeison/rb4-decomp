@@ -33,9 +33,14 @@ struct FixedVector {
     T* end() { return mData + mSize; }
     const T* begin() const { return mData; }
     const T* end() const { return mData + mSize; }
+    T& back() { return mData[mSize - 1]; }
+    const T& back() const { return mData[mSize - 1]; }
 
     void push_back(const T& value) {
         new (&mData[mSize++]) T(value);
+    }
+    void pop_back() {
+        mData[--mSize].~T();
     }
 
     // Appends default-constructed elements up to the count, or drops the

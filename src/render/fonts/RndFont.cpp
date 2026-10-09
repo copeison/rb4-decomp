@@ -49,6 +49,47 @@ void RndFont::SetNumPages(const Vector2i& resolution, unsigned long count) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x65D600. A page whose range covers the
+// character but lacks it ends the search.
+const RndFontGlyph* RndFont::FindGlyphOnPage(
+    const Vector2i& resolution,
+    unsigned short character,
+    unsigned long& page) const {
+    const Size* size = GetSize(resolution);
+    for (unsigned long i = 0; i < size->mNumPages; ++i) {
+        const RndFontPage& candidate = size->mPages[i];
+        if (candidate.mGlyphs.front().mChar <= character &&
+            candidate.mGlyphs.back().mChar >= character) {
+            const RndFontGlyph* glyph = candidate.FindGlyph(character);
+            if (glyph == nullptr) {
+                return nullptr;
+            }
+            page = i;
+            return glyph;
+        }
+    }
+    return nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x65D690. A binary search of the sorted
+// kerning table.
+int RndFont::GetKerning(
+    const Vector2i& resolution,
+    unsigned short first,
+    unsigned short second) const {
+    const Size* size = GetSize(resolution);
+    const unsigned int key = (static_cast<unsigned int>(second) << 16) | first;
+    const KerningPair* pair = std::lower_bound(
+        size->mKerningTable.begin(),
+        size->mKerningTable.end(),
+        key,
+        [](const KerningPair& entry, unsigned int value) { return entry.mKey < value; });
+    if (pair != size->mKerningTable.end() && pair->mKey == key) {
+        return pair->mKerning;
+    }
+    return 0;
+}
+
 // Reconstructed from eboot.elf at 0x65D910. The binary sorts with EASTL's
 // sort (0x65E5D0), an introsort finished by insertion sort; std::sort gives
 // the same order for distinct keys.

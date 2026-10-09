@@ -7,6 +7,7 @@
 #include "utl/text/Symbol.h"
 
 class RndFontPage;
+struct RndFontGlyph;
 
 // A bitmap font. This build keeps one set of metrics and pages per output
 // resolution; the setters take the resolution whose entry they change and
@@ -14,16 +15,17 @@ class RndFontPage;
 // font uses are declared.
 class RndFont {
 public:
-    // A kerning table entry. Finalize sorts the table by mKey, compared as
-    // an unsigned int. Field names are not in the reference map, and the
-    // second field is not recovered.
+    // A kerning table entry. The key holds the first character in its low
+    // 16 bits and the second in its high 16 bits; Finalize sorts the table
+    // by it, compared as an unsigned int. Field names are not in the
+    // reference map.
     struct KerningPair {
         bool operator<(const KerningPair& other) const {
             return mKey < other.mKey;
         }
 
         unsigned int mKey;
-        unsigned char mUnknown4[4];
+        int mKerning;  // Pixels added between the two characters.
     };
 
     // The metrics and pages for one output resolution. Name not in the
@@ -68,6 +70,9 @@ public:
         }
         return size;
     }
+    const Size* GetSize(const Vector2i& resolution) const {
+        return const_cast<RndFont*>(this)->GetSize(resolution);
+    }
 
     // The map's setters take only the value; this build adds the
     // resolution.
@@ -81,13 +86,31 @@ public:
     // Finalizes every page and sorts each kerning table.
     void Finalize();  // 0x65D910
 
-    // Field names are not in the reference map.
+    // The glyph of the character in the resolution's size and the page that
+    // holds it, or null. The first page whose character range covers the
+    // character is searched. The map has FindGlyphOnPage(unsigned short,
+    // unsigned long&) const; this build adds the resolution.
+    const RndFontGlyph* FindGlyphOnPage(
+        const Vector2i& resolution,
+        unsigned short character,
+        unsigned long& page) const;  // 0x65D600
+    // The kerning between the two characters in the resolution's size, or
+    // zero. The map has GetKerning(unsigned short, unsigned short) const;
+    // this build adds the resolution.
+    int GetKerning(
+        const Vector2i& resolution,
+        unsigned short first,
+        unsigned short second) const;  // 0x65D690
+
+    // Field names are not in the reference map. For a font with bit 0 of
+    // mUnknown8 set, the typesetter adds the glyph spacing after each glyph
+    // instead of between glyphs, and sizes spaces from the space size.
     Symbol mName;
     int mUnknown8;
     eastl::vector<Size> mSizes;
 };
 
-static_assert(offsetof(RndFont::KerningPair, mUnknown4) == 4);
+static_assert(offsetof(RndFont::KerningPair, mKerning) == 4);
 static_assert(sizeof(RndFont::KerningPair) == 8);
 static_assert(offsetof(RndFont::Size, mGlyphTileSize) == 8);
 static_assert(offsetof(RndFont::Size, mGlyphHeight) == 16);

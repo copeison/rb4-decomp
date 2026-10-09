@@ -527,24 +527,24 @@ void RndDrawUtl::DrawText2D(
 
     RndTypesetter::Params layout = {};
     layout.mText = text;
-    layout.mUnknown28 = params.mUnknown80;
-    layout.mUnknown32 = params.mUnknown84;
-    layout.mFitMode = static_cast<RndTextFitMode>(params.mWrapMode);
-    layout.mUnknown48 = params.mUnknown100;
+    layout.mAlignment = params.mAlignment;
+    layout.mJustification = params.mJustification;
+    layout.mFitMode = params.mFitMode;
+    layout.mStyleSize = params.mStyleSize;
     layout.mMarkup = params.mNumStyles != 0;
-    layout.mUnknown80 = Symbol();
-    if (params.mWrapMode != 0) {
+    layout.mToken = Symbol();
+    if (params.mFitMode != kTextFitModeNone) {
         const float left = ToPixelsX(mode, viewportSize, Vector2::sZero.x);
         const float right = ToPixelsX(mode, viewportSize, params.mWrapWidth);
         layout.mMaxWidth = RoundToInt((right - left) / params.mScale);
-        if (params.mWrapMode == 4) {
+        if (params.mFitMode == kTextFitModeWrapAndShrink) {
             const float top = ToPixelsY(mode, viewportSize, Vector2::sZero.y);
             const float bottom = ToPixelsY(mode, viewportSize, params.mWrapHeight);
             layout.mMaxHeight = RoundToInt((bottom - top) / params.mScale);
         }
     }
     RndTypesetter::Style style;
-    style.mUnknown8 = 2;
+    style.mAlignment = kTextAlignBottom;
     if (params.mNumStyles != 0) {
         layout.mStyles = params.mStyles;
         layout.mNumStyles = params.mNumStyles;
@@ -561,12 +561,12 @@ void RndDrawUtl::DrawText2D(
     const unsigned long capacity = RndTypesetter::CalcResultGlyphsCapacity(
         RndTypesetter::CalcNumGlyphs(text, layout.mMarkup), 0, layout.mFitMode);
     RndTypesetter::Result result = {};
-    result.mStyleSize = -1;
+    result.mStyleSize = static_cast<RndFontStyleSize>(-1);
     if (capacity != 0) {
-        result.mGlyphs = static_cast<RndTypesetter::Glyph*>(
+        result.mGlyphs.mData = static_cast<RndTypesetter::Glyph*>(
             __builtin_alloca(capacity * sizeof(RndTypesetter::Glyph)));
     }
-    result.mCapacity = capacity;
+    result.mGlyphs.mCapacity = capacity;
     RndTypesetter::ProcessText(layout, result);
 
     const float scale = params.mScale;
@@ -593,7 +593,7 @@ void RndDrawUtl::DrawText2D(
             {static_cast<float>(result.mEnd.x) * scale + origin.x,
              static_cast<float>(result.mEnd.y) * scale + origin.y});
     }
-    if (context == nullptr || result.mNumGlyphs == 0) {
+    if (context == nullptr || result.mGlyphs.size() == 0) {
         return;
     }
 
@@ -616,7 +616,7 @@ void RndDrawUtl::DrawText2D(
 
     const bool identity = context->mUsingIdentityViewProjection;
     context->SetUsingIdentityViewProjection(true);
-    const unsigned long maxVertices = result.mNumGlyphs * 6;
+    const unsigned long maxVertices = result.mGlyphs.size() * 6;
     const unsigned long maxShadowVertices = params.mShadow ? maxVertices * 8 : 0;
     RndVertexColorTex* vertices = nullptr;
     if (maxVertices != 0) {
@@ -640,7 +640,7 @@ void RndDrawUtl::DrawText2D(
         const RndFont::Size* size = font->GetSize(resolution);
         for (unsigned long page = 0; page < size->mNumPages; ++page) {
             unsigned long numVertices = 0;
-            for (unsigned long i = 0; i < result.mNumGlyphs; ++i) {
+            for (unsigned long i = 0; i < result.mGlyphs.size(); ++i) {
                 const RndTypesetter::Glyph& glyph = result.mGlyphs[i];
                 if (glyph.mStyle != styleIndex || glyph.mPage != page) {
                     continue;

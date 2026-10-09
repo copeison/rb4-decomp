@@ -21,6 +21,8 @@ public:
     // Links the page to its font and the output resolution of its size. The
     // map has PostConstruct(RndFont*); this build adds the resolution.
     void PostConstruct(RndFont* font, const Vector2i& resolution);  // 0x667240
+    // The glyph of the character, or null.
+    const RndFontGlyph* FindGlyph(unsigned short character) const;  // 0x667250
     // Takes ownership of the texture.
     void SetTexture(RndTexture2D* texture);  // 0x667340
     void SetNumGlyphs(unsigned long count);  // 0x667350

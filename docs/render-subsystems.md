@@ -103,15 +103,17 @@ with its 160-byte `Params`.
   `DrawQuad2D` does.
 - The wide `DrawText2D` takes the viewport size and a context pointer;
   `MeasureText2D` passes a null context to lay the text out without drawing
-  it. The layout is `RndTypesetter`'s (declared only, in `render/fonts`).
+  it. The layout is `RndTypesetter`'s (see below).
   Each style's font draws its glyphs page by page, after eight copies in the
   shadow color offset one pixel around them when `mShadow` is set.
 
 ## Not yet reconstructed
 
-- `RndTypesetter` (`CalcNumGlyphs`, `CalcResultGlyphsCapacity`,
-  `ProcessText`), `PollMgr::IsWorkerThread` (0x24F6E0, an invented name),
+- `PollMgr::IsWorkerThread` (0x24F6E0, an invented name),
   `Thread::ThreadIdToName`, `DataVarIndex` and `DataVariable`.
+- The typesetter's callees in `utl/UTF8.o` (`WideCharToChar`, `WToUpper`,
+  `WToLower` and the CJK line-break rules) and `ObjPtr::MakeErrorName`
+  (declared on `GameObject`).
 - The console input's slots 6 to 9 (0x6E1910, 0x6E1930, 0x6E1950,
   0x6E1990): they register the console with `TheDebug`, clear its output
   and synchronize with it, but the line editor they belong to is not
@@ -128,3 +130,44 @@ left, top, width and height.
 
 `Finalize` sorts the kerning pairs with `std::sort`; the binary uses EASTL's
 sort, so pairs with equal keys may end up in a different order.
+
+## Typesetter
+
+`RndTypesetter` (`render/fonts/RndTypesetter.cpp`, 0x67D910-0x681610) lays
+wide text out in glyphs. `ProcessText` (0x67E590) copies the params, sizes
+per-style page counts on the stack, and runs the layout once per style size:
+generate the glyphs, then wrap the lines. Shrink to fit (3) and wrap and
+shrink (4) step to the next size until the lines fit the width or the text
+fits the height. If no size fits, the last size runs once more as word wrap
+(from 4) or with no fitting (from 3). Vertical alignment, justification and
+the bounds follow.
+
+- Positions are font pixels with y up. Lines run downward from zero, one
+  glyph height plus the vertical spacing apart, measured with the first
+  style's font.
+- Markup is `<name=value>` between `<` and `>`, without tabs or spaces.
+  `<style=name>` pushes a style, `</style>` pops one, and `<icon=name>`
+  inserts the icon as a blank glyph, once per icon. Every parsed tag is
+  consumed; unknown tags only warn.
+- A missing character comes from the style's fallback, the style
+  `mNumStyles / 2` further on, when extended fonts exist. Otherwise it is
+  drawn as U+25A0, or skipped if the font lacks that too.
+- Word wrap breaks before spaces, zero-width spaces, characters after a
+  hyphen, and CJK boundaries that the kinsoku sets allow. Truncate (2) drops
+  glyphs until three periods fit and ends the text with them.
+- The release build drops the warnings. Only their conversion of the text
+  through `WideCharToChar` and the error prefix (0x680210) remain, and the
+  source keeps both.
+
+The map's `_InitResults`, `_InitContext`, `_InitIconResults`,
+`_ApplyAlignment`, `_FinalizeIconResults`, `_IsCharNumeric` and the
+`Params`/`Context` overload of `_TryParseMarkup` are inlined and have no
+out-of-line copy. `_ApplyJustification` (0x67F560) and both
+`_SkipWhitespaceAndMarkup` overloads have out-of-line copies with no
+callers. This build adds the word wrap (`_ApplyWordWrap` 0x67F1B0,
+`_WrapLine` 0x681470 and `FindLineBreaks` 0x6811F0), a page argument to
+`_ProcessOneGlyph`, and the resolution to `RndFont::FindGlyphOnPage`
+(0x65D600) and `GetKerning` (0x65D690). The three word-wrap names are
+invented, as are `_MakeErrorPrefix`, `RndDebugFont::HasExtendedFonts`
+(0x65CEC0), the enumerators in `RndTextEnums.h` (which follow the text
+options' display names) and `BufVector`'s members.

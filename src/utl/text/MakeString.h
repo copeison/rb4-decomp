@@ -13,6 +13,7 @@ public:
     FormatString& operator<<(void* value);          // 0x247670
     // 0x247890 takes a 64-bit integer.
     FormatString& operator<<(int value);            // 0x247CD0
+    FormatString& operator<<(const char* value);    // 0x247F90
     FormatString& operator<<(float value);          // 0x2480A0
     FormatString& operator<<(const Symbol& value);  // 0x2483D0
     const char* Str();                       // 0x2484E0

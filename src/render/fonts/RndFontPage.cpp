@@ -18,6 +18,26 @@ void RndFontPage::PostConstruct(RndFont* font, const Vector2i& resolution) {
     mResolution = resolution;
 }
 
+// Reconstructed from eboot.elf at 0x667250. A binary search of the glyphs,
+// which Finalize leaves sorted by character.
+const RndFontGlyph* RndFontPage::FindGlyph(unsigned short character) const {
+    const RndFontGlyph* glyph = mGlyphs.begin();
+    long count = mGlyphs.end() - mGlyphs.begin();
+    while (count > 0) {
+        const long half = count / 2;
+        if (glyph[half].mChar < character) {
+            glyph += half + 1;
+            count -= half + 1;
+        } else {
+            count = half;
+        }
+    }
+    if (glyph == mGlyphs.end() || glyph->mChar != character) {
+        return nullptr;
+    }
+    return glyph;
+}
+
 // Reconstructed from eboot.elf at 0x667340.
 void RndFontPage::SetTexture(RndTexture2D* texture) {
     mTexture = texture;

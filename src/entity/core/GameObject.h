@@ -43,6 +43,10 @@ public:
         Symbol mBaseId;
     };
 
+    // A description for error messages, formatted "%s object in %s" from
+    // the object's name and number and its entity.
+    // The map's ObjPtr::MakeErrorName() const.
+    const char* MakeErrorName() const;  // 0x115FC0
     // The map's ObjPtr::SetName(Symbol).
     void SetName(Symbol name);  // 0x1160F0
     // Creates the component of the named class and returns it. The map's

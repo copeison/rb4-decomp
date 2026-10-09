@@ -265,9 +265,9 @@ void RndOverlayGraphBase::_DrawAxes(
     RndDrawUtl::Text2DParams textParams;
     textParams.mCoordinateMode = RndDrawUtl::kCoordinatePixels;
     textParams.mShadow = true;
-    textParams.mUnknown84 = 1;
+    textParams.mJustification = kTextJustifyCenter;
     if (axes.mX.mLabel != Symbol()) {
-        textParams.mUnknown80 = axes.mX.mLabelSide >= 0.0F ? 2 : 0;
+        textParams.mAlignment = axes.mX.mLabelSide >= 0.0F ? kTextAlignBottom : kTextAlignTop;
         const Vector2 position = {
             static_cast<float>(RoundToInt((xAxis.end.x + xAxis.start.x) * 0.5F)),
             axes.mX.mLabelSide * kLabelOffset + xAxis.start.y};
@@ -275,7 +275,7 @@ void RndOverlayGraphBase::_DrawAxes(
             context, axes.mX.mLabel.Str(), position, textParams, nullptr, nullptr);
     }
     if (axes.mY.mLabel != Symbol()) {
-        textParams.mUnknown80 = 0;
+        textParams.mAlignment = kTextAlignTop;
         textParams.mRotation = axes.mY.mLabelSide * kQuarterTurn;
         const Vector2 position = {
             axes.mY.mLabelSide * kLabelOffset + yAxis.start.x,

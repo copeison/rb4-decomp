@@ -55,7 +55,7 @@ void RndOverlayTextBase::OverlayTextStream::Flush() {
     params.mCoordinateMode = RndDrawUtl::kCoordinatePixels;
     params.mColor = mOverlay->_GetTextColor();
     if ((mOverlay->mFlags & kFlagWrapText) != 0) {
-        params.mWrapMode = 1;
+        params.mFitMode = kTextFitModeWordWrap;
         params.mWrapWidth = mContext->mViewportSize.x +
                             static_cast<float>(RndOverlayMgr::GetMarginInPixels()) * -2.0F;
     }
