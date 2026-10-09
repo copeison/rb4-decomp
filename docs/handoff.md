@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 643 entries, most of the
+executable. The latest unresolved-symbol report contains 642 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `RndContext::BeginFrame` and `_SyncClipPlanes`; clip planes and target mode named |
+| (this) | `Hmx::Timer` (`utl/Timer.o`), `RndPixelData::LoadBuffers`, Bink frame preparation through `RndContext::SetCamera` |
+| `257cee5` | `RndContext::BeginFrame` and `_SyncClipPlanes`; clip planes and target mode named |
 | `ad79ac1` | `RndConfig`, `RndCapabilities` and `PlatformMgr` read `SystemConfig` directly; config adapters removed |
 | `2636479` | Script data types (`DataNode`, `DataArray`, `DataRegisterFunc`); `RndCommands` handlers as script functions |
 | `7413b6d` | Empty `_SyncDynamicImpl` overrides of the PS4 1D, 3D, array and cube textures |

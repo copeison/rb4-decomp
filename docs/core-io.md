@@ -98,3 +98,23 @@ deleting destructors call `MemFree` directly use Milo's `DELETE_OVERLOAD`.
 
 The EASTL allocator `HmxAllocator::allocator` (`0x252CF0`, `0x252D30`)
 ignores its object and labels allocations `"StlAlloc"`.
+
+## Timer
+
+`Hmx::Timer` (`utl/Timer.o`) converts cycle-counter ticks:
+- `Init` (`0x25C0A0`) stores 1000 divided by `sceKernelGetTscFrequency()` as
+  milliseconds per tick.
+- `CyclesToMs` (`0x25C0E0`) multiplies by that value.
+- `MsToCycles` (`0x25C110`) divides by it, returning zero before `Init`.
+
+`core_initialize` calls `Init`.
+
+## Pixel data
+
+`RndPixelData::LoadBuffers` (`0x686B10`) reads a revision, then the pixels of
+each mip level in the chain:
+- for revisions up to 5, the size comes from the level's format bits and
+  dimensions;
+- later revisions store each level's size.
+
+Flag 4 at `+0x30` stops after the first level.

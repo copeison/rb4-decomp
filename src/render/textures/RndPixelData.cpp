@@ -8,6 +8,7 @@
 #include "os/memory/MemMgr.h"
 #include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndPixelCanvas.h"
+#include "utl/streams/BinStream.h"
 
 namespace {
 
@@ -177,7 +178,8 @@ RndPixelData::RndPixelData()
       mBuffer(nullptr),
       mBufferSize(0),
       mMip(nullptr),
-      mUnknown48{},
+      mFlags(0),
+      mUnknown52{},
       mUnknown72(nullptr) {}
 
 // Reconstructed from eboot.elf at 0x682960.
@@ -209,7 +211,8 @@ void RndPixelData::Free() {
 // the temporary heap unless `keepPixels` is set; a matching-size buffer is
 // reused. Mip levels are copied recursively into pool allocations.
 void RndPixelData::CopyFrom(const RndPixelData& other, bool keepPixels) {
-    std::memcpy(mUnknown48, other.mUnknown48, sizeof(mUnknown48));
+    mFlags = other.mFlags;
+    std::memcpy(mUnknown52, other.mUnknown52, sizeof(mUnknown52));
     if (other.mBuffer != nullptr) {
         unsigned int heap = 0;
         MemPushTemp(heap, true, !keepPixels);
@@ -337,4 +340,40 @@ unsigned long RndPixelData::GetNumMips() const {
         ++count;
     } while (level != nullptr);
     return count;
+}
+
+// Reconstructed from eboot.elf at 0x686B10.
+void RndPixelData::LoadBuffers(BinStream& stream) {
+    int revision;
+    stream.ReadEndian(&revision, sizeof(revision));
+    constexpr unsigned int kNoMips = 4;
+    if (revision <= 5) {
+        for (auto* level = this; level != nullptr; level = level->mMip) {
+            const auto info = RndGetDataFormatInfo(level->mFormat);
+            const auto size = static_cast<unsigned long>(
+                static_cast<long>(level->mSize.x) * level->mSize.y * level->mSize.z *
+                info.mBitsPerPixel) >> 3;
+            level->mBufferSize = size;
+            delete[] static_cast<unsigned char*>(level->mBuffer);
+            level->mBufferSize = size;
+            level->mBuffer = new unsigned char[size];
+            stream.Read(level->mBuffer, level->mBufferSize);
+            if ((mFlags & kNoMips) != 0) {
+                break;
+            }
+        }
+    } else {
+        for (auto* level = this; level != nullptr; level = level->mMip) {
+            int size;
+            stream.ReadEndian(&size, sizeof(size));
+            level->mBufferSize = size;
+            delete[] static_cast<unsigned char*>(level->mBuffer);
+            level->mBufferSize = size;
+            level->mBuffer = new unsigned char[size];
+            stream.Read(level->mBuffer, level->mBufferSize);
+            if ((mFlags & kNoMips) != 0) {
+                break;
+            }
+        }
+    }
 }

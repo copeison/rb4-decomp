@@ -36,8 +36,9 @@ public:
     // Reconstructed from eboot.elf at 0x686340.
     unsigned long GetTotalBytes() const;
     unsigned long GetNumMips() const;
-    // Pixel loading at 0x686B10, not yet reconstructed.
-    void LoadBuffers(BinStream& stream);
+    // Reads the pixels of this level and its mips. Revisions up to 5 derive
+    // each level's size from its format; later ones store it.
+    void LoadBuffers(BinStream& stream);  // 0x686B10
 
     POOL_OVERLOAD(RndPixelData)
 
@@ -47,7 +48,8 @@ public:
     void* mBuffer;
     unsigned long mBufferSize;
     RndPixelData* mMip;
-    unsigned int mUnknown48[6];
+    unsigned int mFlags;  // 4: no mips are loaded.
+    unsigned int mUnknown52[5];
     void* mUnknown72;
 
     // Releases the pixels and mips and resets the size and format. Also the
@@ -59,6 +61,6 @@ static_assert(offsetof(RndPixelData, mSize) == 8);
 static_assert(offsetof(RndPixelData, mFormat) == 20);
 static_assert(offsetof(RndPixelData, mBuffer) == 24);
 static_assert(offsetof(RndPixelData, mMip) == 40);
-static_assert(offsetof(RndPixelData, mUnknown48) == 48);
+static_assert(offsetof(RndPixelData, mFlags) == 48);
 static_assert(offsetof(RndPixelData, mUnknown72) == 72);
 static_assert(sizeof(RndPixelData) == 80);

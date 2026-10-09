@@ -8,6 +8,7 @@
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
 
+class GameObject;
 class RndComputeBuffer;
 class RndFence;
 class RndShaderCBuffer;
@@ -217,6 +218,10 @@ public:
     // async compute is enabled. The map has SetActivePipeline(RndPipeline,
     // bool); this build passes the compute slot.
     void SetActivePipeline(RndPipeline pipeline, unsigned long computeSlot);  // 0x6BD8A0
+    // Sets the camera of the main view and copies it to the second; the
+    // stereo target modes then refresh its target info. Not reconstructed
+    // yet.
+    void SetCamera(const GameObject* camera);  // 0x6BD220
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340

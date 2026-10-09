@@ -28,9 +28,6 @@ class BinkRenderMgr {
 public:
     // Not reconstructed yet. The manager the device's frame start uses.
     static BinkRenderMgr& Instance();
-    // Not reconstructed yet. Readies the context for the conversions.
-    static void PrepareContext(RndContext& context);
-
     // Runs the queued frame conversions.
     void PrepareFrame(RndContext& context);  // 0x5F2B40
 
