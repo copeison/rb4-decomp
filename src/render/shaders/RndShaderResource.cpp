@@ -11,7 +11,9 @@ void RndShaderResource::Select(
     unsigned int flags,
     unsigned long extra) {
     mFrameStamp = static_cast<long>(TheRndDevice()->mFrameCount);
-    auto& limit = context.mInputSlotLimits[type];
+    auto& limit = (flags & kSelectReadWrite) != 0
+        ? context.mOutputSlotLimits[type]
+        : context.mInputSlotLimits[type];
     if (limit < slot + 1) {
         limit = slot + 1;
     }

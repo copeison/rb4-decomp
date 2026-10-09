@@ -223,3 +223,8 @@ void PS4TextureArray2D::_SyncRegular() {
         mGpuTexture->setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
     }
 }
+
+// Reconstructed from eboot.elf at 0x8E6580. Only validates.
+void PS4TextureArray2D::_GpuCopyFromImpl(RndContext&, RndShaderResource& source) {
+    _ValidateGpuCopyFrom(source);
+}

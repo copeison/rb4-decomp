@@ -110,6 +110,10 @@ public:
 
     DELETE_OVERLOAD
 
+    // Checks that a resource can be copied into this texture; empty in this
+    // build. Each texture class wraps it in its own _ValidateGpuCopyFrom.
+    void _ValidateGpuCopyFromBase(const RndShaderResource& source);  // 0x69B920
+
     Description mBaseDesc;  // Name not in the reference map.
     int mResourceIndex;     // Name not in the reference map.
 

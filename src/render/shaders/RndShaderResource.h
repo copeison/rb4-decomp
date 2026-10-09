@@ -32,8 +32,13 @@ public:
     // Slot 9.
     virtual void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) = 0;
 
-    // Stamps the resource with the frame epoch, raises the context's
-    // input-slot limit for the stage past the slot, and selects the resource
+    // Select flag for a read-write (output) bind. Name not in the reference
+    // map.
+    static constexpr unsigned int kSelectReadWrite = 1;
+
+    // Stamps the resource with the frame epoch, raises the context's input-
+    // or, for read-write binds, output-slot limit for the stage past the
+    // slot, and selects the resource
     // for the stage. The extra argument reaches only the compute stage. The
     // map's build emits it inline from RndContext.o; this build inlines it
     // into the draws.

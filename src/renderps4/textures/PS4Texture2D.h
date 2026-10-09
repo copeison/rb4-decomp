@@ -26,7 +26,6 @@ public:
     void _SelectForGSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8D6FF0
     void _SelectForPSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8D7060
     void _SelectForCSImpl(RndContext& context, unsigned long slot, unsigned int flags, unsigned long extra) override;  // 0x8D70D0
-    // Not yet reconstructed.
     void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) override;  // 0x8D7140
     void _SyncStaticImpl(const RndTextureBase* reuse) override;  // 0x8D6460
     void _SyncDynamicImpl(RndContext& context) override;          // 0x8D6D10

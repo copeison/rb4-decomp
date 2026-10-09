@@ -59,3 +59,8 @@ void RndTextureCube::_SetRequestedFormatImpl(const RndPixelFormat& format) {
 void RndTextureCube::_FreePixelDataImpl() {
     mCube.FreeBuffers();
 }
+
+// Reconstructed from eboot.elf at 0x6A0F90.
+void RndTextureCube::_ValidateGpuCopyFrom(const RndShaderResource& source) {
+    _ValidateGpuCopyFromBase(source);
+}

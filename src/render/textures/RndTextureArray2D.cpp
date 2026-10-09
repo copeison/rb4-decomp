@@ -83,3 +83,8 @@ bool RndTextureArray2D::ValidateElements() const {
     }
     return true;
 }
+
+// Reconstructed from eboot.elf at 0x6985C0.
+void RndTextureArray2D::_ValidateGpuCopyFrom(const RndShaderResource& source) {
+    _ValidateGpuCopyFromBase(source);
+}

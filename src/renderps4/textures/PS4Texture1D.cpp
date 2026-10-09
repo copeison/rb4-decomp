@@ -115,3 +115,8 @@ void PS4Texture1D::_SyncStaticImpl(const RndTextureBase*) {
     mGpuTexture->setBaseAddress(mStorage);
     mGpuTexture->setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
 }
+
+// Reconstructed from eboot.elf at 0x8E5390. Only validates.
+void PS4Texture1D::_GpuCopyFromImpl(RndContext&, RndShaderResource& source) {
+    _ValidateGpuCopyFrom(source);
+}

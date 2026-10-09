@@ -5,6 +5,8 @@
 #include <gnm/platform.h>
 #include <gpu_address.h>
 
+#include "render/buffers/RndCShaderCopyBuffer.h"
+#include "render/shaders/RndShaderCBufferConfig.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/video/PS4Window.h"
@@ -363,4 +365,15 @@ void PS4Texture2D::_SyncRegular(const RndTextureBase* reuse) {
             mGpuTextures[buffer]->setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
         }
     }
+}
+
+// Reconstructed from eboot.elf at 0x8D7140. Copies the source into this texture
+// with the float4 copy shader.
+void PS4Texture2D::_GpuCopyFromImpl(RndContext& context, RndShaderResource& source) {
+    _ValidateGpuCopyFrom(source);
+    RndCShaderCopyBuffer::Params params{};
+    params.mSrcTexture = static_cast<RndTextureBase*>(&source);
+    params.mDestTexture = this;
+    params.mNumericType = kShaderNumericFloat4;
+    TheRndDevice()->mShaderMgr.mCopyBufferCShader->Dispatch(context, params);
 }

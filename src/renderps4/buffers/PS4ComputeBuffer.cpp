@@ -11,8 +11,6 @@ namespace {
 constexpr unsigned int kFlagWritable = 0x1;
 constexpr unsigned int kFlagIndirectArgs = 0x8;
 constexpr unsigned int kFlagDoubleBuffered = 0x10;
-// Bound with flags & kSelectReadWrite as a read-write buffer.
-constexpr unsigned int kSelectReadWrite = 0x1;
 
 // Initial contents of an indirect-argument buffer without initial data.
 // Name not in the reference map.

@@ -49,3 +49,8 @@ void RndTexture3D::_SetRequestedFormatImpl(const RndPixelFormat& format) {
 void RndTexture3D::_FreePixelDataImpl() {
     mPixels.FreeBuffers();
 }
+
+// Reconstructed from eboot.elf at 0x6F5E30.
+void RndTexture3D::_ValidateGpuCopyFrom(const RndShaderResource& source) {
+    _ValidateGpuCopyFromBase(source);
+}

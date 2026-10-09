@@ -36,6 +36,9 @@ public:
     void _SetRequestedFormatImpl(const RndPixelFormat& format) override;  // 0x69ADC0
     void _FreePixelDataImpl() override;                                // 0x69AE20
 
+    // Defers to _ValidateGpuCopyFromBase.
+    void _ValidateGpuCopyFrom(const RndShaderResource& source);  // 0x69AD50
+
     RndTextureBase::Description mDesc;  // Name not in the reference map.
     eastl::vector<RndPixelDataCube> mCubes;  // Name not in the reference map.
 

@@ -122,3 +122,8 @@ void PS4Texture3D::_SyncStaticImpl(const RndTextureBase* reuse) {
             ? sce::Gnm::kResourceMemoryTypeGC
             : sce::Gnm::kResourceMemoryTypeRO);
 }
+
+// Reconstructed from eboot.elf at 0x8E5830. Only validates.
+void PS4Texture3D::_GpuCopyFromImpl(RndContext&, RndShaderResource& source) {
+    _ValidateGpuCopyFrom(source);
+}

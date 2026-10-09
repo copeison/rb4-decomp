@@ -145,3 +145,6 @@ int TextureDefaultFilterMode(unsigned int kind) {
     }
     return (kFilterModeOneKinds & bit) != 0 ? 1 : -1;
 }
+
+// Reconstructed from eboot.elf at 0x69B920.
+void RndTextureBase::_ValidateGpuCopyFromBase(const RndShaderResource&) {}

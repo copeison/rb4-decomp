@@ -34,6 +34,9 @@ public:
     // map.
     void SetLinkedTexture(RndTextureBase* texture, long index);
 
+    // Defers to _ValidateGpuCopyFromBase.
+    void _ValidateGpuCopyFrom(const RndShaderResource& source);  // 0x690260
+
     RndTextureBase::Description mDesc;  // Name not in the reference map.
     RndPixelData mPixels;  // Name not in the reference map.
     RndTextureBase* mLinkedTexture;  // Name not in the reference map.

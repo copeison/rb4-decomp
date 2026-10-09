@@ -17,7 +17,6 @@ public:
     void _SelectForGSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E6B10
     void _SelectForPSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E6B30
     void _SelectForCSImpl(RndContext& context, unsigned long slot, unsigned int flags, unsigned long extra) override;  // 0x8E6B50
-    // Not yet reconstructed.
     void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) override;  // 0x8E6B70
     // The map has _SyncStaticImpl(); this build's slot takes a texture to
     // reuse.

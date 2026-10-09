@@ -204,3 +204,8 @@ void PS4TextureCube::_SyncRegular() {
         mGpuTexture->setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
     }
 }
+
+// Reconstructed from eboot.elf at 0x8E7260. Only validates.
+void PS4TextureCube::_GpuCopyFromImpl(RndContext&, RndShaderResource& source) {
+    _ValidateGpuCopyFrom(source);
+}

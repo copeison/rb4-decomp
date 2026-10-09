@@ -72,3 +72,8 @@ void RndTexture2D::SetLinkedTexture(RndTextureBase* texture, long index) {
     mLinkedTexture = texture;
     mLinkedIndex = index;
 }
+
+// Reconstructed from eboot.elf at 0x690260.
+void RndTexture2D::_ValidateGpuCopyFrom(const RndShaderResource& source) {
+    _ValidateGpuCopyFromBase(source);
+}

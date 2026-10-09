@@ -3,11 +3,32 @@
 #include <cstddef>
 
 #include "render/shaders/RndShader.h"
+#include "render/shaders/RndShaderCBufferConfig.h"
+
+class RndComputeBuffer;
+class RndContext;
+class RndTextureBase;
 
 // Copies between uint or float4 buffers, 1D textures, and 2D textures.
 class RndCShaderCopyBuffer : public RndShaderCompute {
 public:
+    // What to copy. A source texture is copied into the destination texture;
+    // without one the source buffer is copied. Field names are not in the
+    // reference map.
+    struct Params {
+        RndTextureBase* mSrcTexture;
+        RndComputeBuffer* mSrcBuffer;
+        RndTextureBase* mDestTexture;
+        RndComputeBuffer* mDestBuffer;
+        RndShaderNumericType mNumericType;  // kShaderNumericUInt or kShaderNumericFloat4.
+    };
+
     RndCShaderCopyBuffer();             // 0x6F3550
+
+    // Selects the permutation for the source's numeric and texture type,
+    // binds the source and destination and dispatches one thread per
+    // element.
+    void Dispatch(RndContext& context, Params& params);  // 0x6F35E0
     ~RndCShaderCopyBuffer() override;
 
     const char* _GetClassNameImpl() const override;
