@@ -1,15 +1,26 @@
 #pragma once
 
-// Text view over caller-provided storage. The capacity word is stored in the
-// four bytes before the text.
-class FixedString {
-public:
-    virtual ~FixedString() {}
+#include "utl/text/TextStream.h"
 
-    // Slot 2 at 0x2542E0: appends through reserve, truncating to capacity.
-    virtual FixedString& operator+=(const char* str);
-    // Slot 3.
-    virtual void reserve(unsigned long capacity) = 0;
+// Text view over caller-provided storage. The capacity word is stored in the
+// four bytes before the text. Printing to it appends.
+class FixedString : public TextStream {
+public:
+    ~FixedString() override {}
+
+    // Slot 2: a thunk at 0x5F3C0 to operator+=, shared by every subclass.
+    // Inline in the map's build.
+    void Print(const char* str) override {
+        *this += str;
+    }
+    // Slot 3 at 0x5F3D0: fixed storage does not grow. Inline in the map's
+    // build.
+    virtual void reserve(unsigned long capacity) {
+        static_cast<void>(capacity);
+    }
+
+    // Appends through reserve, truncating to the capacity.
+    FixedString& operator+=(const char* str);  // 0x2542E0
 
     const char* c_str() const {
         return mStr;
@@ -23,6 +34,8 @@ protected:
     char* mStr;
 };
 
+static_assert(sizeof(FixedString) == 16);
+
 // Heap string. Empty strings share a static zero-capacity buffer.
 class String : public FixedString {
 public:
@@ -32,8 +45,6 @@ public:
     String(const String& other);
     ~String() override;                // slots 0-1: 0x255550, 0x255580
 
-    // Slot 2 is a thunk at 0x5F3C0 to the FixedString implementation.
-    String& operator+=(const char* str) override;
     // Slot 3 at 0x2553B0.
     void reserve(unsigned long capacity) override;
 
@@ -42,6 +53,26 @@ private:
 };
 
 static_assert(sizeof(String) == 16);
+
+// FixedString over an inline buffer of N characters and a terminator; the
+// capacity word sits in front of the buffer. The constructor and destructor
+// are inline. StackString<256>'s vtable is at 0x18E6AC8.
+template <int N>
+class StackString : public FixedString {
+public:
+    StackString() {
+        mStr = mBuffer;
+        mCapacity = N;
+        mBuffer[0] = '\0';
+    }
+
+private:
+    // Field names are not in the reference map.
+    unsigned int mCapacity;
+    char mBuffer[N + 1];
+};
+
+static_assert(sizeof(StackString<256>) == 280);
 
 // Interned decimal text for small integers at 0x256410. Negative values map
 // to "-1"; non-negative values index the table at 0x18EF6F0.

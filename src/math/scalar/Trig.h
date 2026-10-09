@@ -13,3 +13,7 @@ float Sine(float angle);  // 0x219690
 
 // Table sine without interpolation: rounds to the nearest sample.
 float FastSin(float angle);  // 0x219710
+
+// Registers the script functions sin, cos, tan, asin, acos and atan, which
+// take and return angles in degrees.
+void TrigInit();  // 0x219770

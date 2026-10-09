@@ -36,9 +36,17 @@ target plus the five fixed dimensions documented in `docs/screenshot-capture.md`
 The final two commands accept a mode name, and accept `help` to enumerate their
 respective name tables.
 
-Twenty-one handlers are source-owned. The two overlay commands need
-`RndOverlay`, and `set_quality_level` formats the quality-level names into a
-string this build discards; those three are not reconstructed yet.
+All 24 handlers are source-owned.
+- **`toggle_overlay`** looks up the named overlay with
+  `RndOverlayMgr::TryGetOverlay` and flips its `SetShowing` state.
+- **`overlay_help`** prints the help of the named overlay, or of every overlay
+  with help when given `all` or nothing, to `TheDebug`.
+- **`set_quality_level`** sets the quality level by name. For an unknown name,
+  it formats the three level names into a 256-byte `StackString` that this
+  build discards.
+
+`RndOverlay` and `RndOverlayMgr` are in `src/render/debug`. The manager keeps
+the overlays in a static linked list, `RndOverlayMgr::sOverlays`.
 
 - **`set_resolution`** takes a width and a height, a `WxH` string
   (`ParseResolution`), or a height with a 16:9 width. It overrides the

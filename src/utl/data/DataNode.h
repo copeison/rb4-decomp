@@ -42,6 +42,10 @@ public:
         mValue.object = nullptr;
         mValue.integer = value;
     }
+    explicit DataNode(float value) : mType(kDataFloat) {
+        mValue.object = nullptr;
+        mValue.real = value;
+    }
     DataNode(const DataNode& other);
     ~DataNode();
     DataNode& operator=(const DataNode& other);
@@ -54,7 +58,7 @@ public:
     // variables, commands and properties. The source array names the file
     // and line in errors.
     int Int(const DataArray* source) const;
-    float Float(const DataArray* source) const;
+    float Float(const DataArray* source) const;  // 0xEE30
     Symbol Sym(const DataArray* source) const;
     const char* Str(const DataArray* source) const;
 

@@ -29,6 +29,9 @@ public:
     int Int(unsigned long index) const {
         return Node(index).Int(this);
     }
+    float Float(unsigned long index) const {
+        return Node(index).Float(this);
+    }
     Symbol Sym(unsigned long index) const {
         return Node(index).Sym(this);
     }

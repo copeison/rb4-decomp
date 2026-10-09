@@ -11,18 +11,19 @@ public:
     // Registers every render command.
     static void Init();  // 0x6BB0E0
 
-    // Not reconstructed yet; needs RndOverlay.
-    static DataNode _OnToggleOverlay(DataArray* args);
-    // Not reconstructed yet; needs RndOverlay.
-    static DataNode _OnPrintOverlayHelp(DataArray* args);
+    // Shows or hides the overlay named by the argument.
+    static DataNode _OnToggleOverlay(DataArray* args);  // 0x6BA3D0
+    // Prints the help of the named overlay to TheDebug; "all" or no
+    // argument prints every overlay that has help.
+    static DataNode _OnPrintOverlayHelp(DataArray* args);  // 0x6BA430
     static DataNode _OnReloadShaders(DataArray* args);  // 0x6BA590
     // Overrides the output resolution with a supported one: a width and a
     // height, a "WxH" string, or a 16:9 height. No argument clears the
     // override. Name not in the reference map.
     static DataNode _OnSetResolution(DataArray* args);
-    // Not reconstructed yet; it formats the quality level names into a
-    // discarded string. Name not in the reference map.
-    static DataNode _OnSetQualityLevel(DataArray* args);
+    // Sets the quality level by name; an unknown name leaves it unchanged.
+    // Name not in the reference map.
+    static DataNode _OnSetQualityLevel(DataArray* args);  // 0x6BA730
     static DataNode _OnToggleVSync(DataArray* args);  // 0x6BA880
     static DataNode _OnToggleSceneMask(DataArray* args);  // 0x6BA8B0
     // Name not in the reference map.

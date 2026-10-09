@@ -2,6 +2,9 @@
 
 #include <cmath>
 
+#include "utl/data/DataArray.h"
+#include "utl/data/DataFunc.h"
+
 namespace {
 
 constexpr int kSinTableSize = 256;
@@ -26,6 +29,11 @@ SinTableEntry gBigSinTable[kSinTableSize];
 
 static_assert(sizeof(SinTableEntry) == 8);
 static_assert(sizeof(gBigSinTable) == 0x800);
+
+// Degree conversions of the script functions. Names not in the reference
+// map.
+constexpr float kDegreesToRadians = 0.017453292F;
+constexpr float kRadiansToDegrees = 57.295776F;
 
 }  // namespace
 
@@ -81,4 +89,47 @@ float FastSin(float angle) {
     }
     int index = static_cast<int>(kRound - scaled);
     return -gBigSinTable[static_cast<unsigned char>(index)].mValue;
+}
+
+// The script functions take their argument from the first node after the
+// name. They are file-local; their names are not in the reference map.
+
+// Reconstructed from eboot.elf at 0x219860.
+static DataNode DataSin(DataArray* args) {
+    return DataNode(std::sin(args->Float(1) * kDegreesToRadians));
+}
+
+// Reconstructed from eboot.elf at 0x2198B0.
+static DataNode DataCos(DataArray* args) {
+    return DataNode(std::cos(args->Float(1) * kDegreesToRadians));
+}
+
+// Reconstructed from eboot.elf at 0x219900.
+static DataNode DataTan(DataArray* args) {
+    return DataNode(std::tan(args->Float(1) * kDegreesToRadians));
+}
+
+// Reconstructed from eboot.elf at 0x219940.
+static DataNode DataASin(DataArray* args) {
+    return DataNode(std::asin(args->Float(1)) * kRadiansToDegrees);
+}
+
+// Reconstructed from eboot.elf at 0x219980.
+static DataNode DataACos(DataArray* args) {
+    return DataNode(std::acos(args->Float(1)) * kRadiansToDegrees);
+}
+
+// Reconstructed from eboot.elf at 0x2199C0.
+static DataNode DataATan(DataArray* args) {
+    return DataNode(std::atan(args->Float(1)) * kRadiansToDegrees);
+}
+
+// Reconstructed from eboot.elf at 0x219770.
+void TrigInit() {
+    DataRegisterFunc(Symbol("sin"), DataSin);
+    DataRegisterFunc(Symbol("cos"), DataCos);
+    DataRegisterFunc(Symbol("tan"), DataTan);
+    DataRegisterFunc(Symbol("asin"), DataASin);
+    DataRegisterFunc(Symbol("acos"), DataACos);
+    DataRegisterFunc(Symbol("atan"), DataATan);
 }

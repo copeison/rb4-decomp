@@ -3,8 +3,11 @@
 #include <cstdint>
 #include <cstring>
 
+#include "os/debug/Debug.h"
 #include "os/platform/PlatformMgr.h"
 #include "render/debug/RndBufferInspection.h"
+#include "render/debug/RndOverlay.h"
+#include "render/debug/RndOverlayMgr.h"
 #include "render/debug/screenshot_capture.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "render/system/RndConfig.h"
@@ -12,6 +15,7 @@
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndWindow.h"
 #include "utl/data/DataArray.h"
+#include "utl/text/Str.h"
 
 namespace {
 
@@ -28,6 +32,70 @@ void toggle(bool& value) {
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x6BA3D0. The toggle goes through
+// SetShowing; RndOverlay::ToggleShowing is not called.
+DataNode RndCommands::_OnToggleOverlay(DataArray* args) {
+    if (args->Size() >= 2) {
+        if (auto* overlay = RndOverlayMgr::TryGetOverlay(args->Sym(1))) {
+            overlay->SetShowing(!overlay->IsShowing());
+        }
+    }
+    return DataNode(0);
+}
+
+// Reconstructed from eboot.elf at 0x6BA430.
+DataNode RndCommands::_OnPrintOverlayHelp(DataArray* args) {
+    static Symbol sAll;
+    if (sAll == Symbol()) {
+        sAll = Symbol("all");
+    }
+
+    Symbol name = sAll;
+    if (args->Size() >= 2) {
+        name = args->Sym(1);
+    }
+    if (name == sAll) {
+        const auto end = RndOverlayMgr::End();
+        for (auto it = RndOverlayMgr::Begin(); it != end; ++it) {
+            if ((it->GetFlags() & RndOverlay::kFlagHasHelp) != 0) {
+                it->PrintHelp(TheDebug);
+            }
+        }
+    } else {
+        auto* overlay = RndOverlayMgr::TryGetOverlay(args->Sym(1));
+        if (overlay != nullptr &&
+            (overlay->GetFlags() & RndOverlay::kFlagHasHelp) != 0) {
+            overlay->PrintHelp(TheDebug);
+        }
+    }
+    return DataNode(0);
+}
+
+// Reconstructed from eboot.elf at 0x6BA730. The level names, and the list
+// of valid names for an unknown one, are formatted for a message that is
+// compiled out of this build.
+DataNode RndCommands::_OnSetQualityLevel(DataArray* args) {
+    auto& settings = render_settings();
+    RndQualityLevel level;
+    if (args->Size() <= 1) {
+        level = settings.mQualityLevel;
+    } else {
+        level = RndQualityLevelFromName(args->Str(1));
+        if (level == RndQualityLevel::kInvalid) {
+            StackString<256> names;
+            names << RndQualityLevelName(RndQualityLevel::kLow);
+            names << ", ";
+            names << RndQualityLevelName(RndQualityLevel::kMedium);
+            names << ", ";
+            names << RndQualityLevelName(RndQualityLevel::kHigh);
+            return DataNode(0);
+        }
+        settings.mQualityLevel = level;
+    }
+    static_cast<void>(RndQualityLevelName(level));
+    return DataNode(0);
+}
 
 // Reconstructed from eboot.elf at 0x6BA880.
 DataNode RndCommands::_OnToggleVSync(DataArray*) {

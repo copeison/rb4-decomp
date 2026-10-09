@@ -27,9 +27,10 @@ The math module (`src/math`) follows the map's `math/` object files.
 - **The identity constants** are filled by static initializers in the binary.
   The source defines them as constant aggregates with the same values.
 
+`TrigInit` (`0x219770`) registers the script functions `sin`, `cos` and `tan`,
+which take degrees, and `asin`, `acos` and `atan`, which return degrees.
+
 ## Not yet reconstructed
 
-- `TrigInit` (`0x219770`), which registers the script functions `sin`, `cos`,
-  `tan`, `asin`, `acos` and `atan`.
 - Two 36-byte objects at `0x19E669C` and `0x19E66C0`, filled by the static
   initializer at `0x2195C0`.

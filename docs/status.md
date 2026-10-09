@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct `RndOverlay`, `RndOverlayMgr`, `TextStream` and the overlay and
+  quality-level console commands; register the trig script functions.
 - [x] Reconstruct the math functions and constants the renderer uses
   (`docs/math-foundation.md`).
 - [x] Reconstruct the `RndMeshUtl` builders (`docs/render-mesh-builders.md`),

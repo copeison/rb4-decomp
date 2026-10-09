@@ -51,12 +51,6 @@ String::~String() {
     FreeText();
 }
 
-// Reconstructed from eboot.elf at 0x5F3C0.
-String& String::operator+=(const char* str) {
-    FixedString::operator+=(str);
-    return *this;
-}
-
 void String::FreeText() {
     const auto old_capacity = capacity();
     if (old_capacity != 0) {
