@@ -6,7 +6,7 @@
 #include "os/threading/CritSec.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/debug/RndGpuStatsMgr.h"
-#include "render/resources/lighting/render_lighting_resources.h"
+#include "render/lighting/RndLightGlobals.h"
 #include "render/defaults/RndDefaults.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "utl/containers/FixedVector.h"
@@ -151,7 +151,7 @@ public:
     rb4::RenderPlatformConfig mPlatformConfigs[13];
     RndDefaults mDefaults;
     RndShaderMgr mShaderMgr;
-    rb4::RenderLightingResources mLighting;
+    RndLightGlobals mLighting;
     RndShaderFogDeferred* mFogDeferred;
     rb4::RenderPrimitiveMeshSet* mPrimitiveMeshes;
     rb4::AudioAnalysisTextureSet* mAudioTextures;
