@@ -575,6 +575,10 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the audio and microphone subsystems to the reference map's
+  classes (`FModSystem`, the FMOD generators and managers, `FmodFileWrapper`,
+  `MicHwManager_FMOD`, `Mic_FMOD`, the DSP plug-ins) and move `Vector3`,
+  `Hmx::Matrix3`, and `Transform` into `src/math`.
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

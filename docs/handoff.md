@@ -3,13 +3,11 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert the render context to original classes` milestone, the
-fifth step
-of the conversion to the reference map's original names, classes, and module
+merge of the audio conversion, the sixth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
-render context are converted; the
-rest of the renderer, audio, and game code still use the earlier names. The
+render context, and the audio and microphone subsystems are converted; the
+rest of the renderer and the game code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **181 C++ translation units**. It creates
@@ -177,7 +175,10 @@ The high-confidence reconstructed foundation includes:
 - Startup, top-level system initialization/shutdown, and the main frame loop.
 - UI layout IDs and primary asset-path mappings.
 - FMOD initialization, Orbis integration, IO, playback generators, recording,
-  bank/resource handling, listener state, and timing reports.
+  bank/resource handling, listener state, and timing reports, written as the
+  original classes (`FModSystem`, `FmodAudioStreamGenerator`,
+  `FmodStudioSoundGenerator`, `FmodDialogGenerator`, `FmodAudioBusGenerator`,
+  `FmodFileWrapper`, `MicHwManager_FMOD`, `Mic_FMOD`, the DSP plug-ins).
 - Renderer settings, platform capabilities, debug commands, frame lifecycle,
   resource manager, and default resources.
 - Common texture, render-target, buffer, mesh, particle, fence, query, and
@@ -201,7 +202,9 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Render context converted to original classes |
+| `528bbea` | Audio and microphone subsystems converted to original classes (merge) |
+| `00c11a0` | Render context release fix |
+| `00bc0d4` | Render context converted to original classes |
 | `e149abf` | Meshes converted to original classes |
 | `32dba93` | Textures converted to original classes |
 | `c589005` | Render resource objects converted to original classes |
