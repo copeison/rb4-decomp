@@ -1,10 +1,15 @@
 #include "render/debug/overlays/RndTimersOverlay.h"
 
+#include <cstring>
+
 #include "os/joypads/Keyboard.h"
 #include "os/profiling/PerfMgr.h"
 #include "os/profiling/PerfTimer.h"
 #include "os/system/System.h"
 #include "utl/data/DataArray.h"
+#include "utl/text/MakeString.h"
+#include "utl/threading/PollMgr.h"
+#include "utl/threading/Thread.h"
 
 namespace {
 
@@ -21,7 +26,13 @@ constexpr int kKeyDown = 323;
 // The lines the tree shows at once. Name not in the reference map.
 constexpr unsigned long kVisibleLines = 30;
 
+// How much the over-budget tint fades per print. Name not in the reference
+// map.
+constexpr float kOverBudgetDecay = 0.05F;
+
 }  // namespace
+
+bool RndTimersOverlay::gSplitFrameTiming = false;
 
 // Reconstructed from eboot.elf at 0x6E7850.
 RndTimersOverlay::RndTimersOverlay(const char* name, unsigned int flags)
@@ -94,15 +105,10 @@ void RndTimersOverlay::TimedThreadListView::Update() {
         const bool selected = &view == mSelectedThread;
         TimerItemView* selectedItem = selected ? mSelectedItem : nullptr;
         bool keepSelection = true;
-        const unsigned int displayMode = static_cast<unsigned int>(mDisplayMode);
-        const int sortMode = mSortMode;
-        if (mOwner->_Unknown11() && !view.mExpanded) {
-            view._ClearTimers();
-        } else {
-            view._GatherTimers(selectedItem, displayMode, sortMode, &keepSelection);
-            if (selected && !keepSelection) {
-                mSelectedItem = nullptr;
-            }
+        view._UpdateTimers(
+            selectedItem, static_cast<unsigned int>(mDisplayMode), mSortMode, &keepSelection);
+        if (selected && !keepSelection) {
+            mSelectedItem = nullptr;
         }
     }
 
@@ -202,17 +208,13 @@ void RndTimersOverlay::TimedThreadListView::CollapseItem() {
             timer->mExpanded = false;
             return;
         }
-        PerfTimerBase* parent = timer->mParent;
-        if (parent != nullptr) {
-            for (auto& other : thread->mItems) {
-                if (other.mTimer == parent) {
-                    mSelectedItem = &other;
-                    if (other.mType == TimerItemView::kTypeTimer && parent->mHasChildren) {
-                        parent->mExpanded = false;
-                    }
-                    return;
-                }
+        if (TimerItemView* parentItem = thread->_FindParentItem(*item)) {
+            mSelectedItem = parentItem;
+            PerfTimerBase* parent = parentItem->mTimer;
+            if (parentItem->mType == TimerItemView::kTypeTimer && parent->mHasChildren) {
+                parent->mExpanded = false;
             }
+            return;
         }
     }
     if (threadsFold) {
@@ -278,6 +280,56 @@ void RndTimersOverlay::_Print(TextStream& stream) {
     thePerfMgr.Unlock();
 }
 
+// Reconstructed from eboot.elf at 0x6E8560. Printing stops after the
+// visible lines.
+void RndTimersOverlay::TimedThreadListView::Draw(TextStream& stream) {
+    stream << "[ Displaying: ";
+    switch (mDisplayMode) {
+    case 0:
+        stream << "hierarchical";
+        break;
+    case 1:
+        stream << "flat list";
+        break;
+    case 2:
+        stream << "budget timers";
+        break;
+    default:
+        break;
+    }
+    stream << " | Sorting by: ";
+    switch (mSortMode) {
+    case PerfTimerBase::kSortName:
+        stream << "name";
+        break;
+    case PerfTimerBase::kSortAverageMs:
+        stream << "avg ms";
+        break;
+    case PerfTimerBase::kSortWorstMs:
+        stream << "worst ms";
+        break;
+    case PerfTimerBase::kSortCount:
+        stream << "call count";
+        break;
+    case PerfTimerBase::kSortAverageCount:
+        stream << "avg call count";
+        break;
+    default:
+        break;
+    }
+    stream << " | Threshold: worst >= " << MakeString("%.2f", gTimerThresholdMs) << "ms";
+    stream << " ]\n";
+
+    LineRange lines = {mScroll, mScroll + kVisibleLines, 0};
+    for (auto& view : mThreads) {
+        const bool selected = &view == mSelectedThread;
+        view.Draw(stream, selected, selected ? mSelectedItem : nullptr, lines);
+        if (lines.mLine >= lines.mEnd) {
+            break;
+        }
+    }
+}
+
 // Reconstructed from eboot.elf at 0x6E8740. Blends every channel towards
 // red by the over-budget amount.
 Hmx::Color RndTimersOverlay::_GetBackgroundColor() const {
@@ -296,6 +348,391 @@ Hmx::Color RndTimersOverlay::_GetBackgroundColor() const {
         color.alpha += (sOverBudgetColor.alpha - color.alpha) * amount;
     }
     return color;
+}
+
+// Reconstructed from eboot.elf at 0x6E88E0. A timer is indented once per
+// parent up to the first isolated one, and once more when it or a parent is
+// isolated or has mUnknown40 set. The name is the full sort name while the
+// "show_timer_sort_names" script variable is set.
+void RndTimersOverlay::TimerItemView::_UpdateText() {
+    switch (mType) {
+    case kTypeTimer: {
+        mText.erase();
+        const PerfTimerBase* timer = mTimer;
+        bool indent = timer->mUnknown40;
+        bool isolated = timer->mIsolated;
+        if (!isolated) {
+            for (const PerfTimerBase* parent = timer->mParent; parent != nullptr;
+                 parent = parent->mParent) {
+                mText << "  ";
+                indent = indent || parent->mUnknown40;
+                isolated = parent->mIsolated;
+                if (isolated) {
+                    break;
+                }
+            }
+        }
+        if (indent || isolated) {
+            mText << "  ";
+        }
+        mText << (!timer->mHasChildren ? " " : timer->mExpanded ? "-" : "+");
+        static const unsigned long sShowSortNames =
+            DataVarIndex(Symbol("show_timer_sort_names"), DataNode(0));
+        if (DataVariable(sShowSortNames).mValue.integer != 0) {
+            mText << mTimer->mFullName.c_str();
+        } else {
+            mText << mTimer->mName.Str();
+        }
+        break;
+    }
+    case kTypeIsolatedHeader:
+        mText = " <isolated timers>";
+        break;
+    case kTypeAmbiguousHeader:
+        mText = " <ambiguous parents>";
+        break;
+    default:
+        break;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6E8BF0.
+RndTimersOverlay::TimerItemView* RndTimersOverlay::TimerItemView::_NewHeader(
+    RndTimersOverlay* owner,
+    Type type) {
+    return new TimerItemView(owner, nullptr, type);
+}
+
+// Reconstructed from eboot.elf at 0x6E8C80. The halves are numbered "(0)"
+// and "(1)".
+void RndTimersOverlay::TimerItemView::_PrintHeader(
+    RndTimersOverlay* overlay,
+    TextStream& stream,
+    const char* name,
+    unsigned long width,
+    bool split) {
+    static_cast<void>(overlay);
+    split = split && gSplitFrameTiming;
+    const unsigned long numHalves = split ? 2 : 1;
+    for (unsigned long half = 0; half < numHalves; ++half) {
+        StackString<32> header(name);
+        if (split) {
+            header << " (" << half << ")";
+        }
+        stream.Print(header.c_str());
+        for (unsigned long length = std::strlen(header.c_str()); length < width; ++length) {
+            stream << '_';
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6E8EC0.
+void RndTimersOverlay::TimerItemView::_PrintPadded(
+    RndTimersOverlay* overlay,
+    TextStream& stream,
+    const char* text,
+    unsigned long width) {
+    static_cast<void>(overlay);
+    stream << text;
+    for (unsigned long length = std::strlen(text); length < width; ++length) {
+        stream << ' ';
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6E8FD0.
+void RndTimersOverlay::TimerItemView::_PrintStat(
+    RndTimersOverlay* overlay,
+    TextStream& stream,
+    int value,
+    unsigned long width) {
+    char buffer[32] = {};
+    _PrintPadded(overlay, stream, PrintIntWithCommas(value, buffer, sizeof(buffer)), width);
+}
+
+// Inlined into Draw.
+inline void RndTimersOverlay::TimerItemView::_PrintTimer(TextStream& stream, float ms) {
+    _PrintPadded(mOwner, stream, MakeString("%.2fms", ms), 12);
+}
+
+// Reconstructed from eboot.elf at 0x6E9120. The name column is one
+// character narrower to make room for the underscores.
+void RndTimersOverlay::TimerItemView::DrawHeader(
+    RndTimersOverlay* overlay,
+    TextStream& stream,
+    const char* prefix,
+    unsigned long width) {
+    stream << prefix << "___";
+    _PrintHeader(overlay, stream, "timer", width - 1, false);
+    _PrintHeader(overlay, stream, "dt", 12, true);
+    _PrintHeader(overlay, stream, "avg", 12, true);
+    _PrintHeader(overlay, stream, "worst", 12, true);
+    _PrintHeader(overlay, stream, "count", 8, true);
+    _PrintHeader(overlay, stream, "avg count", 10, true);
+    _PrintHeader(overlay, stream, "budget", 12, false);
+    overlay->_Unknown14(stream);
+    stream << "\n";
+}
+
+// Reconstructed from eboot.elf at 0x6E9230. Each timing column lists the
+// halves of a split frame in turn. A timer over budget in any half tints
+// the background fully; the tint then fades.
+void RndTimersOverlay::TimerItemView::Draw(
+    TextStream& stream,
+    const char* prefix,
+    unsigned long width,
+    bool selected) {
+    mOwner->SetSelectedItem(selected);
+    StackString<128> line;
+    line << (selected ? ">" : " ") << prefix << " ";
+    if (mType != kTypeTimer) {
+        stream.Print(line.c_str());
+        stream.Print(mText.c_str());
+    } else {
+        const unsigned long numFrames = gSplitFrameTiming ? 2 : 1;
+        PerfTimerBase* timer = mTimer;
+        const float budget = timer->mBudget;
+        bool overBudget = false;
+        if (budget != 0.0F) {
+            for (unsigned long frame = 0; frame < numFrames; ++frame) {
+                if (timer->_GetMs(frame) > budget) {
+                    overBudget = true;
+                }
+            }
+        }
+        if (overBudget) {
+            mOverBudget = 1.0F;
+        } else {
+            float amount = mOverBudget - kOverBudgetDecay;
+            if (amount < 0.0F) {
+                amount = 0.0F;
+            }
+            mOverBudget = amount > 1.0F ? 1.0F : amount;
+        }
+        mOwner->SetOverBudget(mOverBudget);
+
+        stream.Print(line.c_str());
+        _PrintPadded(mOwner, stream, mText.c_str(), width);
+        for (unsigned long frame = 0; frame < numFrames; ++frame) {
+            _PrintTimer(stream, timer->_GetMs(frame));
+        }
+        for (unsigned long frame = 0; frame < numFrames; ++frame) {
+            _PrintTimer(stream, timer->_GetAverageMs(frame));
+        }
+        for (unsigned long frame = 0; frame < numFrames; ++frame) {
+            _PrintTimer(stream, timer->_GetWorstMs(frame));
+        }
+        for (unsigned long frame = 0; frame < numFrames; ++frame) {
+            _PrintStat(mOwner, stream, timer->_GetCount(frame), 8);
+        }
+        for (unsigned long frame = 0; frame < numFrames; ++frame) {
+            _PrintPadded(mOwner, stream, MakeString("%.1f", timer->_GetAverageCount(frame)), 10);
+        }
+        if (budget > 0.0F) {
+            _PrintTimer(stream, budget);
+        } else {
+            _PrintPadded(mOwner, stream, "<none>", 12);
+        }
+        mOwner->_Unknown15(stream, *timer, numFrames);
+    }
+    stream << "\n";
+    mOwner->SetSelectedItem(false);
+    mOwner->SetOverBudget(0.0F);
+}
+
+// Reconstructed from eboot.elf at 0x6E9A90.
+bool RndTimersOverlay::ThreadTimersListView::IsBefore(
+    const ThreadTimersListView& a,
+    const ThreadTimersListView& b) {
+    if (a.mThread == Thread::s_MainThreadID) {
+        return true;
+    }
+    if (b.mThread == Thread::s_MainThreadID) {
+        return false;
+    }
+    const bool aWorker = PollMgr::IsWorkerThread(a.mThread);
+    const bool bWorker = PollMgr::IsWorkerThread(b.mThread);
+    if (aWorker != bWorker) {
+        return aWorker;
+    }
+    const StackString<64> aName(Thread::ThreadIdToName(a.mThread));
+    const StackString<64> bName(Thread::ThreadIdToName(b.mThread));
+    if (*aName.c_str() != '\0') {
+        if (*bName.c_str() == '\0') {
+            return true;
+        }
+        return strcasecmp(aName.c_str(), bName.c_str()) < 0;
+    }
+    if (*bName.c_str() != '\0') {
+        return false;
+    }
+    return a.mThread < b.mThread;
+}
+
+// Reconstructed from eboot.elf at 0x6E9C90.
+RndTimersOverlay::TimerItemView* RndTimersOverlay::ThreadTimersListView::_FindParentItem(
+    const TimerItemView& item) {
+    if (item.mType != TimerItemView::kTypeTimer) {
+        return nullptr;
+    }
+    const PerfTimerBase* parent = item.mTimer->mParent;
+    if (parent == nullptr) {
+        return nullptr;
+    }
+    for (auto& other : mItems) {
+        if (other.mTimer == parent) {
+            return &other;
+        }
+    }
+    return nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x6E9CE0.
+void RndTimersOverlay::ThreadTimersListView::_UpdateTimers(
+    TimerItemView* selected,
+    unsigned int displayMode,
+    int sortMode,
+    bool* keepSelection) {
+    if (mOwner->_Unknown11() && !mExpanded) {
+        _ClearTimers();
+    } else {
+        _GatherTimers(selected, displayMode, sortMode, keepSelection);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6E9D80. The current items are set
+// aside and reused for the same timers and headers; the rest are deleted.
+// The selected ambiguous-parents header is kept even without its timers.
+void RndTimersOverlay::ThreadTimersListView::_GatherTimers(
+    TimerItemView* selected,
+    unsigned int displayMode,
+    int sortMode,
+    bool* keepSelection) {
+    *keepSelection = selected != nullptr && selected->mType != TimerItemView::kTypeTimer;
+    const unsigned long numFrames = gSplitFrameTiming ? 2 : 1;
+    mOwner->_Unknown13(mThread, mTimers, displayMode, sortMode);
+
+    ItemList oldItems;
+    oldItems.splice(mItems);
+    // Moves the old item of the type and timer to the end of the list, or
+    // adds a new one.
+    auto keepItem = [&](TimerItemView::Type type, PerfTimerBase* timer) {
+        for (auto& item : oldItems) {
+            if (item.mType == type && item.mTimer == timer) {
+                oldItems.remove(item);
+                mItems.push_back(item);
+                item._UpdateText();
+                return;
+            }
+        }
+        mItems.push_back(*new TimerItemView(mOwner, timer, type));
+    };
+
+    bool headerAdded[3] = {false, false, false};
+    for (PerfTimerBase* timer : mTimers) {
+        if (selected != nullptr && selected->mType == TimerItemView::kTypeTimer &&
+            selected->mTimer == timer) {
+            *keepSelection = true;
+        } else if (!timer->mIsolated) {
+            float worst = 0.0F;
+            for (unsigned long frame = 0; frame < numFrames; ++frame) {
+                const float ms = timer->_GetWorstMs(frame);
+                worst = ms > worst ? ms : worst;
+            }
+            if (!(worst >= gTimerThresholdMs)) {
+                continue;
+            }
+            bool folded = false;
+            for (const PerfTimerBase* parent = timer->mParent; parent != nullptr;
+                 parent = parent->mParent) {
+                if (!parent->mExpanded) {
+                    folded = true;
+                    break;
+                }
+            }
+            if (folded) {
+                continue;
+            }
+        }
+
+        TimerItemView::Type header = TimerItemView::kTypeTimer;
+        if (timer->mIsolated ||
+            (selected != nullptr && selected->mType == TimerItemView::kTypeIsolatedHeader)) {
+            header = TimerItemView::kTypeIsolatedHeader;
+        } else if (timer->mUnknown40) {
+            header = TimerItemView::kTypeAmbiguousHeader;
+        }
+        if (header != TimerItemView::kTypeTimer && !headerAdded[header]) {
+            headerAdded[header] = true;
+            keepItem(header, nullptr);
+        }
+        keepItem(TimerItemView::kTypeTimer, timer);
+    }
+    if (selected != nullptr && selected->mType == TimerItemView::kTypeAmbiguousHeader &&
+        !headerAdded[TimerItemView::kTypeAmbiguousHeader]) {
+        keepItem(TimerItemView::kTypeAmbiguousHeader, nullptr);
+    }
+
+    while (!oldItems.empty()) {
+        delete &oldItems.front();
+    }
+    mTimers.clear();
+}
+
+// Reconstructed from eboot.elf at 0x6EA440. Only the lines from
+// `lines.mFirst` print; each line counts, and printing stops at
+// `lines.mEnd`. When threads fold, the thread line comes first and the
+// items are indented under it.
+void RndTimersOverlay::ThreadTimersListView::Draw(
+    TextStream& stream,
+    bool selected,
+    TimerItemView* selectedItem,
+    LineRange& lines) {
+    StackString<32> prefix;
+    if (mOwner->_Unknown11()) {
+        if (lines.mLine >= lines.mFirst) {
+            StackString<64> name(Thread::ThreadIdToName(mThread));
+            if (*name.c_str() == '\0') {
+                name = MakeString("<unknown thread, id 0x%X>", mThread);
+            }
+            const bool highlighted = selected && selectedItem == nullptr;
+            mOwner->SetSelectedItem(highlighted);
+            TextStream& line =
+                stream << (highlighted ? "> " : "  ") << (mExpanded ? "-" : "+") << "Thread '";
+            line.Print(name.c_str());
+            line << "' Timers:\n";
+            mOwner->SetSelectedItem(false);
+            prefix = "   ";
+        }
+        if (++lines.mLine == lines.mEnd) {
+            return;
+        }
+    }
+    if (mOwner->_Unknown11() && !mExpanded) {
+        return;
+    }
+
+    unsigned long width = 0;
+    for (auto& item : mItems) {
+        const unsigned long length = std::strlen(item.mText.c_str());
+        if (width < length) {
+            width = length;
+        }
+    }
+    width += 2;
+    if (lines.mLine >= lines.mFirst) {
+        TimerItemView::DrawHeader(mOwner, stream, prefix.c_str(), width);
+    }
+    if (++lines.mLine == lines.mEnd) {
+        return;
+    }
+    for (auto& item : mItems) {
+        if (lines.mLine >= lines.mFirst) {
+            item.Draw(stream, prefix.c_str(), width, selected && &item == selectedItem);
+        }
+        if (++lines.mLine == lines.mEnd) {
+            return;
+        }
+    }
 }
 
 // Reconstructed from eboot.elf at 0x6EA8B0. Items without a timer are

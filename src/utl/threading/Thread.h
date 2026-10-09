@@ -40,6 +40,8 @@ public:
     // Records the calling thread's name for engine diagnostics. Name not in
     // the reference map.
     static void SetCurrentName(const char* name);
+    // The name the thread registered, or null when it registered none.
+    static const char* ThreadIdToName(ScePthread thread);  // 0x258DE0
 
     // The main thread, recorded when it first registers its name. At
     // 0x19E8810.

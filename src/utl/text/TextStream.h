@@ -13,7 +13,11 @@ public:
     // Slot 2: writes the text.
     virtual void Print(const char* str) = 0;
 
-    TextStream& operator<<(const char* str);  // 0x2588E0
+    // Each operator formats its value into a 1024-character buffer and
+    // prints it.
+    TextStream& operator<<(char c);              // 0x258560
+    TextStream& operator<<(const char* str);     // 0x2588E0
+    TextStream& operator<<(unsigned long value);  // 0x2589D0
 };
 
 static_assert(sizeof(TextStream) == 8);

@@ -1,14 +1,22 @@
 #include "render/drawing/RndDrawUtl.h"
 
 #include <cstring>
+#include <limits>
 
+#include "math/scalar/Trig.h"
+#include "math/vector/Vector2i.h"
 #include "render/context/RndContext.h"
+#include "render/debug/RndDebugFont.h"
+#include "render/fonts/RndFont.h"
+#include "render/fonts/RndFontPage.h"
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndMeshUtl.h"
 #include "render/meshes/RndVertex.h"
 #include "render/shaders/RndShaderBasic.h"
 #include "render/shaders/RndShaderMgr.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
+#include "render/textures/RndTexture2D.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/text/UTF8.h"
 
@@ -28,6 +36,11 @@ RndMesh* gNestedConeMesh = nullptr;            // 0x1A71348
 RndMesh* gTruncatedRoundedConeMesh = nullptr;  // 0x1A71350
 
 constexpr float kQuarterPi = 0.78539819F;
+constexpr float kHalfPi = 1.5707964F;
+
+// Text rotations and their sines below this are treated as zero. Name not
+// in the reference map.
+constexpr float kRotationEpsilon = 1e-4F;
 
 // Name not in the reference map.
 void SafeDelete(RndMesh*& mesh) {
@@ -56,6 +69,152 @@ RndMeshUtl::CreateQuadParams UnitQuadParams(int numSegments) {
     params.mNumSegmentsU = numSegments;
     params.mNumSegmentsV = numSegments;
     return params;
+}
+
+// The state DrawLines2D and DrawQuadWireframe2D draw with: an identity
+// view-projection, the line's blend mode without depth testing or culling,
+// and the basic shader. Returns the shading mode to restore. Name not in
+// the reference map.
+RndShadingMode BeginLines2D(RndContext& context, const RndDrawUtl::Line2DParams& params) {
+    context.SetUsingIdentityViewProjection(true);
+    context.mBlendMode = params.mBlendMode;
+    context._SetBlendModeImpl(params.mBlendMode, Hmx::Color::GetWhite());
+    context._SetDepthModeImpl(0);
+    context._SetCullModeImpl(kCullNone);
+    context._SetThickLinesImpl(params.mThickLines);
+    const RndShadingMode shadingMode = context.mShadingMode;
+    context.SetShadingMode(kShadingModeStandard);
+    TheRndDevice()->mShaderMgr.mBasicShader->Select(context, RndShaderBasic::Params());
+    return shadingMode;
+}
+
+// A point in the mode's space converted straight to clip space. Name not
+// in the reference map.
+Vector2 ToClip(
+    RndDrawUtl::CoordinateMode mode,
+    const Vector2& viewportSize,
+    const Vector2& point) {
+    const float width = viewportSize.x;
+    const float height = viewportSize.y;
+    switch (mode) {
+    case RndDrawUtl::kCoordinatePixels:
+        return {point.x * (2.0F / width) + -1.0F, point.y * (2.0F / height) + -1.0F};
+    case RndDrawUtl::kCoordinateNormalized:
+        return {point.x * width * (2.0F / width) + -1.0F,
+                point.y * height * (2.0F / height) + -1.0F};
+    case RndDrawUtl::kCoordinateAspectCorrected:
+        return {((width - height) * 0.5F + point.x * height) * (2.0F / width) + -1.0F,
+                point.y * height * (2.0F / height) + -1.0F};
+    case RndDrawUtl::kCoordinateClip:
+        return {(point.x + 1.0F) * 0.5F * width * (2.0F / width) + -1.0F,
+                (point.y + 1.0F) * 0.5F * height * (2.0F / height) + -1.0F};
+    default:
+        return {-1.0F, -1.0F};
+    }
+}
+
+// A point in the mode's space converted to pixels. Name not in the
+// reference map.
+Vector2 ToPixels(
+    RndDrawUtl::CoordinateMode mode,
+    const Vector2& viewportSize,
+    const Vector2& point) {
+    const float width = viewportSize.x;
+    const float height = viewportSize.y;
+    switch (mode) {
+    case RndDrawUtl::kCoordinatePixels:
+        return point;
+    case RndDrawUtl::kCoordinateNormalized:
+        return {point.x * width, point.y * height};
+    case RndDrawUtl::kCoordinateAspectCorrected:
+        return {(width - height) * 0.5F + point.x * height, point.y * height};
+    case RndDrawUtl::kCoordinateClip:
+        return {(point.x + 1.0F) * (width * 0.5F), (point.y + 1.0F) * (height * 0.5F)};
+    default:
+        return {0.0F, 0.0F};
+    }
+}
+
+// An x or y coordinate in the mode's space converted to pixels. Names not
+// in the reference map.
+float ToPixelsX(RndDrawUtl::CoordinateMode mode, const Vector2& viewportSize, float x) {
+    switch (mode) {
+    case RndDrawUtl::kCoordinatePixels:
+        return x;
+    case RndDrawUtl::kCoordinateNormalized:
+        return x * viewportSize.x;
+    case RndDrawUtl::kCoordinateAspectCorrected:
+        return x * viewportSize.y + (viewportSize.x - viewportSize.y) * 0.5F;
+    case RndDrawUtl::kCoordinateClip:
+        return (x + 1.0F) * (viewportSize.x * 0.5F);
+    default:
+        return 0.0F;
+    }
+}
+float ToPixelsY(RndDrawUtl::CoordinateMode mode, const Vector2& viewportSize, float y) {
+    switch (mode) {
+    case RndDrawUtl::kCoordinatePixels:
+        return y;
+    case RndDrawUtl::kCoordinateNormalized:
+    case RndDrawUtl::kCoordinateAspectCorrected:
+        return y * viewportSize.y;
+    case RndDrawUtl::kCoordinateClip:
+        return (y + 1.0F) * (viewportSize.y * 0.5F);
+    default:
+        return 0.0F;
+    }
+}
+
+// A point in pixels converted to the mode's space. Name not in the
+// reference map.
+Vector2 FromPixels(
+    RndDrawUtl::CoordinateMode mode,
+    const Vector2& viewportSize,
+    const Vector2& point) {
+    switch (mode) {
+    case RndDrawUtl::kCoordinatePixels:
+        return point;
+    case RndDrawUtl::kCoordinateNormalized:
+        return {point.x / viewportSize.x, point.y / viewportSize.y};
+    case RndDrawUtl::kCoordinateAspectCorrected:
+        return {(point.x + (viewportSize.y - viewportSize.x) * 0.5F) / viewportSize.y,
+                point.y / viewportSize.y};
+    case RndDrawUtl::kCoordinateClip:
+        return {point.x * (2.0F / viewportSize.x) + -1.0F,
+                point.y * (2.0F / viewportSize.y) + -1.0F};
+    default:
+        return {0.0F, 0.0F};
+    }
+}
+
+// Rounds half away from zero, saturating at the int range. Name not in the
+// reference map.
+int RoundToInt(float value) {
+    if (value > 0.0F) {
+        value += 0.5F;
+        return value < 2147483648.0F ? static_cast<int>(value)
+                                     : std::numeric_limits<int>::max();
+    }
+    value -= 0.5F;
+    return value > -2147483648.0F ? static_cast<int>(value)
+                                  : std::numeric_limits<int>::min();
+}
+
+// Name not in the reference map.
+Vector2 PixelsToClip(const Vector2& viewportSize, const Vector2& point) {
+    return {(point.x + point.x) / viewportSize.x + -1.0F,
+            (point.y + point.y) / viewportSize.y + -1.0F};
+}
+
+// Name not in the reference map.
+void SetLineVertex(RndVertexColor& vertex, const Vector2& position, const Hmx::Color& color) {
+    vertex.mPos[0] = position.x;
+    vertex.mPos[1] = position.y;
+    vertex.mPos[2] = 0.0F;
+    vertex.mColor[0] = color.red;
+    vertex.mColor[1] = color.green;
+    vertex.mColor[2] = color.blue;
+    vertex.mColor[3] = color.alpha;
 }
 
 }  // namespace
@@ -143,6 +302,39 @@ void RndDrawUtl::DrawLine2D(
     FixedVector<Segment2D, 1> segments;
     segments.push_back(segment);
     DrawLines2D(context, VectorAdapter<Segment2D>{segments.begin(), segments.size()}, params);
+}
+
+// Reconstructed from eboot.elf at 0x3DFCB0. The vertices live on the stack.
+void RndDrawUtl::DrawLines2D(
+    RndContext& context,
+    const VectorAdapter<Segment2D>& segments,
+    const Line2DParams& params) {
+    const bool identity = context.mUsingIdentityViewProjection;
+    const RndShadingMode shadingMode = BeginLines2D(context, params);
+    const unsigned long count = segments.mSize * 2;
+    RndVertexColor* vertices = nullptr;
+    if (count != 0) {
+        vertices = static_cast<RndVertexColor*>(
+            __builtin_alloca(count * sizeof(RndVertexColor)));
+    }
+    const Vector2 viewportSize = context.mViewportSize;
+    for (unsigned long index = 0; index < segments.mSize; ++index) {
+        const Segment2D& segment = segments.mData[index];
+        SetLineVertex(
+            vertices[index * 2],
+            ToClip(params.mCoordinateMode, viewportSize, segment.start),
+            params.mColor);
+        SetLineVertex(
+            vertices[index * 2 + 1],
+            PixelsToClip(viewportSize, ToPixels(params.mCoordinateMode, viewportSize, segment.end)),
+            params.mColor);
+    }
+    if (count != 0) {
+        context._DrawPrimitivesImpl(
+            RndPrimitive::kLines, RndVertexColor::kType, vertices, count);
+    }
+    context.SetShadingMode(shadingMode);
+    context.SetUsingIdentityViewProjection(identity);
 }
 
 // Reconstructed from eboot.elf at 0x3E0C50. The left and top edges are
@@ -268,6 +460,36 @@ void RndDrawUtl::DrawQuad2D(RndContext& context, Quad2DParams& params) {
     context.SetUsingIdentityViewProjection(identity);
 }
 
+// Reconstructed from eboot.elf at 0x3E16B0. The outline is one closed
+// line strip; the corners alternate between the direct conversion to clip
+// space and the one through pixels.
+void RndDrawUtl::DrawQuadWireframe2D(
+    RndContext& context,
+    const Hmx::Rect& rect,
+    const Line2DParams& params) {
+    const bool identity = context.mUsingIdentityViewProjection;
+    const RndShadingMode shadingMode = BeginLines2D(context, params);
+    const Vector2 viewportSize = context.mViewportSize;
+    const CoordinateMode mode = params.mCoordinateMode;
+    const float right = rect.x + rect.w;
+    const float bottom = rect.y + rect.h;
+    RndVertexColor vertices[5];
+    SetLineVertex(vertices[0], ToClip(mode, viewportSize, {rect.x, rect.y}), params.mColor);
+    SetLineVertex(
+        vertices[1],
+        PixelsToClip(viewportSize, ToPixels(mode, viewportSize, {right, rect.y})),
+        params.mColor);
+    SetLineVertex(vertices[2], ToClip(mode, viewportSize, {right, bottom}), params.mColor);
+    SetLineVertex(
+        vertices[3],
+        PixelsToClip(viewportSize, ToPixels(mode, viewportSize, {rect.x, bottom})),
+        params.mColor);
+    vertices[4] = vertices[0];
+    context._DrawPrimitivesImpl(RndPrimitive::kLineStrip, RndVertexColor::kType, vertices, 5);
+    context.SetShadingMode(shadingMode);
+    context.SetUsingIdentityViewProjection(identity);
+}
+
 // Reconstructed from eboot.elf at 0x3E49C0. The wide copy lives on the
 // stack.
 void RndDrawUtl::DrawText2D(
@@ -282,5 +504,254 @@ void RndDrawUtl::DrawText2D(
         __builtin_alloca((length + 1) * sizeof(unsigned short)));
     const unsigned short* wide = CharToWideChar(text, buffer, length + 1);
     const Vector2 viewportSize = context.mViewportSize;
-    DrawText2D(context, wide, position, viewportSize, params, bounds, end);
+    DrawText2D(&context, wide, position, viewportSize, params, bounds, end);
+}
+
+// Reconstructed from eboot.elf at 0x3E4A70. The text is laid out in font
+// pixels, scaled and placed at the position's pixels; the bounds and end
+// are converted back to the coordinate mode. Without a context nothing is
+// drawn. Each style's font draws its glyphs page by page, as two triangles
+// a glyph, after eight copies offset by one pixel around them in the
+// shadow color. A rotation within 1e-4 of zero is ignored, and the
+// rotation's sines and cosines snap to whole numbers within 1e-4.
+void RndDrawUtl::DrawText2D(
+    RndContext* context,
+    const unsigned short* text,
+    const Vector2& position,
+    const Vector2& viewportSize,
+    Text2DParams& params,
+    Hmx::Rect* bounds,
+    Vector2* end) {
+    const CoordinateMode mode = params.mCoordinateMode;
+    const Vector2 origin = ToPixels(mode, viewportSize, position);
+
+    RndTypesetter::Params layout = {};
+    layout.mText = text;
+    layout.mUnknown28 = params.mUnknown80;
+    layout.mUnknown32 = params.mUnknown84;
+    layout.mFitMode = static_cast<RndTextFitMode>(params.mWrapMode);
+    layout.mUnknown48 = params.mUnknown100;
+    layout.mMarkup = params.mNumStyles != 0;
+    layout.mUnknown80 = Symbol();
+    if (params.mWrapMode != 0) {
+        const float left = ToPixelsX(mode, viewportSize, Vector2::sZero.x);
+        const float right = ToPixelsX(mode, viewportSize, params.mWrapWidth);
+        layout.mMaxWidth = RoundToInt((right - left) / params.mScale);
+        if (params.mWrapMode == 4) {
+            const float top = ToPixelsY(mode, viewportSize, Vector2::sZero.y);
+            const float bottom = ToPixelsY(mode, viewportSize, params.mWrapHeight);
+            layout.mMaxHeight = RoundToInt((bottom - top) / params.mScale);
+        }
+    }
+    RndTypesetter::Style style;
+    style.mUnknown8 = 2;
+    if (params.mNumStyles != 0) {
+        layout.mStyles = params.mStyles;
+        layout.mNumStyles = params.mNumStyles;
+    } else {
+        RndFont* font = params.mFont;
+        if (font == nullptr) {
+            font = RndDebugFont::GetInstance();
+        }
+        style.mFonts.push_back(RndTypesetter::StyleFont{font, 0});
+        layout.mStyles = &style;
+        layout.mNumStyles = 1;
+    }
+
+    const unsigned long capacity = RndTypesetter::CalcResultGlyphsCapacity(
+        RndTypesetter::CalcNumGlyphs(text, layout.mMarkup), 0, layout.mFitMode);
+    RndTypesetter::Result result = {};
+    result.mStyleSize = -1;
+    if (capacity != 0) {
+        result.mGlyphs = static_cast<RndTypesetter::Glyph*>(
+            __builtin_alloca(capacity * sizeof(RndTypesetter::Glyph)));
+    }
+    result.mCapacity = capacity;
+    RndTypesetter::ProcessText(layout, result);
+
+    const float scale = params.mScale;
+    if (bounds != nullptr) {
+        const Vector2 min = FromPixels(
+            mode,
+            viewportSize,
+            {static_cast<float>(result.mMin.x) * scale + origin.x,
+             static_cast<float>(result.mMin.y) * scale + origin.y});
+        const Vector2 max = FromPixels(
+            mode,
+            viewportSize,
+            {static_cast<float>(result.mMax.x) * scale + origin.x,
+             static_cast<float>(result.mMax.y) * scale + origin.y});
+        bounds->x = min.x;
+        bounds->y = min.y;
+        bounds->w = max.x - min.x;
+        bounds->h = max.y - min.y;
+    }
+    if (end != nullptr) {
+        *end = FromPixels(
+            mode,
+            viewportSize,
+            {static_cast<float>(result.mEnd.x) * scale + origin.x,
+             static_cast<float>(result.mEnd.y) * scale + origin.y});
+    }
+    if (context == nullptr || result.mNumGlyphs == 0) {
+        return;
+    }
+
+    float rotation[4] = {1.0F, 0.0F, 0.0F, 1.0F};
+    const bool rotated = __builtin_fabsf(params.mRotation) > kRotationEpsilon;
+    if (rotated) {
+        const float sine = Sine(params.mRotation);
+        const float cosine = Sine(params.mRotation + kHalfPi);
+        rotation[0] = cosine;
+        rotation[1] = sine;
+        rotation[2] = -sine;
+        rotation[3] = cosine;
+        for (float& value : rotation) {
+            const float rounded = static_cast<float>(RoundToInt(value));
+            if (!(__builtin_fabsf(rounded - value) > kRotationEpsilon)) {
+                value = rounded;
+            }
+        }
+    }
+
+    const bool identity = context->mUsingIdentityViewProjection;
+    context->SetUsingIdentityViewProjection(true);
+    const unsigned long maxVertices = result.mNumGlyphs * 6;
+    const unsigned long maxShadowVertices = params.mShadow ? maxVertices * 8 : 0;
+    RndVertexColorTex* vertices = nullptr;
+    if (maxVertices != 0) {
+        vertices = static_cast<RndVertexColorTex*>(
+            __builtin_alloca(maxVertices * sizeof(RndVertexColorTex)));
+    }
+    RndVertexColorTex* shadowVertices = nullptr;
+    if (maxShadowVertices != 0) {
+        shadowVertices = static_cast<RndVertexColorTex*>(
+            __builtin_alloca(maxShadowVertices * sizeof(RndVertexColorTex)));
+    }
+    context->mBlendMode = params.mBlendMode;
+    context->_SetBlendModeImpl(params.mBlendMode, Hmx::Color::GetWhite());
+    context->_SetDepthModeImpl(0);
+    context->_SetCullModeImpl(kCullNone);
+
+    const Vector2i& resolution = TheRndDevice()->mSettings->mOutputResolution;
+    const Vector2 toClip = {2.0F / viewportSize.x, 2.0F / viewportSize.y};
+    for (unsigned long styleIndex = 0; styleIndex < layout.mNumStyles; ++styleIndex) {
+        RndFont* font = layout.mStyles[styleIndex].mFonts[result.mStyleSize].mFont;
+        const RndFont::Size* size = font->GetSize(resolution);
+        for (unsigned long page = 0; page < size->mNumPages; ++page) {
+            unsigned long numVertices = 0;
+            for (unsigned long i = 0; i < result.mNumGlyphs; ++i) {
+                const RndTypesetter::Glyph& glyph = result.mGlyphs[i];
+                if (glyph.mStyle != styleIndex || glyph.mPage != page) {
+                    continue;
+                }
+                const float left = static_cast<float>(glyph.mMin.x) * scale;
+                const float bottom = static_cast<float>(glyph.mMin.y) * scale;
+                const float right = static_cast<float>(glyph.mMax.x) * scale;
+                const float top = static_cast<float>(glyph.mMax.y) * scale;
+                Vector2 corners[4];  // Min, (max x, min y), (min x, max y), max.
+                if (rotated) {
+                    corners[0] = {left * rotation[0] + bottom * rotation[2],
+                                  left * rotation[1] + bottom * rotation[3]};
+                    corners[1] = {right * rotation[0] + bottom * rotation[2],
+                                  right * rotation[1] + bottom * rotation[3]};
+                    corners[2] = {left * rotation[0] + top * rotation[2],
+                                  left * rotation[1] + top * rotation[3]};
+                    corners[3] = {right * rotation[0] + top * rotation[2],
+                                  right * rotation[1] + top * rotation[3]};
+                } else {
+                    corners[0] = {left, bottom};
+                    corners[1] = {right, bottom};
+                    corners[2] = {left, top};
+                    corners[3] = {right, top};
+                }
+
+                RndVertexColorTex* quad = &vertices[numVertices];
+                for (unsigned long corner = 0; corner < 4; ++corner) {
+                    RndVertexColorTex& vertex = quad[corner];
+                    vertex.mPos[0] = (corners[corner].x + origin.x) * toClip.x + -1.0F;
+                    vertex.mPos[1] = (corners[corner].y + origin.y) * toClip.y + -1.0F;
+                    vertex.mPos[2] = 0.0F;
+                    vertex.mColor[0] = params.mColor.red;
+                    vertex.mColor[1] = params.mColor.green;
+                    vertex.mColor[2] = params.mColor.blue;
+                    vertex.mColor[3] = params.mColor.alpha;
+                }
+                const float u = glyph.mUV[0];
+                const float v = glyph.mUV[1];
+                quad[0].mTex[0] = u;
+                quad[0].mTex[1] = v + glyph.mUV[3];
+                quad[1].mTex[0] = u + glyph.mUV[2];
+                quad[1].mTex[1] = v + glyph.mUV[3];
+                quad[2].mTex[0] = u;
+                quad[2].mTex[1] = v;
+                quad[3].mTex[0] = u + glyph.mUV[2];
+                quad[3].mTex[1] = v;
+                // The second triangle reuses two corners of the first.
+                quad[4] = quad[2];
+                quad[5] = quad[1];
+                numVertices += 6;
+            }
+            if (numVertices == 0) {
+                continue;
+            }
+
+            const RndShadingMode shadingMode = context->mShadingMode;
+            context->SetShadingMode(kShadingModeStandard);
+            RndShaderBasic::Params basic;
+            basic.mAlphaCut = true;
+            basic.mUseTexRedAsAlpha = true;
+            basic.mTexture = size->mPages[page].mTexture;
+            TheRndDevice()->mShaderMgr.mBasicShader->Select(*context, basic);
+            if (params.mShadow) {
+                const float dx = (Vector2::sUnitAll.x - Vector2::sZero.x) * 2.0F / viewportSize.x;
+                const float dy = (Vector2::sUnitAll.y - Vector2::sZero.y) * 2.0F / viewportSize.y;
+                unsigned long block = 0;
+                for (int row = -1; row <= 1; ++row) {
+                    const float offsetY = static_cast<float>(row) * dy;
+                    for (int column = -1; column <= 1; ++column) {
+                        if (row == 0 && column == 0) {
+                            continue;
+                        }
+                        RndVertexColorTex* copy = &shadowVertices[block * numVertices];
+                        for (unsigned long i = 0; i < numVertices; ++i) {
+                            copy[i] = vertices[i];
+                            copy[i].mPos[0] += static_cast<float>(column) * dx;
+                            copy[i].mPos[1] += offsetY;
+                            copy[i].mColor[0] = params.mShadowColor.red;
+                            copy[i].mColor[1] = params.mShadowColor.green;
+                            copy[i].mColor[2] = params.mShadowColor.blue;
+                            copy[i].mColor[3] = params.mShadowColor.alpha;
+                        }
+                        ++block;
+                    }
+                }
+                context->_DrawPrimitivesImpl(
+                    RndPrimitive::kTriangles,
+                    RndVertexColorTex::kType,
+                    shadowVertices,
+                    numVertices * 8);
+            }
+            context->_DrawPrimitivesImpl(
+                RndPrimitive::kTriangles, RndVertexColorTex::kType, vertices, numVertices);
+            context->SetShadingMode(shadingMode);
+        }
+    }
+    context->SetUsingIdentityViewProjection(identity);
+}
+
+// Reconstructed from eboot.elf at 0x3E5F60. The wide copy lives on the
+// stack.
+void RndDrawUtl::MeasureText2D(
+    const char* text,
+    const Vector2& position,
+    const Vector2& viewportSize,
+    Text2DParams& params,
+    Hmx::Rect* bounds,
+    Vector2* end) {
+    const unsigned long length = std::strlen(text);
+    auto* buffer = static_cast<unsigned short*>(
+        __builtin_alloca((length + 1) * sizeof(unsigned short)));
+    const unsigned short* wide = CharToWideChar(text, buffer, length + 1);
+    DrawText2D(nullptr, wide, position, viewportSize, params, bounds, end);
 }

@@ -6,10 +6,12 @@
 #include "math/geometry/Rect.h"
 #include "math/geometry/Segment.h"
 #include "math/vector/Vector2.h"
+#include "render/fonts/RndTypesetter.h"
 #include "render/materials/RndMaterialCom.h"
 #include "utl/containers/VectorAdapter.h"
 
 class RndContext;
+class RndFont;
 class RndTextureBase;
 
 // Immediate-mode drawing of debug and screen-space geometry.
@@ -46,30 +48,37 @@ public:
         CoordinateMode mCoordinateMode = kCoordinateNormalized;
         Hmx::Color mColor = Hmx::Color::GetWhite();
         RndBlendMode mBlendMode = RndBlendMode::kSource;
-        bool mUnknown24 = false;
+        bool mThickLines = false;
     };
 
-    // Debug text: where it is placed, its color and shadow, and how it
-    // wraps. Only the fields the reconstructed callers set are named; the
-    // others are named after their offsets. Field names are not in the
-    // reference map.
+    // Debug text: where it is placed, its color and shadow, its fonts, and
+    // how it is laid out. Field names are not in the reference map.
     struct Text2DParams {
         CoordinateMode mCoordinateMode = kCoordinateNormalized;
         Hmx::Color mColor = Hmx::Color::GetWhite();
-        bool mUnknown20 = false;
+        // Draws the text over a shadow one pixel out in every direction.
+        bool mShadow = false;
         Hmx::Color mShadowColor = Hmx::Color::GetBlack();
         RndBlendMode mBlendMode = RndBlendMode::kSource;
         unsigned int mUnknown44;  // Not set by the constructor.
-        unsigned char mUnknown48[16] = {};
-        void* mUnknown64 = nullptr;
-        float mScale = 1.0F;
-        unsigned int mUnknown76 = 0;
-        unsigned long mUnknown80 = 0;
-        // Nonzero wraps the text at mWrapWidth pixels.
+        // The font, or the debug font, unless styles are given.
+        RndFont* mFont = nullptr;
+        const RndTypesetter::Style* mStyles = nullptr;
+        unsigned long mNumStyles = 0;  // Styles also enable markup.
+        float mScale = 1.0F;     // Pixels per font pixel.
+        float mRotation = 0.0F;  // Radians.
+        // Passed to the typesetter. The graph overlay sets mUnknown84 to 1
+        // for its axis labels, and mUnknown80 to 2 or 0 by the label's
+        // side, so they are likely alignments.
+        int mUnknown80 = 0;
+        int mUnknown84 = 0;
+        // The typesetter's fit mode; nonzero wraps the text at mWrapWidth,
+        // and mode 4 also fits it to mWrapHeight. Both are in the
+        // coordinate mode's units.
         int mWrapMode = 0;
         float mWrapWidth = 0.0F;
-        unsigned int mUnknown96 = 0;
-        int mUnknown100 = 0;
+        float mWrapHeight = 0.0F;
+        int mUnknown100 = 0;  // Passed to the typesetter.
     };
 
     // Builds the shared sphere, box and other meshes the drawing helpers use.
@@ -85,11 +94,18 @@ public:
         const Segment2D& segment,
         const Line2DParams& params);  // 0x3DFC50
     // Draws the segments as one line list with an identity view-projection
-    // and the basic shader.
+    // and the basic shader, without depth testing or culling. The start
+    // points are converted to clip space by mode; the end points are first
+    // brought to pixels.
     static void DrawLines2D(
         RndContext& context,
         const VectorAdapter<Segment2D>& segments,
         const Line2DParams& params);  // 0x3DFCB0
+    // Draws the rectangle's outline.
+    static void DrawQuadWireframe2D(
+        RndContext& context,
+        const Hmx::Rect& rect,
+        const Line2DParams& params);  // 0x3E16B0
     // Draws the text at `position` within the context's viewport. `bounds`
     // and `end` receive the text's rectangle and the position after it
     // when given. Widens the text and draws it through the wide overload.
@@ -100,11 +116,14 @@ public:
         Text2DParams& params,
         Hmx::Rect* bounds,
         Vector2* end);  // 0x3E49C0
-    // The wide overload lays the text out in `viewportSize`; the map's
-    // signature is DrawText2D(RndContext&, unsigned short const*, Vector2
-    // const&, RndDrawUtl::Text2DParams&, Hmx::Rect*, Vector2*).
+    // Lays the text out in a viewport of `viewportSize` and, given a
+    // context, draws it page by page with the basic shader, its shadow
+    // first. The map's signature is DrawText2D(RndContext&, unsigned short
+    // const*, Vector2 const&, RndDrawUtl::Text2DParams&, Hmx::Rect*,
+    // Vector2*); this build takes the viewport size and a context that may
+    // be null.
     static void DrawText2D(
-        RndContext& context,
+        RndContext* context,
         const unsigned short* text,
         const Vector2& position,
         const Vector2& viewportSize,
@@ -122,11 +141,19 @@ public:
         Vector2* end);  // 0x3E5F60
 };
 
+static_assert(offsetof(RndDrawUtl::Line2DParams, mBlendMode) == 20);
+static_assert(offsetof(RndDrawUtl::Line2DParams, mThickLines) == 24);
 static_assert(sizeof(RndDrawUtl::Line2DParams) == 28);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mShadowColor) == 24);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mBlendMode) == 40);
-static_assert(offsetof(RndDrawUtl::Text2DParams, mUnknown64) == 64);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mFont) == 48);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mStyles) == 56);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mNumStyles) == 64);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mScale) == 72);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mRotation) == 76);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mUnknown80) == 80);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mUnknown84) == 84);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapMode) == 88);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapWidth) == 92);
+static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapHeight) == 96);
 static_assert(sizeof(RndDrawUtl::Text2DParams) == 104);

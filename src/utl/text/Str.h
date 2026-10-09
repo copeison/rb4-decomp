@@ -87,6 +87,19 @@ public:
         mCapacity = N;
         mBuffer[0] = '\0';
     }
+    // Copies the text, truncated to the capacity; null is empty.
+    explicit StackString(const char* str) : StackString() {
+        if (str != nullptr && *str != '\0') {
+            unsigned long length = __builtin_strlen(str);
+            if (length > N) {
+                length = N;
+            }
+            __builtin_memcpy(mBuffer, str, length);
+            mBuffer[length] = '\0';
+        }
+    }
+
+    using FixedString::operator=;
 
 private:
     // Field names are not in the reference map.

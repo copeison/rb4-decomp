@@ -74,15 +74,48 @@ with its 160-byte `Params`.
 - `RndDevice` slot 15 is `_GetMemoryUsageImpl` (an invented name). It returns
   the local and non-local memory in use.
 
+### Graphs and timer lists
+
+- `RndOverlayGraphBase` maps the axes' units to pixels with
+  `_GraphToPixels` (0x6E4D00): x spans the viewport inside the overlay
+  margins, y runs from the band's top to its bottom. `_FitAxes` widens a
+  range when the other axis' labels (10 pixels, or 21 with a label) would
+  leave the band. `_DrawSeries` cuts lines at the band's edges, `_DrawAxes`
+  spaces ticks from the origin both ways, and `_DrawLegend` boxes the names
+  by the options' legend alignment.
+- The map's `TimerItemView::DrawHeader(RndTimersOverlay*, TextStream&,
+  char const*, unsigned long)` is 0x6E9120, which prints all the column
+  headers; the per-column helper 0x6E8C80 is `_PrintHeader` (invented).
+  `_PrintStat` stays a static taking the overlay, which the GPU overlay
+  passes and which is unused; its value is an `int`.
+- A timer is listed when it is selected, isolated, or worse than
+  `gTimerThresholdMs` (0x19B03B8, 0.1) under expanded parents. Isolated
+  timers and timers with `mUnknown40` set come after "<isolated timers>" and
+  "<ambiguous parents>" headers. Threads sort with the main thread first,
+  then the poll workers, then by name and handle.
+- `RndTimersOverlay::gSplitFrameTiming` (0x1AB1F04) doubles every timing
+  column. It is separate from `RndFramerateOverlay::gSplitFrameTiming`.
+
+### Text and lines
+
+- `RndDrawUtl::DrawLines2D` and `DrawQuadWireframe2D` (0x3E16B0) convert
+  start points straight to clip space and end points through pixels, as
+  `DrawQuad2D` does.
+- The wide `DrawText2D` takes the viewport size and a context pointer;
+  `MeasureText2D` passes a null context to lay the text out without drawing
+  it. The layout is `RndTypesetter`'s (declared only, in `render/fonts`).
+  Each style's font draws its glyphs page by page, after eight copies in the
+  shadow color offset one pixel around them when `mShadow` is set.
+
 ## Not yet reconstructed
 
-These are declared only:
-- the graph base's `_FitAxes`, `_DrawSeries`, `_DrawAxes` and `_DrawLegend`;
-- `TimerItemView::DrawHeader` and `_PrintStat`,
-  `ThreadTimersListView::_GatherTimers` and `IsBefore`, and
-  `TimedThreadListView::Draw`;
-- `RndDrawUtl::DrawLines2D` and the wide `DrawText2D`. The binary's wide
-  `DrawText2D` takes a viewport-size argument that the map's signature lacks.
+- `RndTypesetter` (`CalcNumGlyphs`, `CalcResultGlyphsCapacity`,
+  `ProcessText`), `PollMgr::IsWorkerThread` (0x24F6E0, an invented name),
+  `Thread::ThreadIdToName`, `DataVarIndex` and `DataVariable`.
+- The console input's slots 6 to 9 (0x6E1910, 0x6E1930, 0x6E1950,
+  0x6E1990): they register the console with `TheDebug`, clear its output
+  and synchronize with it, but the line editor they belong to is not
+  modelled.
 
 ## Fonts
 

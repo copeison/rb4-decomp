@@ -726,6 +726,9 @@
 - [x] Reconstruct the overlays' draw, print, update and keyboard methods,
   `RndDrawUtl::DrawLine2D` and `DrawText2D`, and
   `RndBufferInspectionShader::Select`.
+- [x] Reconstruct the graph overlay's axes, series and legend drawing, the
+  timer overlay's list views, and `RndDrawUtl::DrawLines2D`,
+  `DrawQuadWireframe2D`, the wide `DrawText2D` and `MeasureText2D`.
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

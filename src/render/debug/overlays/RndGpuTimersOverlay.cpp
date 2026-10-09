@@ -45,11 +45,11 @@ void RndGpuTimersOverlay::_Unknown13(
 
 // Reconstructed from eboot.elf at 0x6E30E0.
 void RndGpuTimersOverlay::_Unknown14(TextStream& stream) {
-    TimerItemView::DrawHeader(this, stream, "num_verts", 12, true);
-    TimerItemView::DrawHeader(this, stream, "num_prims", 12, true);
-    TimerItemView::DrawHeader(this, stream, "vs_invocs", 14, true);
-    TimerItemView::DrawHeader(this, stream, "ps_invocs", 14, true);
-    TimerItemView::DrawHeader(this, stream, "cs_invocs", 14, true);
+    TimerItemView::_PrintHeader(this, stream, "num_verts", 12, true);
+    TimerItemView::_PrintHeader(this, stream, "num_prims", 12, true);
+    TimerItemView::_PrintHeader(this, stream, "vs_invocs", 14, true);
+    TimerItemView::_PrintHeader(this, stream, "ps_invocs", 14, true);
+    TimerItemView::_PrintHeader(this, stream, "cs_invocs", 14, true);
 }
 
 // Reconstructed from eboot.elf at 0x6E3180. Each column lists the frames
@@ -61,22 +61,22 @@ void RndGpuTimersOverlay::_Unknown15(
     const auto& stat = static_cast<const RndGpuStatsMgr::Stat&>(timer);
     for (unsigned long i = 0; i < numFrames; ++i) {
         TimerItemView::_PrintStat(
-            this, stream, static_cast<unsigned int>(stat.mFrames[i].mCounters[0]), 12);
+            this, stream, static_cast<int>(stat.mFrames[i].mCounters[0]), 12);
     }
     for (unsigned long i = 0; i < numFrames; ++i) {
         TimerItemView::_PrintStat(
-            this, stream, static_cast<unsigned int>(stat.mFrames[i].mCounters[1]), 12);
+            this, stream, static_cast<int>(stat.mFrames[i].mCounters[1]), 12);
     }
     for (unsigned long i = 0; i < numFrames; ++i) {
         TimerItemView::_PrintStat(
-            this, stream, static_cast<unsigned int>(stat.mFrames[i].mCounters[2]), 14);
+            this, stream, static_cast<int>(stat.mFrames[i].mCounters[2]), 14);
     }
     for (unsigned long i = 0; i < numFrames; ++i) {
         TimerItemView::_PrintStat(
-            this, stream, static_cast<unsigned int>(stat.mFrames[i].mCounters[4]), 14);
+            this, stream, static_cast<int>(stat.mFrames[i].mCounters[4]), 14);
     }
     for (unsigned long i = 0; i < numFrames; ++i) {
         TimerItemView::_PrintStat(
-            this, stream, static_cast<unsigned int>(stat.mFrames[i].mCounters[5]), 14);
+            this, stream, static_cast<int>(stat.mFrames[i].mCounters[5]), 14);
     }
 }

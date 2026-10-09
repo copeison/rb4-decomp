@@ -179,7 +179,8 @@ void RndTimerGraphOverlay::_TrimSamples(ThreadSeries& thread, float now) {
 RndOverlayGraphBase::GraphOptions RndTimerGraphOverlay::_GetOptions() {
     GraphOptions options;
     options.mShowLegend = true;
-    options.mUnknown8 = 0;
+    options.mLegendAlignX = 0;
+    options.mLegendAlignY = 0;
     return options;
 }
 
@@ -196,9 +197,9 @@ RndOverlayGraphBase::GraphAxes RndTimerGraphOverlay::_GetAxes() {
     axes.mY.mMin = 0.0F;
     axes.mY.mMax = mMaxMs;
     axes.mY.mStep = 1.0F;
-    axes.mY.mUnknown20 = 1.0F;
-    axes.mUnknown64 = now;
-    axes.mUnknown68 = 0;
+    axes.mY.mLabelSide = 1.0F;
+    axes.mOriginX = now;
+    axes.mOriginY = 0.0F;
     return axes;
 }
 

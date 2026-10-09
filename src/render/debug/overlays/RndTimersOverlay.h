@@ -16,15 +16,16 @@ class PerfTimerBase;
 // slots.
 class RndTimersOverlay : public RndOverlayTextBase {
 public:
-    // One line of a thread's list. The map's constructor is
-    // TimerItemView(PerfTimer const*); this build builds the items inline
-    // in ThreadTimersListView::_GatherTimers. Field names are not in the
-    // reference map.
+    // One line of a thread's list: a timer, or the header of the isolated
+    // timers or of the timers with ambiguous parents. Field names are not
+    // in the reference map.
     class TimerItemView {
     public:
         // The kinds of line. Names not in the reference map.
         enum Type : int {
             kTypeTimer = 0,
+            kTypeIsolatedHeader = 1,
+            kTypeAmbiguousHeader = 2,
         };
 
         // Reaches the link of an item in its thread's list.
@@ -39,30 +40,82 @@ public:
             }
         };
 
-        // Prints a column header, padded with underscores to `width`, once
-        // per half of a split frame when `split` is set. The map's
-        // signature has no split argument.
+        // The map's constructor is TimerItemView(PerfTimer const*). Inlined
+        // into ThreadTimersListView::_GatherTimers.
+        TimerItemView(RndTimersOverlay* owner, PerfTimerBase* timer, Type type)
+            : mOwner(owner), mTimer(timer), mOverBudget(0.0F), mType(type) {
+            _UpdateText();
+        }
+
+        // A new header line of the type. Name not in the reference map; the
+        // out-of-line copy is unreferenced.
+        static TimerItemView* _NewHeader(RndTimersOverlay* owner, Type type);  // 0x6E8BF0
+
+        // Prints the column headers after `prefix`, the name column padded
+        // to `width`, then the overlay's extra columns.
         static void DrawHeader(
+            RndTimersOverlay* overlay,
+            TextStream& stream,
+            const char* prefix,
+            unsigned long width);  // 0x6E9120
+        // Prints one column header, padded with underscores to `width`, once
+        // per half of a split frame when `split` is set. The overlay is
+        // unused. Name not in the reference map.
+        static void _PrintHeader(
             RndTimersOverlay* overlay,
             TextStream& stream,
             const char* name,
             unsigned long width,
             bool split);  // 0x6E8C80
+        // Prints the text padded with spaces to `width`. The overlay is
+        // unused. Name not in the reference map; the out-of-line copy is
+        // unreferenced.
+        static void _PrintPadded(
+            RndTimersOverlay* overlay,
+            TextStream& stream,
+            const char* text,
+            unsigned long width);  // 0x6E8EC0
         // Prints the value with comma separators, padded with spaces to
         // `width`. The map's signature is _PrintStat(TextStream&, unsigned
-        // long), a member.
+        // long), a member; in this build the GPU timers overlay passes
+        // itself, which is unused, and the value is an int.
         static void _PrintStat(
             RndTimersOverlay* overlay,
             TextStream& stream,
-            unsigned int value,
+            int value,
             unsigned long width);  // 0x6E8FD0
+        // Prints the milliseconds padded to 12 characters. Inlined.
+        void _PrintTimer(TextStream& stream, float ms);
+
+        // Rebuilds mText: a timer's indent, fold marker and name, or the
+        // header's title. Name not in the reference map.
+        void _UpdateText();  // 0x6E88E0
+        // Prints the line after `prefix`, marking it when `selected`: the
+        // timer's text padded to `width` and its timings, with the budget
+        // tinting the background. The map's signature is
+        // Draw(RndTimersOverlay*, TextStream&, char const*, unsigned long).
+        void Draw(
+            TextStream& stream,
+            const char* prefix,
+            unsigned long width,
+            bool selected);  // 0x6E9230
 
         RndTimersOverlay* mOwner;
-        PerfTimerBase* mTimer;  // For kTypeTimer.
-        int mUnknown16;
+        PerfTimerBase* mTimer;  // Null for headers.
+        // How far over budget the timer is, decaying when it is not.
+        float mOverBudget;
         StackString<128> mText;
         Type mType;
         LinkedList::Node mListNode;
+    };
+
+    // The lines Draw prints: the first visible line, the line after the
+    // last, and the next line. Name not in the reference map; the field
+    // names are not either.
+    struct LineRange {
+        unsigned long mFirst;
+        unsigned long mEnd;
+        unsigned long mLine;
     };
 
     // The timers of one thread. Field names are not in the reference map.
@@ -111,14 +164,29 @@ public:
             }
         }
         // Rebuilds the items from the owner's timers for the thread in the
-        // display and sort modes, keeping the views of known timers.
-        // `keepSelection` is cleared when `selected` is no longer listed.
-        // The map's signature is _GatherTimers().
+        // display and sort modes, keeping the views of known timers and
+        // headers. A timer is listed when it is selected, isolated, or worse
+        // than gTimerThresholdMs under expanded parents; isolated timers and
+        // timers with mUnknown40 set come after a header. `keepSelection`
+        // tells whether `selected` is still listed. The map's signature is
+        // _GatherTimers().
         void _GatherTimers(
             TimerItemView* selected,
             unsigned int displayMode,
             int sortMode,
             bool* keepSelection);  // 0x6E9D80
+        // Gathers the timers, or drops the items of a folded thread when
+        // threads fold. Name not in the reference map; the out-of-line copy
+        // is unreferenced.
+        void _UpdateTimers(
+            TimerItemView* selected,
+            unsigned int displayMode,
+            int sortMode,
+            bool* keepSelection);  // 0x6E9CE0
+        // The item of the timer's parent, or null for a header or a timer
+        // without a listed parent. Name not in the reference map; the
+        // out-of-line copy is unreferenced.
+        TimerItemView* _FindParentItem(const TimerItemView& item);  // 0x6E9C90
         // Appends the timers of the timer items to `timers`. Name not in
         // the reference map.
         void AppendTimers(eastl::vector<PerfTimerBase*>& timers);  // 0x6EA8B0
@@ -128,11 +196,22 @@ public:
         }
 
         // Whether `a` is listed before `b`: the main thread first, then
-        // the threads by name, then by handle. Name not in the reference
-        // map.
+        // the poll workers, then the named threads by name, then the others
+        // by handle. Name not in the reference map.
         static bool IsBefore(
             const ThreadTimersListView& a,
             const ThreadTimersListView& b);  // 0x6E9A90
+
+        // Prints the thread's line in the lines of `lines`, then, unless
+        // the thread is folded, the column headers and the items. The
+        // thread line is marked when `selected` and no item is. The map's
+        // signature is Draw(RndTimersOverlay*, TextStream&, bool, unsigned
+        // long).
+        void Draw(
+            TextStream& stream,
+            bool selected,
+            TimerItemView* selectedItem,
+            LineRange& lines);  // 0x6EA440
 
         RndTimersOverlay* mOwner;
         ScePthread mThread;
@@ -166,7 +245,8 @@ public:
         // Scrolls the selection into the 30 visible lines. Name not in the
         // reference map.
         void _UpdateScroll();  // 0x6EAC60
-        // Prints the tree. The map's signature is
+        // Prints the display and sort modes and the threshold, then the
+        // visible lines of the tree. The map's signature is
         // Draw(RndTimersOverlay*, TextStream&).
         void Draw(TextStream& stream);  // 0x6E8560
 
@@ -234,6 +314,15 @@ public:
         static_cast<void>(numFrames);
     }
 
+    // The background tints for the line being printed. Out of line in the
+    // map's build; inlined in this one.
+    void SetSelectedItem(bool selected) {
+        mUnknown152 = selected;
+    }
+    void SetOverBudget(float overBudget) {
+        mOverBudget = overBudget;
+    }
+
     // Replaces `threads` with the source's threads. Name not in the
     // reference map.
     void GetThreads(eastl::vector<ScePthread>& threads);  // 0x6E7930
@@ -243,9 +332,13 @@ public:
         ScePthread thread,
         eastl::vector<PerfTimerBase*>& timers);  // 0x6E7940
 
+    // Shows the timings of the two halves of a split frame side by side.
+    static bool gSplitFrameTiming;  // 0x1AB1F04
+
     TimedThreadListView mThreadList;  // Name not in the reference map.
     // Field names are not in the reference map.
-    // Tints the background blue and halves the budget tint.
+    // Tints the background blue and halves the budget tint; set while the
+    // selected line prints.
     bool mUnknown152;
     // How far over budget the timers are, tinting the background towards
     // red; the map's SetOverBudget(float) sets it.
@@ -253,10 +346,12 @@ public:
 };
 
 static_assert(offsetof(RndTimersOverlay::TimerItemView, mTimer) == 8);
+static_assert(offsetof(RndTimersOverlay::TimerItemView, mOverBudget) == 16);
 static_assert(offsetof(RndTimersOverlay::TimerItemView, mText) == 24);
 static_assert(offsetof(RndTimersOverlay::TimerItemView, mType) == 176);
 static_assert(offsetof(RndTimersOverlay::TimerItemView, mListNode) == 184);
 static_assert(sizeof(RndTimersOverlay::TimerItemView) == 200);
+static_assert(sizeof(RndTimersOverlay::LineRange) == 24);
 static_assert(offsetof(RndTimersOverlay::ThreadTimersListView, mThread) == 8);
 static_assert(offsetof(RndTimersOverlay::ThreadTimersListView, mItems) == 16);
 static_assert(offsetof(RndTimersOverlay::ThreadTimersListView, mExpanded) == 32);

@@ -114,6 +114,12 @@ void GatherSortedTimers(
     unsigned int displayMode,
     int sortMode);  // 0x24ADB0
 
+// The worst time in milliseconds below which the timers overlay hides a
+// timer that is not isolated, 0.1 by default. The script commands from
+// 0x24BB50 toggle the display flags that follow it. Name not in the
+// reference map.
+extern float gTimerThresholdMs;  // 0x19B03B8
+
 static_assert(sizeof(PerfTimer::Frame) == 72);
 static_assert(offsetof(PerfTimer::Frame, mAverageMs) == 8);
 static_assert(offsetof(PerfTimer::Frame, mCount) == 24);

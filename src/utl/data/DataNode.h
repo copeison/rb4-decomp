@@ -75,4 +75,10 @@ public:
 
 static_assert(sizeof(DataNode) == 16);
 
+// The index of the script variable, registering it with `value` when it is
+// new. The map's signature is DataVarIndex(Symbol).
+unsigned long DataVarIndex(Symbol name, DataNode value);  // 0x236910
+// The calling thread's value of the script variable.
+DataNode& DataVariable(unsigned long index);  // 0x236CC0
+
 #include "utl/data/DataArray.h"

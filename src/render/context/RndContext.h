@@ -46,6 +46,8 @@ enum RndWriteMaskChannelSet : unsigned int {
 // Primitive types for transient draws. Enumerator names are not in the
 // reference map.
 enum class RndPrimitive : unsigned int {
+    kLines = 1,      // A list of separate lines.
+    kLineStrip = 2,  // Connected lines.
     kTriangles = 3,
     kTriangleStrip = 4,
 };

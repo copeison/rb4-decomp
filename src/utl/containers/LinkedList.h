@@ -107,6 +107,20 @@ public:
     void remove(T& item) {
         Access::ToNode(item).Remove();
     }
+    // Moves the elements of `other` to the end of the list.
+    void splice(List& other) {
+        Node* first = other.mHead.mNext;
+        if (first == &other.mHead || first == &mHead) {
+            return;
+        }
+        Node* last = other.mHead.mPrev;
+        other.mHead.mNext = &other.mHead;
+        other.mHead.mPrev = &other.mHead;
+        first->mPrev = mHead.mPrev;
+        mHead.mPrev->mNext = first;
+        last->mNext = &mHead;
+        mHead.mPrev = last;
+    }
 
     // Sorts the list with the comparison, as the map's SortInternal does.
     template <class Cmp>

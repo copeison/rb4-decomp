@@ -28,19 +28,24 @@ public:
 
         float mHeight;     // The graph's share of the viewport height, 0.5.
         bool mShowLegend;  // Set.
-        long mUnknown8;    // 2.
+        // Where the legend sits: 0 left, 1 centered, 2 right (the default).
+        int mLegendAlignX;
+        // 0 at the bottom (the default), 1 centered, 2 at the top.
+        int mLegendAlignY;
     };
 
     // One axis: its label and range. The constructor (0x6E33C0) is inlined
     // into GraphAxes'.
     struct GraphAxis {
-        GraphAxis() : mMin(-1.0F), mMax(1.0F), mStep(0.0F), mUnknown20(-1.0F) {}
+        GraphAxis() : mMin(-1.0F), mMax(1.0F), mStep(0.0F), mLabelSide(-1.0F) {}
 
         Symbol mLabel;
         float mMin;
         float mMax;
-        float mStep;
-        float mUnknown20;
+        float mStep;  // The tick spacing; none when not positive.
+        // The side of the axis the ticks and the label go: positive
+        // towards larger pixel coordinates, otherwise smaller ones.
+        float mLabelSide;
     };
 
     struct GraphAxes {
@@ -49,8 +54,9 @@ public:
         GraphAxis mX;
         GraphAxis mY;
         Hmx::Color mColor;  // White.
-        float mUnknown64;
-        unsigned int mUnknown68;
+        // Where the axes cross, in the axes' units.
+        float mOriginX;
+        float mOriginY;
     };
 
     // One plotted series.
@@ -80,22 +86,26 @@ public:
     virtual unsigned long _GetNumSeries() = 0;                    // slot 10
     virtual GraphSeries _GetSeries(unsigned long index) = 0;  // slot 11
 
-    // Draw's helpers. Names not in the reference map; they are not
-    // reconstructed.
-    // Widens a range that the axis labels would overlap.
+    // Draw's helpers. Names not in the reference map.
+    // Moves the axes' labels into a band of `top` to `bottom` pixels: the
+    // side of each axis is snapped to +1 or -1, and a range is widened
+    // when the other axis' labels would leave the band.
     void _FitAxes(
         const Vector2& viewportSize,
         int top,
         int bottom,
         GraphAxes& axes);  // 0x6E3880
+    // Draws the series as connected lines, clipped to the band.
     void _DrawSeries(
         RndContext& context,
         int top,
         int bottom,
         const GraphAxes& axes,
         const GraphSeries& series);  // 0x6E3A70
+    // Draws the axes with their ticks and labels.
     void _DrawAxes(RndContext& context, int top, int bottom, const GraphAxes& axes);  // 0x6E4190
-    // Does not read the overlay.
+    // Draws the names in their colors over a translucent box, placed by
+    // the options. Does not read the overlay.
     void _DrawLegend(
         RndContext& context,
         const GraphOptions& options,
@@ -103,15 +113,39 @@ public:
         int bottom,
         const VectorAdapter<Symbol>& names,
         const VectorAdapter<Hmx::Color>& colors);  // 0x6E47B0
+    // The pixel position of a point in the axes' units: the x range spans
+    // the viewport within the overlay margins and the y range runs from
+    // `top` to `bottom`. Inlined into its callers; the out-of-line copy is
+    // unreferenced.
+    Vector2 _GraphToPixels(
+        const Vector2& point,
+        const Vector2& viewportSize,
+        int top,
+        int bottom,
+        const GraphAxes& axes);  // 0x6E4D00
+    // The axes' lines in pixels: the x axis at the origin's y and the y
+    // axis at its x.
+    void _GetAxisLines(
+        const Vector2& viewportSize,
+        int top,
+        int bottom,
+        const GraphAxes& axes,
+        Segment2D& xAxis,
+        Segment2D& yAxis);  // 0x6E4E80
 
-    // Draw's scratch lines; that they are Segment2Ds for DrawLines2D is
-    // inferred from their size. Name not in the reference map.
+    // _DrawSeries' scratch lines for DrawLines2D, emptied after each
+    // series. Name not in the reference map.
     eastl::vector<Segment2D> mLines;
 };
 
+static_assert(offsetof(RndOverlayGraphBase::GraphOptions, mLegendAlignX) == 8);
+static_assert(offsetof(RndOverlayGraphBase::GraphOptions, mLegendAlignY) == 12);
 static_assert(sizeof(RndOverlayGraphBase::GraphOptions) == 16);
 static_assert(sizeof(RndOverlayGraphBase::GraphAxis) == 24);
+static_assert(offsetof(RndOverlayGraphBase::GraphAxis, mLabelSide) == 20);
 static_assert(offsetof(RndOverlayGraphBase::GraphAxes, mColor) == 48);
+static_assert(offsetof(RndOverlayGraphBase::GraphAxes, mOriginX) == 64);
+static_assert(offsetof(RndOverlayGraphBase::GraphAxes, mOriginY) == 68);
 static_assert(sizeof(RndOverlayGraphBase::GraphAxes) == 72);
 static_assert(offsetof(RndOverlayGraphBase::GraphSeries, mPoints) == 24);
 static_assert(sizeof(RndOverlayGraphBase::GraphSeries) == 40);

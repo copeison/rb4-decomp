@@ -10,6 +10,7 @@ public:
     explicit FormatString(const char* fmt);  // 0x2472C0
     ~FormatString();                         // 0x247510
 
+    FormatString& operator<<(void* value);          // 0x247670
     // 0x247890 takes a 64-bit integer.
     FormatString& operator<<(int value);            // 0x247CD0
     FormatString& operator<<(float value);          // 0x2480A0

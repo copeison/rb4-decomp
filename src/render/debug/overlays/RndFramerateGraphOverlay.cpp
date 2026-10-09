@@ -47,9 +47,9 @@ RndOverlayGraphBase::GraphAxes RndFramerateGraphOverlay::_GetAxes() {
     axes.mY.mMin = 0.0F;
     axes.mY.mMax = 90.0F;
     axes.mY.mStep = 10.0F;
-    axes.mY.mUnknown20 = 1.0F;
-    axes.mUnknown64 = now;
-    axes.mUnknown68 = 0;
+    axes.mY.mLabelSide = 1.0F;
+    axes.mOriginX = now;
+    axes.mOriginY = 0.0F;
     return axes;
 }
 

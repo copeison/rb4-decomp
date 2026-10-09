@@ -11,6 +11,8 @@ constexpr unsigned long kMaxDepth = 16;
 
 }  // namespace
 
+float gTimerThresholdMs = 0.1F;
+
 // Reconstructed from eboot.elf at 0x24B720.
 PerfTimerBase::PerfTimerBase(Symbol name)
     : mName(name),
