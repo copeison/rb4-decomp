@@ -11,13 +11,20 @@
 
 class RndContext;
 
-namespace rb4 {
-struct OrbisMeshInstanceData;
-}  // namespace rb4
+// Per-instance transforms streamed with a draw: a 3x4 world transform, the
+// 3x3 normal transform, packed state and two parameter vectors. Field names
+// are not in the reference map.
+struct RndInstanceData {
+    float mXfm[3][4];
+    float mNormalXfm[3][3];
+    unsigned int mPackedState;
+    float mParams[2][4];
+};
 
-// Per-instance transforms streamed with a draw. Defined by the PS4 vertex
-// descriptor code until it is converted.
-using RndInstanceData = rb4::OrbisMeshInstanceData;
+static_assert(offsetof(RndInstanceData, mNormalXfm) == 48);
+static_assert(offsetof(RndInstanceData, mPackedState) == 84);
+static_assert(offsetof(RndInstanceData, mParams) == 88);
+static_assert(sizeof(RndInstanceData) == 120);
 
 // Anything that can be drawn in instanced batches.
 class RndDrawable {

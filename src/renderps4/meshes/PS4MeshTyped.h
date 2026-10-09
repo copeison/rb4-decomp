@@ -3,12 +3,12 @@
 #include <cstddef>
 #include <cstring>
 
-#include "renderps4/system/PS4Device.h"
 #include "render/meshes/RndMeshTyped.h"
-#include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
-#include "render/platform/orbis/meshes/orbis_mesh_draw.h"
-#include "render/platform/orbis/meshes/orbis_mesh_formats.h"
-#include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
+#include "render/meshes/RndVertexInterpreter.h"
+#include "renderps4/context/PS4Context.h"
+#include "renderps4/system/PS4Device.h"
+#include "renderps4/system/PS4RenderUtl.h"
+#include "renderps4/system/gnm_adapters.h"
 
 // Mesh with double-buffered GPU vertices and a 16- or 32-bit index buffer.
 // The factory zero-fills the object before constructing it. Every member is
@@ -38,18 +38,17 @@ public:
         const VectorAdapter<RndInstanceData>& instances,
         const RndDrawable::DrawRange& range) override {
         auto& commands = reinterpret_cast<rb4::OrbisRenderCommandContext&>(context);
-        SelectVertexBuffers(commands);
-        SelectInstanceBuffer(commands, instances);
-        rb4::orbis_set_primitive_type(commands, rb4::MeshPrimitiveType::kTriangles);
+        _SelectVertexBuffers(commands);
+        _InlineInstanceBufferToCommandBuffer(static_cast<PS4Context&>(context), instances);
+        GfxSetPrimitiveType(commands, GnmPrimitiveType::kTriangles);
         if (mIndexData != nullptr) {
-            DrawIndexed(commands, range);
+            _DrawIndexed(commands, range);
         } else {
-            rb4::gnmx_prepare_draw(commands);
-            rb4::gnm_draw_command_buffer_draw_index_auto(
-                commands, static_cast<unsigned int>(this->mNumVerts));
+            GfxPrepareDraw(commands);
+            GfxDrawIndexAuto(commands, static_cast<unsigned int>(this->mNumVerts));
         }
-        rb4::gnmx_finish_draw(commands);
-        rb4::gnm_draw_command_buffer_set_num_instances(commands, 1);
+        GfxFinishDraw(commands);
+        GfxSetNumInstances(commands, 1);
         this->mLastUseFrame = TheRndDevice()->mFrameCount;
     }
 
@@ -94,16 +93,16 @@ public:
 
         std::memcpy(mVertexData[mActiveVertexData], this->mVerts.mpBegin, bytes);
 
-        const auto* format = rb4::render_mesh_format_descriptor(Vertex::kType);
+        const auto* interpreter = RndVertexInterpreter::GetInstance(Vertex::kType);
         mBufferMask = 0;
         for (int bank = 0; bank < 2; ++bank) {
             if (mVertexData[bank] != nullptr) {
-                rb4::orbis_build_mesh_vertex_descriptors(
+                PS4RenderUtl::InitializeVertexBuffers(
                     mVertexBuffers[bank],
                     mVertexData[bank],
                     mBufferMask,
                     static_cast<unsigned int>(count),
-                    *format);
+                    *interpreter);
             }
         }
     }
@@ -119,7 +118,7 @@ public:
         const auto numIndices = static_cast<unsigned long>(
             reinterpret_cast<const unsigned int*>(faces.mpEnd) - source);
         const bool wide = this->_GetNumVerticesImpl() > 0xFFFF;
-        const auto format = wide ? rb4::OrbisIndexSize::k32Bit : rb4::OrbisIndexSize::k16Bit;
+        const auto format = wide ? GnmIndexSize::k32Bit : GnmIndexSize::k16Bit;
         const auto bytes = numIndices * (wide ? sizeof(unsigned int) : sizeof(unsigned short));
 
         if (mIndexCapacity != numIndices ||
@@ -143,7 +142,7 @@ public:
     }
 
     // Field names are not in the reference map.
-    rb4::OrbisBufferDescriptor mVertexBuffers[2][rb4::kMeshVertexStreamCount] = {};
+    GnmBuffer mVertexBuffers[2][RndVertexInterpreter::kNumStreams] = {};
     Vertex* mVertexData[2] = {nullptr, nullptr};
     unsigned long mActiveVertexData = 0;
     unsigned long mVertexDataCapacity = 0;
@@ -152,53 +151,55 @@ public:
     void* mIndexData = nullptr;
     unsigned long mIndexCapacity = 0;
 
+    // Copies the instance data into the command buffer, binds it after the
+    // mesh streams and sets the instance count. The binary uses the context
+    // as the command context.
+    static void _InlineInstanceBufferToCommandBuffer(
+        PS4Context& context,
+        const VectorAdapter<RndInstanceData>& instances) {
+        auto& commands = reinterpret_cast<rb4::OrbisRenderCommandContext&>(context);
+        const auto bytes = sizeof(RndInstanceData) * instances.mSize;
+        auto* uploaded = static_cast<RndInstanceData*>(
+            GfxAllocateFromCommandBuffer(commands, bytes, 4));
+        GnmBuffer buffers[PS4RenderUtl::kNumInstanceStreams] = {};
+        PS4RenderUtl::InitializeInstanceBuffer(
+            buffers, uploaded, static_cast<unsigned int>(instances.mSize));
+        std::memcpy(uploaded, instances.mData, bytes);
+        GfxSetVertexBuffers(
+            commands,
+            RndVertexInterpreter::kNumStreams,
+            PS4RenderUtl::kNumInstanceStreams,
+            buffers);
+        GfxSetNumInstances(commands, static_cast<unsigned int>(instances.mSize));
+    }
+
 private:
     // Streams the mesh lacks fall back to the shared default buffers.
-    void SelectVertexBuffers(rb4::OrbisRenderCommandContext& commands) const {
+    // Inlined into _DrawBatchImpl; name not in the reference map.
+    void _SelectVertexBuffers(rb4::OrbisRenderCommandContext& commands) const {
         const auto* defaults = gPS4Device->mDefaultVertexDescs;
         const auto* buffers = mVertexBuffers[mActiveVertexData];
-        for (unsigned int stream = 0; stream < rb4::kMeshVertexStreamCount; ++stream) {
+        for (unsigned int stream = 0; stream < RndVertexInterpreter::kNumStreams; ++stream) {
             const auto* buffer = (mBufferMask & (1U << stream)) != 0
                 ? &buffers[stream]
                 : &defaults[stream];
-            rb4::orbis_bind_vertex_buffers(commands, stream, 1, buffer);
+            GfxSetVertexBuffers(commands, stream, 1, buffer);
         }
     }
 
-    // Copies the instance data into the command buffer and binds it.
-    static void SelectInstanceBuffer(
-        rb4::OrbisRenderCommandContext& commands,
-        const VectorAdapter<RndInstanceData>& instances) {
-        const auto bytes = sizeof(RndInstanceData) * instances.mSize;
-        auto* uploaded = static_cast<RndInstanceData*>(
-            rb4::orbis_allocate_embedded_data(commands, bytes, 4));
-        rb4::OrbisBufferDescriptor buffers[rb4::kInstanceVertexStreamCount] = {};
-        rb4::orbis_build_instance_vertex_descriptors(
-            buffers, uploaded, static_cast<unsigned int>(instances.mSize));
-        std::memcpy(uploaded, instances.mData, bytes);
-        rb4::orbis_bind_vertex_buffers(
-            commands,
-            static_cast<unsigned int>(rb4::kMeshVertexStreamCount),
-            static_cast<unsigned int>(rb4::kInstanceVertexStreamCount),
-            buffers);
-        rb4::gnm_draw_command_buffer_set_num_instances(
-            commands, static_cast<unsigned int>(instances.mSize));
-    }
-
-    void DrawIndexed(
+    // Inlined into _DrawBatchImpl; name not in the reference map.
+    void _DrawIndexed(
         rb4::OrbisRenderCommandContext& commands,
         const RndDrawable::DrawRange& range) const {
         const auto numFaces = range.mNumFaces == RndDrawable::DrawRange::kAllFaces
             ? this->mNumFaces
             : range.mNumFaces;
-        const auto size = static_cast<rb4::OrbisIndexSize>(mIndexFormat);
-        const auto indexBytes = size == rb4::OrbisIndexSize::k32Bit ? 4UL : 2UL;
+        const auto size = static_cast<GnmIndexSize>(mIndexFormat);
+        const auto indexBytes = size == GnmIndexSize::k32Bit ? 4UL : 2UL;
         const auto* indices = static_cast<const unsigned char*>(mIndexData) +
             3 * indexBytes * range.mFirstFace;
-        rb4::gnm_draw_command_buffer_set_index_size(
-            commands, size, rb4::OrbisCachePolicy::kBypass);
-        rb4::gnmx_prepare_draw(commands);
-        rb4::gnm_draw_command_buffer_draw_index(
-            commands, static_cast<unsigned int>(3 * numFaces), indices);
+        GfxSetIndexSize(commands, size, GnmCachePolicy::kBypass);
+        GfxPrepareDraw(commands);
+        GfxDrawIndex(commands, static_cast<unsigned int>(3 * numFaces), indices);
     }
 };

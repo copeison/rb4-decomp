@@ -3,15 +3,19 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <kernel/equeue.h>
 #include <system_service.h>
 #include <video_out.h>
 
 #include "os/memory/MemMgr.h"
+#include "render/meshes/RndMesh.h"
+#include "render/meshes/RndVertexInterpreter.h"
 #include "render/system/RndConfig.h"
 #include "render/targets/RndBufferCollection.h"
 #include "renderps4/context/PS4Context.h"
 #include "renderps4/system/PS4Factory.h"
+#include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/video/PS4Window.h"
 #include "utl/time/Timer.h"
@@ -80,6 +84,33 @@ void EraseDeferredDelete(PS4DeferredDeleteList& list, PS4DeferredDelete& node) {
     --list.mSize;
 }
 
+// The default stream data: a unit normal, tangent and bitangent, opaque
+// white, and full weight on the first bone. Name not in the reference map.
+RndVertexSkinned DefaultStreamVertex() {
+    RndVertexSkinned vertex;
+    vertex.mNorm[2] = 1.0F;
+    vertex.mTangent[0] = 1.0F;
+    vertex.mBitangent[1] = 1.0F;
+    vertex.mColor[0] = 1.0F;
+    vertex.mColor[1] = 1.0F;
+    vertex.mColor[2] = 1.0F;
+    vertex.mColor[3] = 1.0F;
+    vertex.mWeights[0] = 1.0F;
+    return vertex;
+}
+
+// Identity world and normal transforms. Name not in the reference map.
+RndInstanceData IdentityInstance() {
+    RndInstanceData instance{};
+    instance.mXfm[0][0] = 1.0F;
+    instance.mXfm[1][1] = 1.0F;
+    instance.mXfm[2][2] = 1.0F;
+    instance.mNormalXfm[0][0] = 1.0F;
+    instance.mNormalXfm[1][1] = 1.0F;
+    instance.mNormalXfm[2][2] = 1.0F;
+    return instance;
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x8D77F0.
@@ -105,6 +136,31 @@ PS4Device::~PS4Device() {
         node = next;
     }
     mSubmitThread.mThread._ForceKillThread();
+}
+
+// Reconstructed from eboot.elf at 0x8D7DB0. One skinned vertex backs every
+// stream a mesh lacks.
+void PS4Device::_InitDefaultVertexBuffers() {
+    const auto* interpreter = RndVertexInterpreter::GetInstance(kVertexSkinned);
+    mDefaultVertexBuffer = MemAlloc(interpreter->mStride, "DefaultVBuffer", 4);
+
+    const auto vertex = DefaultStreamVertex();
+    std::memcpy(mDefaultVertexBuffer, &vertex, sizeof(vertex));
+    unsigned int mask = 0;
+    PS4RenderUtl::InitializeVertexBuffers(
+        mDefaultVertexDescs, mDefaultVertexBuffer, mask, 1, *interpreter);
+}
+
+// Reconstructed from eboot.elf at 0x8D7EB0. Immediate-mode draws bind this
+// single identity instance.
+void PS4Device::_InitIdentityInstanceBuffers() {
+    auto* instance = static_cast<RndInstanceData*>(
+        MemAlloc(sizeof(RndInstanceData), "IdentityInstanceVBuffer", 4));
+    mIdentityInstanceBuffer = instance;
+    PS4RenderUtl::InitializeInstanceBuffer(mIdentityInstanceDescs, instance, 1);
+
+    const auto identity = IdentityInstance();
+    std::memcpy(instance, &identity, sizeof(identity));
 }
 
 // Reconstructed from eboot.elf at 0x8D8580.

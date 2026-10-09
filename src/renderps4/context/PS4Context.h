@@ -5,6 +5,8 @@
 
 #include "render/context/RndContext.h"
 #include "renderps4/buffers/PS4TransientBuffer.h"
+#include "renderps4/context/PS4RenderStateUtl.h"
+#include "renderps4/system/gnm_adapters.h"
 
 class PS4Device;
 
@@ -135,6 +137,23 @@ public:
         float depth,
         unsigned char stencil);  // 0x8E99E0
     void _FlushClear();          // 0x8EBDA0
+
+    // Texture bindings for PS4RenderUtl's stage selects. Names not in the
+    // reference map; not yet reconstructed.
+    bool _UsesComputeQueue() const;
+    void _BindGraphicsTexture(GnmShaderStage stage, std::uint32_t slot, const void* texture);
+    void _BindGraphicsRwTexture(GnmShaderStage stage, std::uint32_t slot, const void* texture);
+    void _BindComputeTexture(std::uint32_t slot, const void* texture);
+    void _BindComputeRwTexture(std::uint32_t slot, const void* texture);
+    void _BindGraphicsTextureSampler(
+        GnmShaderStage stage,
+        std::uint32_t slot,
+        PS4RenderStateUtl::WrapMode wrap,
+        std::uint32_t filter);
+    void _BindComputeTextureSampler(
+        std::uint32_t slot,
+        PS4RenderStateUtl::WrapMode wrap,
+        std::uint32_t filter);
 
 private:
     // Construction and teardown. Names not in the reference map; they are
@@ -295,6 +314,28 @@ private:
     void _EmitGraphicsResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
     void _EmitComputeResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
     void _RemoveResourceSignalGroup(const volatile std::uint32_t* label);
+
+    // Shader stages, samplers and resource tables. Names not in the
+    // reference map; not yet reconstructed.
+    void _BindComputeRwBuffer(std::uint32_t slot, const GnmBuffer* buffer);
+    void _CopyGdsToMemory(
+        std::uint32_t gdsOffset,
+        void* destination,
+        std::size_t size,
+        bool blocking);
+    void _BindGraphicsSampler(
+        RndShaderProgramType stage,
+        std::uint32_t slot,
+        const GnmSampler& sampler);
+    void _BindComputeSampler(std::uint32_t slot, const GnmSampler& sampler);
+    void _ClearVertexShader();
+    void _ClearGeometryShader();
+    void _ClearPixelShader();
+    void _ClearComputeShader();
+    bool _GraphicsResourcesActive() const;
+    void _ClearGnmRwTextures(RndShaderProgramType stage);
+    void _ClearGnmTextures(RndShaderProgramType stage);
+    void _ClearGnmBuffers(RndShaderProgramType stage);
 
 public:
     // Layout is modeled only where the offsets are known. Field names are

@@ -1,14 +1,42 @@
 #pragma once
 
+#include "renderps4/system/gnm_adapters.h"
+
 class RndContext;
+class RndVertexInterpreter;
+struct RndInstanceData;
+
+// Gnm helpers shared by the PS4 resources.
+namespace PS4RenderUtl {
+
+// Instance data occupies the nine vertex streams after the mesh streams.
+// Name not in the reference map.
+constexpr unsigned int kNumInstanceStreams = 9;
+
+// Builds a read-only vertex buffer for each stream the layout uses and sets
+// its bit in the mask. A single vertex gets a zero stride so every vertex
+// reads it. The map has InitializeVertexBuffers(sce::Gnm::Buffer*, void*,
+// unsigned int&, unsigned long, RndVertexInterpreter const&); the binary
+// takes the count as unsigned int.
+void InitializeVertexBuffers(
+    GnmBuffer* buffers,
+    const void* data,
+    unsigned int& mask,
+    unsigned int numVerts,
+    const RndVertexInterpreter& interpreter);  // 0x8E1840
+// Builds the nine instance streams. The map has
+// InitializeInstanceBuffer(sce::Gnm::Buffer*, void*, unsigned long); the
+// binary takes the count as unsigned int.
+void InitializeInstanceBuffer(
+    GnmBuffer* buffers,
+    const RndInstanceData* data,
+    unsigned int numInstances);               // 0x8E1BD0
 
 // Texture selection for each shader stage. The map has
 // SelectTextureFor*(RndContext&, unsigned long, sce::Gnm::Texture*,
 // RndTexWrapMode, RndTexFilterMode); this build adds a flags argument to
 // every stage but the vertex stage reads none. Slots below 16 also get a
 // sampler unless the flags suppress it.
-namespace PS4RenderUtl {
-
 void SelectTextureForVS(
     RndContext& context,
     unsigned long slot,

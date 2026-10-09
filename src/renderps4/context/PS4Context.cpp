@@ -9,11 +9,13 @@
 #include "render/context/RndResourceBarrier.h"
 #include "render/core/system/render_runtime_adapters.h"
 #include "render/meshes/RndMesh.h"
-#include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
-#include "render/platform/orbis/meshes/orbis_mesh_draw.h"
+#include "render/meshes/RndVertexInterpreter.h"
+#include "render/shaders/RndShaderEnums.h"
 #include "render/system/RndDevice.h"
+#include "renderps4/buffers/PS4ComputeBuffer.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Fence.h"
+#include "renderps4/system/PS4RenderUtl.h"
 
 using namespace rb4;
 
@@ -65,6 +67,7 @@ constexpr std::size_t kScratchBufferSize = 4 * 1024 * 1024;
 constexpr std::size_t kComputeCommandBufferSize = 0x3FFFFC;
 constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
+constexpr unsigned int kNumShaderStages = 6;
 constexpr std::size_t kTimestampBufferSize = 0x2000;
 constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
@@ -412,18 +415,18 @@ void PS4Context::_DrawPrimitivesImpl(
     RndVertexType type,
     const void* vertices,
     unsigned long count) {
-    const auto primitiveType = static_cast<MeshPrimitiveType>(primitive);
+    const auto primitiveType = static_cast<GnmPrimitiveType>(primitive);
     auto& transient = mTransientBuffers[mActiveFrame][type];
     auto& commands = _ActiveGfxContext();
     const auto firstVertex = transient.Write(vertices, count);
     transient.Bind(commands);
-    orbis_bind_vertex_buffers(
+    GfxSetVertexBuffers(
         commands,
-        static_cast<std::uint32_t>(kMeshVertexStreamCount),
-        static_cast<std::uint32_t>(kInstanceVertexStreamCount),
+        RndVertexInterpreter::kNumStreams,
+        PS4RenderUtl::kNumInstanceStreams,
         gPS4Device->mIdentityInstanceDescs);
     auto* indices = static_cast<std::uint16_t*>(
-        orbis_allocate_embedded_data(
+        GfxAllocateFromCommandBuffer(
             commands,
             count * sizeof(std::uint16_t),
             alignof(std::uint32_t)));
@@ -431,13 +434,104 @@ void PS4Context::_DrawPrimitivesImpl(
         indices[index] = static_cast<std::uint16_t>(firstVertex + index);
     }
 
-    gnm_draw_command_buffer_set_index_size(
-        commands, OrbisIndexSize::k16Bit, OrbisCachePolicy::kBypass);
-    orbis_set_primitive_type(commands, primitiveType);
-    gnmx_prepare_draw(commands);
-    gnm_draw_command_buffer_draw_index(
+    GfxSetIndexSize(commands, GnmIndexSize::k16Bit, GnmCachePolicy::kBypass);
+    GfxSetPrimitiveType(commands, primitiveType);
+    GfxPrepareDraw(commands);
+    GfxDrawIndex(
         commands, static_cast<std::uint32_t>(count), indices);
-    gnmx_finish_draw(commands);
+    GfxFinishDraw(commands);
+}
+
+// Shader resources -----------------------------------------------------------
+
+// Reconstructed from eboot.elf at 0x8E9810. The map has
+// _DeselectAllReadWriteTexturesImpl(unsigned int, unsigned long const*).
+void PS4Context::_DeselectAllReadWriteTexturesImpl(unsigned int stages) {
+    if (!_GraphicsResourcesActive()) {
+        return;
+    }
+
+    for (unsigned int index = 0; index < kNumShaderStages; ++index) {
+        if ((stages & (1U << index)) == 0) {
+            continue;
+        }
+        _ClearGnmRwTextures(static_cast<RndShaderProgramType>(index));
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8E9940. The map has
+// _DeselectAllSourceTexturesImpl(unsigned int, unsigned long const*).
+void PS4Context::_DeselectAllSourceTexturesImpl(unsigned int stages) {
+    if (!_GraphicsResourcesActive()) {
+        return;
+    }
+
+    for (unsigned int index = 0; index < kNumShaderStages; ++index) {
+        if ((stages & (1U << index)) == 0) {
+            continue;
+        }
+        const auto stage = static_cast<RndShaderProgramType>(index);
+        _ClearGnmTextures(stage);
+        _ClearGnmBuffers(stage);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8EA740. Copies the source's append
+// counter from GDS into the destination's active storage.
+void PS4Context::_CopyBufferCounter(
+    const RndComputeBuffer& source,
+    const RndComputeBuffer& dest) {
+    const auto& ps4Source = static_cast<const PS4ComputeBuffer&>(source);
+    const auto& ps4Dest = static_cast<const PS4ComputeBuffer&>(dest);
+    _BindComputeRwBuffer(0, &ps4Source.ActiveBuffer());
+    _CopyGdsToMemory(0, ps4Dest.ActiveStorage(), sizeof(std::uint32_t), true);
+    _BindComputeRwBuffer(0, nullptr);
+}
+
+// Reconstructed from eboot.elf at 0x8EA830. Hull, domain and geometry
+// stages take no sampler.
+void PS4Context::_SetSamplerImpl(
+    RndShaderProgramType type,
+    unsigned int slot,
+    unsigned int wrap,
+    unsigned int filter) {
+    GnmSampler sampler;
+    PS4RenderStateUtl::InitSampler(
+        sampler, static_cast<PS4RenderStateUtl::WrapMode>(wrap), filter);
+    switch (type) {
+    case kShaderProgramVertex:
+    case kShaderProgramPixel:
+        _BindGraphicsSampler(type, slot, sampler);
+        break;
+    case kShaderProgramCompute:
+        _BindComputeSampler(slot, sampler);
+        break;
+    case kShaderProgramHull:
+    case kShaderProgramDomain:
+    case kShaderProgramGeometry:
+        break;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8EA920.
+void PS4Context::_DeactivateShaderProgramTypeImpl(RndShaderProgramType type) {
+    switch (type) {
+    case kShaderProgramVertex:
+        _ClearVertexShader();
+        break;
+    case kShaderProgramGeometry:
+        _ClearGeometryShader();
+        break;
+    case kShaderProgramPixel:
+        _ClearPixelShader();
+        break;
+    case kShaderProgramCompute:
+        _ClearComputeShader();
+        break;
+    case kShaderProgramHull:
+    case kShaderProgramDomain:
+        break;
+    }
 }
 
 // Resource barriers ----------------------------------------------------------

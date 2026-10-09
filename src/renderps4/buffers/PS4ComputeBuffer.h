@@ -4,15 +4,11 @@
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/shaders/RndShaderEnums.h"
+#include "renderps4/system/gnm_adapters.h"
 
 // Double-buffered PS4 compute buffer. The vtable is at 0x195F7A8.
 class PS4ComputeBuffer : public RndComputeBuffer {
 public:
-    // sce::Gnm::Buffer. Name not in the reference map.
-    struct GnmBuffer {
-        unsigned char mRegisters[16];
-    };
-
     explicit PS4ComputeBuffer(const Description& desc);  // 0x8E3250
     ~PS4ComputeBuffer() override;                        // 0x8E3290, 0x8E32F0
 

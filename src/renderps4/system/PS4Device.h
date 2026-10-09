@@ -5,8 +5,8 @@
 #include <kernel/equeue.h>
 
 #include "os/threading/Condition.h"
-#include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/system/RndDevice.h"
+#include "renderps4/system/gnm_adapters.h"
 #include "utl/threading/Thread.h"
 
 class PS4Context;
@@ -105,9 +105,9 @@ public:
     Condition mSubmitCondition;
     unsigned long mSubmitToken;
     bool mSubmitThreadRunning;
-    rb4::OrbisBufferDescriptor mDefaultVertexDescs[8];
+    GnmBuffer mDefaultVertexDescs[8];
     void* mDefaultVertexBuffer;
-    rb4::OrbisBufferDescriptor mIdentityInstanceDescs[9];
+    GnmBuffer mIdentityInstanceDescs[9];
     void* mIdentityInstanceBuffer;
     NamedThread mSubmitThread;
     CritSec mSubmitCritSec;

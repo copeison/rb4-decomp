@@ -3,11 +3,8 @@
 #include <cstddef>
 
 #include "render/meshes/RndMesh.h"
-#include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
-
-namespace rb4 {
-struct OrbisRenderCommandContext;
-}
+#include "render/meshes/RndVertexInterpreter.h"
+#include "renderps4/system/gnm_adapters.h"
 
 // Per-format vertex buffer for immediate-mode draws. PS4Context embeds two
 // banks of eight, one bank per frame; Reset discards a bank's vertices when
@@ -26,7 +23,7 @@ public:
     void Bind(rb4::OrbisRenderCommandContext& context) const;  // 0x8EC910
 
     // Field names are not in the reference map.
-    rb4::OrbisBufferDescriptor mVertexBuffers[rb4::kMeshVertexStreamCount];
+    GnmBuffer mVertexBuffers[RndVertexInterpreter::kNumStreams];
     unsigned int mBufferMask;
     unsigned int mUnknown132;
     unsigned char* mData;
