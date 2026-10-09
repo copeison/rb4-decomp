@@ -1,28 +1,109 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <semaphore.h>
 
+#include "audio/core/containers/LinkedListSizeTracked.h"
+#include "os/threading/CritSec.h"
 #include "utl/threading/Thread.h"
 
-// Background thread that services stream readers. Only the members the FMOD
-// buffered-stream manager calls are declared; the class has not been
-// reconstructed.
+namespace FMOD {
+class Sound;
+}
+
+// One queued read of up to eight PCM ranges from an FMOD sound into 16-bit
+// samples. The map's StreamReader has a vtable; this build's reader is a
+// plain object whose members sit with StreamReaderThread's at 0x263EC0 and
+// 0x263F70. Names not in the reference map unless noted.
+class StreamReader {
+public:
+    // mState values.
+    enum State : int {
+        kStateIdle = 0,
+        kStateQueued = 1,
+        kStateReading = 2,
+        kStateDone = 3,
+    };
+
+    // A range of frames; a negative start is leading silence.
+    struct Segment {
+        int mStart;
+        int mCount;
+    };
+
+    static constexpr int kMaxSegments = 8;
+
+    // Binds the sound, the destination and the completion callback. At
+    // 0x263EC0.
+    void Setup(
+        FMOD::Sound* sound,
+        int numChannels,
+        short* buffer,
+        int unknown152,
+        const std::function<void()>& onDone);
+    // Reads every segment into the buffer, padding short reads with
+    // silence, and widens mono to stereo in place. At 0x263F70.
+    void ReadSegments();
+
+    Segment mSegments[kMaxSegments];
+    State mState;
+    std::function<void()> mOnDone;
+    FMOD::Sound* mSound;
+    void* mUnknown136;
+    short* mBuffer;
+    int mUnknown152;
+    int mNumChannels;
+    int mFramesRead;
+    int mResult;  // FMOD_RESULT of the last read.
+    LinkedListSizeTracked::Node mReaderNode;
+};
+
+static_assert(offsetof(StreamReader, mState) == 64);
+static_assert(offsetof(StreamReader, mOnDone) == 80);
+static_assert(offsetof(StreamReader, mSound) == 128);
+static_assert(offsetof(StreamReader, mBuffer) == 144);
+static_assert(offsetof(StreamReader, mNumChannels) == 156);
+static_assert(offsetof(StreamReader, mResult) == 164);
+static_assert(offsetof(StreamReader, mReaderNode) == 168);
+
+// Background thread that services stream readers
+// (audio/StreamReaderThread.o). The map has a global theStreamReaderThread;
+// in this build FmodBufferedStreamGeneratorManager owns the thread.
 class StreamReaderThread {
 public:
-    StreamReaderThread();
+    using ReaderList = LinkedListSizeTracked::List<StreamReader, &StreamReader::mReaderNode>;
+
+    StreamReaderThread();   // 0x264140
     ~StreamReaderThread();  // 0x264260
 
-    // Starts the "stream_reader" thread. At 0x2643D0.
-    void StartAsyncPoll();
     // Signals the thread to quit and joins it. At 0x264390.
     void QuitAsyncPoll();
+    // Starts the "stream_reader" thread. At 0x2643D0.
+    void StartAsyncPoll();
+    // Queues a reader and wakes the thread; ignored while quitting. At
+    // 0x264660.
+    void AddReader(StreamReader* reader);
+    // Unqueues a reader that has not started. At 0x264700. The map has
+    // AsyncRemoveReader(StreamReader*) with a separate wait; this build
+    // removes it at once.
+    void RemoveReader(StreamReader* reader);
+
+    // The thread body at 0x264470. On quit, every queued reader completes
+    // with result 15.
+    static int _ReaderThreadMain(void* context);
 
     // Field names are not in the reference map.
     bool mQuit;
     NamedThread mThread;
-    unsigned char mUnknown144[44];
-    unsigned char mSemaphore[16];  // sem_t
+    CritSec mCritSec;
+    ReaderList mReaders;
+    int mUnknown184;
+    sem_t mSemaphore;
 };
 
 static_assert(offsetof(StreamReaderThread, mThread) == 8);
+static_assert(offsetof(StreamReaderThread, mCritSec) == 144);
+static_assert(offsetof(StreamReaderThread, mReaders) == 160);
 static_assert(offsetof(StreamReaderThread, mSemaphore) == 188);
+static_assert(sizeof(StreamReaderThread) == 208);

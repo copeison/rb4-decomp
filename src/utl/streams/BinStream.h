@@ -59,6 +59,7 @@ public:
     void Read(void* data, unsigned long size);
     void ReadEndian(void* data, int size);
     void WriteEndian(const void* data, int size);
+    void Write(const void* data, unsigned long size);  // 0x219DF0
     void Seek(long offset, SeekType origin);
     BinStream& operator>>(Symbol& symbol);
 

@@ -23,8 +23,8 @@ The 80-byte base has its vtable at `0x18DCD58`:
 The 32 virtual slots are, in order: `Pause`, `Continue`, `Stop`, a state
 getter, `GetElapsedMs`, `GetTimelineMs`, `GetLengthMs`, `SeekToMs`,
 `SetSpeed`, `GetSpeed`, `SetParameter`, `GetParameter`, `SetGain`,
-`GetGain`, `SetMute`, `GetMute`, three unnamed queries (the third returns
-true only for dialog generators), `Init`, the destructor pair, `Poll`,
+`GetGain`, `SetMute`, `GetMute`, `IsMusic`, `IsInstrument`, an unnamed
+dialog query, `Init`, the destructor pair, `Poll`,
 `Release`, a plugin-data lookup, three unnamed defaults, `_InitTypeId`,
 `Kill`, `GetGeneratorOfType` and a type getter. The map gives
 `SetMute(bool)`; this build passes an extra "immediate" flag.
@@ -41,8 +41,8 @@ handle, so a stale handle cannot retain a reused slot.
 ## AudioGeneratorManager
 
 The manager's vtable at `0x18DFF18` has 18 slots: `Play(PlayArgs const&)`,
-`Play(Symbol, AudioEmitterCom*, bool)`, `Prepare`, `Init`, `Destroy`, an
-unnamed no-op, `GetIndex`, `GetId`, `GetResourceExt`, `LockIfOwned`,
+`Play(Symbol, AudioEmitterCom*, bool)`, `Prepare`, `Init`, `Destroy`, the
+empty `Poll`, `GetIndex`, `GetId`, `GetResourceExt`, `LockIfOwned`,
 `SendStopToAllGenerators`, `SendKillToAllGenerators`, an active-handle
 collector, `_SetManagerIndex`, `_InitGeneratorPool`, `_DeleteGeneratorPool`
 and the destructor pair. Its fields are the pool size at `+0x08`, a `CritSec`
@@ -97,3 +97,35 @@ completes.
 See [fmod-audio-bus-generator.md](fmod-audio-bus-generator.md),
 [fmod-audio-stream-generator.md](fmod-audio-stream-generator.md) and
 [fmod-studio-sound-generator.md](fmod-studio-sound-generator.md).
+
+## Reconstructed core
+
+The platform-neutral generator code is reconstructed in
+`src/audio/core/generators`:
+
+- `AudioGenerator.cpp` is the map's `audio/AudioGenerator.o`: the manager's
+  `Init` (`0x40500`), `Destroy` (`0x40540`), `Play` (`0x40570`), `Prepare`
+  (`0x406C0`) and destructor (`0xE780`, reached from `0x40AC0`),
+  `KillLocked`, `GetNewHandle`, the handle release check at `0x40770`, the
+  emitter notifications at `0x407C0` and `0x407E0`, four event-parameter
+  queries forwarded to the FMOD platform (`0x40800` to `0x40890`), and the
+  `PlayArgs::Route` descriptions at `0x408C0`. The `AudioGenerator`
+  defaults at `0xE3E0` to `0xE5F0` and its destructor are emitted with the
+  sound manager in the map; they are kept in the same file.
+- `AudioBusGenerator.cpp` holds the bus generator (`0xE0490` to `0xE1510`).
+  Its block buffer is an `AudioBuffer<float>`; a rendered block sets a flag
+  in the buffer's tail padding. Gain and mute use a 48-byte per-block ramp
+  (`BlockRamp`) that differs from the FMOD generators' `GainRamp`.
+  `_ResetGainAndMute` at `0xE0900` is on `FmodAudioBusGenerator` in the map.
+- `DialogGenerator.cpp` holds the dialog base (`0x1127330` to `0x1127730`).
+  `PlayArgs` ends at `0x68` bytes; dialog requests are a `DialogPlayArgs`
+  marked by format 4, whose sink is a `std::function` at `+0x70`.
+
+`PlayArgs` gained its inlined constructor and destructor: the route path is a
+`Symbol`, and the parameter list is an owned `eastl::vector`.
+`LinkedListSizeTracked` nodes and lists gained the inlined constructors and
+destructors that every owner's destructor repeats.
+
+Still undefined: `SoundManager` (`_RegisterGeneratorManager`,
+`LockIfOwned`), the `AudioBuffer` object, the FMOD platform's event
+queries, and `String`'s move constructor at `0x255280`.

@@ -15,19 +15,21 @@ public:
     // Reconstructed from eboot.elf at 0x275E20.
     FmodRecordingAudioRenderTarget(
         Symbol name,
-        void* unknown,
+        const char* path,
         int bufferLength,
         int maxChannels,
         int sampleRate,
-        float unknownRate,
+        float gain,
         int speakerConfig);
     ~FmodRecordingAudioRenderTarget() override;  // slots 0-1: 0x275FB0, 0x276010
 
     int SuspendMixer() override;    // slot 2: 0x276130
     int ResumeMixer() override;     // slot 3: 0x276140
-    void InitVoicePool(int maxVoices, int numBuffers, int unknown, bool unknownFlag) override;  // slot 5: 0x276150
-    void ConfigureVoicePool(int numBuffers, int maxVoices) override;  // slot 6: 0x276160
-    void* GetVoicePool() override;  // slot 7: 0x276170
+    // Slot 5 at 0x276150.
+    void InitVoicePool(
+        int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag) override;
+    void ConfigureVoicePool(int softVoiceLimit, int hardVoiceLimit) override;  // slot 6: 0x276160
+    FusionVoicePool* GetVoicePool() override;  // slot 7: 0x276170
     bool TryBeginMix() override;    // slot 8: 0x276180
     bool EndMix() override;         // slot 9: 0x276190
     void Lock() override;           // slot 10: 0x2761A0
@@ -37,7 +39,7 @@ public:
     void RemovePremixCallback(FmodPremixCallback* callback) override;  // slot 14: 0x276230
     void ExecutePremixCallbacks(unsigned long mixCount) override;      // slot 15: 0x276250
     AudioMixer* GetMixer() override;       // slot 16: 0x276290
-    FModSystem* GetFModSystem() override;  // slot 17: 0x2762B0
+    FModSystem* GetOutputTarget() override;  // slot 17: 0x2762B0
     void StartAsyncRecording() override;   // slot 18: 0x276080
     void WaitForRecording() override;      // slot 19: 0x276120
 

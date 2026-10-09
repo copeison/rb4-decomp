@@ -77,7 +77,7 @@ bool FmodStudioSoundGenerator::_Setup(
     mMuteGain.Snap();
 
     if (args.mParameters != nullptr) {
-        for (auto* parameter = args.mParameters->mBegin; parameter != args.mParameters->mEnd;
+        for (auto* parameter = args.mParameters->begin(); parameter != args.mParameters->end();
              ++parameter) {
             SetParameter(parameter->mName, parameter->mValue);
         }

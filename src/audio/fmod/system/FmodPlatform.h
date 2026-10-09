@@ -59,19 +59,6 @@ public:
 
 extern FmodBusInterface* gFmodBusInterface;
 
-// Client run by FModSystem before each FMOD mix. The vtable is at 0x18E5B30.
-class FmodPremixCallback {
-public:
-    virtual ~FmodPremixCallback();  // slots 0-1: 0xC09D0, 0xC0A40
-    // Slot 2. The map has ExecutePremix(int, unsigned long).
-    virtual void ExecutePremix(int numSamples, unsigned long mixCount) = 0;
-
-    LinkedListSizeTracked::Node mCallbackNode;
-};
-
-static_assert(offsetof(FmodPremixCallback, mCallbackNode) == 8);
-static_assert(sizeof(FmodPremixCallback) == 32);
-
 // Lock-protected CPU timer reported as a percentage of one audio buffer. The
 // vtable is at 0x18F0EF0. Name not in the reference map.
 class AudioCpuTimer {
@@ -169,7 +156,7 @@ public:
 
     int SuspendMixer() override;  // slot 2: 0x277B20
     int ResumeMixer() override;   // slot 3: 0x277B30
-    void* GetVoicePool() override;  // slot 7: 0x278C40
+    FusionVoicePool* GetVoicePool() override;  // slot 7: 0x278C40
     bool TryBeginMix() override;  // slot 8: 0x277B40
     bool EndMix() override;       // slot 9: 0x277B80
     int Update() override;        // slot 12: 0x2780D0. The map has Poll().

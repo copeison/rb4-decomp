@@ -731,6 +731,11 @@
   `DrawQuadWireframe2D`, the wide `DrawText2D` and `MeasureText2D`.
 - [x] Reconstruct the text typesetter (`RndTypesetter`), the text option
   enums, and the font glyph and kerning lookup.
+- [x] Reconstruct the platform-neutral audio core: `AudioGenerator` and its
+  manager, `AudioBusGenerator`, `DialogGenerator`, `AudioBus`, the mixer, the
+  render targets and their registry, and `StreamReaderThread` (see
+  [audio-generators.md](audio-generators.md) and
+  [audio-render-target.md](audio-render-target.md)).
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

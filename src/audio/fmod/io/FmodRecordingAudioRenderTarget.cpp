@@ -19,14 +19,14 @@ constexpr auto kRecordingOutput = static_cast<FMOD_OUTPUTTYPE>(1);
 // the recording buffer.
 FmodRecordingAudioRenderTarget::FmodRecordingAudioRenderTarget(
     Symbol name,
-    void* unknown,
+    const char* path,
     int bufferLength,
     int maxChannels,
     int sampleRate,
-    float unknownRate,
+    float gain,
     int speakerConfig)
     : RecordingAudioRenderTarget(
-          name, unknown, bufferLength, maxChannels, sampleRate, unknownRate, speakerConfig) {
+          name, path, bufferLength, maxChannels, sampleRate, gain, speakerConfig) {
     mRecordThread.Init("Unknown Thread!");
     mType = kTypeRecording;
     mFModSystem.Init(
@@ -79,17 +79,18 @@ int FmodRecordingAudioRenderTarget::ResumeMixer() {
 
 // Reconstructed from eboot.elf at 0x276150.
 void FmodRecordingAudioRenderTarget::InitVoicePool(
-    int maxVoices, int numBuffers, int unknown, bool unknownFlag) {
-    mFModSystem.AudioRenderTarget::InitVoicePool(maxVoices, numBuffers, unknown, unknownFlag);
+    int hardVoiceLimit, int softVoiceLimit, int unknownCount, bool unknownFlag) {
+    mFModSystem.AudioRenderTarget::InitVoicePool(
+        hardVoiceLimit, softVoiceLimit, unknownCount, unknownFlag);
 }
 
 // Reconstructed from eboot.elf at 0x276160.
-void FmodRecordingAudioRenderTarget::ConfigureVoicePool(int numBuffers, int maxVoices) {
-    mFModSystem.AudioRenderTarget::ConfigureVoicePool(numBuffers, maxVoices);
+void FmodRecordingAudioRenderTarget::ConfigureVoicePool(int softVoiceLimit, int hardVoiceLimit) {
+    mFModSystem.AudioRenderTarget::ConfigureVoicePool(softVoiceLimit, hardVoiceLimit);
 }
 
 // Reconstructed from eboot.elf at 0x276170.
-void* FmodRecordingAudioRenderTarget::GetVoicePool() {
+FusionVoicePool* FmodRecordingAudioRenderTarget::GetVoicePool() {
     return mFModSystem.mVoicePool;
 }
 
@@ -146,6 +147,6 @@ AudioMixer* FmodRecordingAudioRenderTarget::GetMixer() {
 }
 
 // Reconstructed from eboot.elf at 0x2762B0.
-FModSystem* FmodRecordingAudioRenderTarget::GetFModSystem() {
+FModSystem* FmodRecordingAudioRenderTarget::GetOutputTarget() {
     return &mFModSystem;
 }

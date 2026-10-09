@@ -30,3 +30,13 @@ public:
 };
 
 static_assert(offsetof(EntityResource, mEntity) == 48);
+
+// Per-thread entity state reached through the thread-local descriptor at
+// 0x19B03C8. RecordingAudioRenderTarget clears the flag while it loads its
+// entity. Names not in the reference map.
+struct EntityThreadState {
+    void* mUnknown0;
+    bool mUnknown8;
+};
+
+extern thread_local EntityThreadState gEntityThreadState;

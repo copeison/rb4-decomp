@@ -89,10 +89,41 @@ public:
         mAnchor.mpNodeParent = nullptr;
         mAnchor.mColor = 0;
     }
-    map(const map&) = delete;
+    // Copies the tree node by node, as EASTL's rbtree copy constructor does
+    // (for example in AudioRenderTargetRegistry::DeleteAll at 0xC0F90).
+    map(const map& other) : mCompare(other.mCompare), mnSize(0), mAllocator(other.mAllocator) {
+        mAnchor.mpNodeRight = &mAnchor;
+        mAnchor.mpNodeLeft = &mAnchor;
+        mAnchor.mpNodeParent = nullptr;
+        mAnchor.mColor = 0;
+        if (other.mAnchor.mpNodeParent != nullptr) {
+            mAnchor.mpNodeParent = DoCopySubtree(
+                static_cast<const node_type*>(other.mAnchor.mpNodeParent), &mAnchor);
+            rbtree_node_base* node = mAnchor.mpNodeParent;
+            while (node->mpNodeRight != nullptr) {
+                node = node->mpNodeRight;
+            }
+            mAnchor.mpNodeRight = node;
+            node = mAnchor.mpNodeParent;
+            while (node->mpNodeLeft != nullptr) {
+                node = node->mpNodeLeft;
+            }
+            mAnchor.mpNodeLeft = node;
+            mnSize = other.mnSize;
+        }
+    }
     map& operator=(const map&) = delete;
     ~map() {
         DoNukeSubtree(static_cast<node_type*>(mAnchor.mpNodeParent));
+    }
+
+    void clear() {
+        DoNukeSubtree(static_cast<node_type*>(mAnchor.mpNodeParent));
+        mAnchor.mpNodeRight = &mAnchor;
+        mAnchor.mpNodeLeft = &mAnchor;
+        mAnchor.mpNodeParent = nullptr;
+        mAnchor.mColor = 0;
+        mnSize = 0;
     }
 
     unsigned long size() const {
@@ -155,6 +186,35 @@ private:
         const_cast<Key&>(node->mValue.first) = key;
         node->mValue.second = T();
         return node;
+    }
+    node_type* DoCreateNode(const node_type* source, rbtree_node_base* parent) {
+        auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
+        const_cast<Key&>(node->mValue.first) = source->mValue.first;
+        node->mValue.second = source->mValue.second;
+        node->mpNodeRight = nullptr;
+        node->mpNodeLeft = nullptr;
+        node->mpNodeParent = parent;
+        node->mColor = source->mColor;
+        return node;
+    }
+    node_type* DoCopySubtree(const node_type* source, rbtree_node_base* dest) {
+        node_type* const root = DoCreateNode(source, dest);
+        if (source->mpNodeRight != nullptr) {
+            root->mpNodeRight =
+                DoCopySubtree(static_cast<const node_type*>(source->mpNodeRight), root);
+        }
+        node_type* parent = root;
+        for (auto* child = static_cast<const node_type*>(source->mpNodeLeft); child != nullptr;
+             child = static_cast<const node_type*>(child->mpNodeLeft)) {
+            node_type* const copy = DoCreateNode(child, parent);
+            parent->mpNodeLeft = copy;
+            if (child->mpNodeRight != nullptr) {
+                copy->mpNodeRight =
+                    DoCopySubtree(static_cast<const node_type*>(child->mpNodeRight), copy);
+            }
+            parent = copy;
+        }
+        return root;
     }
     void DoFreeNode(node_type* node) {
         mAllocator.deallocate(node, sizeof(node_type));

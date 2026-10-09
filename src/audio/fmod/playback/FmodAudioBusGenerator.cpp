@@ -104,16 +104,16 @@ FMOD_RESULT FmodAudioBusGenerator::_DspProcess(
 
     AudioMixer* mixer = generator->mMixer;
     mixer->Lock();
-    if (!generator->mHasSamples) {
+    if (!generator->mBuffer.mHasSamples) {
         std::memset(output, 0, length * 2 * sizeof(float));
     } else {
-        const float* left = generator->mChannelData[0];
-        const float* right = generator->mChannelData[1];
+        const float* left = generator->mBuffer.mChannelData[0];
+        const float* right = generator->mBuffer.mChannelData[1];
         for (unsigned int index = 0; index < length; ++index) {
             output[index * 2] = left[index];
             output[index * 2 + 1] = right[index];
         }
-        generator->mHasSamples = false;
+        generator->mBuffer.mHasSamples = false;
     }
     mixer->Unlock();
     return FMOD_OK;
@@ -142,7 +142,7 @@ bool FmodAudioBusGenerator::Setup(
     FMOD::Studio::EventDescription* description = nullptr;
     if (args.mRoute == PlayArgs::kRouteEvent) {
         bool oneshot = false;
-        if (studio->getEvent(args.mRoutePath, &description) != FMOD_OK ||
+        if (studio->getEvent(args.mRoutePath.Str(), &description) != FMOD_OK ||
             (description->isOneshot(&oneshot), oneshot)) {
             description = nullptr;
         }
@@ -150,8 +150,8 @@ bool FmodAudioBusGenerator::Setup(
             description->createInstance(&mEventInstance);
             mEventInstance->setUserData(this);
             if (args.mParameters != nullptr) {
-                for (auto* parameter = args.mParameters->mBegin;
-                     parameter != args.mParameters->mEnd;
+                for (auto* parameter = args.mParameters->begin();
+                     parameter != args.mParameters->end();
                      ++parameter) {
                     SetParameter(parameter->mName, parameter->mValue);
                 }
@@ -165,7 +165,7 @@ bool FmodAudioBusGenerator::Setup(
 
     lowLevel->playDSP(mDSP, nullptr, true, &mChannel);
     if (args.mRoute == PlayArgs::kRouteBus) {
-        if (studio->getBus(args.mRoutePath, &mStudioBus) != FMOD_OK) {
+        if (studio->getBus(args.mRoutePath.Str(), &mStudioBus) != FMOD_OK) {
             mStudioBus = nullptr;
         } else {
             mStudioBus->getChannelGroup(&mChannelGroup);
@@ -348,11 +348,7 @@ void FmodAudioBusGenerator::Stop() {
         mState = kStateStopping;
         return;
     }
-    constexpr float kMinFadeMs = 25.0F;
-    mBlocksPerSecond = mSource != nullptr
-        ? static_cast<float>(mSource->mSampleRate) / static_cast<float>(mSource->mBlockSize)
-        : Audio::sBuffersPerSecond;
-    mGainFadeStep = kMinFadeMs == 0.0F ? 1.0F : 1000.0F / (kMinFadeMs * mBlocksPerSecond);
+    mGainRamp.SetDurationMs(kMinGainRampMs, BlocksPerSecond());
 }
 
 // Reconstructed from eboot.elf at 0x267FB0. The channel and DSP are released

@@ -2,17 +2,24 @@
 
 #include <atomic>
 #include <cstddef>
+#include <kernel.h>
 
+#include "audio/core/buffers/AudioBuffer.h"
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
 #include "os/threading/CritSec.h"
 
 // Client of an AudioMixer. Each 128-sample block is prepared on every
 // callable and then made once per mix. The map emits the class's inline
-// members in the FmodAudioBusGenerator object. The vtable is at 0x18E0A98;
-// the object is 40 bytes.
+// members in the FmodAudioBusGenerator object; this build keeps them out of
+// line at 0x47650 through 0x47730. The vtable is at 0x18E0A98; the object is
+// 40 bytes.
 class AudioBusCallable {
 public:
+    // Inlined into AudioBusGenerator's constructor at 0xE0490.
+    AudioBusCallable() {
+        mMakeGuard = 0;
+    }
     virtual ~AudioBusCallable();  // slots 0-1: 0x476C0, 0x47730
     // Slot 2.
     virtual bool _PrepareToMakeSamples(
@@ -21,7 +28,7 @@ public:
     virtual bool _MakeSamples(
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock);
     // Slot 4 at 0x47660. Name not in the reference map.
-    virtual void Unknown4();
+    virtual bool Unknown4();
 
     // Claimed by the first caller of _MakeSamples in each block. Name not in
     // the reference map.
@@ -33,41 +40,76 @@ static_assert(offsetof(AudioBusCallable, mMakeGuard) == 8);
 static_assert(offsetof(AudioBusCallable, _mCallbackNode) == 16);
 static_assert(sizeof(AudioBusCallable) == 40);
 
-// Audio source rendered by an AudioBusGenerator, such as an
-// FmodBufferedStreamGenerator. The vtable is at 0x18E5A78 and the
-// constructor at 0xBEF90; the object is 192 bytes. Its methods have not been
-// reconstructed.
-template <class T>
-class AudioBuffer;
+class AudioBus;
 
+// Object told when an AudioBus it holds is destroyed. Only the slot the bus
+// calls is declared. Name not in the reference map.
+class AudioBusOwner {
+public:
+    virtual void Unknown0();
+    virtual void Unknown1();
+    // Slot 2: called from ~AudioBus at 0xBF0A0 with the dying bus.
+    virtual void OnBusDestroyed(AudioBus* bus);
+};
+
+// Audio source rendered by an AudioBusGenerator, such as an
+// FmodBufferedStreamGenerator (audio/AudioBus.o). The vtable is at 0x18E5A78;
+// the object is 192 bytes.
 class AudioBus {
 public:
-    AudioBus();
-    virtual ~AudioBus();  // slots 0-1
-    // Slot 2 at 0xBF210.
-    virtual void Prepare(float sampleRate, unsigned int numChannels, unsigned int blockSize, bool unknown);
-    virtual void Unknown3();  // slot 3: 0xBF2B0. Name not in the reference map.
-    virtual bool Process(AudioBuffer<float>& buffer);  // slot 4
-    // Slots 5-9. The map lists these five inline members; slot 5 and slot 7
-    // are confirmed as the lock and unlock, the order of the others is
-    // inferred.
-    virtual void LockBus();     // slot 5: 0x43BA0
-    virtual bool TryLockBus();  // slot 6: 0x43BD0
-    virtual void UnlockBus();   // slot 7: 0x43C00
-    virtual CritSec* GetBusLock();  // slot 8: 0x43C20
-    virtual void TearDown();    // slot 9: 0x43C30
-    virtual void Unknown10();   // slot 10: 0x52330. Name not in the reference map.
+    AudioBus();            // 0xBEF90
+    virtual ~AudioBus();   // slots 0-1: 0xBF0A0, 0xBF1F0
+    // Slot 2 at 0xBF210. Allocates the bus buffer only when the block size
+    // is nonzero and allocate is set.
+    virtual void Prepare(float sampleRate, unsigned int numChannels, unsigned int blockSize, bool allocate);
+    // Slot 3 at 0xBF2B0. Name not in the reference map.
+    virtual void SetSampleRate(float sampleRate);
+    // Slot 4. The map defines AudioBus::Process(AudioBuffer<float>&); in this
+    // build the slot is pure.
+    virtual bool Process(AudioBuffer<float>& buffer) = 0;
+    // Slots 5-9. The map emits these five inline members in the
+    // FusionGenerator object.
+    virtual void LockBus() {  // slot 5: 0x43BA0
+        mBusLock.Enter();
+    }
+    // Slot 6 at 0x43BD0. Only a busy mutex counts as failure.
+    virtual bool TryLockBus() {
+        if (scePthreadMutexTrylock(&mBusLock.mCritSec) == SCE_KERNEL_ERROR_EBUSY) {
+            return false;
+        }
+        ++mBusLock.mEntryCount;
+        return true;
+    }
+    virtual void UnlockBus() {  // slot 7: 0x43C00
+        mBusLock.Exit();
+    }
+    virtual CritSec* GetBusLock() {  // slot 8: 0x43C20
+        return &mBusLock;
+    }
+    virtual void TearDown() {}  // slot 9: 0x43C30
+    // Slot 10 at 0x52330. Name not in the reference map.
+    virtual bool Unknown10() {
+        return false;
+    }
 
     // Field names are not in the reference map.
-    LinkedListSizeTracked::ListBase mUnknown8;
-    unsigned char mUnknown32[112];
+    AudioBuffer<float> mBuffer;
+    int mUnknown136;
+    int mUnknown140;
     int mBlockSize;      // Samples per rendered block.
+    int mNumChannels;
     double mSampleRate;
-    unsigned char mUnknown160[16];
+    double mSecondsPerSample;
+    AudioBusOwner* mOwner;
     CritSec mBusLock;
 };
 
+static_assert(offsetof(AudioBus, mBuffer) == 8);
+static_assert(offsetof(AudioBus, mUnknown136) == 136);
 static_assert(offsetof(AudioBus, mBlockSize) == 144);
+static_assert(offsetof(AudioBus, mNumChannels) == 148);
 static_assert(offsetof(AudioBus, mSampleRate) == 152);
+static_assert(offsetof(AudioBus, mSecondsPerSample) == 160);
+static_assert(offsetof(AudioBus, mOwner) == 168);
 static_assert(offsetof(AudioBus, mBusLock) == 176);
 static_assert(sizeof(AudioBus) == 192);

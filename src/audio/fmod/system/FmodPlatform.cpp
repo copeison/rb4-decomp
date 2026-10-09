@@ -465,7 +465,7 @@ void FModSystem::ExecutePremixCallbacks(unsigned long mixCount) {
             callback->ExecutePremix(mDspBufferLength, mixCount);
         }
     }
-    mMixer.Mix(0.0F, mDspBufferLength, mixCount, false);
+    mMixer.ExecutePremix(mDspBufferLength, mixCount);
 }
 
 // Reconstructed from eboot.elf at 0x278270.
@@ -633,7 +633,7 @@ void FModSystem::DeferredReleaser::ExecutePremix(int, unsigned long) {
 }
 
 // Reconstructed from eboot.elf at 0x278C40.
-void* FModSystem::GetVoicePool() {
+FusionVoicePool* FModSystem::GetVoicePool() {
     return mVoicePool;
 }
 

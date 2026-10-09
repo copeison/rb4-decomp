@@ -63,6 +63,8 @@ public:
     explicit String(const char* str);  // 0x2550C0
     // Copies the text. Its address in this build has not been located.
     String(const String& other);
+    // Takes the other string's text and leaves it the shared empty buffer.
+    String(String&& other);  // 0x255280
     ~String() override;                // slots 0-1: 0x255550, 0x255580
 
     using FixedString::operator=;

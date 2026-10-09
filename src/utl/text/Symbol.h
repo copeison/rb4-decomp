@@ -19,6 +19,12 @@ public:
     bool operator!=(const Symbol& other) const {
         return mStr != other.mStr;
     }
+    // Orders symbols by their interned addresses, as the engine's
+    // eastl::map<Symbol, ...> lookups compare them (for example
+    // AudioRenderTargetRegistry::Find at 0xC14B0).
+    bool operator<(const Symbol& other) const {
+        return mStr < other.mStr;
+    }
 
 private:
     const char* mStr;

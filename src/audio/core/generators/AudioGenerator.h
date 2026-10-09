@@ -5,38 +5,57 @@
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
+#include "utl/containers/Vector.h"
+#include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
 #include "os/threading/CritSec.h"
 
 class AudioEmitterCom;
+class AudioGenerator;
 class AudioGeneratorManager;
 class AudioRenderTarget;
 class TextStream;
 class Transform;
 
 // Playback request shared by every generator manager. Only the fields read
-// by the FMOD generators are named; the inlined builder in
-// AudioGeneratorManager::Play(Symbol, AudioEmitterCom*, bool) at 0x40570
-// sets the defaults. Field names are not in the reference map.
+// by the FMOD generators are named. The constructor and destructor are
+// inlined into each builder, for example
+// AudioGeneratorManager::Play(Symbol, AudioEmitterCom*, bool) at 0x40570.
+// Field names are not in the reference map.
 struct PlayArgs {
     struct ParameterValue {
         Symbol mName;
         float mValue;
     };
 
-    // EASTL vector view: begin, end, capacity and allocator.
-    struct ParameterList {
-        ParameterValue* mBegin;
-        ParameterValue* mEnd;
-        ParameterValue* mCapacity;
-        void* mAllocator;
-    };
+    using ParameterList = eastl::vector<ParameterValue>;
 
     enum Route : int {
         kRouteDefault = 0,
         kRouteEvent = 1,
         kRouteBus = 2,
     };
+
+    PlayArgs()
+        : mEmitter(nullptr),
+          mStartPaused(false),
+          mStartMuted(false),
+          mHasInitialGain(false),
+          mInitialGainDb(0.0F),
+          mInitialGainFadeSecs(1.0F),
+          mInitialGainPostFade(0),
+          mRoute(kRouteDefault),
+          mSpread(180.0F),
+          mParameters(nullptr),
+          mFormat(0),
+          mOwnsParameters(false) {}
+    ~PlayArgs() {
+        if (mOwnsParameters) {
+            delete mParameters;
+            mParameters = nullptr;
+            mOwnsParameters = false;
+        }
+    }
 
     Symbol mName;
     AudioEmitterCom* mEmitter;
@@ -49,20 +68,16 @@ struct PlayArgs {
     int mInitialGainPostFade;
     int mUnknown36;
     int mRoute;
-    const char* mRoutePath;
+    Symbol mRoutePath;
     float mSpread;
     Symbol mRenderTarget;
     Symbol mUnknown72;
     Symbol mUnknown80;
     ParameterList* mParameters;
+    // 4 marks a DialogPlayArgs.
     int mFormat;
     bool mOwnsParameters;
     bool mStreaming;
-    unsigned char mUnknown102[10];
-    // Optional std::function dialog sink and its context, copied by
-    // DialogGenerator::Setup at 0x1127330.
-    unsigned char mDialogSink[48];
-    void* mDialogContext;
 };
 
 static_assert(offsetof(PlayArgs, mStartPaused) == 16);
@@ -76,17 +91,20 @@ static_assert(offsetof(PlayArgs, mRenderTarget) == 64);
 static_assert(offsetof(PlayArgs, mParameters) == 88);
 static_assert(offsetof(PlayArgs, mFormat) == 96);
 static_assert(offsetof(PlayArgs, mStreaming) == 101);
-static_assert(offsetof(PlayArgs, mDialogSink) == 112);
-static_assert(offsetof(PlayArgs, mDialogContext) == 160);
+static_assert(sizeof(PlayArgs) == 104);
 
 // Scene component that owns sounds. Only the virtual slots called by the
 // audio generators are declared; the earlier slots are placeholders so the
 // calls use the recovered vtable offsets. Names not in the reference map.
 class AudioEmitterCom {
 public:
-    virtual void Unknown0();
+    // Slot 0: a generator the emitter is playing. RecordingAudioRenderTarget
+    // kills it through AudioGenerator::KillLocked.
+    virtual AudioGenerator* Unknown0();
+    // Slot 1: told when an HMX DSP plugin binds to one of its generators.
     virtual void Unknown1();
-    virtual void Unknown2();
+    // Slot 2: queried through AudioGenerator at 0x407E0.
+    virtual bool Unknown2();
     virtual void Unknown3();
     virtual void Unknown4();
     virtual void Unknown5();
@@ -115,7 +133,14 @@ public:
     virtual void Unknown24();
     // Slot 25: whether the emitter is positional.
     virtual bool Is3D();
+    // Slot 26: RecordingAudioRenderTarget sets it on the emitter it creates.
+    virtual void Unknown26(bool enable);
 };
+
+// The class symbol of the emitter component, at 0x19C7770. The component's
+// registration at 0x32110 names the class "AudioEmitterCom"; the interface
+// above sits at +0x228 in it. Name not in the reference map.
+extern Symbol gAudioEmitterComClass;
 
 // Linear gain ramp advanced by each generator's Poll. Its members are
 // inlined at every use, for example in FmodAudioStreamGenerator::SetGain at
@@ -240,17 +265,15 @@ static_assert(sizeof(GeneratorTimer) == 24);
 // bytes.
 class AudioGenerator {
 public:
-    // Inlined into every pool constructor, for example at 0x26A690.
+    // Inlined into every pool constructor, for example at 0x26A690 and
+    // AudioBusGenerator's at 0xE0490.
     AudioGenerator()
-        : mUnknown8(""),
-          mManager(nullptr),
+        : mManager(nullptr),
           mIndex(0),
           mState(kStateStopped),
           mRefCount(0),
           mHandle(0xFFFFFFFF),
-          mEmitter(nullptr) {
-        mPoolNode.InitUnlinked();
-    }
+          mEmitter(nullptr) {}
 
     // Playback state at +28. Names not in the reference map.
     enum State : int {
@@ -285,8 +308,8 @@ public:
     // immediate flag as well.
     virtual void SetMute(bool mute, bool immediate);
     virtual bool GetMute() const;                     // slot 15: 0xE470
-    virtual bool Unknown16();                         // slot 16: 0xE480. Name not in the reference map.
-    virtual bool Unknown17();                         // slot 17: 0xE490. Name not in the reference map.
+    virtual bool IsMusic();                           // slot 16: 0xE480
+    virtual bool IsInstrument();                      // slot 17: 0xE490
     virtual bool IsDialog();                          // slot 18: 0xE4A0. Name not in the reference map.
     virtual void Init(AudioGeneratorManager* manager, int index);  // slot 19: 0xE4B0
     virtual ~AudioGenerator();                        // slots 20-21: 0xE4E0, 0xE550
@@ -307,9 +330,15 @@ public:
     // Calls Kill under the global generator lock. At 0x406D0. Name not in
     // the reference map.
     void KillLocked();
+    // Clears the active handle bit when no caller holds the generator, so
+    // the pool can release it. At 0x40770. Name not in the reference map.
+    bool TryDeactivateHandle();
     // Tells the emitter that an HMX DSP plugin bound to this generator. At
     // 0x407C0. Name not in the reference map.
     void NotifyPluginAttached();
+    // Forwards slot 2 of the emitter; false without one. At 0x407E0, with no
+    // callers in this build. Name not in the reference map.
+    bool QueryEmitter();
 
     // Field names are not in the reference map.
     Symbol mUnknown8;
@@ -335,7 +364,8 @@ static_assert(sizeof(AudioGenerator) == 80);
 // Handle bits shared by every generator pool. Names not in the reference map.
 constexpr unsigned int kGeneratorHandleActive = 0x80000000;
 
-// Owner of one fixed generator pool. The vtable is at 0x18DFF18.
+// Owner of one fixed generator pool (audio/AudioGenerator.o). The vtable is
+// at 0x18DFF18.
 class AudioGeneratorManager {
 public:
     using GeneratorList =
@@ -346,7 +376,7 @@ public:
     virtual AudioGenerator* Prepare(Symbol name, AudioEmitterCom* emitter);  // slot 2: 0x406C0
     virtual void Init();                              // slot 3: 0x40500
     virtual bool Destroy();                           // slot 4: 0x40540
-    virtual void Unknown5();                          // slot 5: 0xDD20. Name not in the reference map.
+    virtual void Poll() {}                            // slot 5: 0xDD20
     virtual int GetIndex() = 0;                       // slot 6
     virtual Symbol GetId() = 0;                       // slot 7
     virtual Symbol GetResourceExt() = 0;              // slot 8
@@ -358,7 +388,8 @@ public:
     virtual void _SetManagerIndex(int index) = 0;     // slot 13
     virtual void _InitGeneratorPool() = 0;            // slot 14
     virtual bool _DeleteGeneratorPool() = 0;          // slot 15
-    virtual ~AudioGeneratorManager();                 // slots 16-17: 0x40AC0, 0x40AD0
+    // Slots 16-17: 0x40AC0, which jumps to the body at 0xE780, and 0x40AD0.
+    virtual ~AudioGeneratorManager();
 
     // Field names are not in the reference map. Each concrete manager stores
     // its typed pool array at +64.
@@ -377,11 +408,51 @@ static_assert(sizeof(AudioGeneratorManager) == 64);
 // Locked by AudioGenerator::KillLocked. Name not in the reference map.
 extern CritSec gGeneratorKillCritSec;  // 0x19C8488
 
+// One FMOD Studio event parameter as the platform reports it. Names not in
+// the reference map.
+struct EventParameterInfo {
+    Symbol mName;
+    float mMinimum;
+    float mMaximum;
+    float mDefault;
+};
+
+static_assert(sizeof(EventParameterInfo) == 24);
+
+// Event parameter queries forwarded to the FMOD platform object; each
+// returns zero without one. Names not in the reference map.
+bool GetEventParameterDefault(const char* event, const char* parameter, float* value);  // 0x40800
+int GetEventParameterCount(const char* event);  // 0x40830
+bool GetEventParameterByIndex(const char* event, int index, EventParameterInfo* info);  // 0x40860
+bool GetEventParameter(const char* event, const char* parameter, EventParameterInfo* info);  // 0x40890
+
+// One value of an enumerated property with its label and help text. Names
+// not in the reference map.
+struct EnumValueDesc {
+    int mValue;
+    String mName;
+    String mDescription;
+};
+
+static_assert(sizeof(EnumValueDesc) == 40);
+
+// The PlayArgs::Route values with their descriptions, for the property
+// editors that construct the descriptor at 0x2ADB0 and 0x2FF50. At 0x408C0.
+// Name not in the reference map.
+eastl::vector<EnumValueDesc> GetPlayArgsRouteValues();
+
 // The sound manager's default 2D emitter, used when a request names none.
 // At 0x5C20; the map has SoundManager::GetDefault2DEmitter() const.
 class SoundManager {
 public:
     AudioEmitterCom* GetDefault2DEmitter() const;
+    // Adds a generator manager and returns its index. The map has
+    // _RegisterGeneratorManager(AudioGeneratorManager*, Symbol); this build
+    // passes the manager's resource extension.
+    int _RegisterGeneratorManager(AudioGeneratorManager* manager, Symbol ext);  // 0x7820
+    // The generator with the handle, retained, or null when the handle is
+    // stale.
+    AudioGenerator* LockIfOwned(unsigned int handle);  // 0x5FB0
     // Updates the FMOD systems, emitters and registered sounds once per frame.
     void Poll();  // 0x7560
     // Prints the FMOD state and each generator manager's pool usage. The

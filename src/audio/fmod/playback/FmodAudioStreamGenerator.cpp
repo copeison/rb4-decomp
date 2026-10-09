@@ -97,7 +97,7 @@ bool FmodAudioStreamGenerator::Setup(
     mState = kStateReady;
     if (args.mRoute == PlayArgs::kRouteBus) {
         auto* system = static_cast<FModSystem*>(mRenderTarget);
-        if (system->mStudioSystem->getBus(args.mRoutePath, &mStudioBus) != FMOD_OK) {
+        if (system->mStudioSystem->getBus(args.mRoutePath.Str(), &mStudioBus) != FMOD_OK) {
             mStudioBus = nullptr;
         } else {
             _CheckBusLoaded(mStudioBus);

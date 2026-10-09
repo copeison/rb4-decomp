@@ -109,7 +109,7 @@ bool Delete(AudioGeneratorManager& manager, Generator* pool) {
 template <class Generator>
 Generator* Allocate(
     AudioGeneratorManager& manager, AudioRenderTarget* target, AudioEmitterCom* emitter) {
-    AudioRenderTarget* boundTarget = gDefaultAudioRenderTarget;
+    AudioRenderTarget* boundTarget = gAudioRenderTargets.mDefault;
     ScopedCritSecPtr tracker(&manager.mCritSec);
     if (manager.mFreeList.mSize == 0) {
         return nullptr;
