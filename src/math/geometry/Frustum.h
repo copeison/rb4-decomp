@@ -19,7 +19,32 @@ public:
         int mCorner1;
     };
 
+    // Half-angles of a perspective frustum's sides, in radians. The camera
+    // context builds them as a vertical and a horizontal pair. Name and
+    // field names not in the reference map.
+    struct Fov {
+        float mUp;
+        float mDown;
+        float mLeft;
+        float mRight;
+    };
+
     Frustum() { mPlanes.resize(6); }
+
+    // The planes face inward in camera space, with y forward and z up:
+    // near, far, left, right, top and bottom. Each setter rebuilds the hull.
+    // The map has SetPerspective(float, float, float, float); this build
+    // takes the side angles.
+    void SetPerspective(float nearPlane, float farPlane, const Fov& fov);  // 0x1172F10
+    // The height spans the top and bottom planes; the aspect ratio scales
+    // it to the width.
+    void SetOrtho(float nearPlane, float farPlane, float height, float aspect);  // 0x1173280
+    // Takes the eight corners in _DoUpdateHull's order and derives the
+    // planes.
+    void SetCorners(const Vector3* corners);  // 0x1173340
+    // Intersects the planes into the eight corners and, the first time,
+    // fills the twelve edges.
+    void _DoUpdateHull();  // 0x11730B0
 
     FixedVector<Vector3, 8> mCorners;
     FixedVector<Edge, 12> mEdges;

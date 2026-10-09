@@ -83,7 +83,7 @@ PS4ParticleBuffer::~PS4ParticleBuffer() {
 
 void PS4ParticleBuffer::_UpdateBuffer(RndContext& context) {
     mActiveBank = (mActiveBank & 1U) == 0 ? 1 : 0;
-    _FillVertexBuffer(context, mVertexStorage[mActiveBank]);
+    _FillVertexBuffer(context, context.mCameras[0], mVertexStorage[mActiveBank]);
 }
 
 // Reconstructed from eboot.elf at 0x8E2E10. The particles carry their own

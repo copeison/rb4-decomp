@@ -5,6 +5,7 @@
 
 #include "math/color/Color.h"
 #include "math/vector/Vector2.h"
+#include "render/buffers/RndParticleBuffer.h"
 #include "render/context/RndCameraContext.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "utl/containers/FixedVector.h"
@@ -56,12 +57,6 @@ struct RndGpuStatSample {
 };
 
 static_assert(sizeof(RndGpuStatSample) == 56);
-
-// Sixteen-byte record reserved 2000 at a time by the constructor. Name not in
-// the reference map.
-struct RndContextRecord16 {
-    unsigned char mBytes[16];
-};
 
 // Open GPU statistic scope. Name not in the reference map.
 struct RndGpuStatScope {
@@ -217,6 +212,9 @@ public:
     // Writes the clip planes in the mask to the clip-plane buffer and
     // selects it, or the device's default when no plane is enabled.
     void _SyncClipPlanes(unsigned int mask);  // 0x6BC590
+    // Grows the particle sort list to hold 2000 records; the count is not
+    // read. Not reconstructed. Name not in the reference map.
+    void _ReserveParticleSorts(unsigned long numParticles);  // 0x6BC070
 
     // Statistic scopes opened on this context. Names not in the reference
     // map.
@@ -258,7 +256,8 @@ public:
     // 0 records on the graphics context, 1 on a compute context.
     int mActivePipe;
     unsigned long mActiveComputeSlot;
-    eastl::vector<RndContextRecord16> mUnknown18992;
+    // The particle draw order, filled by RndParticleBuffer::_FillVertexBuffer.
+    eastl::vector<RndParticleBuffer::ParticleIndexDepth> mParticleSorts;
     // Global constant buffers created by Init; the last three are the
     // per-draw buffers of 16, 32, and 64 elements.
     RndShaderCBuffer* mCBuffers[9];
@@ -286,7 +285,7 @@ static_assert(offsetof(RndContext, mClipPlanes) == 18888);
 static_assert(offsetof(RndContext, mShadingMode) == 0x4A18);
 static_assert(offsetof(RndContext, mActivePipe) == 0x4A24);
 static_assert(offsetof(RndContext, mActiveComputeSlot) == 0x4A28);
-static_assert(offsetof(RndContext, mUnknown18992) == 18992);
+static_assert(offsetof(RndContext, mParticleSorts) == 18992);
 static_assert(offsetof(RndContext, mCBuffers) == 0x4A50);
 static_assert(offsetof(RndContext, mUnknown19096) == 19096);
 static_assert(offsetof(RndContext, mUnknown22264) == 0x56F8);

@@ -10,6 +10,9 @@ public:
     // the binary stores infinity or the sign and then overwrites it with the
     // truncated bits.
     void Set(float value);  // 0x1179780
+    // Exact: denormals are normalized, and infinity and NaN keep their
+    // payload.
+    float ToFloat() const;  // 0x1179810
 
     std::uint16_t mValue;  // Name not in the reference map.
 };

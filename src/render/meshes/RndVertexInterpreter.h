@@ -71,7 +71,16 @@ public:
     class _AttributeValueHelper {
     public:
         static void Set(const AttributeInfo& info, const T& value, void* data);
+        static T Get(const AttributeInfo& info, const void* data);
     };
+
+    // Reconstructed from eboot.elf at 0x447880, the out-of-line Vector3
+    // copy. Reads an attribute of a vertex. Name not in the reference map.
+    template <typename T>
+    T GetAttribute(int attribute, const void* vertex) const {
+        const AttributeInfo& info = mAttributes[attribute];
+        return _AttributeValueHelper<T>::Get(info, static_cast<const char*>(vertex) + info.mOffset);
+    }
 
     // Returns null for an unknown type.
     static const RndVertexInterpreter* GetInstance(RndVertexType type);  // 0x4430C0, 0x4435E0
@@ -115,6 +124,11 @@ public:
         const int rounded = _RoundToInt(value * 65535.0F);
         const int clamped = rounded > 0xFFFF ? 0xFFFF : (rounded > 0 ? rounded : 0);
         return static_cast<std::uint16_t>(clamped);
+    }
+    // The most negative value reads as -1, like the one above it. Name not
+    // in the reference map.
+    static float _FromSNorm16(std::int16_t value) {
+        return value == -32768 ? -1.0F : static_cast<float>(value) * (1.0F / 32767.0F);
     }
 
     // Field names are not in the reference map.
@@ -176,6 +190,30 @@ inline void RndVertexInterpreter::_AttributeValueHelper<Vector3>::Set(
     }
     default:
         break;
+    }
+}
+
+// Inlined into GetAttribute<Vector3> at 0x447880. Other storage types read
+// as zero.
+template <>
+inline Vector3 RndVertexInterpreter::_AttributeValueHelper<Vector3>::Get(
+    const AttributeInfo& info,
+    const void* data) {
+    switch (info.mType) {
+    case kVertexDataSNorm16: {
+        const auto* shorts = static_cast<const std::int16_t*>(data);
+        return {_FromSNorm16(shorts[0]), _FromSNorm16(shorts[1]), _FromSNorm16(shorts[2])};
+    }
+    case kVertexDataFloat16: {
+        const auto* halves = static_cast<const Half*>(data);
+        return {halves[0].ToFloat(), halves[1].ToFloat(), halves[2].ToFloat()};
+    }
+    case kVertexDataFloat32: {
+        const auto* floats = static_cast<const float*>(data);
+        return {floats[0], floats[1], floats[2]};
+    }
+    default:
+        return {0.0F, 0.0F, 0.0F};
     }
 }
 

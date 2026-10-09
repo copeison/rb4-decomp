@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "math/color/Color.h"
+#include "math/geometry/Geo.h"
 #include "math/scalar/Trig.h"
 #include "math/transform/Transform.h"
 #include "math/vector/Vector2.h"
@@ -113,6 +114,25 @@ void SetFace(RndMesh::Face& face, unsigned int a, unsigned int b, unsigned int c
 }
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0x5D86E0. The binary calls the mesh's
+// vertex accessors through the vtable on the const mesh.
+Sphere RndMeshUtl::ComputeBoundingSphere(const RndMesh& mesh, const Transform& xfm) {
+    auto& vertices = const_cast<RndMesh&>(mesh);
+    const RndVertexInterpreter* interp =
+        RndVertexInterpreter::GetInstance(vertices._GetVertexTypeImpl());
+    BoundingHull hull;
+    const unsigned long numVertices = vertices._GetNumVerticesImpl();
+    for (unsigned long i = 0; i < numVertices; ++i) {
+        Vector3 position = interp->GetAttribute<Vector3>(
+            RndVertexInterpreter::kPositionAttribute, vertices._GetVertexVoidImpl(i));
+        Multiply(position, xfm, position);
+        hull.GrowToContain(&position, 1);
+    }
+    Sphere sphere = {};
+    hull.GenerateSphere(sphere);
+    return sphere;
+}
 
 // Reconstructed from eboot.elf at 0x5DB660.
 RndMesh* RndMeshUtl::_CreateMeshPrelude(

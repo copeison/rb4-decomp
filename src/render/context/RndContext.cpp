@@ -46,8 +46,16 @@ RndContext::RndContext(bool disableComputeQueues)
     // The constructor also copies two 16-byte constants into +0x49E0..+0x4A18;
     // their values have not been recovered.
     std::memset(mUnknown19096, 0xFF, sizeof(mUnknown19096));
-    if (mUnknown18992.capacity() < kReservedRecords) {
-        mUnknown18992.reserve(kReservedRecords);
+    if (mParticleSorts.capacity() < kReservedRecords) {
+        mParticleSorts.reserve(kReservedRecords);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BC070. The constructor inlines the same
+// check.
+void RndContext::_ReserveParticleSorts(unsigned long) {
+    if (mParticleSorts.capacity() < kReservedRecords) {
+        mParticleSorts.reserve(kReservedRecords);
     }
 }
 

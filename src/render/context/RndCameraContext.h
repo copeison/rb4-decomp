@@ -4,6 +4,7 @@
 
 #include "math/geometry/Frustum.h"
 #include "math/geometry/Rect.h"
+#include "math/geometry/Segment.h"
 #include "math/matrix/Matrix3.h"
 #include "math/matrix/Matrix4.h"
 #include "math/transform/Transform.h"
@@ -15,10 +16,7 @@
 class GameObject;
 class ObjPtr;
 class RndShaderCBuffer;
-class Segment;
 class Sphere;
-
-struct Rnd2DCoord;
 
 enum RndTextureCubeFace : int;
 
@@ -31,6 +29,18 @@ enum RndTargetMode : int {
     kTargetModeCube = 2,      // Cube textures.
     kTargetModeLeftEye = 3,   // One eye of a stereo pair.
     kTargetModeRightEye = 4,
+    // 5 to 10 draw one face of a cube, face (mode - 5).
+    kTargetModeCubeFace = 5,
+};
+
+// The 2D coordinate systems that Project and Unproject convert between.
+// Enumerator names are not in the reference map.
+enum Rnd2DCoord : int {
+    k2DCoordPixels = 0,      // Viewport pixels.
+    k2DCoordNormalized = 1,  // Zero to one across the viewport.
+    // Viewport heights, with the square of the viewport's height centered.
+    k2DCoordHeightNormalized = 2,
+    k2DCoordNDC = 3,  // Minus one to one.
 };
 
 // Render-target slices of a target mode: one for none and 2D, two for
@@ -49,15 +59,34 @@ inline unsigned long RndTargetModeSlices(RndTargetMode mode) {
 // camera component, whose +8 is the owning object that _CalcWorldXfms asks
 // for its transform. Name and field names not in the reference map.
 struct RndCameraSettings {
-    unsigned char mUnknown0[24];
+    // A stereo eye's view: its world transform and its side angles.
+    struct Eye {
+        Transform mXfm;
+        Frustum::Fov mFov;
+    };
+
+    unsigned char mUnknown0[8];
+    GameObject* mOwner;
+    unsigned char mUnknown16[8];
     float mNearPlane;
     float mFarPlane;
     bool mOrthographic;
+    float mYFov;          // Full vertical angle, in radians.
+    float mOrthoHeight;   // Height of the orthographic view volume.
+    // The stereo modes take each eye's transform and angles from mEyes.
+    bool mUseEyes;
+    Eye mEyes[2];  // Left, then right.
 };
 
+static_assert(sizeof(RndCameraSettings::Eye) == 64);
+static_assert(offsetof(RndCameraSettings, mOwner) == 8);
 static_assert(offsetof(RndCameraSettings, mNearPlane) == 24);
 static_assert(offsetof(RndCameraSettings, mFarPlane) == 28);
 static_assert(offsetof(RndCameraSettings, mOrthographic) == 32);
+static_assert(offsetof(RndCameraSettings, mYFov) == 36);
+static_assert(offsetof(RndCameraSettings, mOrthoHeight) == 40);
+static_assert(offsetof(RndCameraSettings, mUseEyes) == 44);
+static_assert(offsetof(RndCameraSettings, mEyes) == 48);
 
 // Camera and projection state for one render target: the camera, the target
 // it draws into, the transforms and frusta derived from both, and the
@@ -113,14 +142,16 @@ public:
     // The mask is stored as is; the three distances end the LOD bands.
     void SetLodSettings(unsigned int lodMask, const float* distances);  // 0x3D89E0
 
-    // Not reconstructed yet.
+    // Projects a world point through the whole target's view-projection,
+    // and stores its depth, z over w, when depth is not null. A point with
+    // a zero w projects to the origin with zero depth.
     Vector2 Project(const Vector3& point, Rnd2DCoord coord, float* depth) const;  // 0x3D9190
-    // Not reconstructed yet.
+    // The world point at the given view-space depth under the 2D point.
     Vector3 Unproject(const Vector2& point, float depth, Rnd2DCoord coord) const;  // 0x3D9350
-    // Unprojects the point at the camera's near and far planes. Not
-    // reconstructed yet. Name not in the reference map.
+    // Unprojects the point at the camera's near and far planes. Name not in
+    // the reference map.
     Segment UnprojectSegment(const Vector2& point, Rnd2DCoord coord) const;  // 0x3D94D0
-    // Not reconstructed yet.
+    // The sphere's projected diameter, in the coordinate system's units.
     float CalcProjectedHeight(const Sphere& sphere, Rnd2DCoord coord) const;  // 0x3D9560
 
     // Writes each slice's view-projection matrix.
@@ -143,29 +174,40 @@ public:
     // Keeps one view per slice of the target and rederives everything from
     // the camera, or marks the context invalid without a camera or target.
     void _SyncDerived();  // 0x3D87E0
-    // Rebuilds the LOD frusta. Shares its body with SetLodSettings at
-    // 0x3D8A20; not reconstructed yet.
+    // Rebuilds the frusta of the LOD bands the camera's range reaches.
+    // SetLodSettings (0x3D89E0) carries a copy that _SyncDerived jumps into
+    // at 0x3D8A20; the binary has no separate entry point.
     void _SyncLodData();
-    // Not reconstructed yet.
+    // Takes each slice's camera-to-world transform from the camera's
+    // transform component, the stereo eyes or the cube faces, and derives
+    // the inverse and the rotation's transpose.
     void _CalcWorldXfms();  // 0x3D9DF0
     void _CalcViewXfms();   // 0x3DA8D0
-    // Not reconstructed yet.
+    // Builds each view's projection from the projection rectangle and the
+    // camera, then its view-projection and inverse.
     void _CalcProjectionMatrices();  // 0x3DAA40
-    // Not reconstructed yet.
+    // Builds the view frusta of the whole target and of each slice, and the
+    // combined world frustum.
     void _CalcPrimaryFrusta();  // 0x3DB020
-    // Not located in this build; _CalcWorldXfms inlines it.
-    void _CalcCubeFaceWorldXfm(const Transform& xfm, RndTextureCubeFace face);
-    // Not reconstructed yet. This build's copy at 0x3DBFD0 also takes four
-    // scratch frustum sets from its callers.
+    // Inlined into _CalcWorldXfms. Rotates the transform to face one side
+    // of the cube. The map gives no return type.
+    Transform _CalcCubeFaceWorldXfm(const Transform& xfm, RndTextureCubeFace face);
+    // Sets the view frustum between the two depths, each slice's view
+    // frustum, their world frusta, and the frustum that bounds every slice.
+    // The map has _CalcFrusta(float, float, Frustum&, Frustum*, Frustum&)
+    // const; this build also takes the world frustum and the slices' world
+    // frusta.
     void _CalcFrusta(
         float nearPlane,
         float farPlane,
         Frustum& viewFrustum,
-        Frustum* sliceFrusta,
-        Frustum& worldFrustum) const;
-    // Not located in this build; inlined.
+        Frustum& worldFrustum,
+        Frustum* sliceViewFrusta,
+        Frustum* sliceWorldFrusta,
+        Frustum& combinedFrustum) const;  // 0x3DBFD0
+    // Inlined into its callers.
     float _CalcAspectRatio() const;
-    // Not located in this build; inlined.
+    // Inlined into its callers.
     float _GetPerspectiveYFov() const;
 
     // The camera's projection settings. Name not in the reference map.

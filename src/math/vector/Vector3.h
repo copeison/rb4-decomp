@@ -8,6 +8,8 @@ public:
     float y;
     float z;
 
+    static Vector3 sZero;  // 0x19E76F0
+
     // The unit axes.
     static Vector3 sX;  // 0x19B0340
     static Vector3 sY;  // 0x19B034C

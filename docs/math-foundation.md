@@ -12,6 +12,15 @@ The math module (`src/math`) follows the map's `math/` object files.
 | `Transform.o` | `Multiply` (`0x2187E0`), `Transform::sID` and `sZero` |
 | `Vector2.o`, `Vector3.o`, `Vector4.o` | the zero and axis constants |
 
+## Geometry
+
+- **`Frustum`** (`SetPerspective`, `SetOrtho`, `SetCorners` and
+  `_DoUpdateHull`) keeps corners, edges and planes.
+- **Planes** can be transformed and intersected.
+- **`BoundingHull`** (`math/Geo.o`) grows a 27-direction hull around points
+  and turns it into an optimized bounding sphere. `RndMeshUtl::ComputeBoundingSphere`
+  uses it.
+
 ## Details
 
 - **`Sine`** interpolates a 256-entry table of value and slope pairs at

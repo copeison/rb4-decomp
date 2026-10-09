@@ -4,7 +4,7 @@
 
 class RndContext;
 class RndShader;
-struct Rnd2DCoord;
+enum Rnd2DCoord : int;
 
 namespace Hmx {
 class Rect;

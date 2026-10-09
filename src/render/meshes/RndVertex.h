@@ -59,6 +59,16 @@ struct RndVertexPosOnly {
     float mPos[3] = {};
 };
 
+// Written by RndParticleBuffer::_FillVertexBuffer. Name not in the
+// reference map.
+struct RndVertexParticle {
+    static constexpr RndVertexType kType = kVertexParticle;
+    float mPos[3] = {};
+    float mColor[4] = {0.0F, 0.0F, 0.0F, 1.0F};
+    float mTex[2] = {};
+    float mParticleData[4] = {};
+};
+
 struct RndVertexUnskinnedCompressed {
     static constexpr RndVertexType kType = kVertexUnskinnedCompressed;
     float mPos[3] = {};
@@ -90,6 +100,7 @@ static_assert(sizeof(RndVertexSkinned) == 100);
 static_assert(sizeof(RndVertexUnskinnedCompressed) == 52);
 static_assert(sizeof(RndVertexSkinnedCompressed) == 64);
 static_assert(sizeof(RndVertexPosOnly) == 12);
+static_assert(sizeof(RndVertexParticle) == 52);
 
 // Reconstructed from eboot.elf at 0x442930. Name not in the reference map.
 RndVertexType VertexTypeFromName(const char* name);

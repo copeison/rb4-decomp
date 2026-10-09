@@ -176,8 +176,9 @@ static_assert(sizeof(CreateTruncatedRoundedConeParams) == 128);
 extern eastl::vector<ContourVertex> gTmpContour;  // 0x1AA6A58
 extern eastl::vector<float> gTmpUVIntervals;      // 0x1AA6A78
 
-// Not reconstructed yet. The map has ComputeBoundingSphere(RndMesh&); this
-// build takes a transform for the positions and returns the sphere.
+// Bounds the transformed vertex positions with a BoundingHull and returns
+// its sphere. The map has ComputeBoundingSphere(RndMesh&); this build takes
+// a transform for the positions and returns the sphere.
 Sphere ComputeBoundingSphere(const RndMesh& mesh, const Transform& xfm);  // 0x5D86E0
 
 // The binary keeps out-of-line copies of these two; the builders inline them.

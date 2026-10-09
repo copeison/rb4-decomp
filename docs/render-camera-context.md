@@ -63,13 +63,24 @@ Recovering the camera also settled several `RndContext` fields:
 | `+120`, `+128`, `+136` | the viewport origin, size and depth range |
 | `+18776` | the camera override |
 
-## Not yet reconstructed
+## Projection and frusta
 
-These are declared but not reconstructed:
-- `Project`, `Unproject` and `CalcProjectedHeight`;
-- `_CalcWorldXfms`, `_CalcProjectionMatrices`, `_CalcPrimaryFrusta` and
-  `_CalcFrusta`.
+These are reconstructed:
+- `_CalcWorldXfms` reads the camera's world transform from its `TransCom`.
+- `_CalcProjectionMatrices` builds perspective or orthographic projections,
+  with per-eye fields of view in the stereo modes.
+- `_CalcPrimaryFrusta` and `_CalcFrusta` derive the view and world frusta of
+  each slice and their union.
+- `Project`, `Unproject`, `UnprojectSegment` and `CalcProjectedHeight`
+  convert between world space and the four `Rnd2DCoord` spaces: pixels,
+  normalized, height-normalized and NDC.
 
-The camera object is treated through `GameObject const*`, as in the map. The
+Target modes 5 to 10 render one cube face each.
+
+The binary was built with fast math: it uses reciprocal approximations and
+reassociated sums. The source follows its order of operations where it can be
+read, but cannot match its rounding exactly.
+
+The camera object is still typed as `GameObject const*`, as in the map. The
 binary reads near, far and an orthographic flag from it, so its real type is
 probably a camera component.
