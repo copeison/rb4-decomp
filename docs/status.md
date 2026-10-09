@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the render windows to `RndWindow`, `RndBufferedWindow`, and
+  `PS4Window` with their seven-slot vtables (see
+  [render-window.md](render-window.md)).
 - [x] Convert the render device to `RndDevice` and `PS4Device` with all 17
   virtual slots, a fully asserted layout, `Rnd::PlatformCreateDevice`,
   `CritSec`, `ScopedCritSec`, and `Condition`; recover the deferred-context,

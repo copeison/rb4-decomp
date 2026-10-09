@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "render/core/frame/render_frame_owner.h"
+#include "render/core/frame/render_extent.h"
 #include "render/core/platform/render_platform.h"
 
 namespace rb4 {

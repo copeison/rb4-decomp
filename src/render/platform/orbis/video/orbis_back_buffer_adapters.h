@@ -6,10 +6,10 @@
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
 class PS4Texture2D;
+class PS4Window;
 
 namespace rb4 {
 
-void orbis_back_buffer_install_vtable(OrbisBackBuffer& back_buffer);
 OrbisBackBufferSpecification orbis_back_buffer_specification(
     const PS4Device& system,
     OrbisBackBufferDataFormat data_format);
@@ -31,7 +31,7 @@ PS4Texture2D* orbis_wrap_back_buffer_textures(
     OrbisGpuRenderTarget* targets,
     std::size_t target_count);
 void orbis_back_buffer_attach_texture(
-    OrbisBackBuffer& back_buffer,
+    PS4Window& window,
     PS4Texture2D& texture);
 void orbis_video_output_register_back_buffers(
     PS4Device& system,

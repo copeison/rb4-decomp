@@ -44,7 +44,7 @@ public:
     // Waits for the GPU and frees retired allocations before the frame.
     void _BeginFrameImpl(bool offscreen) override;         // slot 6 at 0x8D8100
     void _EndFrameImpl(
-        FixedVector<rb4::RenderFrameOwner*, 6>& windows,
+        FixedVector<RndWindow*, 6>& windows,
         bool offscreen) override;                          // slot 7 at 0x8D8300
     int _GetGpuBlockingBehaviorImpl() const override;      // slot 13 at 0x8D8590
     int _UnknownSlot14Impl() override;                     // slot 14 at 0x8D83E0

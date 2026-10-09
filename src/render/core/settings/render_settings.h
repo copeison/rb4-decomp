@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/frame/render_frame_owner.h"
+#include "render/core/frame/render_extent.h"
 #include "render/core/capture/screenshot_capture.h"
 
 namespace rb4 {

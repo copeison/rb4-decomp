@@ -61,7 +61,7 @@ in the base class's tail padding. Each field is checked by `static_assert`.
 | 64, 68 | pending begin-frame flag and flags |
 | 72 | deferred contexts (`eastl::vector<RndContext*>`) |
 | 104 | HDR output mode |
-| 112, 120 | main window and current window |
+| 112, 120 | main window and current window (`RndWindow`, see [render-window.md](render-window.md)) |
 | 128 | current target states (`eastl::vector`) |
 | 160, 168 | frame count and offscreen frame count |
 | 176, 177 | in-frame and terminating flags |

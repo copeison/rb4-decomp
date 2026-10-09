@@ -18,11 +18,11 @@ std::uint32_t g_screenshot_draw_mode = 0;
 std::uint32_t g_screenshot_debug_view = 0;
 
 RenderExtent extent_for_resolution(
-    const RenderFrameOwner& owner,
+    const RndWindow& owner,
     ScreenshotResolution resolution) {
     switch (resolution) {
     case ScreenshotResolution::kCurrent:
-        return render_frame_owner_output_extent(owner);
+        return owner.GetSize();
     case ScreenshotResolution::k720p:
         return {1280, 720};
     case ScreenshotResolution::k1080p:
@@ -74,7 +74,7 @@ const char* screenshot_resolution_name(ScreenshotResolution resolution) {
 
 // Reconstructed from eboot.elf at 0x43B140 and 0x43B240.
 void screenshot_capture_frame(
-    RenderFrameOwner& owner,
+    RndWindow& owner,
     ScreenshotResolution resolution) {
     const auto extent = extent_for_resolution(owner, resolution);
     if (extent.empty()) {
@@ -92,8 +92,8 @@ void screenshot_capture_frame(
         return;
     }
 
-    g_screenshot_draw_mode = render_frame_owner_draw_mode(owner);
-    g_screenshot_debug_view = render_frame_owner_debug_view(owner);
+    g_screenshot_draw_mode = owner.GetShadingMode();
+    g_screenshot_debug_view = owner.GetBufferInspectionMode();
 
     screenshot_bind_render_target(
         *g_screenshot_target,

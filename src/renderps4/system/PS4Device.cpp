@@ -4,6 +4,7 @@
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 #include "renderps4/context/PS4Context.h"
+#include "renderps4/video/PS4Window.h"
 
 using namespace rb4;
 
@@ -105,7 +106,7 @@ void PS4Device::_ReleaseRetiredAllocations() {
 
 // Reconstructed from eboot.elf at 0x8D8300.
 void PS4Device::_EndFrameImpl(
-    FixedVector<RenderFrameOwner*, 6>& windows,
+    FixedVector<RndWindow*, 6>& windows,
     bool) {
     // The submission lock stays held while the frame is submitted; only the
     // token wait is counted as an entry.
@@ -122,8 +123,7 @@ void PS4Device::_EndFrameImpl(
 
     orbis_render_context_submit_frame(Context());
     for (unsigned long i = 0; i < windows.mSize; ++i) {
-        orbis_back_buffer_advance(
-            *reinterpret_cast<OrbisBackBuffer*>(windows.mData[i]));
+        (reinterpret_cast<PS4Window*>(windows.mData[i]))->AdvanceFrame();
     }
     scePthreadMutexUnlock(&mSubmitCritSec.mCritSec);
 }

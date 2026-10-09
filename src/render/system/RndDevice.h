@@ -16,10 +16,11 @@ class RndContext;
 class RndFactory;
 class RndShaderCBuffer;
 
+class RndWindow;
+
 namespace rb4 {
 struct AudioAnalysisTextureSet;
 struct FogDeferredShaderResource;
-struct RenderFrameOwner;
 struct RenderPrimitiveMeshSet;
 struct RenderSettings;
 struct RenderTargetState;
@@ -68,7 +69,7 @@ public:
     // The map's signature is _BeginFrameImpl().
     virtual void _BeginFrameImpl(bool offscreen) = 0;      // slot 6
     virtual void _EndFrameImpl(
-        FixedVector<rb4::RenderFrameOwner*, 6>& windows,
+        FixedVector<RndWindow*, 6>& windows,
         bool offscreen) = 0;                               // slot 7
     // Slots 8 to 10 and 14 to 16 are not in the reference map.
     virtual void _AcquireDeferredContextImpl(RndContext* context);  // slot 8 at 0x3DEF60
@@ -103,7 +104,7 @@ public:
     ConsoleState GetConsoleState() const;                  // 0x3DEC00
     void SetConsoleState(ConsoleState state);              // 0x3DEC10
     void SyncFreeMaterialData(RndMaterialRuntimeData* data);  // 0x3DEC20
-    void _InstallMainWindow(rb4::RenderFrameOwner* window);  // 0x3DED70
+    void _InstallMainWindow(RndWindow* window);  // 0x3DED70
     void _DestroyMainWindow();                             // 0x3DED80
     void _InstallFactory(RndFactory* factory);             // 0x3DEDB0
     void _InstallImmediateContext(RndContext* context);    // 0x3DEDC0
@@ -118,7 +119,7 @@ public:
     // The map's signature is _DoBeginFrame().
     void _DoBeginFrame(bool offscreen);                    // 0x3DE170
     // The map's parameter is RndWindow&.
-    bool _DoBeginDrawingWindow(rb4::RenderFrameOwner& window);  // 0x3DE3A0
+    bool _DoBeginDrawingWindow(RndWindow& window);  // 0x3DE3A0
     void _DoEndFrame(bool offscreen);                      // 0x3DE4A0
     void _DoEndDrawingBufferCollection();                  // 0x3DE8E0
 
@@ -132,14 +133,14 @@ public:
     unsigned int mBeginFrameFlags;
     eastl::vector<RndContext*> mDeferredContexts;
     unsigned int mHdrOutputMode;
-    rb4::RenderFrameOwner* mMainWindow;
-    rb4::RenderFrameOwner* mCurrentWindow;
+    RndWindow* mMainWindow;
+    RndWindow* mCurrentWindow;
     eastl::vector<rb4::RenderTargetState*> mCurrentTargets;
     unsigned long mFrameCount;
     unsigned long mOffscreenFrameCount;
     bool mInFrame;
     bool mTerminating;
-    FixedVector<rb4::RenderFrameOwner*, 6> mFrameWindows;
+    FixedVector<RndWindow*, 6> mFrameWindows;
     unsigned long mLastFrameCycles;
     unsigned long mPendingFrameCycles;
     unsigned int mFrameTimerState;

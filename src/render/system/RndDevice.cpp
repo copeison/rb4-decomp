@@ -6,7 +6,7 @@
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/context/RndContext.h"
 #include "render/context/RndResourceBarrier.h"
-#include "render/core/frame/render_frame_owner.h"
+#include "render/system/RndWindow.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/core/targets/render_target_resources.h"
@@ -60,11 +60,11 @@ void TransitionWindowTargets(RndDevice& device, RndContext& context) {
     const auto& windows = device.mFrameWindows;
     for (unsigned long i = 0; i < windows.mSize; ++i) {
         const auto& window = *windows.mData[i];
-        if (render_frame_owner_output_extent(window).empty()) {
+        if (window.GetSize().empty()) {
             continue;
         }
 
-        const auto targets = render_frame_owner_target_states(window);
+        const auto targets = window.GetBufferCollections();
         for (std::size_t t = 0; t < targets.count; ++t) {
             const auto& resources =
                 reinterpret_cast<const RenderTargetResources&>(
@@ -280,7 +280,7 @@ void RndDevice::Unlock() {
 void RndDevice::PollMainWindow() {
     ScopedCritSec lock(mCritSec);
     if (mMainWindow != nullptr) {
-        render_frame_owner_poll(*mMainWindow);
+        mMainWindow->Poll();
     }
 }
 
@@ -332,12 +332,12 @@ void RndDevice::_DoBeginFrame(bool offscreen) {
 }
 
 // Reconstructed from eboot.elf at 0x3DE3A0.
-bool RndDevice::_DoBeginDrawingWindow(RenderFrameOwner& window) {
+bool RndDevice::_DoBeginDrawingWindow(RndWindow& window) {
     static_cast<void>(scePthreadSelf());
     mCurrentWindow = &window;
-    render_frame_owner_begin(window);
+    window.CheckForResize();
 
-    if (render_frame_owner_output_extent(window).empty()) {
+    if (window.GetSize().empty()) {
         static_cast<void>(scePthreadSelf());
         mCurrentTargets.clear();
         mCurrentWindow = nullptr;
@@ -346,7 +346,7 @@ bool RndDevice::_DoBeginDrawingWindow(RenderFrameOwner& window) {
 
     mFrameWindows.mData[mFrameWindows.mSize++] = &window;
 
-    const auto targets = render_frame_owner_target_states(window);
+    const auto targets = window.GetBufferCollections();
     mCurrentTargets.resize(targets.count);
     std::copy_n(targets.states, targets.count, mCurrentTargets.begin());
 
@@ -471,14 +471,14 @@ void RndDevice::SyncFreeMaterialData(RndMaterialRuntimeData* data) {
 }
 
 // Reconstructed from eboot.elf at 0x3DED70.
-void RndDevice::_InstallMainWindow(RenderFrameOwner* window) {
+void RndDevice::_InstallMainWindow(RndWindow* window) {
     mMainWindow = window;
 }
 
 // Reconstructed from eboot.elf at 0x3DED80.
 void RndDevice::_DestroyMainWindow() {
     if (mMainWindow != nullptr) {
-        render_frame_owner_delete(*mMainWindow);
+        delete mMainWindow;
         mMainWindow = nullptr;
     }
 }

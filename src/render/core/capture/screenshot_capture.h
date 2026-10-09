@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/frame/render_frame_owner.h"
+#include "render/system/RndWindow.h"
 
 namespace rb4 {
 
@@ -19,7 +19,7 @@ void screenshot_request();
 bool screenshot_capture_pending();
 const char* screenshot_resolution_name(ScreenshotResolution resolution);
 void screenshot_capture_frame(
-    RenderFrameOwner& owner,
+    RndWindow& owner,
     ScreenshotResolution resolution);
 void screenshot_capture_current_frame();
 

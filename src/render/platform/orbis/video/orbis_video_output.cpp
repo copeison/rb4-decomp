@@ -10,15 +10,17 @@
 #include "os/memory/MemMgr.h"
 #include "utl/threading/Thread.h"
 #include "utl/time/Timer.h"
-#include "render/core/frame/render_frame_owner.h"
+#include "render/system/RndWindow.h"
 #include "render/core/settings/render_settings.h"
 #include "render/system/RndDevice.h"
 #include "render/core/targets/render_target.h"
+#include "render/core/targets/render_target_resources.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Factory.h"
 #include "renderps4/textures/PS4Texture2D.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
+#include "renderps4/video/PS4Window.h"
 
 extern "C" {
 
@@ -57,9 +59,10 @@ void for_each_output_texture(
     PS4Device& system,
     Callback callback) {
     auto* frame_owner = system.mMainWindow;
-    const auto states = render_frame_owner_target_states(*frame_owner);
+    const auto states = frame_owner->GetBufferCollections();
     for (std::size_t index = 0; index < states.count; ++index) {
-        auto* texture = render_target_state_texture(*states.states[index]);
+        auto* texture = reinterpret_cast<RenderTargetResources&>(
+            *states.states[index]).source_texture;
         if (texture != nullptr) {
             callback(reinterpret_cast<PS4Texture2D&>(*texture));
         }
@@ -271,7 +274,7 @@ void PS4Device::_InitImpl(const RndInitParams*) {
     _InitDefaultVertexBuffers();
     _InitIdentityInstanceBuffers();
     _InstallFactory(new PS4Factory);
-    orbis_create_back_buffer(system);
+    _InstallMainWindow(new PS4Window);
     orbis_create_render_context(system);
 
     system.mSubmitCondition.Init(system.mSubmitCritSec);
@@ -304,10 +307,6 @@ void PS4Device::_TerminateImpl() {
 }
 
 namespace rb4 {
-
-void orbis_create_back_buffer(PS4Device& system) {
-    static_cast<void>(orbis_back_buffer_create(system));
-}
 
 void orbis_create_render_context(PS4Device& system) {
     static_cast<void>(orbis_render_context_create(system));
