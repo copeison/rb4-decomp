@@ -101,12 +101,10 @@ void RndDrawUtl::Init() {
     {
         RndMeshUtl::CreateNestedConeParams params;
         params.mVertexUsageFlags = 1;
-        params.mUnknown72[0] = 0.5F;
-        params.mUnknown72[1] = 1.0F;
-        params.mUnknown80[0] = 2.0F;
-        params.mUnknown80[1] = 2.0F;
-        params.mUnknown88 = 1;
-        params.mUnknown96 = true;
+        params.mRadii = {0.5F, 1.0F};
+        params.mHeights = {2.0F, 2.0F};
+        params.mNumConeSegments = 1;
+        params.mJoinRims = true;
         gNestedConeMesh = RndMeshUtl::CreateNestedCone(params);
     }
     {

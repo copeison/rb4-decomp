@@ -14,9 +14,16 @@ class RndFontPage;
 // font uses are declared.
 class RndFont {
 public:
-    // A kerning table entry. Its fields are not recovered.
+    // A kerning table entry. Finalize sorts the table by mKey, compared as
+    // an unsigned int. Field names are not in the reference map, and the
+    // second field is not recovered.
     struct KerningPair {
-        unsigned char mUnknown[8];
+        bool operator<(const KerningPair& other) const {
+            return mKey < other.mKey;
+        }
+
+        unsigned int mKey;
+        unsigned char mUnknown4[4];
     };
 
     // The metrics and pages for one output resolution. Name not in the
@@ -36,13 +43,18 @@ public:
     };
 
     RndFont();   // 0x65D1F0
+    // Deletes every size's pages.
     ~RndFont();  // 0x65D220
 
-    // Appends a copy of an empty entry for the resolution. The binary's copy
-    // sits in the debug font's object, so the original is likely inline in
-    // this header. Not reconstructed yet: the modelled vector cannot copy
-    // the kerning table. Name not in the reference map.
-    void AddResolution(const Vector2i& resolution);  // 0x65C390
+    // Reconstructed from eboot.elf at 0x65C390. Appends a copy of a zeroed
+    // entry for the resolution. The binary's copy sits in the debug font's
+    // object, so the original is likely inline in this header. Name not in
+    // the reference map.
+    void AddResolution(const Vector2i& resolution) {
+        Size size{};
+        size.mResolution = resolution;
+        mSizes.push_back(size);
+    }
     // The entry for the resolution, or the first entry. Inlined into the
     // setters and into RndDebugFont::Init at 0x65C2A8. Name not in the
     // reference map.
@@ -75,6 +87,7 @@ public:
     eastl::vector<Size> mSizes;
 };
 
+static_assert(offsetof(RndFont::KerningPair, mUnknown4) == 4);
 static_assert(sizeof(RndFont::KerningPair) == 8);
 static_assert(offsetof(RndFont::Size, mGlyphTileSize) == 8);
 static_assert(offsetof(RndFont::Size, mGlyphHeight) == 16);

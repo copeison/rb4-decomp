@@ -11,6 +11,11 @@ is a namespace, which mangles the same as the map's names.
 | `CreateRadialSurface` | `0x5DD5E0` | a surface swept from a contour |
 | `ReshapeRadialSurface` | `0x5DF180` | an existing radial surface |
 | `CreateTruncatedRoundedCone` | `0x5E0C10` | a capped cone |
+| `CreateQuad` | `0x5DB700` | a segmented quad |
+| `CreateFacingQuad` | `0x5DC240` | a unit quad facing one of six axes |
+| `CreateTriangleFan` | `0x5DC380` | a fan facing one of six axes (name not in the map) |
+| `CreateCapsule` | `0x5DE890` | a capsule swept from a contour |
+| `CreateNestedCone` | `0x5E0240` | two cones joined at the rims (name not in the map) |
 
 Each builder takes a parameter block that starts with `CreateMeshParams`: the
 name, vertex type, flags and usage flags, and an offset. The flags are:

@@ -38,7 +38,16 @@ These names are not in the map:
 ## Not yet reconstructed
 
 These are declared only:
-- the mesh builders `CreateQuad`, `CreateFacingQuad`, `CreateCapsule`, the
-  triangle fan and the nested cone;
-- the `RndFont` and `RndFontPage` methods;
 - the overlay constructors.
+
+## Fonts
+
+`RndFont` keeps one size per resolution. Each size has:
+- the tile size, glyph height, space size, spacing and fixed width;
+- a list of pages and sorted kerning pairs.
+
+Each `RndFontPage` holds a texture and its glyphs. A glyph's UV rectangle is
+left, top, width and height.
+
+`Finalize` sorts the kerning pairs with `std::sort`; the binary uses EASTL's
+sort, so pairs with equal keys may end up in a different order.

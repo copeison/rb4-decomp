@@ -18,7 +18,23 @@ public:
           mpEnd(nullptr),
           mpCapacity(nullptr),
           mAllocator("EASTL vector") {}
-    vector(const vector&) = delete;
+    // Copies the allocator, allocates exactly the other vector's size and
+    // copy-constructs its elements, as EASTL's copy constructor does.
+    vector(const vector& other)
+        : mpBegin(nullptr),
+          mpEnd(nullptr),
+          mpCapacity(nullptr),
+          mAllocator(other.mAllocator) {
+        const auto count = other.size();
+        if (count != 0) {
+            mpBegin = static_cast<T*>(mAllocator.allocate(count * sizeof(T)));
+        }
+        mpEnd = mpBegin;
+        mpCapacity = mpBegin + count;
+        for (const auto* input = other.mpBegin; input != other.mpEnd; ++input, ++mpEnd) {
+            new (mpEnd) T(*input);
+        }
+    }
     vector(vector&& other)
         : mpBegin(other.mpBegin),
           mpEnd(other.mpEnd),

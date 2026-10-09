@@ -11,7 +11,9 @@ struct RndFontGlyph {
     int mWidth;
     int mUnknown8;
     int mUnknown12;
-    float mUV[4];  // Left, top, right and bottom, in texture coordinates.
+    // Left, top, width and height, in texture coordinates. The width is
+    // mWidth's and the height is the size's glyph height.
+    float mUV[4];
 };
 
 static_assert(offsetof(RndFontGlyph, mWidth) == 4);

@@ -242,6 +242,186 @@ void RndMeshUtl::_SetupQuadVertsAndFaces(
     face = nextFace;
 }
 
+// Reconstructed from eboot.elf at 0x5DB700.
+RndMesh* RndMeshUtl::CreateQuad(const CreateQuadParams& params) {
+    RndMesh* mesh = _CreateMeshPrelude(params, "Quad");
+    mesh->_SetNumVerticesImpl(
+        static_cast<unsigned long>(
+            (params.mNumSegmentsU + 1L) * (params.mNumSegmentsV + 1L))
+        << DoubleSidedShift(params));
+    const int numFaces = 2 * params.mNumSegmentsV * params.mNumSegmentsU;
+    mesh->mFaces.resize(static_cast<unsigned long>(static_cast<long>(numFaces))
+                        << DoubleSidedShift(params));
+
+    unsigned long vertex = 0;
+    unsigned long face = 0;
+    _SetupQuadVertsAndFaces(mesh, params, vertex, face);
+    // The binary reads the vertex count and discards it.
+    mesh->_GetNumVerticesImpl();
+    _CreateMeshCoda(*mesh, params);
+    return mesh;
+}
+
+// Reconstructed from eboot.elf at 0x5DC240. When the facing is out of range
+// the quad keeps the unit axes, which the binary stores before the switch.
+RndMesh* RndMeshUtl::CreateFacingQuad(const CreateFacingQuadParams& params) {
+    CreateQuadParams quad;
+    static_cast<CreateMeshParams&>(quad) = params;
+    quad.mAxisU = {1.0F, 0.0F, 0.0F};
+    quad.mAxisV = {0.0F, 1.0F, 0.0F};
+    quad.mNumSegmentsU = params.mNumSegmentsU;
+    quad.mNumSegmentsV = params.mNumSegmentsV;
+    const float width = params.mWidth;
+    const float height = params.mHeight;
+    switch (params.mFacing) {
+    case 0:
+        quad.mAxisU = {0.0F, width, 0.0F};
+        quad.mAxisV = {0.0F, 0.0F, height};
+        break;
+    case 1:
+        quad.mAxisU = {-width, 0.0F, 0.0F};
+        quad.mAxisV = {0.0F, 0.0F, height};
+        break;
+    case 2:
+        quad.mAxisU = {width, 0.0F, 0.0F};
+        quad.mAxisV = {0.0F, height, 0.0F};
+        break;
+    case 3:
+        quad.mAxisU = {0.0F, -width, 0.0F};
+        quad.mAxisV = {0.0F, 0.0F, height};
+        break;
+    case 4:
+        quad.mAxisU = {width, 0.0F, 0.0F};
+        quad.mAxisV = {0.0F, 0.0F, height};
+        break;
+    case 5:
+        quad.mAxisU = {width, 0.0F, 0.0F};
+        quad.mAxisV = {0.0F, -height, 0.0F};
+        break;
+    default:
+        break;
+    }
+    return CreateQuad(quad);
+}
+
+// Reconstructed from eboot.elf at 0x5DC380. Vertex 0 is the center; the rim
+// vertices run from axisU toward axisV. The normal is axisU x axisV, the
+// tangent axisU and the bitangent -axisV. The UVs project each position,
+// offset included, onto the two axes, scaled by the radius into 0 to 1.
+// There is no second side.
+RndMesh* RndMeshUtl::CreateTriangleFan(const CreateTriangleFanParams& params) {
+    using Interp = RndVertexInterpreter;
+    Vector3 axisU;
+    Vector3 axisV;
+    switch (params.mFacing) {
+    case 0:
+        axisU = Vector3::sY;
+        axisV = Vector3::sZ;
+        break;
+    case 1:
+        axisU = Negate(Vector3::sX);
+        axisV = Vector3::sZ;
+        break;
+    case 2:
+        axisU = Vector3::sX;
+        axisV = Vector3::sY;
+        break;
+    case 3:
+        axisU = Negate(Vector3::sY);
+        axisV = Vector3::sZ;
+        break;
+    case 4:
+        axisU = Vector3::sX;
+        axisV = Vector3::sZ;
+        break;
+    case 5:
+        axisU = Negate(Vector3::sX);
+        axisV = Vector3::sY;
+        break;
+    default:
+        axisU = {0.0F, 0.0F, 0.0F};
+        axisV = {0.0F, 0.0F, 0.0F};
+        break;
+    }
+
+    RndMesh* mesh = _CreateMeshPrelude(params, "TriangleFan");
+    const RndVertexInterpreter* interp =
+        RndVertexInterpreter::GetInstance(params.mVertexType);
+    const unsigned long numVertices = params.mNumSegments + 1;
+    mesh->_SetNumVerticesImpl(numVertices);
+    const unsigned long numFaces = params.mNumSegments;
+    mesh->mFaces.resize(numFaces);
+
+    const Vector3 tangent = axisU;
+    const Vector3 normal = Cross(axisU, axisV);
+    const Vector3 bitangent = Negate(axisV);
+
+    SetAttribute(
+        interp, Interp::kPositionAttribute, mesh->_GetVertexVoidImpl(0), params.mOffset);
+    for (unsigned long segment = 0; segment < params.mNumSegments;) {
+        const float angle = segment / static_cast<float>(params.mNumSegments) * kTwoPi;
+        const float sine = Sine(angle);
+        const float cosine = Sine(angle + kHalfPi);
+        ++segment;
+        const Vector3 pos = {
+            (cosine * axisU.x + sine * axisV.x) * params.mRadius + params.mOffset.x,
+            (cosine * axisU.y + sine * axisV.y) * params.mRadius + params.mOffset.y,
+            (cosine * axisU.z + sine * axisV.z) * params.mRadius + params.mOffset.z,
+        };
+        SetAttribute(
+            interp, Interp::kPositionAttribute, mesh->_GetVertexVoidImpl(segment), pos);
+    }
+
+    for (unsigned long vertex = 0; vertex < numVertices; ++vertex) {
+        void* data = mesh->_GetVertexVoidImpl(vertex);
+        if (HasAttribute(interp, Interp::kNormalAttribute)) {
+            SetAttribute(interp, Interp::kNormalAttribute, data, normal);
+        }
+        if (HasAttribute(interp, Interp::kTangentAttribute)) {
+            SetAttribute(interp, Interp::kTangentAttribute, data, tangent);
+            SetAttribute(interp, Interp::kBitangentAttribute, data, bitangent);
+        }
+        if (HasAttribute(interp, Interp::kColorAttribute)) {
+            SetAttribute(
+                interp,
+                Interp::kColorAttribute,
+                data,
+                reinterpret_cast<const Vector4&>(Hmx::Color::GetWhite()));
+        }
+        if (HasAttribute(interp, Interp::kWeightsAttribute) &&
+            HasAttribute(interp, Interp::kBonesAttribute)) {
+            const Vector4 weights = {1.0F, 0.0F, 0.0F, 0.0F};
+            SetAttribute(interp, Interp::kWeightsAttribute, data, weights);
+            *static_cast<std::uint32_t*>(
+                AttributeData(data, Attribute(interp, Interp::kBonesAttribute))) = 0;
+        }
+        const Vector3 pos =
+            interp->GetAttribute<Vector3>(Interp::kPositionAttribute, data);
+        const float scale = 1.0F / params.mRadius;
+        const float x = pos.x * scale;
+        const float y = pos.y * scale;
+        const float z = scale * pos.z;
+        const Vector2 uv = {
+            (x * axisU.x + 1.0F + (y * axisU.y + z * axisU.z)) * 0.5F,
+            1.0F - (x * axisV.x + 1.0F + (y * axisV.y + z * axisV.z)) * 0.5F,
+        };
+        for (unsigned long set = 0; set < interp->GetNumUVs(); ++set) {
+            SetAttribute(
+                interp, Interp::kFirstUVAttribute + static_cast<unsigned int>(set), data, uv);
+        }
+    }
+
+    for (unsigned long face = 0; face < numFaces; ++face) {
+        SetFace(
+            mesh->mFaces[face],
+            0,
+            static_cast<unsigned int>(face + 1),
+            static_cast<unsigned int>((face + 1) % params.mNumSegments + 1));
+    }
+    _CreateMeshCoda(*mesh, params);
+    return mesh;
+}
+
 // Reconstructed from eboot.elf at 0x5DCBA0. The faces are built as six
 // quads: +x, -x, +y, -y, +z, -z.
 RndMesh* RndMeshUtl::CreateBox(const CreateBoxParams& params) {
@@ -459,6 +639,68 @@ RndMesh* RndMeshUtl::CreateCylinder(const CreateCylinderParams& params) {
     return CreateRadialSurface(gTmpContour, radial);
 }
 
+// Reconstructed from eboot.elf at 0x5DE890.
+RndMesh* RndMeshUtl::CreateCapsule(const CreateCapsuleParams& params) {
+    _GenerateCapsuleContour(params, gTmpContour);
+    CreateRadialSurfaceParams radial = params;
+    if (radial.mName == nullptr) {
+        radial.mName = "Capsule";
+    }
+    return CreateRadialSurface(gTmpContour, radial);
+}
+
+// Reconstructed from eboot.elf at 0x5DE910. The profile runs from the -z
+// pole over the bottom hemisphere, up the side and over the top hemisphere
+// to the +z pole. The hemispheres are centered at -mLength/2 and
+// +mLength/2, and the side adds only its inner points.
+void RndMeshUtl::_GenerateCapsuleContour(
+    const CreateCapsuleParams& params,
+    eastl::vector<ContourVertex>& contour) {
+    contour.clear();
+    contour.reserve(params.mNumSideSegments + 2 * params.mNumCapSegments + 1);
+
+    const float length = params.mLength;
+    const float bottom = length * -0.5F;
+    for (unsigned long segment = 0; segment <= params.mNumCapSegments; ++segment) {
+        Vector3 normal;
+        if (segment == 0) {
+            normal = Negate(Vector3::sZ);
+        } else if (segment == params.mNumCapSegments) {
+            normal = Vector3::sX;
+        } else {
+            const float angle =
+                (1.0F - segment / static_cast<float>(params.mNumCapSegments)) * kHalfPi;
+            normal = {Sine(angle + kHalfPi), 0.0F, Sine(angle + kPi)};
+        }
+        const float radius = params.mRadius;
+        contour.push_back(
+            {{radius * normal.x, radius * normal.y, radius * normal.z + bottom}, normal});
+    }
+
+    for (unsigned long segment = 1; segment < params.mNumSideSegments; ++segment) {
+        const float height =
+            segment / static_cast<float>(params.mNumSideSegments) * params.mLength + bottom;
+        contour.push_back({{params.mRadius, 0.0F, height}, Vector3::sX});
+    }
+
+    const float top = length * 0.5F;
+    for (unsigned long segment = 0; segment <= params.mNumCapSegments; ++segment) {
+        Vector3 normal;
+        if (segment == 0) {
+            normal = Vector3::sX;
+        } else if (segment == params.mNumCapSegments) {
+            normal = Vector3::sZ;
+        } else {
+            const float angle =
+                (1.0F - segment / static_cast<float>(params.mNumCapSegments)) * kHalfPi;
+            normal = {Sine(angle), 0.0F, Sine(angle + kHalfPi)};
+        }
+        const float radius = params.mRadius;
+        contour.push_back(
+            {{radius * normal.x, radius * normal.y, radius * normal.z + top}, normal});
+    }
+}
+
 // Reconstructed from eboot.elf at 0x5DF180. Sweeps each contour point around
 // the z axis. U runs around the sweep; V runs from 1 at the start of the
 // contour to 0 at its end, by arc length. The tangent follows the sweep and
@@ -542,6 +784,96 @@ void RndMeshUtl::ReshapeRadialSurface(
                 SetDefaultAttributes(interp, data, {u, gTmpUVIntervals[point]});
             }
         }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x5E0240.
+RndMesh* RndMeshUtl::CreateNestedCone(const CreateNestedConeParams& params) {
+    _GenerateNestedConeContour(params, gTmpContour);
+    CreateRadialSurfaceParams radial = params;
+    if (radial.mName == nullptr) {
+        radial.mName = "NestedCone";
+    }
+    return CreateRadialSurface(gTmpContour, radial);
+}
+
+// Reconstructed from eboot.elf at 0x5E02C0. The profile runs from the apex
+// out along the outer cone to its rim, optionally across to the inner
+// cone's rim, then back along the inner cone to the apex. The outer cone's
+// normal faces away from the axis and the inner cone's toward it; the join
+// uses the normalized midpoint of the two rims. The binary divides the
+// slopes with a reciprocal estimate refined by one Newton step, and
+// normalizes with a reciprocal square root estimate refined the same way.
+void RndMeshUtl::_GenerateNestedConeContour(
+    const CreateNestedConeParams& params,
+    eastl::vector<ContourVertex>& contour) {
+    contour.clear();
+    const Vector2 radii = {
+        params.mRadii.x < 0.0F ? 0.0F : params.mRadii.x,
+        params.mRadii.y < 0.0F ? 0.0F : params.mRadii.y,
+    };
+    contour.reserve(
+        2 * params.mNumConeSegments + 2 * static_cast<unsigned long>(params.mJoinRims) + 2);
+
+    const float slopeX = params.mHeights.x / (radii.x > kEpsilon ? radii.x : kEpsilon);
+    const float slopeY = params.mHeights.y / (radii.y > kEpsilon ? radii.y : kEpsilon);
+    float outerRadius;
+    float outerHeight;
+    float innerRadius;
+    float innerHeight;
+    if (slopeX > slopeY) {
+        innerRadius = radii.x;
+        innerHeight = params.mHeights.x;
+        outerRadius = radii.y;
+        outerHeight = params.mHeights.y;
+    } else {
+        innerRadius = radii.y;
+        innerHeight = params.mHeights.y;
+        outerRadius = radii.x;
+        outerHeight = params.mHeights.x;
+    }
+
+    const float outerScale =
+        1.0F / std::sqrt(outerHeight * outerHeight + outerRadius * outerRadius);
+    const Vector3 outerNormal = {
+        outerScale * outerHeight, 0.0F, -(outerRadius * outerScale)};
+    for (unsigned long segment = 0; segment <= params.mNumConeSegments; ++segment) {
+        Vector3 pos = {0.0F, 0.0F, 0.0F};
+        if (segment != 0) {
+            pos = {outerRadius, 0.0F, outerHeight};
+            if (segment != params.mNumConeSegments) {
+                const float t = segment / static_cast<float>(params.mNumConeSegments);
+                pos = {t * outerRadius, 0.0F, t * outerHeight};
+            }
+        }
+        contour.push_back({pos, outerNormal});
+    }
+
+    if (params.mJoinRims) {
+        const float midRadius = (outerRadius + innerRadius) * 0.5F;
+        const float midHeight = (outerHeight + innerHeight) * 0.5F;
+        const float length = std::sqrt(midHeight * midHeight + midRadius * midRadius);
+        const float scale = length != 0.0F ? 1.0F / length : 0.0F;
+        const Vector3 joinNormal = {scale * midRadius, 0.0F, scale * midHeight};
+        contour.push_back({{outerRadius, 0.0F, outerHeight}, joinNormal});
+        contour.push_back({{innerRadius, 0.0F, innerHeight}, joinNormal});
+    }
+
+    const float innerScale =
+        1.0F / std::sqrt(innerHeight * innerHeight + innerRadius * innerRadius);
+    const Vector3 innerNormal = {
+        -(innerHeight * innerScale), 0.0F, innerScale * innerRadius};
+    for (unsigned long segment = 0; segment <= params.mNumConeSegments; ++segment) {
+        Vector3 pos = {innerRadius, 0.0F, innerHeight};
+        if (segment != 0) {
+            pos = {0.0F, 0.0F, 0.0F};
+            if (segment != params.mNumConeSegments) {
+                const float t =
+                    1.0F - segment / static_cast<float>(params.mNumConeSegments);
+                pos = {t * innerRadius, 0.0F, t * innerHeight};
+            }
+        }
+        contour.push_back({pos, innerNormal});
     }
 }
 

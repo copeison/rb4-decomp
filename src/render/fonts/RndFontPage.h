@@ -25,9 +25,9 @@ public:
     void SetTexture(RndTexture2D* texture);  // 0x667340
     void SetNumGlyphs(unsigned long count);  // 0x667350
     // Records the glyph's character and metrics and derives its texture
-    // rectangle from the size's glyph tiles. The map has SetGlyph(unsigned
-    // long, unsigned short, int, Vector2i const&); this build stores two
-    // more metrics.
+    // rectangle from the size's glyph tiles, which fill the texture row by
+    // row. The map has SetGlyph(unsigned long, unsigned short, int,
+    // Vector2i const&); this build stores two more metrics.
     void SetGlyph(
         unsigned long index,
         unsigned short character,
@@ -35,6 +35,8 @@ public:
         int unknown8,
         int unknown12,
         const Vector2i& textureSize);  // 0x667380
+    // Empty in this build.
+    void Finalize();  // 0x6674B0
 
     RndTexture2D* mTexture;
     eastl::vector<RndFontGlyph> mGlyphs;

@@ -4,6 +4,7 @@
 
 #include "math/geometry/Sphere.h"
 #include "math/geometry/TruncatedRoundedCone.h"
+#include "math/vector/Vector2.h"
 #include "math/vector/Vector3.h"
 #include "render/meshes/RndVertex.h"
 #include "utl/containers/Vector.h"
@@ -175,8 +176,9 @@ static_assert(sizeof(CreateTruncatedRoundedConeParams) == 128);
 // A quad facing along one of the six axis directions, built by CreateQuad.
 // Field names are not in the reference map.
 struct CreateFacingQuadParams : public CreateMeshParams {
-    // Selects the axis-aligned orientation, 0 to 5; other values build a
-    // degenerate quad.
+    // Selects the quad's axes, 0 to 5: (y, z), (-x, z), (x, y), (-y, z),
+    // (x, z) and (x, -y), scaled by mWidth and mHeight. Other values build a
+    // unit quad on (x, y).
     unsigned int mFacing;
     float mWidth;
     float mHeight;
@@ -194,7 +196,9 @@ static_assert(sizeof(CreateFacingQuadParams) == 56);
 // the six axis directions. Name not in the reference map, which has a
 // CreateTriangleParams instead; field names are not in the reference map.
 struct CreateTriangleFanParams : public CreateMeshParams {
-    unsigned int mFacing;  // As in CreateFacingQuadParams.
+    // Selects the disc's axes as in CreateFacingQuadParams, except that 5
+    // uses (-x, y). Other values collapse the disc onto mOffset.
+    unsigned int mFacing;
     unsigned long mNumSegments;
     float mRadius;
 };
@@ -220,21 +224,26 @@ static_assert(offsetof(CreateCapsuleParams, mNumCapSegments) == 80);
 static_assert(offsetof(CreateCapsuleParams, mNumSideSegments) == 88);
 static_assert(sizeof(CreateCapsuleParams) == 96);
 
-// A radial surface swept from a generated cone contour; its default mesh
-// name is "NestedCone". Name not in the reference map. The fields are not
-// recovered beyond their types: the contour has 2 * mUnknown88 +
-// 2 * mUnknown96 + 2 points.
+// Two cones along +z that share their apex at the origin, swept from a
+// generated contour; its default mesh name is "NestedCone". The flatter
+// cone (the smaller height over radius) is the outer surface and the
+// steeper one the inner surface. Name not in the reference map; field
+// names are not in the reference map.
 struct CreateNestedConeParams : public CreateRadialSurfaceParams {
-    float mUnknown72[2];  // Clamped to be non-negative.
-    float mUnknown80[2];
-    unsigned long mUnknown88;
-    bool mUnknown96;
+    // The base radius and height of each cone. Negative radii are clamped
+    // to zero.
+    Vector2 mRadii;
+    Vector2 mHeights;
+    // Rings along each cone's side.
+    unsigned long mNumConeSegments;
+    // Adds a ring of faces joining the two cones' base rims.
+    bool mJoinRims;
 };
 
-static_assert(offsetof(CreateNestedConeParams, mUnknown72) == 72);
-static_assert(offsetof(CreateNestedConeParams, mUnknown80) == 80);
-static_assert(offsetof(CreateNestedConeParams, mUnknown88) == 88);
-static_assert(offsetof(CreateNestedConeParams, mUnknown96) == 96);
+static_assert(offsetof(CreateNestedConeParams, mRadii) == 72);
+static_assert(offsetof(CreateNestedConeParams, mHeights) == 80);
+static_assert(offsetof(CreateNestedConeParams, mNumConeSegments) == 88);
+static_assert(offsetof(CreateNestedConeParams, mJoinRims) == 96);
 static_assert(sizeof(CreateNestedConeParams) == 104);
 
 // Scratch storage shared by the builders.
@@ -258,13 +267,10 @@ void _SetupQuadVertsAndFaces(
     unsigned long& vertex,
     unsigned long& face);  // 0x5DB930
 
-// Not reconstructed yet; the default mesh name is "Quad".
 RndMesh* CreateQuad(const CreateQuadParams& params);  // 0x5DB700
-// Not reconstructed yet. Converts the facing to the quad's axes and calls
-// CreateQuad.
+// Converts the facing to the quad's axes and calls CreateQuad.
 RndMesh* CreateFacingQuad(const CreateFacingQuadParams& params);  // 0x5DC240
-// Not reconstructed yet; the default mesh name is "TriangleFan". Name not in
-// the reference map.
+// Name not in the reference map, which has CreateTriangle instead.
 RndMesh* CreateTriangleFan(const CreateTriangleFanParams& params);  // 0x5DC380
 RndMesh* CreateBox(const CreateBoxParams& params);        // 0x5DCBA0
 RndMesh* CreateSphere(const CreateSphereParams& params);  // 0x5DD0E0
@@ -272,13 +278,19 @@ RndMesh* CreateRadialSurface(
     const eastl::vector<ContourVertex>& contour,
     const CreateRadialSurfaceParams& params);  // 0x5DD5E0
 RndMesh* CreateCylinder(const CreateCylinderParams& params);  // 0x5DDC00
-// Not reconstructed yet. Generates the contour into gTmpContour (0x5DE910)
-// and sweeps it with CreateRadialSurface; the default mesh name is
-// "Capsule".
+// Generates the contour into gTmpContour and sweeps it with
+// CreateRadialSurface.
 RndMesh* CreateCapsule(const CreateCapsuleParams& params);  // 0x5DE890
-// Not reconstructed yet. Generates the contour into gTmpContour (0x5E02C0)
-// and sweeps it with CreateRadialSurface. Name not in the reference map.
+void _GenerateCapsuleContour(
+    const CreateCapsuleParams& params,
+    eastl::vector<ContourVertex>& contour);  // 0x5DE910
+// Generates the contour into gTmpContour and sweeps it with
+// CreateRadialSurface. Name not in the reference map.
 RndMesh* CreateNestedCone(const CreateNestedConeParams& params);  // 0x5E0240
+// Name not in the reference map.
+void _GenerateNestedConeContour(
+    const CreateNestedConeParams& params,
+    eastl::vector<ContourVertex>& contour);  // 0x5E02C0
 void ReshapeRadialSurface(
     RndMesh& mesh,
     const eastl::vector<ContourVertex>& contour,
