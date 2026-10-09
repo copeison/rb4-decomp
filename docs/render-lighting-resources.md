@@ -1,7 +1,7 @@
 # Render lighting resources
 
 The render system embeds a 304-byte lighting-resource block at offset `0xCB8`.
-`render_lighting_resources_construct` reconstructs its constructor at
+`RndLightGlobals::RndLightGlobals` reconstructs its constructor at
 `0x47EEE0`: every resource owner begins null, the scalar at offset `0x10`
 starts at `-1.0`, the two fixed group sizes are 16 and 8, and both dynamic
 pointer arrays begin empty.

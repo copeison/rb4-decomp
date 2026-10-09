@@ -1,6 +1,6 @@
 # Render debug commands
 
-`render_register_debug_commands` at `0x6BB0E0` registers 24 console commands.
+`RndCommands::Init` at `0x6BB0E0` registers 24 console commands.
 The clean reconstruction preserves their exact spelling and registration order:
 
 | Command | Purpose |

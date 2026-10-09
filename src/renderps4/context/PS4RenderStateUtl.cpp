@@ -2,8 +2,8 @@
 
 namespace PS4RenderStateUtl {
 
-// Reconstructed from the sampler setup in PS4Context::_SetSamplerImpl
-// (eboot.elf at 0x8EA830).
+// Reconstructed from eboot.elf at 0x8EC6A0, called by
+// PS4Context::_SetSamplerImpl.
 void InitSampler(
     rb4::OrbisSamplerDescriptor& sampler,
     rb4::OrbisSamplerAddressMode wrap,
