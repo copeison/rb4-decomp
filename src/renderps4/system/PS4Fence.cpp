@@ -3,7 +3,7 @@
 #include <limits>
 
 #include "render/core/transition_aliases.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 
 namespace {
 
@@ -15,8 +15,8 @@ unsigned int* AllocateLabel() {
 }
 
 void ReleaseLabel(unsigned int* label) {
-    if (rb4::orbis_render_system_instance() != nullptr) {
-        PS4DeferredDelete(label);
+    if (gPS4Device != nullptr) {
+        gPS4Device->DeferredDelete(label);
     } else {
         MemFree(label);
     }

@@ -1,6 +1,6 @@
 # Orbis render system
 
-`orbis_render_system_create` at `0x8D5DF0` allocates 4,352 bytes and invokes
+`Rnd::PlatformCreateDevice` at `0x8D5DF0` allocates 4,352 bytes and invokes
 the Orbis-specific constructor at `0x8D77F0`. That constructor first builds the
 shared render-system base, installs the Orbis vtable, and initializes the
 following platform state:
@@ -14,7 +14,7 @@ following platform state:
 - an eight-byte Orbis resource factory stored in the common render-system
   factory slot at offset `0x130`;
 - an intrusive deferred-command list;
-- the Orbis renderer singleton at `g_orbis_render_system`.
+- the Orbis renderer singleton at `gPS4Device`.
 
 The Orbis destructor at `0x8D79B0` clears that singleton first, releases every
 node in the deferred-command list, destroys both recursive mutexes, cancels a
@@ -31,7 +31,7 @@ vtable are now source-owned. The table preserves the seven recovered
 lifecycle, GPU-idle, and frame-submit methods; its no-op and zero-result hooks;
 and the default empty 24-byte range result.
 
-Runtime shutdown remains a separate phase. `render_system_shutdown` closes the
+Runtime shutdown remains a separate phase. `RndDevice::Terminate` closes the
 active backend and owned GPU resources before the virtual deleting destructor
 reaches this object destructor.
 

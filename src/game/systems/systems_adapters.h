@@ -1,23 +1,18 @@
 #pragma once
 
-namespace rb4 {
+#include "render/system/RndDevice.h"
 
-struct RenderSystem;
-struct DefaultRenderResources;
-struct GameSystemInitOptions;
-struct OrbisRenderSystem;
+namespace rb4 {
 
 using GameCleanupCallback = void (*)(void* context);
 
-DefaultRenderResources& game_default_render_resources(RenderSystem& system);
 void game_render_backend_post_initialize(
-    RenderSystem& system,
-    const GameSystemInitOptions& options);
-void game_render_dependents_initialize(const GameSystemInitOptions& options);
+    RndDevice& system,
+    const RndInitParams& options);
+void game_render_dependents_initialize(const RndInitParams& options);
 void game_register_cleanup_callback(GameCleanupCallback callback);
 
 bool game_systems_shutdown_in_progress();
 void game_systems_set_shutdown_in_progress(bool in_progress);
 void game_render_dependents_shutdown(void* context);
-void game_render_system_delete(RenderSystem& system);
 }  // namespace rb4

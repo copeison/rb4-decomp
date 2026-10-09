@@ -6,12 +6,12 @@
 #include "utl/containers/Std.h"
 #include "render/textures/RndTextureBase.h"
 #include "render/resources/audio/audio_analysis_texture_adapters.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
 
 bool texture_width_changed(
     const RndTextureBase* texture,
@@ -22,13 +22,6 @@ bool texture_width_changed(
 }
 
 }  // namespace
-
-AudioAnalysisTextureSet& render_system_audio_analysis_textures(
-    RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return **reinterpret_cast<AudioAnalysisTextureSet**>(
-        bytes + kAudioAnalysisTextureSetOffset);
-}
 
 // Reconstructed from eboot.elf at 0x457620.
 void audio_analysis_texture_set_construct(

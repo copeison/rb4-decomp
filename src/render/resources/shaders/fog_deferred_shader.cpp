@@ -15,7 +15,6 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kFogDeferredShaderOffset = 3560;
 
 struct FogDeferredShaderDispatch {
     void (*destruct)(FogDeferredShaderResource* shader);
@@ -165,13 +164,6 @@ void fog_deferred_shader_construct(FogDeferredShaderResource& shader) {
 }
 
 }  // namespace
-
-FogDeferredShaderResource*& render_system_fog_deferred_shader(
-    RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<FogDeferredShaderResource**>(
-        bytes + kFogDeferredShaderOffset);
-}
 
 // Reconstructed from eboot.elf at 0x451C90.
 void fog_deferred_shader_create(FogDeferredShaderResource*& shader) {

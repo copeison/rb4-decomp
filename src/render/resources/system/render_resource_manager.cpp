@@ -13,7 +13,7 @@
 #include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/platform/render_platform_config.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureArray1D.h"
 #include "render/textures/RndPixelCanvas.h"
@@ -26,7 +26,6 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kResourceManagerOffset = 2544;
 constexpr std::ptrdiff_t kSecondaryShaderDirtyOffset = -395;
 constexpr std::size_t kCurrentPlatformConfigIndex = 7;
 constexpr std::uint32_t kAsyncComputeFeature = 0x10;
@@ -144,18 +143,11 @@ void* create_builtin_shader(
 }
 
 bool supports_async_compute() {
-    const auto& platform = render_system_platform_config_at(
-        *render_system_instance(), kCurrentPlatformConfigIndex);
+    const auto& platform = TheRndDevice()->mPlatformConfigs[kCurrentPlatformConfigIndex];
     return (platform.feature_flags & kAsyncComputeFeature) != 0;
 }
 
 }  // namespace
-
-RenderResourceManager& render_system_resource_manager(RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<RenderResourceManager*>(
-        bytes + kResourceManagerOffset);
-}
 
 // Reconstructed from eboot.elf at 0x63F180.
 void render_resource_manager_construct(RenderResourceManager& manager) {
@@ -734,7 +726,7 @@ void render_resource_manager_reload_shaders(RenderResourceManager& manager) {
             render_primary_shader_from_link(*node));
     }
 
-    const auto& settings = *render_system_settings(*render_system_instance());
+    const auto& settings = *TheRndDevice()->mSettings;
     if (settings.max_partial_framerate_scenes != 0) {
         return;
     }

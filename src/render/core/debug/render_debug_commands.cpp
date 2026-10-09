@@ -5,20 +5,19 @@
 #include "render/core/capture/screenshot_capture.h"
 #include "render/core/debug/render_debug_command_adapters.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/system/render_resource_manager.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderSystem& render_system() {
-    return *render_system_instance();
+RndDevice& render_system() {
+    return *TheRndDevice();
 }
 
 RenderSettings& render_settings() {
-    return *render_system_settings(render_system());
+    return *render_system().mSettings;
 }
 
 void toggle(bool& value) {
@@ -60,7 +59,7 @@ void render_command_toggle_vscat() {
 // Reconstructed from eboot.elf at 0x6BA590.
 void render_command_reload_shaders() {
     render_resource_manager_reload_shaders(
-        render_system_resource_manager(render_system()));
+        render_system().mResourceMgr);
 }
 
 // Reconstructed from eboot.elf at 0x6BAA40.
@@ -103,8 +102,7 @@ void render_command_toggle_64_bit_light_accum() {
 
 // Reconstructed from eboot.elf at 0x6BABA0.
 void render_command_toggle_hdr() {
-    auto& mode = render_system_core_state(render_system())
-                     .render_contexts.hdr_output_mode;
+    auto& mode = render_system().mHdrOutputMode;
     mode = mode == 1 ? 0 : 1;
 }
 

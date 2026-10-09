@@ -1,5 +1,6 @@
 #include "renderps4/textures/PS4TextureCube.h"
 #include "renderps4/system/PS4RenderUtl.h"
+#include "renderps4/system/PS4Device.h"
 
 // Reconstructed from eboot.elf at 0x8E6BA0.
 PS4TextureCube::PS4TextureCube(const Description& desc)
@@ -14,13 +15,13 @@ PS4TextureCube::PS4TextureCube(const Description& desc)
 // 0x8E6CC0 releases the texture through MemFree.
 PS4TextureCube::~PS4TextureCube() {
     if (mRenderTarget != nullptr) {
-        PS4DeferredDelete(TargetMetadata(*mRenderTarget));
-        PS4DeferredDelete(TargetSurface(*mRenderTarget));
+        gPS4Device->DeferredDelete(TargetMetadata(*mRenderTarget));
+        gPS4Device->DeferredDelete(TargetSurface(*mRenderTarget));
         operator delete(mRenderTarget);
         mRenderTarget = nullptr;
     }
-    PS4DeferredDelete(mStorage);
-    PS4DeferredDelete(mStorage2);
+    gPS4Device->DeferredDelete(mStorage);
+    gPS4Device->DeferredDelete(mStorage2);
     operator delete(mGpuTexture);
     mGpuTexture = nullptr;
     operator delete(mDepthTarget);

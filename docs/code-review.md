@@ -37,9 +37,12 @@ These were checked against the binary in IDA.
 - **Light-accumulation factory.** It takes a signed attachment selector and a
   target-flags argument. The source narrows the first to `bool` and hard-codes
   the second.
-- **Wrong address label.** `render_system_release_builtin_buffers` is labelled
-  0x3DDE60, but 0x3DDE60 is `render_system_shutdown`.
-- **Mislabelled FMOD constant.** `FMOD_CHANNELCONTROL_DSP_HEAD = -3` is really
+- **Wrong address label.** *(Fixed in the render-device conversion.)*
+  `render_system_release_builtin_buffers` was labelled 0x3DDE60, which is
+  `RndDevice::Terminate`; the release is inlined there through
+  `RndShaderCBuffer::SafeDelete`.
+- **Mislabelled FMOD constant.** *(Fixed in the audio conversion.)*
+  `FMOD_CHANNELCONTROL_DSP_HEAD = -3` is really
   `DSP_TAIL`, so the clip DSP is inserted at the tail.
 - **Cache "defines" are include checksums.** The records read by the cache
   loader are `RndShaderIncludeChecksums` (`Symbol` + checksum), not global
@@ -64,14 +67,16 @@ These were checked against the binary in IDA.
 - **Duplicate layouts for one object.** `RenderTargetState` and
   `RenderTargetResources` describe the same object.
   `TiledLightTargetResources` duplicates `RenderTargetResourceBlock`.
-- **`RenderSystem` layout lives in raw offsets** spread across about ten files,
-  with no single struct or static_asserts.
+- **`RenderSystem` layout lives in raw offsets.** *(Fixed: `RndDevice` and
+  `PS4Device` are now classes with asserted layouts; see
+  [render-device.md](render-device.md).)*
 - **Layer inversions.**
-  - `render/core/system` includes `game/startup/system_init_options.h`, which
-    is really `RndInitParams`.
+  - *(Fixed.)* `render/core/system` included `game/startup/system_init_options.h`,
+    which is really `RndInitParams`; it is now declared in `RndDevice.h`.
   - `core/io` uses `render/.../render_resource_name.h`, which is really the
     engine `String` and belongs in `core/types`.
-  - `Vector3` and the transform type are defined in an audio header.
+  - *(Fixed in the audio conversion.)* `Vector3` and the transform type were
+    defined in an audio header; they are now in `src/math`.
 - **Platform-neutral code under `orbis`.** The mesh-format functions at
   0x4429xx-0x4438xx and the resource-barrier types belong in `render/core`.
 - **Unbounded writes into fixed inline storage.** Affected:

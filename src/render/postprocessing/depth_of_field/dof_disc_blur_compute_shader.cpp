@@ -5,7 +5,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -114,8 +114,8 @@ void initialize_dof_disc_blur_support_objects(
         "gOverbrightLuminance");
     fields[10] = static_cast<std::int64_t>(constant_block->next_offset);
 
-    auto* system = render_system_instance();
-    auto* settings = system == nullptr ? nullptr : render_system_settings(*system);
+    auto* system = TheRndDevice();
+    auto* settings = system == nullptr ? nullptr : system->mSettings;
     const auto tile_size = settings == nullptr
         ? std::int32_t{32}
         : static_cast<std::int32_t>(settings->light_tile_size);

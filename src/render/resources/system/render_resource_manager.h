@@ -9,8 +9,6 @@
 
 namespace rb4 {
 
-struct RenderSystem;
-
 struct RenderResourcePointerArray {
     void** begin;
     void** end;
@@ -177,7 +175,6 @@ static_assert(offsetof(RenderResourceManager, primary_list) == 696);
 static_assert(offsetof(RenderResourceManager, secondary_list) == 704);
 static_assert(sizeof(RenderResourceManager) == 712);
 
-RenderResourceManager& render_system_resource_manager(RenderSystem& system);
 void render_resource_manager_construct(RenderResourceManager& manager);
 void render_resource_manager_initialize(RenderResourceManager& manager);
 void render_resource_manager_initialize_shader_parameters(

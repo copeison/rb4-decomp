@@ -5,7 +5,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
 #include "render/textures/RndTexture3D.h"
@@ -213,7 +213,7 @@ void render_volumetric_scattering_textures_create(
     RenderTargetResourceBlock& block,
     const RenderTargetResourceBlock* reusable_block) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     if (!settings.volumetric_scattering_enabled) {
         return;
     }

@@ -7,8 +7,7 @@
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
 #include "render/context/RndContext.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
@@ -108,7 +107,7 @@ RenderPrimaryShaderResource& render_primary_shader_from_link(
 
 // Reconstructed from eboot.elf at 0x638A20.
 void render_primary_shader_register(RenderPrimaryShaderResource& shader) {
-    auto& manager = render_system_resource_manager(*render_system_instance());
+    auto& manager = TheRndDevice()->mResourceMgr;
     auto* sentinel = manager.primary_list;
     auto* previous = sentinel->previous;
     shader.manager_link.next = sentinel;
@@ -229,13 +228,13 @@ void render_primary_shader_finalize(RenderPrimaryShaderResource& shader) {
 
     const auto mode = shader.dispatch->mode(&shader);
     const auto& options =
-        render_system_core_state(*render_system_instance()).init_options;
+        TheRndDevice()->mInitParams;
     if (mode == 1) {
-        if (!options.option2) {
+        if (!options.mUnknown2) {
             return;
         }
     } else if (mode == 0) {
-        if (!options.initialize_rendering) {
+        if (!options.mInitRendering) {
             return;
         }
     } else {
@@ -266,7 +265,7 @@ bool render_primary_shader_validate_permutation(
 // their own bind the error shader with geometry type zero.
 void render_primary_shader_bind_fallback(void*, void* context) {
     auto& resources =
-        render_system_resource_manager(*render_system_instance())
+        TheRndDevice()->mResourceMgr
             .runtime.resources;
     render_error_shader_bind(resources.error_shader, context, 0);
 }

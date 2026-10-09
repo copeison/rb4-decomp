@@ -7,6 +7,7 @@
 #include "utl/options/Option.h"
 #include "os/files/File.h"
 #include "ui/layout/ui_layout_id.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
@@ -59,10 +60,10 @@ bool game_initialize() {
     physics_register_types();
     game_audio_register_types();
 
-    GameSystemInitOptions options{};
-    options.option0 = true;
-    options.initialize_rendering = true;
-    options.option2 = true;
+    RndInitParams options{};
+    options.mUnknown0 = true;
+    options.mInitRendering = true;
+    options.mUnknown2 = true;
     game_systems_initialize(options);
 
     ui_register_types();

@@ -5,6 +5,7 @@
 #include "audio/core/resources/Resource.h"
 #include "audio/core/system/Audio.h"
 #include "audio/fmod/api/fmod_api.h"
+#include "os/threading/CritSec.h"
 
 // Consumer of decoded PCM. Only the slots the FMOD decoder calls are
 // declared; the earlier ones are placeholders that keep the recovered vtable

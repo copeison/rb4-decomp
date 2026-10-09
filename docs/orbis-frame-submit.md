@@ -1,6 +1,6 @@
 # Orbis frame submission
 
-`orbis_render_system_submit_frame` at `0x8D8300` is the Orbis implementation
+`PS4Device::_EndFrameImpl` at `0x8D8300` is the Orbis implementation
 of the base renderer's frame-submit hook. The base frame lifecycle passes it
 the back buffers collected from every active frame owner.
 

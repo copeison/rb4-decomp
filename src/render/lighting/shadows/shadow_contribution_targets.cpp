@@ -1,7 +1,7 @@
 #include "render/lighting/shadows/shadow_contribution_targets.h"
 
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -140,7 +140,7 @@ void render_shadow_contribution_targets_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     if (settings.max_shadow_contrib_buffers == 0) {
         return;
     }

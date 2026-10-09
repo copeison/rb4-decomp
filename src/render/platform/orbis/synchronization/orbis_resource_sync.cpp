@@ -1,6 +1,6 @@
 #include "render/platform/orbis/synchronization/orbis_resource_sync.h"
 
-#include "render/core/system/render_epoch.h"
+#include "render/system/RndDevice.h"
 #include "render/platform/orbis/synchronization/orbis_resource_sync_adapters.h"
 #include "renderps4/context/PS4Context.h"
 
@@ -34,7 +34,7 @@ void orbis_render_context_signal_resource(
     const OrbisResourceSignal signal = {
         resource,
         shared_label,
-        current_render_epoch(),
+        TheRndDevice()->mFrameCount,
     };
     orbis_render_context_track_resource_signal(context, signal);
 }

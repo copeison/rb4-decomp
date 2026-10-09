@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "render/shaders/RndShaderEnums.h"
+#include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
 
 class RndComputeBuffer;
@@ -47,16 +48,6 @@ public:
 };
 
 static_assert(sizeof(RndCameraContext) == 9312);
-
-// Fixed-capacity vector with inline storage. Name from the map's
-// FixedVector<T, N>.
-template <typename T, unsigned long N>
-struct FixedVector {
-    T* mData;
-    unsigned long mSize;
-    unsigned long mCapacity;
-    T mStorage[N];
-};
 
 // GPU timing results for one statistic. Name not in the reference map.
 struct RndGpuStatSample {

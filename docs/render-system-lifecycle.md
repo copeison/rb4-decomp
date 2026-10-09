@@ -1,8 +1,8 @@
 # Render-system construction
 
-`render_system_construct` at `0x3DD410` builds the shared base renderer. The
+`RndDevice::RndDevice` at `0x3DD410` builds the shared base renderer. The
 clean control-flow reconstruction is in
-`src/render/core/system/render_system_lifecycle.cpp`; backend object layouts remain behind
+`src/render/system/RndDevice.cpp`; backend object layouts remain behind
 adapters until their individual types are identified.
 
 Construction proceeds in this order:
@@ -13,7 +13,7 @@ Construction proceeds in this order:
    backend slots, GPU-stat block, and built-in buffer slots.
 4. Initialize the deferred-release queue, its recursive mutex, and the adjacent
    frame-phase state.
-5. Publish `g_render_system`.
+5. Publish `gRndDevice`.
 6. Read `platform_mgr.supported_platforms` and initialize the corresponding
    slots, including each platform's sorted resolution list.
 7. Invoke a capability predicate for slot seven. The return value is ignored
@@ -33,7 +33,7 @@ and frame-phase tail at `0xEA0` is also source-owned. Destruction frees the acti
 target-state and render-context arrays by their recorded capacities, drains
 the recursive lock depth, and destroys the frame mutex.
 
-`render_system_destruct` at `0x3DD790` releases the settings block, callback
+`RndDevice::~RndDevice` at `0x3DD790` releases the settings block, callback
 state, backend objects, default resources, platform configurations, core
 vectors, and mutexes in reverse ownership order.
 
@@ -46,7 +46,7 @@ The common context prefix now owns the deleting, initialize, and shutdown
 dispatch slots at vtable offsets `0x08`, `0x10`, and `0x18`; runtime lifecycle
 code no longer models those context calls as frame-owner operations.
 
-`src/render/core/system/render_system_state.h` centralizes the verified
+`src/render/system/RndDevice.h` centralizes the verified
 312-byte prefix shared by frame activation and lifetime code. The prefix now
 includes the recursive mutex and lock bookkeeping at `0x08`-`0x1F`, the copied
 16-byte startup options at `0x28`, active frame owner and target-state array at
@@ -112,7 +112,7 @@ the typed 128-byte slots directly and destroys their resolution vectors in
 reverse slot order.
 
 Runtime initialization now writes the initialized flag and copies the exact
-16-byte `GameSystemInitOptions` block directly before invoking platform vtable
+16-byte `RndInitParams` block directly before invoking platform vtable
 slot `0x18`. Slot `0x20` completes initialization. The runtime epoch increments
 the timing-state counter and captures the first performance counter when that
 counter transitions from zero. Shutdown marks the shared state at `0xB1`

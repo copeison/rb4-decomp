@@ -6,7 +6,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -135,8 +135,8 @@ void initialize_blur_shader_support_objects(
     render_shader_constant_registry_add_definition(
         *constants, "HX_BLUR_DIRECTION_VERTICAL", 1);
     static const RenderSettings default_settings{};
-    auto* system = render_system_instance();
-    auto* settings = system == nullptr ? nullptr : render_system_settings(*system);
+    auto* system = TheRndDevice();
+    auto* settings = system == nullptr ? nullptr : system->mSettings;
     const auto tile_size = static_cast<std::int32_t>(
         (settings == nullptr ? default_settings : *settings).light_tile_size);
     render_shader_constant_registry_add_definition(

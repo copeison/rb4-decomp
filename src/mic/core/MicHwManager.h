@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "audio/core/system/Audio.h"
+#include "os/threading/CritSec.h"
 
 class Mic;
 class MicHwManager_FMOD;

@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -38,7 +38,7 @@ void render_depth_stencil_target_create(
     }
 
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     const auto use_40_bit_format = settings.use_40_bit_depth_stencil;
     const RenderDataFormatDescriptor format_descriptor{
         use_40_bit_format ? 40U : 32U,

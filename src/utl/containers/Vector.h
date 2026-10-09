@@ -13,7 +13,11 @@ namespace eastl {
 template <typename T, typename Allocator = HmxAllocator::allocator>
 class vector {
 public:
-    vector() : mpBegin(nullptr), mpEnd(nullptr), mpCapacity(nullptr) {}
+    vector()
+        : mpBegin(nullptr),
+          mpEnd(nullptr),
+          mpCapacity(nullptr),
+          mAllocator("EASTL vector") {}
     vector(const vector&) = delete;
     vector& operator=(const vector&) = delete;
     ~vector() {
@@ -48,6 +52,13 @@ public:
     }
     const T& front() const {
         return *mpBegin;
+    }
+    T& back() {
+        return *(mpEnd - 1);
+    }
+    void pop_back() {
+        --mpEnd;
+        mpEnd->~T();
     }
     T& operator[](unsigned long index) {
         return mpBegin[index];

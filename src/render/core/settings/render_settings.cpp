@@ -7,7 +7,7 @@
 #include "os/memory/MemMgr.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings_adapters.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
@@ -17,9 +17,7 @@ constexpr std::size_t kCurrentPlatformConfigIndex = 7;
 constexpr std::uint32_t kAsyncComputeFeature = 0x10;
 
 const RenderPlatformConfig& current_platform_config() {
-    return render_system_platform_config_at(
-        *render_system_instance(),
-        kCurrentPlatformConfigIndex);
+    return TheRndDevice()->mPlatformConfigs[kCurrentPlatformConfigIndex];
 }
 
 bool platform_supports_async_compute() {

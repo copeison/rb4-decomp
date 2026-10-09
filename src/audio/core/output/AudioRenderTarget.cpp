@@ -1,4 +1,5 @@
 #include "audio/core/output/AudioRenderTarget.h"
+#include "os/threading/CritSec.h"
 
 // Reconstructed from eboot.elf at 0x1127B90.
 void AudioMixer::SetSampleRate(int sampleRate) {
@@ -9,10 +10,10 @@ void AudioMixer::SetSampleRate(int sampleRate) {
 // mix are promoted first. Every block is then prepared on all callables, and
 // each callable makes its samples at most once per block.
 void AudioMixer::Mix(float, unsigned int numSamples, unsigned int mixCount, bool) {
-    CritSecTracker tracker(&mCritSec);
+    ScopedCritSecPtr tracker(&mCritSec);
 
     {
-        CritSecTracker pendingTracker(&mPendingCritSec);
+        ScopedCritSecPtr pendingTracker(&mPendingCritSec);
         while (!mPendingCallables.Empty()) {
             auto* callable = mPendingCallables.PopFront();
             mCallables.PushBack(*callable);

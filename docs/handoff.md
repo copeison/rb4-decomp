@@ -3,17 +3,21 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-merge of the audio conversion, the sixth step of the conversion to the reference map's original names, classes, and module
+`decomp: convert the render device to original classes` milestone, the
+seventh step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
-render context, and the audio and microphone subsystems are converted; the
-rest of the renderer and the game code still use the earlier names. The
+render context, the render device (`RndDevice`/`PS4Device`), and the audio and
+microphone subsystems are converted; the rest of the renderer and the game
+code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **181 C++ translation units**. It creates
+The current PS4 object build compiles **166 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 585 unique entries,
-covering engine code that has not been reconstructed, external runtime APIs,
+executable. The latest unresolved-symbol report contains 664 entries, most of the
+growth since the previous snapshot coming from FMOD loaders and decoders the
+audio conversion declared but has not reconstructed. It covers
+engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
 Rendering is roughly three quarters structurally reconstructed. The resource,
@@ -202,6 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
+| (this) | Render device (`RndDevice`, `PS4Device`, `CritSec`, `Condition`) converted to original classes |
+| `6f3b574` | Docs for the audio merge |
 | `528bbea` | Audio and microphone subsystems converted to original classes (merge) |
 | `00c11a0` | Render context release fix |
 | `00bc0d4` | Render context converted to original classes |

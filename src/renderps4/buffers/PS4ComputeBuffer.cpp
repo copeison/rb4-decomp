@@ -1,4 +1,5 @@
 #include "renderps4/buffers/PS4ComputeBuffer.h"
+#include "renderps4/system/PS4Device.h"
 
 #include <cstring>
 
@@ -25,7 +26,7 @@ bool PS4ComputeBuffer::_SyncStaticImpl() {
 // Reconstructed from eboot.elf at 0x8E34D0.
 void PS4ComputeBuffer::_FreeImpl() {
     for (auto& storage : mStorage) {
-        PS4DeferredDelete(storage);
+        gPS4Device->DeferredDelete(storage);
         storage = nullptr;
     }
 }

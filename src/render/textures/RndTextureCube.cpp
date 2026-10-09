@@ -2,7 +2,7 @@
 
 #include "render/system/RndFactory.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 
 // Reconstructed from eboot.elf at 0x6A1030.
 RndTextureCube::Description::Description() {
@@ -15,7 +15,7 @@ RndTextureCube* RndTextureCube::New(Description& desc, const RndTextureCube* reu
     desc.mCube.IsValid();
     auto* texture = TheRndFactory()->CreateTextureCube(desc);
     const auto& settings =
-        *rb4::render_system_settings(*rb4::render_system_instance());
+        *TheRndDevice()->mSettings;
     if (texture->mBaseDesc.mFormat.mUsage != kTextureUsageTiledLighting ||
         (texture->mBaseDesc.mFormat.mFlags & 2U) != 0 ||
         !settings.use_tiled_lighting) {

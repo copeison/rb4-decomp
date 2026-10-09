@@ -9,9 +9,9 @@
 
 namespace rb4 {
 
-struct RenderSystem;
-
 struct RenderPlatformConfig {
+    RenderPlatformConfig();  // 0x6B9940
+
     std::vector<RenderExtent> resolutions;
     std::uint64_t resource_tier;
     std::uint32_t feature_flags;
@@ -32,14 +32,9 @@ static_assert(offsetof(RenderPlatformConfig, resource_budget) == 96);
 static_assert(offsetof(RenderPlatformConfig, capability_mask) == 112);
 static_assert(sizeof(RenderPlatformConfig) == 128);
 
-RenderPlatformConfig& render_system_platform_config_at(
-    RenderSystem& system,
-    std::size_t index);
-void render_platform_config_construct(RenderPlatformConfig& config);
 void render_platform_config_initialize(
     RenderPlatformConfig& config,
     std::uint32_t platform_id);
-void render_platform_config_destruct(RenderPlatformConfig& config);
 bool render_platform_config_boot_probe(const RenderPlatformConfig& config);
 std::vector<std::uint32_t> render_supported_platform_ids();
 

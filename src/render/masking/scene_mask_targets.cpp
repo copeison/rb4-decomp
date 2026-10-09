@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -120,7 +120,7 @@ void render_scene_mask_targets_create(
         extent);
 
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     const auto tile_size =
         static_cast<std::uint32_t>(settings.mask_tile_size);
     const RenderExtent tile_extent{

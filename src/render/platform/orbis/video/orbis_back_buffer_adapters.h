@@ -11,7 +11,7 @@ namespace rb4 {
 
 void orbis_back_buffer_install_vtable(OrbisBackBuffer& back_buffer);
 OrbisBackBufferSpecification orbis_back_buffer_specification(
-    const OrbisRenderSystem& system,
+    const PS4Device& system,
     OrbisBackBufferDataFormat data_format);
 void orbis_gpu_render_target_initialize(
     OrbisGpuRenderTarget& target,
@@ -34,7 +34,7 @@ void orbis_back_buffer_attach_texture(
     OrbisBackBuffer& back_buffer,
     PS4Texture2D& texture);
 void orbis_video_output_register_back_buffers(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     const OrbisGpuRenderTarget* targets,
     std::size_t target_count);
 }  // namespace rb4

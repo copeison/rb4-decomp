@@ -3,7 +3,7 @@
 #include "render/textures/RndTextureBase.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 
@@ -14,12 +14,11 @@ namespace {
 constexpr std::size_t kCurrentPlatformConfig = 7;
 
 bool render_system_supports_cmaa() {
-    auto* system = render_system_instance();
+    auto* system = TheRndDevice();
     if (system == nullptr) {
         return false;
     }
-    const auto& config = render_system_platform_config_at(
-        *system, kCurrentPlatformConfig);
+    const auto& config = system->mPlatformConfigs[kCurrentPlatformConfig];
     return (config.feature_flags & 0x10U) != 0;
 }
 
@@ -130,7 +129,7 @@ void render_cmaa_targets_create(
 
     const auto extent = resources.extent;
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
 
     auto* reusable_color = reusable_target(
         reusable_resources, CmaaTargetKind::kColor);

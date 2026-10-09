@@ -4,8 +4,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -73,8 +72,7 @@ void initialize_depth_range_support_objects(
     RenderShaderParameterRegistrySet*,
     RenderShaderConstantBlock* constant_block,
     RenderShaderBackendState* backend_state) {
-    const auto& settings = *render_system_core_state(
-        *render_system_instance()).settings;
+    const auto& settings = *TheRndDevice()->mSettings;
     render_shader_constant_registry_add_definition(
         *constants,
         "HX_TILE_SIZE",

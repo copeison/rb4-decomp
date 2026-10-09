@@ -11,7 +11,6 @@ namespace rb4 {
 namespace {
 
 constexpr RenderExtent kFallbackResolution{1920, 1080};
-constexpr std::size_t kPlatformConfigOffset = 312;
 
 bool extent_less(RenderExtent left, RenderExtent right) {
     if (left.width != right.width) {
@@ -89,17 +88,9 @@ void apply_platform_capabilities(
 
 }  // namespace
 
-RenderPlatformConfig& render_system_platform_config_at(
-    RenderSystem& system,
-    std::size_t index) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<RenderPlatformConfig*>(
-        bytes + kPlatformConfigOffset + index * sizeof(RenderPlatformConfig));
-}
-
 // Reconstructed from eboot.elf at 0x6B9940.
-void render_platform_config_construct(RenderPlatformConfig& config) {
-    new (&config.resolutions) std::vector<RenderExtent>();
+RenderPlatformConfig::RenderPlatformConfig() {
+    auto& config = *this;
     config.resource_tier = ~std::uint64_t{0};
     config.feature_flags = 0;
     config.reserved_44 = 0;
@@ -140,11 +131,6 @@ void render_platform_config_initialize(
     }
     std::sort(resolutions.begin(), resolutions.end(), extent_less);
     config.resolutions = resolutions;
-}
-
-void render_platform_config_destruct(RenderPlatformConfig& config) {
-    using ResolutionList = std::vector<RenderExtent>;
-    config.resolutions.~ResolutionList();
 }
 
 // Reconstructed from eboot.elf at 0x6B9FE0.

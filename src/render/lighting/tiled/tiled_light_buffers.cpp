@@ -7,7 +7,7 @@
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureArray2D.h"
 #include "render/textures/RndPixelData.h"
@@ -115,7 +115,7 @@ void release_tiled_light_buffer(
 // Reconstructed from eboot.elf at 0x48A400.
 void render_tiled_light_buffers_initialize(RenderLightingSystem& system) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
 
     if (settings.use_tiled_lighting) {
         set_tiled_light_buffer(

@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
@@ -41,10 +41,10 @@ bool data_format_supported(
     if (data_format < 0) {
         return false;
     }
-    const auto* system = reinterpret_cast<const std::uint8_t*>(
-        render_system_instance());
-    const auto* supported_words = reinterpret_cast<const std::uint64_t*>(
-        system + 424 + static_cast<std::size_t>(resource_class) * 128);
+    // The original indexes the device's platform configurations by the
+    // resource class and reads their capability masks.
+    const auto* supported_words =
+        TheRndDevice()->mPlatformConfigs[resource_class].capability_mask;
     const auto format = static_cast<std::uint32_t>(data_format);
     return (supported_words[format >> 6] &
             (std::uint64_t{1} << (format & 63))) != 0;

@@ -4,6 +4,7 @@
 
 #include "audio/core/resources/Resource.h"
 #include "audio/fmod/api/fmod_api.h"
+#include "os/threading/CritSec.h"
 
 class String;
 

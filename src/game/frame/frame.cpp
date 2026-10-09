@@ -1,6 +1,6 @@
 #include "game/startup/startup.h"
 
-#include "render/core/system/render_system_frame.h"
+#include "render/system/RndDevice.h"
 #include "render/core/capture/screenshot_capture.h"
 
 namespace rb4 {
@@ -68,25 +68,27 @@ void update_frame_subsystems() {
 bool game_run_frame() {
     update_frame_subsystems();
 
-    render_system_poll();
-    if (!render_system_is_alive()) {
+    if (TheRndDevice() != nullptr) {
+        TheRndDevice()->PollMainWindow();
+    }
+    if (TheRndDevice() == nullptr) {
         return false;
     }
 
     if (ui_layout_consume_skip_frame()) {
-        render_system_skip_frame();
+        TheRndDevice()->ForceIncrementFrameCount();
     } else {
         if (screenshot_capture_pending()) {
             screenshot_capture_current_frame();
         }
 
-        if (render_system_begin_frame()) {
+        if (TheRndDevice()->BeginMainWindowFrame()) {
             ui_manager_render();
-            render_system_end_frame();
+            TheRndDevice()->EndMainWindowFrame();
         }
     }
 
-    return !exit_requested() && render_system_is_alive();
+    return !exit_requested() && TheRndDevice() != nullptr;
 }
 
 }  // namespace rb4

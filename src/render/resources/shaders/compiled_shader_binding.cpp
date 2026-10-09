@@ -4,8 +4,7 @@
 
 #include "render/context/RndContext.h"
 #include "render/shaders/RndShaderProgram.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
@@ -65,7 +64,7 @@ bool render_compiled_shader_objects_bind(
     }
 
     const auto frame_epoch = static_cast<std::int64_t>(
-        render_system_core_state(*render_system_instance()).frame_epoch);
+        TheRndDevice()->mFrameCount);
     for (std::uint32_t stage = 0; stage < kRenderShaderStageCount; ++stage) {
         const auto bit = kStageProgramBits[stage];
         if (!has_program(variant, bit)) {

@@ -6,6 +6,7 @@
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
 #include "utl/text/Symbol.h"
+#include "os/threading/CritSec.h"
 
 class AudioEmitterCom;
 class AudioGeneratorManager;

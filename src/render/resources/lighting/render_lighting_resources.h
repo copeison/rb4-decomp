@@ -5,8 +5,6 @@
 
 namespace rb4 {
 
-struct RenderSystem;
-
 struct RenderLightingResources {
     void* primary_resource;
     void* secondary_resource;
@@ -42,8 +40,6 @@ static_assert(
 static_assert(offsetof(RenderLightingResources, resource_slots_280) == 280);
 static_assert(sizeof(RenderLightingResources) == 304);
 
-RenderLightingResources& render_system_lighting_resources(
-    RenderSystem& system);
 void render_lighting_resources_construct(RenderLightingResources& resources);
 void render_lighting_resources_shutdown(RenderLightingResources& resources);
 void render_lighting_resources_destruct(RenderLightingResources& resources);

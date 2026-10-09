@@ -1,4 +1,5 @@
 #include "renderps4/buffers/PS4ParticleBuffer.h"
+#include "renderps4/system/PS4Device.h"
 
 namespace {
 
@@ -39,9 +40,9 @@ PS4ParticleBuffer::PS4ParticleBuffer(unsigned long numParticles, const char* nam
 // Reconstructed from eboot.elf at 0x8E2D30. The deleting destructor at
 // 0x8E2D80 releases the buffer through MemFree.
 PS4ParticleBuffer::~PS4ParticleBuffer() {
-    PS4DeferredDelete(mVertexStorage[0]);
-    PS4DeferredDelete(mVertexStorage[1]);
-    PS4DeferredDelete(mIndices);
+    gPS4Device->DeferredDelete(mVertexStorage[0]);
+    gPS4Device->DeferredDelete(mVertexStorage[1]);
+    gPS4Device->DeferredDelete(mIndices);
 }
 
 void PS4ParticleBuffer::_UpdateBuffer(RndContext& context) {

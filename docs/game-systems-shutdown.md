@@ -3,7 +3,7 @@
 `game_systems_initialize` at `0x402C30` creates the 4,352-byte Orbis renderer,
 warms the platform configuration for ID 7, initializes the shared render
 runtime, and conditionally creates default resources from the second byte of
-`GameSystemInitOptions`. It then runs the Orbis backend post-initializer and
+`RndInitParams`. It then runs the Orbis backend post-initializer and
 nine render-dependent subsystem initializers before registering the cleanup
 callback.
 
@@ -12,8 +12,8 @@ callback.
 exist or when another shutdown is already running.
 
 Once guarded, it shuts down eight render-dependent game subsystems in reverse
-startup order, calls `render_system_shutdown`, invokes the renderer's virtual
-deleting destructor, and clears `g_render_system`. The in-progress flag is
+startup order, calls `RndDevice::Terminate`, invokes the renderer's virtual
+deleting destructor, and clears `gRndDevice`. The in-progress flag is
 cleared only after the global renderer pointer has been reset.
 
 The individual dependent subsystem types remain unnamed, so their fixed

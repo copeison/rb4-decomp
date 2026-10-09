@@ -12,14 +12,11 @@
 #include "utl/time/Timer.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/synchronization/render_system_lock.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
-#include "render/platform/orbis/meshes/orbis_builtin_buffers.h"
-#include "render/platform/orbis/system/orbis_render_system.h"
+#include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Factory.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
 #include "renderps4/textures/PS4Texture2D.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
@@ -57,10 +54,9 @@ struct OrbisSubmitWorkerState {
 
 template <typename Callback>
 void for_each_output_texture(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     Callback callback) {
-    auto& base = orbis_render_system_base(system);
-    auto* frame_owner = render_system_frame_owner(base);
+    auto* frame_owner = system.mMainWindow;
     const auto states = render_frame_owner_target_states(*frame_owner);
     for (std::size_t index = 0; index < states.count; ++index) {
         auto* texture = render_target_state_texture(*states.states[index]);
@@ -78,62 +74,62 @@ std::uint32_t video_flip_mode(std::int32_t rate) {
 
 }  // namespace
 
-void orbis_video_output_open(OrbisRenderSystem& system) {
+void orbis_video_output_open(PS4Device& system) {
     constexpr std::int32_t kSystemUserId = 255;
     const auto handle = sceVideoOutOpen(kSystemUserId, 0, 0, nullptr);
-    orbis_set_video_output_handle(system, handle);
+    system.mVideoOutHandle = handle;
 }
 
 void orbis_video_output_set_flip_rate(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     std::uint32_t rate) {
     sceVideoOutSetFlipRate(
-        orbis_video_output_handle(system), static_cast<std::int32_t>(rate));
+        system.mVideoOutHandle, static_cast<std::int32_t>(rate));
 }
 
 void orbis_video_output_set_window_margins(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     std::uint32_t top,
     std::uint32_t bottom) {
     sceVideoOutSetWindowModeMargins(
-        orbis_video_output_handle(system),
+        system.mVideoOutHandle,
         static_cast<int>(top),
         static_cast<int>(bottom));
 }
 
 void orbis_create_event_queue(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     const char* name) {
     SceKernelEqueue queue = nullptr;
     sceKernelCreateEqueue(&queue, name);
-    orbis_set_event_queue(system, queue);
+    system.mEventQueue = queue;
 }
 
 void orbis_register_gnm_event(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     std::uint32_t event_id) {
-    sceGnmAddEqEvent(orbis_event_queue(system), event_id, nullptr);
+    sceGnmAddEqEvent(system.mEventQueue, event_id, nullptr);
 }
 
-void orbis_register_video_flip_event(OrbisRenderSystem& system) {
+void orbis_register_video_flip_event(PS4Device& system) {
     sceVideoOutAddFlipEvent(
-        orbis_event_queue(system),
-        orbis_video_output_handle(system),
+        system.mEventQueue,
+        system.mVideoOutHandle,
         nullptr);
 }
 
 void orbis_unregister_gnm_event(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     std::uint32_t event_id) {
-    sceGnmDeleteEqEvent(orbis_event_queue(system), event_id);
+    sceGnmDeleteEqEvent(system.mEventQueue, event_id);
 }
 
-void orbis_delete_event_queue(OrbisRenderSystem& system) {
-    sceKernelDeleteEqueue(orbis_event_queue(system));
+void orbis_delete_event_queue(PS4Device& system) {
+    sceKernelDeleteEqueue(system.mEventQueue);
 }
 
-void orbis_video_output_close(OrbisRenderSystem& system) {
-    sceVideoOutClose(orbis_video_output_handle(system));
+void orbis_video_output_close(PS4Device& system) {
+    sceVideoOutClose(system.mVideoOutHandle);
 }
 
 void orbis_hide_system_splash_screen() {
@@ -141,7 +137,7 @@ void orbis_hide_system_splash_screen() {
 }
 
 bool orbis_wait_for_submit_events(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     OrbisSubmitEvent* events,
     std::size_t capacity,
     std::size_t& event_count) {
@@ -152,7 +148,7 @@ bool orbis_wait_for_submit_events(
     const auto wait_capacity = static_cast<int>(
         std::min(capacity, kernel_events.size()));
     const auto result = sceKernelWaitEqueue(
-        orbis_event_queue(system),
+        system.mEventQueue,
         kernel_events.data(),
         wait_capacity,
         &kernel_event_count,
@@ -176,20 +172,20 @@ bool orbis_wait_for_submit_events(
 }
 
 void orbis_process_submit_timeout(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     OrbisSubmitWorkerState& state) {
-    orbis_lock_submission(system);
-    orbis_submit_scope_begin(system);
+    scePthreadMutexLock(&system.mSubmitCritSec.mCritSec);
+    ++system.mSubmitCritSec.mEntryCount;
     state.last_submit_check = Hmx::Timer::GetCycleCounter();
     sceGnmSubmitDone();
     state.pending_submit_ticks = 0;
-    orbis_submit_scope_end(system);
-    orbis_unlock_submission(system);
+    --system.mSubmitCritSec.mEntryCount;
+    scePthreadMutexUnlock(&system.mSubmitCritSec.mCritSec);
 }
 
-void orbis_process_flip_complete(OrbisRenderSystem& system) {
+void orbis_process_flip_complete(PS4Device& system) {
     SceVideoOutFlipStatus status{};
-    sceVideoOutGetFlipStatus(orbis_video_output_handle(system), &status);
+    sceVideoOutGetFlipStatus(system.mVideoOutHandle, &status);
 
     const auto completed_buffer =
         static_cast<std::uint64_t>(status.flipArg);
@@ -206,12 +202,12 @@ void orbis_process_flip_complete(OrbisRenderSystem& system) {
 }
 
 void orbis_process_end_of_pipe(
-    OrbisRenderSystem& system,
+    PS4Device& system,
     OrbisSubmitWorkerState& state) {
-    orbis_lock_submission(system);
-    orbis_submit_scope_begin(system);
+    scePthreadMutexLock(&system.mSubmitCritSec.mCritSec);
+    ++system.mSubmitCritSec.mEntryCount;
 
-    auto& context = orbis_render_system_context(system);
+    auto& context = system.Context();
     bool submit_done = orbis_render_context_frame_submissions_complete(
         context, state.next_buffer);
     if (!submit_done) {
@@ -236,21 +232,20 @@ void orbis_process_end_of_pipe(
             texture.AddPendingPresentation(state.next_buffer);
         });
 
-    orbis_publish_submit_token(system);
-    orbis_submit_scope_end(system);
-    orbis_unlock_submission(system);
-    orbis_signal_submit_condition(system);
+    system.mSubmitToken = 1;
+    --system.mSubmitCritSec.mEntryCount;
+    scePthreadMutexUnlock(&system.mSubmitCritSec.mCritSec);
+    system.mSubmitCondition.Signal();
 
-    auto& base = orbis_render_system_base(system);
     const auto rate = render_settings_active_vsync_mode(
-        *render_system_settings(base));
-    if (rate != orbis_cached_flip_rate(system)) {
-        orbis_set_cached_flip_rate(system, rate);
+        *system.mSettings);
+    if (rate != system.mFlipRate) {
+        system.mFlipRate = rate;
         orbis_video_output_set_flip_rate(system, rate == 2);
     }
 
     sceVideoOutSubmitFlip(
-        orbis_video_output_handle(system),
+        system.mVideoOutHandle,
         static_cast<std::int32_t>(state.next_buffer),
         video_flip_mode(rate),
         state.previous_buffer);
@@ -258,8 +253,13 @@ void orbis_process_end_of_pipe(
     state.next_buffer = (state.next_buffer + 1) % kBackBufferCount;
 }
 
+}  // namespace rb4
+
+using namespace rb4;
+
 // Reconstructed from eboot.elf at 0x8D7B20.
-void orbis_render_system_initialize(OrbisRenderSystem& system) {
+void PS4Device::_InitImpl(const RndInitParams*) {
+    auto& system = *this;
     orbis_video_output_open(system);
     orbis_video_output_set_flip_rate(system, 0);
     orbis_video_output_set_window_margins(system, 1080, 0);
@@ -268,15 +268,14 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
     orbis_register_gnm_event(system, kGnmEventId);
     orbis_register_video_flip_event(system);
 
-    orbis_create_default_vertex_buffer(system);
-    orbis_create_identity_instance_buffer(system);
-    auto& base = orbis_render_system_base(system);
-    render_system_set_factory(base, new PS4Factory);
+    _InitDefaultVertexBuffers();
+    _InitIdentityInstanceBuffers();
+    _InstallFactory(new PS4Factory);
     orbis_create_back_buffer(system);
     orbis_create_render_context(system);
 
-    orbis_initialize_submit_condition(system);
-    orbis_submit_thread_wrapper(system).Create(
+    system.mSubmitCondition.Init(system.mSubmitCritSec);
+    system.mSubmitThread.Create(
         orbis_submit_done_thread_entry,
         &system,
         kSubmitThreadName,
@@ -284,69 +283,70 @@ void orbis_render_system_initialize(OrbisRenderSystem& system) {
         kSubmitThreadPriority,
         0,
         0);
-    orbis_set_submit_thread_running(system, true);
-    orbis_consume_submit_token(system);
-    orbis_submit_thread(system).Start();
+    system.mSubmitThreadRunning = true;
+    system.mSubmitToken = 0;
+    system.mSubmitThread.mThread.Start();
     orbis_wait_for_submit_thread(system);
     orbis_hide_system_splash_screen();
 }
 
 // Reconstructed from eboot.elf at 0x8D8040.
-void orbis_render_system_shutdown(OrbisRenderSystem& system) {
-    orbis_set_submit_thread_running(system, false);
-    orbis_submit_thread(system)._Join();
-    orbis_destroy_submit_condition(system);
-    auto& base = orbis_render_system_base(system);
-    render_system_release_back_buffer(base);
-    render_system_release_render_contexts(base);
+void PS4Device::_TerminateImpl() {
+    auto& system = *this;
+    mSubmitThreadRunning = false;
+    mSubmitThread.mThread._Join();
+    mSubmitCondition.Destroy();
+    _DestroyMainWindow();
+    _DestroyContexts();
     orbis_unregister_gnm_event(system, kGnmEventId);
     orbis_delete_event_queue(system);
     orbis_video_output_close(system);
 }
 
-void orbis_create_back_buffer(OrbisRenderSystem& system) {
+namespace rb4 {
+
+void orbis_create_back_buffer(PS4Device& system) {
     static_cast<void>(orbis_back_buffer_create(system));
 }
 
-void orbis_create_render_context(OrbisRenderSystem& system) {
+void orbis_create_render_context(PS4Device& system) {
     static_cast<void>(orbis_render_context_create(system));
 }
 
-void orbis_wait_for_submit_thread(OrbisRenderSystem& system) {
-    orbis_lock_submission(system);
-    orbis_submit_scope_begin(system);
-    while (!orbis_submit_token_available(system)) {
-        orbis_wait_for_submit_token(system);
+void orbis_wait_for_submit_thread(PS4Device& system) {
+    scePthreadMutexLock(&system.mSubmitCritSec.mCritSec);
+    ++system.mSubmitCritSec.mEntryCount;
+    while (system.mSubmitToken == 0) {
+        system.mSubmitCondition.Wait();
     }
-    orbis_submit_scope_end(system);
-    orbis_unlock_submission(system);
+    --system.mSubmitCritSec.mEntryCount;
+    scePthreadMutexUnlock(&system.mSubmitCritSec.mCritSec);
 }
 
 // Reconstructed from eboot.elf at 0x8D77E0.
 std::int32_t orbis_submit_done_thread_entry(void* context) {
-    auto& system = *static_cast<OrbisRenderSystem*>(context);
+    auto& system = *static_cast<PS4Device*>(context);
     orbis_submit_done_thread_run(system);
     return 0;
 }
 
 // Reconstructed from eboot.elf at 0x8D7340.
-void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
-    auto& base = orbis_render_system_base(system);
-    render_system_acquire_frame_lock(base);
-    if (render_system_has_pending_frame(base)) {
-        render_system_activate_pending_frame(base);
+void orbis_submit_done_thread_run(PS4Device& system) {
+    system.Lock();
+    if (system.mBeginFramePending) {
+        system._FlushPendingBeginFrame();
     }
-    render_system_release_frame_lock(base);
+    system.Unlock();
 
-    orbis_lock_submission(system);
-    orbis_publish_submit_token(system);
-    orbis_unlock_submission(system);
-    orbis_signal_submit_condition(system);
+    scePthreadMutexLock(&system.mSubmitCritSec.mCritSec);
+    system.mSubmitToken = 1;
+    scePthreadMutexUnlock(&system.mSubmitCritSec.mCritSec);
+    system.mSubmitCondition.Signal();
 
     OrbisSubmitWorkerState state;
     state.last_submit_check = Hmx::Timer::GetCycleCounter();
     std::array<OrbisSubmitEvent, 4> events{};
-    while (orbis_submit_thread_running(system)) {
+    while (system.mSubmitThreadRunning) {
         std::size_t event_count = 0;
         if (!orbis_wait_for_submit_events(
                 system, events.data(), events.size(), event_count)) {
@@ -365,12 +365,6 @@ void orbis_submit_done_thread_run(OrbisRenderSystem& system) {
             }
         }
     }
-}
-
-// Reconstructed from eboot.elf at 0x8D7B00.
-void orbis_render_system_delete(OrbisRenderSystem& system) {
-    orbis_render_system_destruct(system);
-    operator delete(&system);
 }
 
 }  // namespace rb4

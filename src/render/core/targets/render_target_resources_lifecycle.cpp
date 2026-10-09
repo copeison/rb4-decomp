@@ -4,7 +4,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_block.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/textures/RndTextureBase.h"
@@ -225,7 +225,7 @@ void render_target_resources_initialize(
 
     if (has_flag(flags, RenderTargetResourceFlag::kPartialFrameBlocks)) {
         const auto& settings =
-            *render_system_settings(*render_system_instance());
+            *TheRndDevice()->mSettings;
         const auto partial_block_count = static_cast<std::size_t>(
             settings.max_partial_framerate_scenes);
         resize_blocks(resources, partial_block_count + 1);

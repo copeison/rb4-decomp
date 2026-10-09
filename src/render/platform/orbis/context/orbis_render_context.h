@@ -5,9 +5,10 @@
 
 class PS4Context;
 
+class PS4Device;
+
 namespace rb4 {
 
-struct OrbisRenderSystem;
 struct OrbisRenderCommandContext;
 struct OrbisTransientVertexBuffer;
 
@@ -19,7 +20,7 @@ constexpr std::size_t kOrbisComputeContextsPerFrame = 9;
 constexpr std::size_t kOrbisTransientFormatCount = 8;
 
 PS4Context* orbis_render_context_create(
-    OrbisRenderSystem& system);
+    PS4Device& system);
 void orbis_render_context_create_gfx_contexts(
     PS4Context& context);
 void orbis_render_context_create_gpu_timestamp_pool(

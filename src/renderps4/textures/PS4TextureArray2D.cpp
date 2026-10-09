@@ -1,5 +1,6 @@
 #include "renderps4/textures/PS4TextureArray2D.h"
 #include "renderps4/system/PS4RenderUtl.h"
+#include "renderps4/system/PS4Device.h"
 
 // Reconstructed from eboot.elf at 0x8E5D40.
 PS4TextureArray2D::PS4TextureArray2D(const Description& desc)
@@ -14,11 +15,11 @@ PS4TextureArray2D::PS4TextureArray2D(const Description& desc)
 // Reconstructed from eboot.elf at 0x8E5D80. The deleting destructor at
 // 0x8E5E50 releases the texture through MemFree.
 PS4TextureArray2D::~PS4TextureArray2D() {
-    PS4DeferredDelete(mStorage);
-    PS4DeferredDelete(mStencilStorage);
-    PS4DeferredDelete(mHtileStorage);
+    gPS4Device->DeferredDelete(mStorage);
+    gPS4Device->DeferredDelete(mStencilStorage);
+    gPS4Device->DeferredDelete(mHtileStorage);
     if (mColorTarget != nullptr) {
-        PS4DeferredDelete(ColorTargetMetadata(mColorTarget));
+        gPS4Device->DeferredDelete(ColorTargetMetadata(mColorTarget));
         operator delete(mColorTarget);
         mColorTarget = nullptr;
     }

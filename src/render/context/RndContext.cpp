@@ -3,7 +3,7 @@
 #include <cstring>
 
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/system/render_resource_manager.h"
 
 namespace {
@@ -59,7 +59,7 @@ RndContext::~RndContext() {}
 // constant buffers from the shader manager's configurations.
 void RndContext::Init() {
     const auto& constants =
-        rb4::render_system_resource_manager(*rb4::render_system_instance())
+        TheRndDevice()->mResourceMgr
             .shader_constants;
     mCBuffers[0] = RndShaderCBuffer::New(*constants.render_target_block, 0);
     mCBuffers[1] = RndShaderCBuffer::New(*constants.camera_block, 0);

@@ -4,7 +4,7 @@
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -76,7 +76,7 @@ void render_tiled_light_target_buffers_create(
     bool stereo,
     RndTextureBase* existing_interpolation_target) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     if (!settings.use_tiled_lighting) {
         return;
     }

@@ -9,8 +9,6 @@ class RndContext;
 
 namespace rb4 {
 
-struct RenderSystem;
-
 struct AudioAnalysisTextureSet {
     RndTextureBase** textures;
     std::size_t texture_count;
@@ -28,8 +26,6 @@ static_assert(offsetof(AudioAnalysisTextureSet, inline_textures) == 24);
 static_assert(offsetof(AudioAnalysisTextureSet, samples_begin) == 40);
 static_assert(sizeof(AudioAnalysisTextureSet) == 72);
 
-AudioAnalysisTextureSet& render_system_audio_analysis_textures(
-    RenderSystem& system);
 void audio_analysis_texture_set_construct(
     AudioAnalysisTextureSet& textures);
 void audio_analysis_texture_set_destruct(

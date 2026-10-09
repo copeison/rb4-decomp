@@ -7,7 +7,7 @@
 #include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 
 using namespace rb4;
 
@@ -26,7 +26,7 @@ void PS4Context::_DrawPrimitivesImpl(RndPrimitive primitive, RndVertexType forma
         commands,
         static_cast<std::uint32_t>(kMeshVertexStreamCount),
         static_cast<std::uint32_t>(kInstanceVertexStreamCount),
-        orbis_identity_instance_descriptors());
+        gPS4Device->mIdentityInstanceDescs);
     auto* indices = static_cast<std::uint16_t*>(
         orbis_allocate_embedded_data(
             commands,

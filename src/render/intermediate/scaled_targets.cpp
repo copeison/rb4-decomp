@@ -3,7 +3,7 @@
 #include <array>
 
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -95,7 +95,7 @@ void render_scaled_targets_create(
     const RenderTargetResources* reusable_resources) {
     const auto full_extent = resources.extent;
     const auto use_64_bit_format =
-        render_system_settings(*render_system_instance())
+        TheRndDevice()->mSettings
             ->use_64_bit_light_accum;
     const RenderDataFormatDescriptor format_descriptor{
         use_64_bit_format ? 64U : 32U,

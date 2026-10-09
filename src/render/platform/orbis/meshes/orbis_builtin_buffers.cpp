@@ -1,4 +1,3 @@
-#include "render/platform/orbis/meshes/orbis_builtin_buffers.h"
 
 #include <cstring>
 
@@ -7,7 +6,7 @@
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/meshes/RndVertex.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 
 namespace rb4 {
 
@@ -47,19 +46,24 @@ RndVertexSkinned DefaultStreamVertex() {
 
 }  // namespace
 
+}  // namespace rb4
+
+using namespace rb4;
+
 // Reconstructed from eboot.elf at 0x8D7DB0.
-void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
+void PS4Device::_InitDefaultVertexBuffers() {
+    auto& system = *this;
     const auto* format =
         render_mesh_format_descriptor(kVertexSkinned);
     auto* buffer = MemAlloc(
         format->vertex_stride, kDefaultVertexBufferName, 4);
-    orbis_set_default_vertex_buffer(system, buffer);
+    system.mDefaultVertexBuffer = buffer;
 
     const auto vertex = DefaultStreamVertex();
     std::memcpy(buffer, &vertex, sizeof(vertex));
     std::uint32_t descriptor_mask = 0;
     orbis_build_mesh_vertex_descriptors(
-        orbis_default_vertex_descriptors(system),
+        system.mDefaultVertexDescs,
         buffer,
         descriptor_mask,
         1,
@@ -67,19 +71,18 @@ void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
 }
 
 // Reconstructed from eboot.elf at 0x8D7EB0.
-void orbis_create_identity_instance_buffer(OrbisRenderSystem& system) {
+void PS4Device::_InitIdentityInstanceBuffers() {
+    auto& system = *this;
     auto* buffer = MemAlloc(
         sizeof(OrbisMeshInstanceData),
         kIdentityInstanceBufferName,
         4);
-    orbis_set_identity_instance_buffer(system, buffer);
+    system.mIdentityInstanceBuffer = buffer;
     orbis_build_instance_vertex_descriptors(
-        orbis_identity_instance_descriptors(system),
+        system.mIdentityInstanceDescs,
         static_cast<const OrbisMeshInstanceData*>(buffer),
         1);
 
     const auto instance = identity_instance_data();
     std::memcpy(buffer, &instance, sizeof(instance));
 }
-
-}  // namespace rb4

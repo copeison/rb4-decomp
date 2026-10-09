@@ -8,11 +8,14 @@
 #include "render/resources/materials/default_materials.h"
 #include "render/resources/textures/default_textures.h"
 
+class RndDevice;
+
 namespace rb4 {
 
-struct RenderSystem;
-
+// Constructed inline by RndDevice's constructor (0x6BDB30 in this build).
 struct DefaultRenderResources {
+    ~DefaultRenderResources();  // 0x6BDC20
+
     RndSceneResource* scene_resource = nullptr;
     DefaultTextureSet textures;
     std::array<RndComputeBuffer*, 2> compute_buffers{};
@@ -23,11 +26,6 @@ struct DefaultRenderResources {
 
 static_assert(sizeof(DefaultRenderResources) == 568);
 
-DefaultRenderResources& render_system_default_resources(
-    RenderSystem& system);
-
-void render_construct_default_resources(DefaultRenderResources& resources);
-void render_destruct_default_resources(DefaultRenderResources& resources);
 void render_initialize_default_resources(
     DefaultRenderResources& resources,
     bool initialize_rendering);

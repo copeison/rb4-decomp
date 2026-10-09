@@ -2,7 +2,7 @@
 
 #include "render/textures/RndTextureBase.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 
@@ -13,7 +13,7 @@ void render_light_probe_accumulation_target_create(
     RenderTargetResources& resources,
     const RenderTargetResources* reusable_resources) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     if (settings.use_tiled_lighting) {
         return;
     }

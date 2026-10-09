@@ -1,5 +1,6 @@
 #include "renderps4/textures/PS4Texture3D.h"
 #include "renderps4/system/PS4RenderUtl.h"
+#include "renderps4/system/PS4Device.h"
 
 // Reconstructed from eboot.elf at 0x8E53C0.
 PS4Texture3D::PS4Texture3D(const Description& desc)
@@ -9,7 +10,7 @@ PS4Texture3D::PS4Texture3D(const Description& desc)
 // Reconstructed from eboot.elf at 0x8E53F0. The deleting destructor at
 // 0x8E5450 releases the texture through MemFree.
 PS4Texture3D::~PS4Texture3D() {
-    PS4DeferredDelete(mStorage);
+    gPS4Device->DeferredDelete(mStorage);
     operator delete(mGpuTexture);
     mGpuTexture = nullptr;
 }

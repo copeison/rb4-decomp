@@ -3,7 +3,7 @@
 #include <new>
 
 #include "render/buffers/RndComputeBuffer.h"
-#include "render/core/system/render_system.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
@@ -11,7 +11,6 @@ namespace rb4 {
 namespace {
 
 constexpr const char* kDefaultComputeBufferName = "Default Compute Buffer";
-constexpr std::size_t kDefaultRenderResourcesOffset = 1976;
 
 void replace_scene_resource(
     RndSceneResource*& destination,
@@ -42,24 +41,9 @@ void release_texture_family(DefaultTextureFamily& family) {
 
 }  // namespace
 
-DefaultRenderResources& render_system_default_resources(
-    RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<DefaultRenderResources*>(
-        bytes + kDefaultRenderResourcesOffset);
-}
-
-// Reconstructed from eboot.elf at 0x6BDB30.
-void render_construct_default_resources(DefaultRenderResources& resources) {
-    new (&resources) DefaultRenderResources{};
-}
-
 // Reconstructed from eboot.elf at 0x6BDC20.
-void render_destruct_default_resources(DefaultRenderResources& resources) {
-    using LightList = std::vector<RndObjectId>;
-    resources.lighting.shadowed_spot_lights.~LightList();
-    resources.lighting.directional_lights.~LightList();
-
+DefaultRenderResources::~DefaultRenderResources() {
+    auto& resources = *this;
     if (resources.lighting.resource != nullptr) {
         rnd_scene_resource_release(resources.lighting.resource);
     }

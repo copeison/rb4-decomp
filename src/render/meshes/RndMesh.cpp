@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "render/core/system/render_epoch.h"
+#include "render/system/RndDevice.h"
 #include "render/system/RndFactory.h"
 
 // Reconstructed from eboot.elf at 0x5C26D0.
@@ -67,7 +67,7 @@ void RndMesh::SyncStatic() {
 
 // Records the frame of the update before forwarding it.
 void RndMesh::SyncDynamic(RndContext& context, unsigned int flags) {
-    mLastUseFrame = rb4::current_render_epoch();
+    mLastUseFrame = TheRndDevice()->mFrameCount;
     if ((flags & 2U) != 0) {
         mNumFaces = mFaces.size();
     }

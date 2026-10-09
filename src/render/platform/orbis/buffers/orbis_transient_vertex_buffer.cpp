@@ -5,7 +5,7 @@
 #include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 
 namespace rb4 {
 
@@ -75,7 +75,7 @@ std::size_t orbis_transient_vertex_buffer_append(
 void orbis_transient_vertex_buffer_bind(
     const OrbisTransientVertexBuffer& buffer,
     OrbisRenderCommandContext& context) {
-    const auto* defaults = orbis_default_vertex_descriptors();
+    const auto* defaults = gPS4Device->mDefaultVertexDescs;
     for (std::uint32_t stream = 0;
          stream < kMeshVertexStreamCount;
          ++stream) {

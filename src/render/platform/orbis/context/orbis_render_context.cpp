@@ -6,7 +6,7 @@
 #include "os/memory/MemMgr.h"
 #include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 
 using namespace rb4;
 
@@ -54,9 +54,9 @@ static_assert(
 }  // namespace
 
 PS4Context* orbis_render_context_create(
-    OrbisRenderSystem& system) {
+    PS4Device& system) {
     auto* context = new PS4Context;
-    render_system_set_render_context(system, *context);
+    system._InstallImmediateContext(&*context);
     return context;
 }
 

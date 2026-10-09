@@ -2,7 +2,7 @@
 
 #include "render/core/capture/screenshot_capture_adapters.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 
 namespace rb4 {
 
@@ -106,16 +106,16 @@ void screenshot_capture_frame(
 }
 
 void screenshot_capture_current_frame() {
-    auto* system = render_system_instance();
+    auto* system = TheRndDevice();
     if (system == nullptr) {
         return;
     }
 
-    auto* owner = render_system_frame_owner(*system);
+    auto* owner = system->mMainWindow;
     if (owner != nullptr) {
         screenshot_capture_frame(
             *owner,
-            render_system_settings(*system)->screenshot_resolution);
+            system->mSettings->screenshot_resolution);
     }
 }
 

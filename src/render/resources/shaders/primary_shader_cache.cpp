@@ -12,7 +12,7 @@
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
 #include "render/core/platform/render_platform_config.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "utl/text/Str.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -71,8 +71,7 @@ void hash_permutation(
         if (!shader.dispatch->supports_render_target_slices(&shader)) {
             return;
         }
-        auto& platform = render_system_platform_config_at(
-            *render_system_instance(), kActivePlatformConfig);
+        auto& platform = TheRndDevice()->mPlatformConfigs[kActivePlatformConfig];
         if ((platform.feature_flags & kSixSliceFeature) == 0) {
             return;
         }
@@ -171,7 +170,7 @@ void release_defines(RenderShaderCacheDefineArray& defines) {
 }
 
 RenderResourceManager& resource_manager() {
-    return render_system_resource_manager(*render_system_instance());
+    return TheRndDevice()->mResourceMgr;
 }
 
 // Reconstructed from eboot.elf at 0x638A40. A compiled-shader cache begins

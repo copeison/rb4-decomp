@@ -10,6 +10,7 @@
 #include "audio/fmod/api/fmod_api.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
+#include "os/threading/CritSec.h"
 
 class Transform;
 class Vector3;

@@ -5,6 +5,7 @@
 #include "audio/core/system/Audio.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "utl/text/Str.h"
+#include "os/threading/CritSec.h"
 
 class File;
 

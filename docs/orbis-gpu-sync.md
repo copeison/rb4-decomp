@@ -1,6 +1,6 @@
 # Orbis GPU synchronization
 
-`orbis_render_system_wait_idle` at `0x8D8100` performs the renderer's full idle
+`PS4Device::_BeginFrameImpl` at `0x8D8100` performs the renderer's full idle
 barrier. It waits for GPU submissions, retires deferred allocations, flushes
 an active frame when necessary, and resets the newly selected platform frame
 slot at `0x8E8450` for recording.
@@ -15,8 +15,8 @@ at `0x8D8200` starts only once the frame index reaches two and releases entries
 whose recorded frame is no newer than `current_frame - 2`. This preserves a
 two-frame safety window before GPU-owned memory is returned to the allocator.
 
-`orbis_defer_allocation_release` at `0x8D83F0` appends a non-null allocation
-and the current frame index to this queue. `orbis_release_all_retired_allocations`
+`PS4Device::DeferredDelete` at `0x8D83F0` appends a non-null allocation
+and the current frame index to this queue. `PS4Device::_ProcessDeferredDeletion`
 at `0x8D84B0` ignores frame age and drains every entry; it is used when the
 renderer needs a complete cleanup rather than normal rolling retirement.
 The exact 32-byte node allocation, sentinel links, unlinking, GPU allocation

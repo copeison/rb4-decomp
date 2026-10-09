@@ -4,8 +4,7 @@
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/context/RndContext.h"
 #include "render/shaders/RndShaderProgram.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -51,7 +50,7 @@ constexpr std::size_t kConstantElementSize = 16;
 
 std::int64_t current_frame_epoch() {
     return static_cast<std::int64_t>(
-        render_system_core_state(*render_system_instance()).frame_epoch);
+        TheRndDevice()->mFrameCount);
 }
 
 void raise_limit(std::uint64_t& limit, std::uint64_t slot) {

@@ -1,4 +1,5 @@
 #include "renderps4/buffers/PS4ShaderCBuffer.h"
+#include "renderps4/system/PS4Device.h"
 
 #include <algorithm>
 #include <cstring>
@@ -29,7 +30,7 @@ PS4ShaderCBuffer::~PS4ShaderCBuffer() {
 
 void PS4ShaderCBuffer::_FreeGpuData() {
     if (mGpuData != nullptr) {
-        PS4DeferredDelete(mGpuData);
+        gPS4Device->DeferredDelete(mGpuData);
         mGpuData = nullptr;
     }
     mGpuSize = 0;

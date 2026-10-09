@@ -1,6 +1,7 @@
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/system/PS4RenderUtl.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
+#include "render/platform/orbis/video/orbis_back_buffer.h"
 
 // Reconstructed from eboot.elf at 0x8D62C0.
 PS4Texture2D::PS4Texture2D(const Description& desc)
@@ -99,7 +100,8 @@ void PS4Texture2D::_SyncDynamicImpl(RndContext&) {
 }
 
 const rb4::OrbisGpuRenderTarget* PS4Texture2D::GetRenderTarget() const {
-    const auto frame = rb4::orbis_active_render_frame_index();
+    const auto frame = reinterpret_cast<const rb4::OrbisBackBuffer*>(
+        gPS4Device->mMainWindow)->active_buffer;
     auto* target = mRenderTargets[frame];
     return target != nullptr ? target : mRenderTargets[0];
 }

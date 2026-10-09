@@ -9,6 +9,7 @@
 #include "os/files/File.h"
 #include "os/memory/MemMgr.h"
 #include "utl/time/Timer.h"
+#include "os/threading/CritSec.h"
 
 namespace {
 
@@ -220,14 +221,14 @@ void FmodAudioStreamResource::StopAsyncProcess(bool wait) {
 // Reconstructed from eboot.elf at 0x271B20. Streams are registered by file
 // name, which is what playback requests name.
 void FmodAudioStreamResource::_Register() {
-    CritSecTracker tracker(&gStreamCritSec);
+    ScopedCritSecPtr tracker(&gStreamCritSec);
     gStreams[Symbol(FileName(mFile.Str())).Str()] = this;
 }
 
 // Reconstructed from eboot.elf at 0x271830. Every entry for this resource is
 // removed.
 bool FmodAudioStreamResource::_Unregister() {
-    CritSecTracker tracker(&gStreamCritSec);
+    ScopedCritSecPtr tracker(&gStreamCritSec);
     bool removed = false;
     for (auto entry = gStreams.begin(); entry != gStreams.end();) {
         if (entry->second == this) {
@@ -242,7 +243,7 @@ bool FmodAudioStreamResource::_Unregister() {
 
 // Reconstructed from eboot.elf at 0x271C20.
 ResourcePtr<FmodAudioStreamResource> FmodAudioStreamResource::Find(Symbol file) {
-    CritSecTracker tracker(&gStreamCritSec);
+    ScopedCritSecPtr tracker(&gStreamCritSec);
     const auto entry = gStreams.find(file.Str());
     if (entry == gStreams.end()) {
         return ResourcePtr<FmodAudioStreamResource>();

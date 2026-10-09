@@ -5,6 +5,7 @@
 #include "os/files/File.h"
 #include "utl/containers/Std.h"
 #include "utl/threading/Thread.h"
+#include "os/threading/CritSec.h"
 
 namespace {
 
@@ -106,7 +107,7 @@ int ReaderThread(void*) {
 
 // Reconstructed from eboot.elf at 0x279FE0.
 FMOD_RESULT FmodFileWrapper::Open(const char* path, unsigned int* fileSize) {
-    CritSecTracker tracker(&mCritSec);
+    ScopedCritSecPtr tracker(&mCritSec);
     if (path != nullptr) {
         mPath += path;
     }
@@ -152,7 +153,7 @@ FMOD_RESULT FmodFileRead(
     if (wrapper == nullptr) {
         return FMOD_ERR_INVALID_PARAM;
     }
-    CritSecTracker tracker(&wrapper->mCritSec);
+    ScopedCritSecPtr tracker(&wrapper->mCritSec);
     *bytesRead = static_cast<unsigned int>(FileRead(wrapper->mFile, buffer, size));
     return *bytesRead < size ? FMOD_ERR_FILE_EOF : FMOD_OK;
 }
@@ -163,7 +164,7 @@ FMOD_RESULT FmodFileSeek(void* handle, unsigned int position, void*) {
     if (wrapper == nullptr) {
         return FMOD_ERR_INVALID_PARAM;
     }
-    CritSecTracker tracker(&wrapper->mCritSec);
+    ScopedCritSecPtr tracker(&wrapper->mCritSec);
     FileSeek(wrapper->mFile, position, kSeekBegin);
     return FMOD_OK;
 }
@@ -173,7 +174,7 @@ FMOD_RESULT FmodFileAsyncRead(FMOD_ASYNCREADINFO* info, void*) {
     if (info == nullptr) {
         return FMOD_ERR_INVALID_PARAM;
     }
-    CritSecTracker tracker(&gReaderCritSec);
+    ScopedCritSecPtr tracker(&gReaderCritSec);
     auto** position = gReadQueue.mBegin;
     while (position != gReadQueue.mEnd && (*position)->priority < info->priority) {
         ++position;
@@ -193,7 +194,7 @@ FMOD_RESULT FmodFileAsyncCancel(FMOD_ASYNCREADINFO* info, void*) {
     if (info == nullptr) {
         return FMOD_ERR_INVALID_PARAM;
     }
-    CritSecTracker tracker(&gReaderCritSec);
+    ScopedCritSecPtr tracker(&gReaderCritSec);
     for (auto** position = gReadQueue.mBegin; position != gReadQueue.mEnd; ++position) {
         if (*position == info) {
             std::memmove(

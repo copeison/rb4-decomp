@@ -5,6 +5,7 @@
 #include "audio/core/system/Audio.h"
 #include "audio/fmod/api/fmod_api.h"
 #include "mic/core/Mic.h"
+#include "os/threading/CritSec.h"
 
 // Microphone recorded through an FMOD record driver. The vtable is at
 // 0x18F1208; the object is 16720 bytes.

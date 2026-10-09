@@ -7,8 +7,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/core/system/render_system_globals.h"
-#include "render/core/system/render_system_state.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
@@ -204,8 +203,7 @@ void render_downsample_shader_draw(
     }
     buffer._SelectImpl(context);
 
-    const auto hdr_mode = render_system_core_state(*render_system_instance())
-                              .render_contexts.hdr_output_mode;
+    const auto hdr_mode = TheRndDevice()->mHdrOutputMode;
     std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
     keys[kPixelKey] = render_shader_parameter_binding_apply(
         0, parameter_binding(shader, 0), hdr_mode == kHdr10Output ? 1U : 0U);

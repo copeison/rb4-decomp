@@ -12,14 +12,13 @@
 #include "utl/text/Symbol.h"
 #include "render/context/RndContext.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "utl/text/Str.h"
 
 namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kRenderGpuStatBlockOffset = 3584;
 
 struct RenderGpuStatisticDispatch {
     void* reserved_0;
@@ -614,14 +613,14 @@ void aggregate_root_statistics(RenderGpuStatBlock& block) {
 
 // Reconstructed from eboot.elf at 0x62B9E0.
 void resolve_gpu_stat_frame(RenderGpuStatBlock& block) {
-    auto& system = *render_system_instance();
-    if (render_system_has_pending_frame(system)) {
-        render_system_activate_pending_frame(system);
+    auto& system = *TheRndDevice();
+    if (system.mBeginFramePending) {
+        system._FlushPendingBeginFrame();
     }
 
     resolve_statistic_queries(
         block,
-        render_system_primary_render_context(system));
+        (*system.mImmediateContext));
     if (block.backend != nullptr) {
         build_gpu_remainder(block);
     }
@@ -630,12 +629,6 @@ void resolve_gpu_stat_frame(RenderGpuStatBlock& block) {
 }
 
 }  // namespace
-
-RenderGpuStatBlock& render_system_gpu_stat_block(RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<RenderGpuStatBlock*>(
-        bytes + kRenderGpuStatBlockOffset);
-}
 
 // Reconstructed from eboot.elf at 0x62AAE0.
 void render_gpu_stat_block_construct(RenderGpuStatBlock& block) {

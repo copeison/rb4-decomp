@@ -3,14 +3,12 @@
 #include <cstddef>
 #include <cstring>
 
-#include "render/core/system/render_epoch.h"
+#include "renderps4/system/PS4Device.h"
 #include "render/meshes/RndMeshTyped.h"
-#include "render/platform/orbis/meshes/orbis_builtin_buffers.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/meshes/orbis_mesh_draw.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 // Mesh with double-buffered GPU vertices and a 16- or 32-bit index buffer.
 // The factory zero-fills the object before constructing it. Every member is
@@ -24,10 +22,10 @@ public:
 
     // Returns the GPU buffers to the device for deferred release.
     ~PS4MeshTyped() override {
-        if (rb4::g_orbis_render_system != nullptr) {
-            PS4DeferredDelete(mVertexData[0]);
-            PS4DeferredDelete(mVertexData[1]);
-            PS4DeferredDelete(mIndexData);
+        if (gPS4Device != nullptr) {
+            gPS4Device->DeferredDelete(mVertexData[0]);
+            gPS4Device->DeferredDelete(mVertexData[1]);
+            gPS4Device->DeferredDelete(mIndexData);
         }
         mVertexData[0] = nullptr;
         mVertexData[1] = nullptr;
@@ -52,7 +50,7 @@ public:
         }
         rb4::gnmx_finish_draw(commands);
         rb4::gnm_draw_command_buffer_set_num_instances(commands, 1);
-        this->mLastUseFrame = rb4::current_render_epoch();
+        this->mLastUseFrame = TheRndDevice()->mFrameCount;
     }
 
     void _SyncStaticImpl() override {
@@ -83,9 +81,9 @@ public:
         }
         const auto bytes = count * sizeof(Vertex);
         if (mVertexDataCapacity != count) {
-            if (rb4::g_orbis_render_system != nullptr) {
-                PS4DeferredDelete(mVertexData[0]);
-                PS4DeferredDelete(mVertexData[1]);
+            if (gPS4Device != nullptr) {
+                gPS4Device->DeferredDelete(mVertexData[0]);
+                gPS4Device->DeferredDelete(mVertexData[1]);
             }
             mVertexData[0] = static_cast<Vertex*>(MemAlloc(bytes, "VBuffer", 4));
             mVertexData[1] = (this->mVertexUsageFlags & 1U) != 0
@@ -126,8 +124,8 @@ public:
 
         if (mIndexCapacity != numIndices ||
             mIndexFormat != static_cast<unsigned int>(format)) {
-            if (rb4::g_orbis_render_system != nullptr) {
-                PS4DeferredDelete(mIndexData);
+            if (gPS4Device != nullptr) {
+                gPS4Device->DeferredDelete(mIndexData);
             }
             mIndexData = MemAlloc(bytes, "IBuffer", 4);
             mIndexCapacity = numIndices;
@@ -157,7 +155,7 @@ public:
 private:
     // Streams the mesh lacks fall back to the shared default buffers.
     void SelectVertexBuffers(rb4::OrbisRenderCommandContext& commands) const {
-        const auto* defaults = rb4::orbis_default_vertex_descriptors();
+        const auto* defaults = gPS4Device->mDefaultVertexDescs;
         const auto* buffers = mVertexBuffers[mActiveVertexData];
         for (unsigned int stream = 0; stream < rb4::kMeshVertexStreamCount; ++stream) {
             const auto* buffer = (mBufferMask & (1U << stream)) != 0

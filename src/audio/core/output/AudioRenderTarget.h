@@ -6,6 +6,7 @@
 #include "audio/core/output/AudioBus.h"
 #include "audio/core/system/Audio.h"
 #include "utl/text/Symbol.h"
+#include "os/threading/CritSec.h"
 
 class FmodPremixCallback;
 
@@ -40,7 +41,7 @@ public:
     // Queues a callable for the next mix. Inlined, for example at 0x267205.
     // Name not in the reference map.
     void AddCallable(AudioBusCallable* callable) {
-        CritSecTracker tracker(&mPendingCritSec);
+        ScopedCritSecPtr tracker(&mPendingCritSec);
         mPendingCallables.PushBack(*callable);
     }
 

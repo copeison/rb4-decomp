@@ -1,7 +1,7 @@
 #include "render/lighting/accumulation/light_accumulation_target_factory.h"
 
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
 #include "render/textures/RndTextureBase.h"
@@ -30,7 +30,7 @@ RndTextureBase* render_light_accumulation_target_create(
     bool allocate_attachment,
     RndTextureBase* reusable_target) {
     const auto& settings =
-        *render_system_settings(*render_system_instance());
+        *TheRndDevice()->mSettings;
     const bool use_64_bit_format = settings.use_64_bit_light_accum ||
         (resources.flags & 0x20000000U) != 0;
 

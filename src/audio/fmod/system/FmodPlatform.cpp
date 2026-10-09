@@ -20,6 +20,7 @@
 #include "audio/core/generators/AudioGenerator.h"
 #include "math/transform/Transform.h"
 #include "utl/time/Timer.h"
+#include "os/threading/CritSec.h"
 
 FModSystem* FModSystem::sSystem;
 
@@ -456,7 +457,7 @@ int FModSystem::Update() {
 // Reconstructed from eboot.elf at 0x2781C0.
 void FModSystem::ExecutePremixCallbacks(unsigned long mixCount) {
     {
-        CritSecTracker tracker(&mPremixCritSec);
+        ScopedCritSecPtr tracker(&mPremixCritSec);
         auto* const sentinel = mPremixCallbacks.Sentinel();
         for (auto* node = mPremixCallbacks.mNext; node != sentinel; node = node->mNext) {
             auto* callback = reinterpret_cast<FmodPremixCallback*>(
@@ -588,7 +589,7 @@ int FModSystem::InitBufferedOutput() {
 // Reconstructed from eboot.elf at 0x278A00. Releases are dropped once the
 // Studio system is gone.
 void FModSystem::DeferRelease(FMOD::ChannelControl* channel, FMOD::DSP* dsp) {
-    CritSecTracker tracker(&mDeferredCritSec);
+    ScopedCritSecPtr tracker(&mDeferredCritSec);
     if (mStudioSystem == nullptr) {
         return;
     }

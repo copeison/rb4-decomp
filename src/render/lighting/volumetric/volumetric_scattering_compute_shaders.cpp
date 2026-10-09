@@ -6,7 +6,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
 #include "render/core/settings/render_settings.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -62,11 +62,11 @@ std::int64_t& shader_field(void* shader, std::size_t offset) {
 
 const RenderSettings& current_settings() {
     static const RenderSettings default_settings{};
-    auto* system = render_system_instance();
+    auto* system = TheRndDevice();
     if (system == nullptr) {
         return default_settings;
     }
-    auto* settings = render_system_settings(*system);
+    auto* settings = system->mSettings;
     return settings == nullptr ? default_settings : *settings;
 }
 

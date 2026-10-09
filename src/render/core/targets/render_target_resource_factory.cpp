@@ -3,7 +3,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "render/system/RndFactory.h"
-#include "render/core/system/render_system_globals.h"
+#include "render/system/RndDevice.h"
 #include "render/core/targets/render_target_resources.h"
 #include "render/textures/RndTextureBase.h"
 #include "render/textures/RndTexture2D.h"
@@ -45,7 +45,7 @@ void resolve_descriptor(
 }
 
 RndFactory& render_factory() {
-    return *render_system_factory(*render_system_instance());
+    return *TheRndDevice()->mFactory;
 }
 
 }  // namespace

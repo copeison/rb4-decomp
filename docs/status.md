@@ -575,6 +575,11 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the render device to `RndDevice` and `PS4Device` with all 17
+  virtual slots, a fully asserted layout, `Rnd::PlatformCreateDevice`,
+  `CritSec`, `ScopedCritSec`, and `Condition`; recover the deferred-context,
+  console-state, and material pending-free entry points (see
+  [render-device.md](render-device.md)).
 - [x] Convert the audio and microphone subsystems to the reference map's
   classes (`FModSystem`, the FMOD generators and managers, `FmodFileWrapper`,
   `MicHwManager_FMOD`, `Mic_FMOD`, the DSP plug-ins) and move `Vector3`,

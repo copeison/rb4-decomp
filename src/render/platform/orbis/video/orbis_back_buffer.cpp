@@ -5,7 +5,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/core/targets/render_target.h"
-#include "render/platform/orbis/system/orbis_render_system_globals.h"
+#include "renderps4/system/PS4Device.h"
 #include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
 
 namespace rb4 {
@@ -27,18 +27,18 @@ static_assert(offsetof(OrbisBackBuffer, active_buffer) == 32,
 static_assert(sizeof(OrbisGpuRenderTarget) == 64,
               "unexpected Gnm render-target size");
 
-OrbisBackBuffer* orbis_back_buffer_create(OrbisRenderSystem& system) {
+OrbisBackBuffer* orbis_back_buffer_create(PS4Device& system) {
     auto* storage = operator new(kBackBufferSize);
     auto* back_buffer = static_cast<OrbisBackBuffer*>(storage);
     orbis_back_buffer_construct(*back_buffer, system);
-    render_system_set_back_buffer(system, *back_buffer);
+    system._InstallMainWindow(reinterpret_cast<RenderFrameOwner*>(&*back_buffer));
     return back_buffer;
 }
 
 // Reconstructed from eboot.elf at 0x8E24A0.
 void orbis_back_buffer_construct(
     OrbisBackBuffer& back_buffer,
-    OrbisRenderSystem& system) {
+    PS4Device& system) {
     render_target_construct(
         back_buffer, kRenderTargetFlags, true);
     orbis_back_buffer_install_vtable(back_buffer);

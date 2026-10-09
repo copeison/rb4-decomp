@@ -3,6 +3,7 @@
 #include "audio/core/generators/AudioGenerator.h"
 #include "audio/core/output/AudioRenderTarget.h"
 #include "utl/containers/Std.h"
+#include "os/threading/CritSec.h"
 
 // Pool operations shared by the FMOD generator managers. Each manager has its
 // own copy of these members in the binary (for example _InitGeneratorPool at
@@ -14,7 +15,7 @@ namespace FmodGeneratorPool {
 template <class Generator>
 Generator* LockIfOwned(
     AudioGeneratorManager& manager, Generator* pool, unsigned int handle, int index) {
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     if (manager.mPoolSize >= index && pool[index].mHandle == handle) {
         ++pool[index].mRefCount;
         return &pool[index];
@@ -25,7 +26,7 @@ Generator* LockIfOwned(
 // SendStopToAllGenerators.
 template <class Generator>
 void SendStop(AudioGeneratorManager& manager, Generator* pool) {
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     for (int index = 0; index < manager.mPoolSize; ++index) {
         pool[index].Stop();
     }
@@ -34,7 +35,7 @@ void SendStop(AudioGeneratorManager& manager, Generator* pool) {
 // SendKillToAllGenerators.
 template <class Generator>
 void SendKill(AudioGeneratorManager& manager, Generator* pool) {
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     for (int index = 0; index < manager.mPoolSize; ++index) {
         pool[index].KillLocked();
     }
@@ -96,7 +97,7 @@ void Init(AudioGeneratorManager& manager, Generator*& pool) {
 // _DeleteGeneratorPool: frees the pool only when every voice is idle.
 template <class Generator>
 bool Delete(AudioGeneratorManager& manager, Generator* pool) {
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     if (manager.mFreeList.mSize != static_cast<unsigned long>(manager.mPoolSize)) {
         return false;
     }
@@ -109,7 +110,7 @@ template <class Generator>
 Generator* Allocate(
     AudioGeneratorManager& manager, AudioRenderTarget* target, AudioEmitterCom* emitter) {
     AudioRenderTarget* boundTarget = gDefaultAudioRenderTarget;
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     if (manager.mFreeList.mSize == 0) {
         return nullptr;
     }
@@ -126,7 +127,7 @@ Generator* Allocate(
 // AudioGenerator::Release: returns a voice to its manager's free list.
 inline void Release(AudioGenerator& generator) {
     AudioGeneratorManager& manager = *generator.mManager;
-    CritSecTracker tracker(&manager.mCritSec);
+    ScopedCritSecPtr tracker(&manager.mCritSec);
     generator.mHandle &= ~kGeneratorHandleActive;
     generator.mEmitter = nullptr;
     if (generator.mPoolNode.mList != &manager.mFreeList) {

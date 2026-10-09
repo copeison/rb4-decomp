@@ -8,8 +8,6 @@ class RndContext;
 
 namespace rb4 {
 
-struct RenderSystem;
-
 struct RenderGpuStatBlock {
     void** statistics_begin;
     void** statistics_end;
@@ -38,8 +36,6 @@ static_assert(offsetof(RenderGpuStatBlock, backend) == 104);
 static_assert(offsetof(RenderGpuStatBlock, lock_depth) == 112);
 static_assert(offsetof(RenderGpuStatBlock, mutex) == 120);
 static_assert(sizeof(RenderGpuStatBlock) == 128);
-
-RenderGpuStatBlock& render_system_gpu_stat_block(RenderSystem& system);
 
 void render_gpu_stat_block_construct(RenderGpuStatBlock& block);
 void render_gpu_stat_block_initialize(RenderGpuStatBlock& block);

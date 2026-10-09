@@ -11,7 +11,6 @@ namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kLightingResourcesOffset = 3256;
 
 struct RenderLightingResourceDispatch {
     void* reserved_0;
@@ -64,13 +63,6 @@ void release_owned_state(void*& state) {
 }
 
 }  // namespace
-
-RenderLightingResources& render_system_lighting_resources(
-    RenderSystem& system) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&system);
-    return *reinterpret_cast<RenderLightingResources*>(
-        bytes + kLightingResourcesOffset);
-}
 
 // Reconstructed from eboot.elf at 0x47EEE0.
 void render_lighting_resources_construct(RenderLightingResources& resources) {

@@ -5,6 +5,7 @@
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
+#include "os/threading/CritSec.h"
 
 // Client of an AudioMixer. Each 128-sample block is prepared on every
 // callable and then made once per mix. The map emits the class's inline

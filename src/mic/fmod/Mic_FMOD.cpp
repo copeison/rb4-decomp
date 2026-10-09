@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "audio/fmod/system/FmodPlatform.h"
+#include "os/threading/CritSec.h"
 
 namespace {
 
@@ -40,7 +41,7 @@ Mic_FMOD::Mic_FMOD(int index)
 
 // Reconstructed from eboot.elf at 0x27B680.
 Mic_FMOD::~Mic_FMOD() {
-    CritSecTracker tracker(&mCritSec);
+    ScopedCritSecPtr tracker(&mCritSec);
     if (mSound != nullptr) {
         mSound->release();
         mSound = nullptr;
@@ -93,7 +94,7 @@ bool Mic_FMOD::AttachToHardware(int driver, Symbol name) {
 // Reconstructed from eboot.elf at 0x27B880. The driver is found by name; a
 // missing or disconnected driver releases the mic.
 bool Mic_FMOD::CheckDeviceStillConnected() {
-    CritSecTracker tracker(&mCritSec);
+    ScopedCritSecPtr tracker(&mCritSec);
     if (std::strcmp(mDriverName.Str(), "") == 0) {
         return false;
     }
@@ -129,7 +130,7 @@ bool Mic_FMOD::CheckDeviceStillConnected() {
 
 // Reconstructed from eboot.elf at 0x27BE70.
 void Mic_FMOD::Stop() {
-    CritSecTracker tracker(&mCritSec);
+    ScopedCritSecPtr tracker(&mCritSec);
     if (mDriver == kNoDriver || mSound == nullptr) {
         return;
     }
