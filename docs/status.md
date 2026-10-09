@@ -422,6 +422,10 @@
   and perceptual-quantizer permutations, minimum intensity, and both textures.
 - [x] Reconstruct the Bink conversion graphics shader, alpha-plane
   permutation, four YCrCbA plane textures, and scale/offset constants.
+- [x] Reconstruct the test-pattern and render-test-simple graphics shaders,
+  retiring the last built-in dispatch adapters and the shared adapter file.
+- [ ] Extend source-owned primary-shader dispatches from 7 to the binary's 11
+  slots, including permutation validators and per-shader slot 8/9 overrides.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

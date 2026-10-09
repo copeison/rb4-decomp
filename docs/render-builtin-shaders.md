@@ -3,8 +3,8 @@
 Built-in graphics and compute shader ownership lives under
 `src/render/resources/shaders`. The resource manager stores 35 named slots and
 allocates each concrete object at the exact size observed in `eboot.elf`.
-Class-specific dispatch installation remains a focused binary boundary while
-the reconstructed constructors own every verified object-layout default.
+Every class-specific dispatch is source-owned beside its constructor, in the
+domain that uses the shader, and the shared adapter boundary has been retired.
 
 All built-in graphics resources now have source-owned constructors. The error,
 basic, Bink conversion, bloom, blur, display-texture-cube, downsample, output
@@ -33,3 +33,24 @@ Every constructor first initializes the shared 288-byte primary-shader base,
 then installs the concrete dispatch and initializes only its verified trailing
 fields. This keeps base ownership, manager-list registration, lazy preparation,
 and compiled-object teardown centralized in `primary_shader_resource.cpp`.
+
+## Dispatch slots beyond the seventh
+
+The original primary-shader dispatch tables contain 11 slots, recovered from
+their `R_X86_64_RELATIVE` relocations. Source dispatches currently model the
+first seven. The remaining defaults are:
+
+| Slot | Default | Behavior |
+| ---: | ---: | --- |
+| 7 | `0x6388F0` | Permutation validator; returns `true` |
+| 8 | `0x638900` | Forwards to `0x63E6C0` with the render-system object at `+0xB80` |
+| 9 | `0x450870` | Returns `0` |
+| 10 | `0x450880` | Returns `0` |
+
+Known overrides: blur (`0x635F00`) and output conversion (`0x636BF0`)
+validate permutation keys in slot 7; basic overrides slots 7 and 9
+(`0x639E40`, `0x639EF0`); error overrides slots 8 and 9 (`0x63E820`,
+`0x63E810`); Bink conversion overrides slot 9 with `0x5F4E80`, which also
+returns zero. Callers of these slots are not yet reconstructed, so extend the
+source dispatch layout when the backend-initialization path at `0x638430` is
+recovered.
