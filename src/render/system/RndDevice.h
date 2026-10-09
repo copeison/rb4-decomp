@@ -7,7 +7,7 @@
 #include "render/core/platform/render_platform_config.h"
 #include "render/debug/RndGpuStatsMgr.h"
 #include "render/resources/lighting/render_lighting_resources.h"
-#include "render/resources/system/default_render_resources.h"
+#include "render/defaults/RndDefaults.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "utl/containers/FixedVector.h"
 #include "utl/containers/Vector.h"
@@ -149,7 +149,7 @@ public:
     rb4::RenderSettings* mSettings;
     RndFactory* mFactory;
     rb4::RenderPlatformConfig mPlatformConfigs[13];
-    rb4::DefaultRenderResources mDefaults;
+    RndDefaults mDefaults;
     RndShaderMgr mShaderMgr;
     rb4::RenderLightingResources mLighting;
     RndShaderFogDeferred* mFogDeferred;
