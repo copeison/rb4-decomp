@@ -16,5 +16,8 @@ enum class OrbisSamplerAddressMode : std::uint32_t {
     kMirror = 5,
 };
 
+struct OrbisSamplerDescriptor {
+    std::uint32_t registers[4];
+};
 
 }  // namespace rb4

@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "renderps4/system/PS4Device.h"
@@ -16,12 +15,10 @@ void PS4Context::_DrawPrimitivesImpl(RndPrimitive primitive, RndVertexType forma
     auto& context = *this;
     const auto primitive_type = static_cast<rb4::MeshPrimitiveType>(primitive);
     const auto frame = orbis_render_context_active_frame(context);
-    auto& transient = orbis_render_context_transient_vertex_buffer(
-        context, frame, static_cast<std::size_t>(format));
+    auto& transient = mTransientBuffers[frame][format];
     auto& commands = orbis_active_render_command_context(context);
-    const auto first_vertex = orbis_transient_vertex_buffer_append(
-        transient, vertices, vertex_count);
-    orbis_transient_vertex_buffer_bind(transient, commands);
+    const auto first_vertex = transient.Write(vertices, vertex_count);
+    transient.Bind(commands);
     orbis_bind_vertex_buffers(
         commands,
         static_cast<std::uint32_t>(kMeshVertexStreamCount),

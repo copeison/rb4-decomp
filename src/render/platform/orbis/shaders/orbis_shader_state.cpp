@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "render/platform/orbis/shaders/orbis_shader_state_adapters.h"
+#include "renderps4/context/PS4RenderStateUtl.h"
 
 using namespace rb4;
 
@@ -14,55 +15,6 @@ namespace {
 
 constexpr std::uint32_t kShaderStageCount = 6;
 
-OrbisSamplerDescriptor build_sampler_descriptor(
-    OrbisSamplerAddressMode address_mode,
-    std::uint32_t filter_mode) {
-    OrbisSamplerDescriptor sampler = {
-        {0, 0x00FFF000, 0x05000000, 0},
-    };
-
-    switch (address_mode) {
-    case OrbisSamplerAddressMode::kClamp:
-        sampler.registers[0] = 0x92;
-        break;
-    case OrbisSamplerAddressMode::kWrap:
-        break;
-    case OrbisSamplerAddressMode::kClampOpaqueBlack:
-        sampler.registers[0] = 0x1B6;
-        sampler.registers[3] = 0x40000000;
-        break;
-    case OrbisSamplerAddressMode::kClampOpaqueWhite:
-        sampler.registers[0] = 0x1B6;
-        sampler.registers[3] = 0x80000000;
-        break;
-    case OrbisSamplerAddressMode::kMirror:
-        sampler.registers[0] = 0x49;
-        break;
-    }
-
-    switch (filter_mode) {
-    case 1:
-        sampler.registers[2] = 0x05000000;
-        break;
-    case 2:
-        sampler.registers[2] = 0x06500000;
-        break;
-    case 3:
-        sampler.registers[2] = 0x0A500000;
-        break;
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-        sampler.registers[0] |= (filter_mode - 3) << 9;
-        sampler.registers[2] = 0x0AF00000;
-        break;
-    default:
-        break;
-    }
-    return sampler;
-}
-
 }  // namespace
 
 }  // namespace rb4
@@ -71,7 +23,8 @@ OrbisSamplerDescriptor build_sampler_descriptor(
 void PS4Context::_SetSamplerImpl(RndShaderProgramType stage, unsigned int slot, unsigned int wrap, unsigned int filter_mode) {
     auto& context = *this;
     const auto address_mode = static_cast<rb4::OrbisSamplerAddressMode>(wrap);
-    const auto sampler = build_sampler_descriptor(address_mode, filter_mode);
+    OrbisSamplerDescriptor sampler;
+    PS4RenderStateUtl::InitSampler(sampler, address_mode, filter_mode);
     switch (stage) {
     case kShaderProgramVertex:
     case kShaderProgramPixel:

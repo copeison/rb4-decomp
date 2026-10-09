@@ -10,7 +10,6 @@ class PS4Device;
 namespace rb4 {
 
 struct OrbisRenderCommandContext;
-struct OrbisTransientVertexBuffer;
 
 enum class RndMaterialBlendMode : std::int32_t;
 
@@ -29,10 +28,6 @@ bool orbis_render_context_compute_queues_enabled(
     const PS4Context& context);
 std::size_t orbis_render_context_active_frame(
     const PS4Context& context);
-OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
-    PS4Context& context,
-    std::size_t frame,
-    std::size_t format);
 OrbisRenderCommandContext& orbis_active_render_command_context(
     PS4Context& context);
 bool orbis_render_context_submissions_complete(

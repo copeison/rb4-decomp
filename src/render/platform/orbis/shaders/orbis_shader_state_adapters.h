@@ -9,10 +9,6 @@ class PS4Context;
 
 namespace rb4 {
 
-struct OrbisSamplerDescriptor {
-    std::uint32_t registers[4];
-};
-
 void orbis_render_context_bind_graphics_sampler(
     PS4Context& context,
     RndShaderProgramType stage,

@@ -4,7 +4,6 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/platform/orbis/buffers/orbis_transient_vertex_buffer.h"
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
 #include "renderps4/system/PS4Device.h"
 
@@ -30,8 +29,6 @@ constexpr std::size_t kHighPriorityComputeContextCount = 3;
 constexpr std::size_t kSubmissionCounterCount = 10;
 constexpr std::size_t kGraphicsCommandContextOffset = 0x5728;
 constexpr std::size_t kGraphicsCommandContextStride = 0xE888;
-constexpr std::size_t kTransientVertexBufferOffset = 0x40DB8;
-constexpr std::size_t kTransientVertexBufferBankStride = 0x540;
 
 struct OrbisRenderContextRuntimePrefix {
     std::uint8_t reserved_0[9];
@@ -62,7 +59,10 @@ PS4Context* orbis_render_context_create(
 
 }  // namespace rb4
 
-// Reconstructed from eboot.elf at 0x8E72B0.
+// Reconstructed from eboot.elf at 0x8E72B0. The binary constructs the
+// transient buffers (0x8EC7C0) after the state defaults; here the compiler
+// constructs them as members before the body, since the earlier members are
+// not yet modeled.
 PS4Context::PS4Context() : RndContext(false) {
     auto& context = *this;
     orbis_render_context_initialize_command_state(context);
@@ -71,16 +71,6 @@ PS4Context::PS4Context() : RndContext(false) {
         orbis_render_context_construct_compute_slot(context, slot);
     }
     orbis_render_context_initialize_state_defaults(context);
-
-    for (std::size_t bank = 0; bank < kOrbisFrameSlotCount; ++bank) {
-        for (std::size_t format = 0;
-             format < kOrbisTransientFormatCount;
-             ++format) {
-            orbis_transient_vertex_buffer_construct(
-                orbis_render_context_transient_vertex_buffer(
-                    context, bank, format));
-        }
-    }
     orbis_render_context_initialize_allocation_map(context);
     orbis_render_context_create_gfx_contexts(context);
     orbis_render_context_create_gpu_timestamp_pool(context);
@@ -89,11 +79,8 @@ PS4Context::PS4Context() : RndContext(false) {
         for (std::size_t format = 0;
              format < kOrbisTransientFormatCount;
              ++format) {
-            orbis_transient_vertex_buffer_initialize(
-                orbis_render_context_transient_vertex_buffer(
-                    context, bank, format),
-                static_cast<RndVertexType>(format),
-                kTransientVertexCapacity);
+            mTransientBuffers[bank][format].Init(
+                static_cast<RndVertexType>(format), kTransientVertexCapacity);
         }
     }
 
@@ -152,17 +139,6 @@ std::size_t orbis_render_context_active_frame(
     return runtime->active_frame;
 }
 
-OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
-    PS4Context& context,
-    std::size_t frame,
-    std::size_t format) {
-    auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
-    return *reinterpret_cast<OrbisTransientVertexBuffer*>(
-        bytes + kTransientVertexBufferOffset +
-        frame * kTransientVertexBufferBankStride +
-        format * sizeof(OrbisTransientVertexBuffer));
-}
-
 OrbisRenderCommandContext& orbis_active_render_command_context(
     PS4Context& context) {
     auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
@@ -218,18 +194,14 @@ void orbis_render_context_set_active_frame(
 
 }  // namespace rb4
 
-// Reconstructed from eboot.elf at 0x8E8070.
+// Reconstructed from eboot.elf at 0x8E8070. The binary destroys the
+// transient buffers (0x8EC7D0) after releasing the timestamp pool; here the
+// compiler destroys them as members after the body, since the members around
+// them are not yet modeled.
 PS4Context::~PS4Context() {
     auto& context = *this;
     orbis_render_context_release_label_pool(context);
     orbis_render_context_release_timestamp_pool(context);
-    for (std::size_t bank = kOrbisFrameSlotCount; bank-- > 0;) {
-        for (std::size_t format = kOrbisTransientFormatCount; format-- > 0;) {
-            orbis_transient_vertex_buffer_destruct(
-                orbis_render_context_transient_vertex_buffer(
-                    context, bank, format));
-        }
-    }
     for (std::size_t slot = kOrbisComputeContextCount; slot-- > 0;) {
         orbis_render_context_destruct_compute_slot(context, slot);
     }
@@ -282,9 +254,7 @@ void orbis_render_context_reset_active_frame(PS4Context& context) {
     for (std::size_t format = 0;
          format < kOrbisTransientFormatCount;
          ++format) {
-        orbis_transient_vertex_buffer_reset(
-            orbis_render_context_transient_vertex_buffer(
-                context, frame, format));
+        context.mTransientBuffers[frame][format].Reset();
     }
     orbis_render_context_emit_default_control_state(context, frame);
 }
