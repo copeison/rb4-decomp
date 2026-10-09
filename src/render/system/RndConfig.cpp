@@ -7,34 +7,13 @@
 #include "utl/options/Option.h"
 #include "render/system/RndCapabilities.h"
 #include "render/system/RndDevice.h"
-#include "render/system/rnd_config_adapters.h"
-#include "os/platform/platform_adapters.h"
+#include "os/system/System.h"
+#include "utl/data/DataArray.h"
 
 namespace {
 
 constexpr std::size_t kCurrentPlatformConfigIndex = 7;
 constexpr std::uint32_t kAsyncComputeFeature = 0x10;
-
-const RndCapabilities& CurrentCapabilities() {
-    return TheRndDevice()->mCapabilities[kCurrentPlatformConfigIndex];
-}
-
-bool PlatformSupportsAsyncCompute() {
-    return (CurrentCapabilities().mFeatureFlags & kAsyncComputeFeature) != 0;
-}
-
-Vector2i PlatformDefaultResolution() {
-    return CurrentCapabilities().mResolutions.back();
-}
-
-bool PlatformSupportsResolution(Vector2i resolution) {
-    for (const auto& supported : CurrentCapabilities().mResolutions) {
-        if (supported.x == resolution.x && supported.y == resolution.y) {
-            return true;
-        }
-    }
-    return false;
-}
 
 bool EqualsIgnoreAsciiCase(const char* left, const char* right) {
     while (*left != '\0' && *right != '\0') {
@@ -47,116 +26,11 @@ bool EqualsIgnoreAsciiCase(const char* left, const char* right) {
     return *left == *right;
 }
 
-void ReadSignExtendedInt32(
-    const DataConfig& config,
-    const char* key,
-    std::int64_t& destination) {
-    auto value = static_cast<std::int32_t>(destination);
-    config_read_int32(config, key, value);
+// Reads a 32-bit value into a 64-bit setting, sign-extending it.
+void FindInt64(const DataArray* config, const char* key, std::int64_t& destination) {
+    auto value = static_cast<int>(destination);
+    config->FindData(Symbol(key), value, false);
     destination = value;
-}
-
-void ReadValidationSettings(RndConfig& settings, const DataConfig& root) {
-    if (const auto* validation =
-            config_find_block(root, "graphics_api_validation")) {
-        config_read_bool(
-            *validation, "enabled", settings.mGraphicsApiValidationEnabled);
-        config_read_bool(
-            *validation, "break_on_warning", settings.mBreakOnGraphicsWarning);
-        config_read_bool(
-            *validation, "break_on_error", settings.mBreakOnGraphicsError);
-    }
-
-    if (const auto* debugger = config_find_block(root, "graphics_debugger")) {
-        config_read_bool(
-            *debugger, "enabled", settings.mGraphicsDebuggerEnabled);
-    }
-    if (const auto* barrier =
-            config_find_block(root, "graphics_barrier_validation")) {
-        config_read_bool(
-            *barrier, "enabled", settings.mGraphicsBarrierValidationEnabled);
-    }
-}
-
-void ReadShaderCompilationSettings(
-    RndConfig& settings,
-    const DataConfig& root) {
-    const auto* shader = config_find_block(root, "shader_compilation");
-    if (shader == nullptr) {
-        return;
-    }
-
-    config_read_bool(*shader, "print", settings.mPrintShaderCompilation);
-    config_read_bool(
-        *shader, "print_verbose", settings.mPrintVerboseShaderCompilation);
-    config_read_bool(
-        *shader, "output_intermediates", settings.mOutputShaderIntermediates);
-    config_read_bool(
-        *shader, "generate_debug_info", settings.mGenerateShaderDebugInfo);
-}
-
-void ReadRenderConfig(RndConfig& settings, const DataConfig& config) {
-    config_read_extent(
-        config, "content_resolution", settings.mContentResolution);
-    config_read_bool(config, "pc_init_fullscreen", settings.mPcFullscreen);
-    config_read_extent(
-        config, "pc_init_window_resolution", settings.mPcWindowResolution);
-    config_read_int32(config, "vsync_mode", settings.mVSyncMode);
-    config_read_bool(config, "use_lod", settings.mUseLod);
-    config_read_bool(
-        config,
-        "use_gbuffer_vertex_normals",
-        settings.mUseGBufferVertexNormals);
-    config_read_bool(
-        config, "use_64_bit_light_accum", settings.mUse64BitLightAccum);
-    config_read_bool(
-        config, "use_40_bit_depth_stencil", settings.mUse40BitDepthStencil);
-    config_read_bool(config, "use_tiled_lighting", settings.mUseTiledLighting);
-    ReadSignExtendedInt32(
-        config,
-        "max_partial_framerate_scenes",
-        settings.mMaxPartialFramerateScenes);
-    ReadSignExtendedInt32(
-        config,
-        "max_shadow_contrib_buffers",
-        settings.mMaxShadowContribBuffers);
-
-    if (const auto* quality_name = config_read_string(config, "quality_level")) {
-        settings.mQualityLevel = RndQualityLevelFromName(quality_name);
-    }
-    config_read_bool(
-        config, "scene_mask_enabled", settings.mSceneMaskEnabled);
-    config_read_bool(
-        config,
-        "multi_threaded_rendering_enabled",
-        settings.mMultithreadedRenderingEnabled);
-    config_read_bool(
-        config, "async_compute_enabled", settings.mAsyncComputeEnabled);
-    ReadSignExtendedInt32(
-        config, "max_geo_overdraw", settings.mMaxGeoOverdraw);
-    ReadSignExtendedInt32(
-        config, "max_lighting_overdraw", settings.mMaxLightingOverdraw);
-    ReadSignExtendedInt32(
-        config,
-        "max_light_probe_overdraw",
-        settings.mMaxLightProbeOverdraw);
-
-    ReadValidationSettings(settings, config);
-    ReadShaderCompilationSettings(settings, config);
-}
-
-void ApplyPlatformLimits(RndConfig& settings) {
-    settings.mPartialFramerateEnabled =
-        settings.mMaxPartialFramerateScenes != 0;
-
-    if (PlatformSupportsAsyncCompute()) {
-        if (settings.mAsyncComputeEnabled) {
-            settings.mMultithreadedRenderingEnabled = false;
-        }
-    } else {
-        settings.mAsyncComputeEnabled = false;
-        settings.mUseTiledLighting = false;
-    }
 }
 
 }  // namespace
@@ -167,16 +41,11 @@ std::int32_t RndConfig::ActiveVSyncMode() const {
 
 // Reconstructed from eboot.elf at 0x4414A0.
 HxGfxApi RndGfxApiForPlatform(HxPlatform platform) {
-    const auto* configured_name =
-        render_configured_api_name(PlatformSymbol(platform));
-    if (configured_name == nullptr) {
-        return kGfxApiNull;
-    }
-
+    const Symbol api =
+        SystemConfig(Symbol("rnd"), PlatformSymbol(platform), Symbol("api"))->Sym(1);
     for (std::uint32_t index = 0; index < kNumGfxApis; ++index) {
-        const auto api = static_cast<HxGfxApi>(index);
-        if (std::strcmp(configured_name, GfxApiSymbol(api)) == 0) {
-            return api;
+        if (GfxApiSymbol(static_cast<HxGfxApi>(index)) == api) {
+            return static_cast<HxGfxApi>(index);
         }
     }
     return kGfxApiNull;
@@ -244,22 +113,77 @@ RndQualityLevel RndQualityLevelFromName(const char* name) {
 }
 
 // Reconstructed from eboot.elf at 0x6BB470. The members start at their
-// defaults; the rnd config block then overrides them.
+// defaults; the rnd config block then overrides them, the platform's
+// capabilities clamp them, and the -resolution option picks a supported
+// output resolution.
 RndConfig::RndConfig() {
-    if (const auto* config = load_data_config("rnd")) {
-        ReadRenderConfig(*this, *config);
-    }
-    ApplyPlatformLimits(*this);
+    auto& capabilities = TheRndDevice()->mCapabilities[kCurrentPlatformConfigIndex];
+    const auto* config = SystemConfig(Symbol("rnd"));
+    mContentResolution.x = config->FindArray(Symbol("content_resolution"), false)->Int(1);
+    mContentResolution.y = config->FindArray(Symbol("content_resolution"), false)->Int(2);
+    config->FindData(Symbol("pc_init_fullscreen"), mPcFullscreen, false);
+    mPcWindowResolution.x = config->FindArray(Symbol("pc_init_window_resolution"), false)->Int(1);
+    mPcWindowResolution.y = config->FindArray(Symbol("pc_init_window_resolution"), false)->Int(2);
+    config->FindData(Symbol("vsync_mode"), mVSyncMode, false);
+    config->FindData(Symbol("use_lod"), mUseLod, false);
+    config->FindData(Symbol("use_gbuffer_vertex_normals"), mUseGBufferVertexNormals, false);
+    config->FindData(Symbol("use_64_bit_light_accum"), mUse64BitLightAccum, false);
+    config->FindData(Symbol("use_40_bit_depth_stencil"), mUse40BitDepthStencil, false);
+    config->FindData(Symbol("use_tiled_lighting"), mUseTiledLighting, false);
+    FindInt64(config, "max_partial_framerate_scenes", mMaxPartialFramerateScenes);
+    FindInt64(config, "max_shadow_contrib_buffers", mMaxShadowContribBuffers);
+    mPartialFramerateEnabled = mMaxPartialFramerateScenes != 0;
 
-    mOutputResolution = PlatformDefaultResolution();
-    if (const auto* override_text =
-            OptionStr(gOptionArgs, "resolution", nullptr)) {
-        Vector2i override_resolution{};
-        if (ParseResolution(override_text, override_resolution) &&
-            PlatformSupportsResolution(mOutputResolution)) {
-            mOutputResolution = override_resolution;
-            mPcWindowResolution = override_resolution;
-            mResolutionOverridden = true;
+    Symbol quality("");
+    config->FindData(Symbol("quality_level"), quality, false);
+    if (quality != Symbol()) {
+        mQualityLevel = RndQualityLevelFromName(quality.Str());
+    }
+    config->FindData(Symbol("scene_mask_enabled"), mSceneMaskEnabled, false);
+    config->FindData(
+        Symbol("multi_threaded_rendering_enabled"), mMultithreadedRenderingEnabled, false);
+    config->FindData(Symbol("async_compute_enabled"), mAsyncComputeEnabled, false);
+    FindInt64(config, "max_geo_overdraw", mMaxGeoOverdraw);
+    FindInt64(config, "max_lighting_overdraw", mMaxLightingOverdraw);
+    FindInt64(config, "max_light_probe_overdraw", mMaxLightProbeOverdraw);
+
+    const auto* validation = config->FindArray(Symbol("graphics_api_validation"), false);
+    validation->FindData(Symbol("enabled"), mGraphicsApiValidationEnabled, false);
+    validation->FindData(Symbol("break_on_warning"), mBreakOnGraphicsWarning, false);
+    validation->FindData(Symbol("break_on_error"), mBreakOnGraphicsError, false);
+    config->FindArray(Symbol("graphics_debugger"), false)
+        ->FindData(Symbol("enabled"), mGraphicsDebuggerEnabled, false);
+    config->FindArray(Symbol("graphics_barrier_validation"), false)
+        ->FindData(Symbol("enabled"), mGraphicsBarrierValidationEnabled, false);
+    const auto* shaders = config->FindArray(Symbol("shader_compilation"), false);
+    shaders->FindData(Symbol("print"), mPrintShaderCompilation, false);
+    shaders->FindData(Symbol("print_verbose"), mPrintVerboseShaderCompilation, false);
+    shaders->FindData(Symbol("output_intermediates"), mOutputShaderIntermediates, false);
+    shaders->FindData(Symbol("generate_debug_info"), mGenerateShaderDebugInfo, false);
+
+    if ((capabilities.mFeatureFlags & kAsyncComputeFeature) != 0) {
+        if (mAsyncComputeEnabled) {
+            mMultithreadedRenderingEnabled = false;
+        }
+    } else {
+        mAsyncComputeEnabled = false;
+        mUseTiledLighting = false;
+    }
+
+    // The override is accepted when the current resolution, not the
+    // requested one, is supported.
+    mOutputResolution = capabilities.mResolutions.back();
+    if (const auto* text = OptionStr(gOptionArgs, "resolution", nullptr)) {
+        Vector2i resolution{0, 0};
+        if (ParseResolution(text, resolution)) {
+            for (const auto& supported : capabilities.mResolutions) {
+                if (supported.x == mOutputResolution.x && supported.y == mOutputResolution.y) {
+                    mOutputResolution = resolution;
+                    mPcWindowResolution = resolution;
+                    mResolutionOverridden = true;
+                    break;
+                }
+            }
         }
     }
 }

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
+
+#include "utl/containers/Vector.h"
+#include "utl/text/Symbol.h"
 
 // The engine's platform enumeration. Name in the reference map; the
 // enumerator names are not. Values 1, 2, 4 and 6 have empty names in this
@@ -32,16 +34,15 @@ enum HxGfxApi : std::uint32_t {
     kNumGfxApis = 7,
 };
 
-// The platform's short name ("ps4"), or "" for a platform without one. The
-// map's signature is PlatformSymbol(HxPlatform); this build returns the name
-// string.
-const char* PlatformSymbol(HxPlatform platform);  // 0x363030
+// The platform's short name ("ps4"), or the empty symbol for a platform
+// without one.
+Symbol PlatformSymbol(HxPlatform platform);  // 0x363030
 
 // The graphics API's short name ("ps4"), or "" when out of range. Name not
 // in the reference map; its object file is not identified.
-const char* GfxApiSymbol(HxGfxApi api);  // 0x1AE4D0
+Symbol GfxApiSymbol(HxGfxApi api);  // 0x1AE4D0
 
 // The platform ids listed in the platform_mgr config block's
 // supported_platforms. The map has PlatformMgr::GetSupportedPlatforms()
 // const; this build's function takes no manager object.
-std::vector<std::uint32_t> GetSupportedPlatforms();  // 0x3641B0
+eastl::vector<int> GetSupportedPlatforms();  // 0x3641B0

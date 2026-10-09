@@ -3,35 +3,58 @@
 #include <array>
 #include <cstddef>
 
-#include "os/platform/platform_adapters.h"
-
-namespace {
-
-constexpr std::array<const char*, kNumPlatforms> kPlatformNames = {
-    "", "", "", "pc", "", "xb1", "", "ps4", "android", "ios", "osx",
-    "tvos", "nx",
-};
-
-constexpr std::array<const char*, kNumGfxApis> kGfxApiNames = {
-    "null", "dx11", "ps4", "mtl", "vlk", "nx", "gles3",
-};
-
-}  // namespace
+#include "os/system/System.h"
+#include "utl/data/DataArray.h"
 
 // Reconstructed from eboot.elf at 0x363030.
-const char* PlatformSymbol(HxPlatform platform) {
-    const auto index = static_cast<std::size_t>(platform);
-    return index < kPlatformNames.size() ? kPlatformNames[index] : "";
+Symbol PlatformSymbol(HxPlatform platform) {
+    static Symbol sNames[kNumPlatforms] = {
+        Symbol(""),
+        Symbol(""),
+        Symbol(""),
+        Symbol("pc"),
+        Symbol(""),
+        Symbol("xb1"),
+        Symbol(""),
+        Symbol("ps4"),
+        Symbol("android"),
+        Symbol("ios"),
+        Symbol("osx"),
+        Symbol("tvos"),
+        Symbol("nx"),
+    };
+    return platform < kNumPlatforms ? sNames[platform] : Symbol();
 }
 
 // Reconstructed from eboot.elf at 0x1AE4D0.
-const char* GfxApiSymbol(HxGfxApi api) {
-    const auto index = static_cast<std::size_t>(api);
-    return index < kGfxApiNames.size() ? kGfxApiNames[index] : "";
+Symbol GfxApiSymbol(HxGfxApi api) {
+    static Symbol sNames[kNumGfxApis] = {
+        Symbol("null"),
+        Symbol("dx11"),
+        Symbol("ps4"),
+        Symbol("mtl"),
+        Symbol("vlk"),
+        Symbol("nx"),
+        Symbol("gles3"),
+    };
+    return api < kNumGfxApis ? sNames[api] : Symbol();
 }
 
 // Reconstructed from eboot.elf at 0x3641B0.
-std::vector<std::uint32_t> GetSupportedPlatforms() {
-    return render_configured_supported_platform_ids(
-        "platform_mgr", "supported_platforms");
+eastl::vector<int> GetSupportedPlatforms() {
+    static Symbol sPlatformMgr;
+    if (sPlatformMgr == Symbol()) {
+        sPlatformMgr = Symbol("platform_mgr");
+    }
+    static Symbol sSupportedPlatforms;
+    if (sSupportedPlatforms == Symbol()) {
+        sSupportedPlatforms = Symbol("supported_platforms");
+    }
+    auto* config = SystemConfig(sPlatformMgr, sSupportedPlatforms);
+    eastl::vector<int> platforms;
+    platforms.reserve(config->Size() - 1);
+    for (int index = 1; index < config->Size(); ++index) {
+        platforms.push_back(config->Int(index));
+    }
+    return platforms;
 }

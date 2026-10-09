@@ -35,3 +35,16 @@ commands and properties.
 
 `DataRegisterFunc` (`0x2221F0`) stores a `DataNode (*)(DataArray*)` under its
 `Symbol` in a red-black tree.
+
+## Lookups
+
+These lookups are not inline:
+- `DataArray::FindArray(Symbol, bool)` (`0x21C970`) finds the child array
+  whose first node is the key.
+- The `FindData` overloads read the node after the key: `Symbol&` at
+  `0x21CFC0`, `int&` at `0x21D060` and `bool&` at `0x21D260`.
+- `SystemConfig` with one, two or three keys (`0x368B00`, `0x368CD0`,
+  `0x369A90`) walks the root configuration with `FindArray` and failure
+  off.
+
+`Int`, `Sym` and `Str` by index are inline.

@@ -19,6 +19,13 @@ public:
           mpCapacity(nullptr),
           mAllocator("EASTL vector") {}
     vector(const vector&) = delete;
+    vector(vector&& other)
+        : mpBegin(other.mpBegin),
+          mpEnd(other.mpEnd),
+          mpCapacity(other.mpCapacity),
+          mAllocator(other.mAllocator) {
+        other.mpBegin = other.mpEnd = other.mpCapacity = nullptr;
+    }
     vector& operator=(const vector&) = delete;
     ~vector() {
         DestroyElements();
@@ -54,6 +61,9 @@ public:
         return *mpBegin;
     }
     T& back() {
+        return *(mpEnd - 1);
+    }
+    const T& back() const {
         return *(mpEnd - 1);
     }
     void pop_back() {
@@ -93,6 +103,10 @@ public:
         }
         new (mpEnd) T(std::forward<Args>(args)...);
         return *mpEnd++;
+    }
+
+    void push_back(const T& value) {
+        emplace_back(value);
     }
 
     void clear() {

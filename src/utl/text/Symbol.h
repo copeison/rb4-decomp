@@ -4,6 +4,9 @@
 // reconstructed yet, but the executable stores each Symbol in one pointer.
 class Symbol {
 public:
+    // The empty symbol. Its string is the empty literal, which the old map
+    // names gNullStr.
+    Symbol() : mStr("") {}
     explicit Symbol(const char* str);
 
     const char* Str() const {

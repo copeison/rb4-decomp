@@ -108,7 +108,7 @@ RndDevice::RndDevice()
     gRndDevice = this;
 
     for (const auto platform : GetSupportedPlatforms()) {
-        if (platform < kPlatformConfigCount) {
+        if (static_cast<std::size_t>(platform) < kPlatformConfigCount) {
             mCapabilities[platform].InitForPlatform(
                 static_cast<HxPlatform>(platform));
         }

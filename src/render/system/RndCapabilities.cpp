@@ -2,8 +2,9 @@
 
 #include <algorithm>
 
-#include "os/platform/platform_adapters.h"
+#include "os/system/System.h"
 #include "render/system/RndConfig.h"
+#include "utl/data/DataArray.h"
 
 namespace {
 
@@ -103,22 +104,19 @@ RndCapabilities::RndCapabilities() {
 void RndCapabilities::InitForPlatform(HxPlatform platform) {
     ApplyPlatformCapabilities(*this, platform);
 
-    const auto configured_resolutions = render_configured_resolutions(
-        PlatformSymbol(platform));
-    std::vector<Vector2i> resolutions;
-    resolutions.reserve(configured_resolutions.size());
-    for (const auto* text : configured_resolutions) {
-        Vector2i extent{};
-        if (ParseResolution(text, extent)) {
-            resolutions.push_back(extent);
+    auto* resolutions =
+        SystemConfig(Symbol("rnd"), PlatformSymbol(platform), Symbol("resolutions"));
+    mResolutions.reserve(resolutions->Size() - 1);
+    for (int index = 1; index < resolutions->Size(); ++index) {
+        Vector2i extent{0, 0};
+        if (ParseResolution(resolutions->Sym(index).Str(), extent)) {
+            mResolutions.push_back(extent);
         }
     }
-
-    if (resolutions.empty()) {
-        resolutions.push_back(kFallbackResolution);
+    if (mResolutions.empty()) {
+        mResolutions.push_back(kFallbackResolution);
     }
-    std::sort(resolutions.begin(), resolutions.end(), ExtentLess);
-    mResolutions = resolutions;
+    std::sort(mResolutions.begin(), mResolutions.end(), ExtentLess);
 }
 
 // Reconstructed from eboot.elf at 0x6B9FE0.

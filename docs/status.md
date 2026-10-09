@@ -575,6 +575,9 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Read the `rnd` and `platform_mgr` configuration through `SystemConfig` and
+  `DataArray` in `RndConfig`, `RndCapabilities`, `RndGfxApiForPlatform` and
+  `GetSupportedPlatforms`; remove the configuration adapters.
 - [x] Model the script data types in `src/utl/data` and register the
   `RndCommands` handlers as `DataNode (DataArray*)` script functions, with
   `set_resolution`, `set_drawn_scene_range` and the window mode commands.

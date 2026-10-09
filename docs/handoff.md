@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 642 entries, most of the
+executable. The latest unresolved-symbol report contains 641 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Script data types (`DataNode`, `DataArray`, `DataRegisterFunc`); `RndCommands` handlers as script functions |
+| (this) | `RndConfig`, `RndCapabilities` and `PlatformMgr` read `SystemConfig` directly; config adapters removed |
+| `2636479` | Script data types (`DataNode`, `DataArray`, `DataRegisterFunc`); `RndCommands` handlers as script functions |
 | `7413b6d` | Empty `_SyncDynamicImpl` overrides of the PS4 1D, 3D, array and cube textures |
 | `d5a7c21` | `PS4Context::_ResourceBarrierImpl` with the Gnmx surface decompression; `RndContext::SetActivePipeline` |
 | `e5f5425` | `PS4Context` construction, `_CreateGfxContext`, compute queues, `SubmitFrame` and `_ResetFrame` on the Gnm SDK |

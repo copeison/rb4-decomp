@@ -2,9 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 
 #include "math/vector/Vector2i.h"
+#include "utl/containers/Vector.h"
 #include "os/platform/PlatformMgr.h"
 
 // The renderer's capabilities on one platform: its supported output
@@ -16,7 +16,7 @@ public:
     void InitForPlatform(HxPlatform platform);  // 0x6B99B0
     bool CheckMinimumRequirements() const;  // 0x6B9FE0
 
-    std::vector<Vector2i> mResolutions;
+    eastl::vector<Vector2i> mResolutions;
     std::uint64_t mResourceTier;
     std::uint32_t mFeatureFlags;
     std::uint32_t mReserved44;

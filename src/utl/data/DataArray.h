@@ -26,6 +26,24 @@ public:
     // The node at the index, with variables, commands and properties
     // evaluated.
     DataNode Evaluate(unsigned long index) const;  // 0xC7D30
+    int Int(unsigned long index) const {
+        return Node(index).Int(this);
+    }
+    Symbol Sym(unsigned long index) const {
+        return Node(index).Sym(this);
+    }
+    const char* Str(unsigned long index) const {
+        return Node(index).Str(this);
+    }
+
+    // The child array whose first node is the key, or null; failing
+    // reports a missing key.
+    DataArray* FindArray(Symbol key, bool fail) const;  // 0x21C970
+    // Reads the value after the key into the destination, leaving it
+    // unchanged when the key is missing. Returns whether it was found.
+    bool FindData(Symbol key, Symbol& value, bool fail) const;  // 0x21CFC0
+    bool FindData(Symbol key, int& value, bool fail) const;     // 0x21D060
+    bool FindData(Symbol key, bool& value, bool fail) const;    // 0x21D260
 
     void AddRef() {
         __atomic_add_fetch(&mRefs, 1, __ATOMIC_SEQ_CST);

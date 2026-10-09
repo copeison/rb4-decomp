@@ -29,8 +29,18 @@ The principal defaults recovered from its constant stores are:
 | Geometry, lighting, light-probe overdraw limits | 10, 20, 10 |
 | Break on graphics error | true |
 
-The loader reads nested settings for graphics API validation, a graphics
-debugger, barrier validation, and shader-compilation diagnostics. If the
+The constructor reads the block with `SystemConfig("rnd")`. It then uses
+`DataArray::FindArray` and the `FindData` overloads for booleans, integers
+and symbols, all with failure off.
+- **Resolutions.** Each resolution is the second and third node of its
+  array.
+- **64-bit limits.** These are read as 32-bit integers and sign-extended.
+- **Partial frame rate.** It is enabled as soon as
+  `max_partial_framerate_scenes` is read.
+- **Quality level.** It changes only when `quality_level` names a symbol.
+
+The nested blocks for graphics API validation, the graphics debugger, barrier
+validation and shader compilation are read without a null check. If the
 current platform slot's feature bit `0x10` supports async compute and that
 option is enabled, multithreaded rendering is disabled. Platforms without the
 feature force both async compute and tiled lighting off. This capability test
@@ -84,3 +94,21 @@ value clears the override.
 
 Quality levels are the case-insensitive names `Low`, `Medium`, and `High`, with
 numeric values zero through two. Unknown names produce the invalid value `-1`.
+
+## Platform configuration
+
+Three more readers take their data from the system configuration:
+- **`RndCapabilities::InitForPlatform` (`0x6B99B0`)** parses
+  `rnd <platform> resolutions` into its `eastl::vector<Vector2i>` with
+  `ParseResolution`. If none parse it falls back to 1920 x 1080, then sorts
+  the list.
+- **`RndGfxApiForPlatform` (`0x4414A0`)** compares the symbol in
+  `rnd <platform> api` with each `GfxApiSymbol`.
+- **`GetSupportedPlatforms` (`0x3641B0`)** returns the integers of
+  `platform_mgr supported_platforms` as an `eastl::vector<int>`.
+
+`PlatformSymbol` and `GfxApiSymbol` return `Symbol`s from static tables, and
+the empty symbol out of range.
+
+The resolution override has a quirk: the `-resolution` option is accepted
+when the current output resolution is supported, not the requested one.
