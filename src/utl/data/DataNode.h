@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 
 #include "utl/text/Symbol.h"
 
@@ -11,6 +12,7 @@ class DataNode;
 class Entity;
 class GameObject;
 class String;
+class TextStream;
 
 // Type tag of a DataNode. The name is the map's; the enumerators follow the
 // Milo engine and are not in the reference map. Types with kDataArray set
@@ -147,6 +149,9 @@ public:
 
     void AddRefWaveform() const;   // 0x239290
     void ReleaseWaveform() const;  // 0x2392A0
+    // Writes the value as script text. What the flag selects is not
+    // decoded. Not reconstructed.
+    void Print(TextStream& stream, bool compact) const;  // 0x2392B0
 
     DataNodeValue mValue;
     DataType mType;
@@ -217,3 +222,7 @@ unsigned long DataVarIndex(Symbol name, DataNode value);  // 0x236910
 DataNode& DataVariable(unsigned long index);  // 0x236CC0
 // Sets the named variable in every thread.
 void DataSetGlobal(Symbol name, const DataNode& value);  // 0x236D50
+// Calls `visit` with the name of every script variable until it returns
+// false, holding the variable table's lock. The script console's tab
+// completion uses it. Name not in the reference map.
+void DataForEachVariable(const std::function<bool(Symbol)>& visit);  // 0x236E70

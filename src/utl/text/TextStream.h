@@ -19,6 +19,7 @@ public:
     // prints it.
     TextStream& operator<<(char c);              // 0x258560
     TextStream& operator<<(int value);           // 0x258640
+    TextStream& operator<<(unsigned int value);  // 0x258790
     TextStream& operator<<(const char* str);     // 0x2588E0
     TextStream& operator<<(Symbol sym);          // 0x258900
     TextStream& operator<<(unsigned long value);  // 0x2589D0

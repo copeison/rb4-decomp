@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include "render/shaders/RndShaderIncludeChecksums.h"
 #include "render/shaders/RndShaderDefines.h"
@@ -166,3 +167,9 @@ static_assert(offsetof(RndShaderMgr, mErrorShader) == 400);
 static_assert(offsetof(RndShaderMgr, mFixedDefinesChecksum) == 680);
 static_assert(offsetof(RndShaderMgr, mShaders) == 696);
 static_assert(sizeof(RndShaderMgr) == 712);
+
+// Samples falloff function `function_index` (0 to 3) of the shaders'
+// function table at `input`, clamped to [0, 1].
+float sample_function_table(
+    std::uint32_t function_index,
+    float input);  // 0x645F20

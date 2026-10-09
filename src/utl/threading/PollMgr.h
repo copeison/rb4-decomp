@@ -15,6 +15,32 @@ class Entity;
 // declared; the manager has not been reconstructed.
 class PollMgr {
 public:
+    // The managers the renderer nests are 544-byte small-pool blocks
+    // (PoolAlloc), named for reports. The map has PollMgr(); this build
+    // takes the name.
+    explicit PollMgr(const char* name);  // 0x24CB60
+    // Reads the job_manager and poll_mgr configuration and registers the
+    // pollmgr script functions. Not reconstructed.
+    static void Init();  // 0x24E0B0
+    ~PollMgr();                          // 0x24CDA0
+    // Sets the flag at +436 and lets the end job run on a worker. Name not
+    // in the reference map.
+    void SetThreaded(bool threaded);  // 0x24CEE0
+    // Unlinks the queued jobs, resets the start and end jobs and makes the
+    // end job wait for the start job. Name not in the reference map.
+    void Reset();  // 0x24D0D0
+    // Unlinks the jobs the end job waits for, clears the start job's
+    // dependencies and makes the end job wait for the start job. Name not
+    // in the reference map.
+    void ClearJobs();  // 0x24D190
+    // Makes the job wait for the start job and queues it. Name not in the
+    // reference map.
+    void AddJob(PollDepBase* job);  // 0x24D3A0
+    // Makes the start job wait for, or stop waiting for, the other
+    // manager's end job. Names not in the reference map.
+    void PollAfter(PollMgr* other);        // 0x24D310
+    void RemovePollAfter(PollMgr* other);  // 0x24D340
+
     // Whether the thread is one of the poll workers, which the manager
     // keeps at 0x19E7EC0. Name not in the reference map.
     static bool IsWorkerThread(ScePthread thread);  // 0x24F6E0
@@ -52,6 +78,32 @@ public:
 static_assert(offsetof(PollMgr, mSharePollMgr) == 438);
 static_assert(offsetof(PollMgr, mPostPollCrit) == 440);
 static_assert(offsetof(PollMgr, mPostPolls) == 456);
+
+// A nested poll manager ("PollMgr PollGroup") with a lock, which a renderer
+// object selects as the thread's manager around the polls it groups
+// (0x24F740-0x24FA90). The scene component and the drawable entity
+// resource own one each. Only its constructor and destructor are declared.
+// Name not in the reference map; it follows the manager's name.
+class PollGroup {
+public:
+    // The binary does not read the name.
+    explicit PollGroup(const char* name);  // 0x24F740
+    ~PollGroup();                          // 0x24F820
+
+    // Makes the group the thread's poll manager (also stored at
+    // 0x19E7F48). Name not in the reference map.
+    void Select();  // 0x24F9B0
+    // Polls the group's queued jobs on the calling thread until none is
+    // left; a non-null job polls only up to it. Name not in the reference
+    // map.
+    void PollJobs(PollDepBase* until);  // 0x24FB80
+    // Clears the thread's poll manager. Name not in the reference map.
+    static void Deselect();  // 0x24FA90
+
+    unsigned char mOpaque[88];  // Not modelled.
+};
+
+static_assert(sizeof(PollGroup) == 88);
 
 // The calling thread's poll state (the map's ThreadPollContext).
 // RecordingAudioRenderTarget and TransEntityResource clear the flag while

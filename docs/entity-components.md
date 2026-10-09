@@ -92,6 +92,13 @@ twelve name and index nodes and returns the address of the property.
 are virtual. `Resize` and `_Insert` work through slots 5-7; `_Insert`
 takes an element from the array itself before the storage moves.
 
+A component's `_Imprint` (slot 10) copies it into an imprint buffer inside a
+`ScopedImprint` (`0xB4D0`). The scope sets the thread's
+`PropArrayBase::sImprinting`, which the binary reaches through the
+thread-local descriptor at `0x19B0310` and the source models as
+`thread_local`; `PropArrayBase::_Copy` (`0xBA70`) skips its copy while it is
+set. The class copies are reconstructed for the render components.
+
 ## Weak evidence
 
 - The slot names 3, 5, 6, 9, 12-14, 17, 18, 24-26 and 28-30 rest on their

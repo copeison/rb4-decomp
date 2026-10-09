@@ -13,6 +13,22 @@ TextStream& TextStream::operator<<(char c) {
     return *this;
 }
 
+// Reconstructed from eboot.elf at 0x258640.
+TextStream& TextStream::operator<<(int value) {
+    char buffer[1024];
+    HmxSnprintf(buffer, sizeof(buffer), "%d", value);
+    Print(buffer);
+    return *this;
+}
+
+// Reconstructed from eboot.elf at 0x258790.
+TextStream& TextStream::operator<<(unsigned int value) {
+    char buffer[1024];
+    HmxSnprintf(buffer, sizeof(buffer), "%u", value);
+    Print(buffer);
+    return *this;
+}
+
 // Reconstructed from eboot.elf at 0x2588E0.
 TextStream& TextStream::operator<<(const char* str) {
     Print(str);

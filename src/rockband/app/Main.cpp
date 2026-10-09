@@ -1,6 +1,7 @@
 #include "rockband/app/Main.h"
 
 #include "audio/core/system/SoundManager.h"
+#include "os/debug/Debug.h"
 #include "os/files/File.h"
 #include "os/system/Core.h"
 #include "os/system/System.h"
@@ -29,7 +30,6 @@ void ui_register_types();
 void dingo_initialize(DingoService& service);
 void audio_configure_time_stretch();
 void input_refresh_player_assignments();
-[[noreturn]] void runtime_terminate(int status);
 void ui_load_layout_by_id(
     UILayoutController& controller,
     UILayoutId id,
@@ -119,7 +119,7 @@ bool App::Initialize(int argc, char** argv) {
     input_refresh_player_assignments();
 
     if (gResourcePrecacheMode) {
-        runtime_terminate(0);
+        HmxExit(0);
     }
 
     ui_load_layout_by_id(g_ui_layout_controller, kLayoutGameStartup, false);

@@ -2,7 +2,9 @@
 
 #include <cstddef>
 
+#include "entity/core/EntityResource.h"
 #include "entity/resources/Resource.h"
+#include "render/textures/RndTexture2DResource.h"
 #include "utl/containers/Vector.h"
 
 class RndComputeBuffer;
@@ -21,6 +23,7 @@ class RndShaderLightDirectionalShadowGen;
 class RndShaderLightPointShadowGen;
 class RndShaderLightSpotShadowGen;
 class RndTonemapShader;
+class RndTexture2D;
 class RndTextureBase;
 struct RndInitParams;
 
@@ -35,7 +38,9 @@ public:
     // Inlines _InitMeshes and _InitBuffers.
     void Init();       // 0x47F030
     void Terminate();  // 0x47F580
-    // Not reconstructed yet. The map's signature is LoadResources(); this
+    // Loads the inline lighting textures and the skin diffusion texture,
+    // and takes the hair reflectance textures from the first's
+    // RndTextureUtilityCom. The map's signature is LoadResources(); this
     // build reads RndInitParams::mInitRendering.
     void LoadResources(const RndInitParams& params);  // 0x47F8D0
 
@@ -43,8 +48,11 @@ public:
     // vector follows the map's function order.
     RndTextureBase* GetProbeCaptureDownsampleTexture(int size);  // 0x47FD60
     RndTextureBase* GetProbeCaptureHelperTexture(int size);      // 0x47FDA0
-    // Not reconstructed yet. The return type is not in the reference map.
+    // The return type is not in the reference map.
     ResourcePath GetSkinDiffusionTexPath();  // 0x47FCD0
+    // The texture of error_light_cookie.png, loaded on first use, or null
+    // when it failed. Name not in the reference map. Not reconstructed.
+    RndTexture2D* GetErrorLightCookie();  // 0x47FBF0
 
     void _InitBuffers();  // 0x47F500
     // Builds the spotlight volume and encodes per-vertex blend weights in
@@ -82,11 +90,12 @@ public:
     // Lazily loaded error_light_cookie.png.
     ResourcePtr<Resource> mErrorLightCookie;
     // inline_lighting_textures.entity.
-    ResourcePtr<Resource> mInlineLightingTextures;
-    // Read from mInlineLightingTextures by LoadResources.
-    void* mInlineLightingData[2];
+    ResourcePtr<EntityResource> mInlineLightingTextures;
+    // The hair reflectance textures of the inline lighting textures'
+    // RndTextureUtilityCom, read by LoadResources.
+    RndTextureBase* mHairReflectanceTextures[2];
     // skin_diffusion.bmp.
-    ResourcePtr<Resource> mSkinDiffusion;
+    ResourcePtr<RndTexture2DResource> mSkinDiffusion;
     RndTonemapShader* mTonemapShader;
     RndCShaderTonemap* mTonemapCShader;
     // The members below are released through their virtual destructors;
@@ -116,7 +125,7 @@ static_assert(offsetof(RndLightGlobals, mTiledLightIdsCount) == 104);
 static_assert(offsetof(RndLightGlobals, mTiledLightsCullShader) == 112);
 static_assert(offsetof(RndLightGlobals, mErrorLightCookie) == 144);
 static_assert(offsetof(RndLightGlobals, mInlineLightingTextures) == 152);
-static_assert(offsetof(RndLightGlobals, mInlineLightingData) == 160);
+static_assert(offsetof(RndLightGlobals, mHairReflectanceTextures) == 160);
 static_assert(offsetof(RndLightGlobals, mSkinDiffusion) == 176);
 static_assert(offsetof(RndLightGlobals, mTonemapShader) == 184);
 static_assert(offsetof(RndLightGlobals, mProbeCaptureBuffers) == 200);

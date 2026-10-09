@@ -281,6 +281,12 @@ bool RndPixelData::TryCopyFrom(const RndPixelData& other) {
     return true;
 }
 
+// Reconstructed from eboot.elf at 0x683050. Free is inlined.
+void RndPixelData::CreateEmpty(int format) {
+    Free();
+    mFormat = format;
+}
+
 // Reconstructed from eboot.elf at 0x6830D0.
 void RndPixelData::CreateEmpty(int width, int height, int depth, int format) {
     Free();

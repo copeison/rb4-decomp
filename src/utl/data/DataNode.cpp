@@ -141,6 +141,16 @@ void DataSetGlobal(Symbol name, const DataNode& value) {
     SetVarInAllThreads(DataVarIndex(name), value);
 }
 
+// Reconstructed from eboot.elf at 0x236E70.
+void DataForEachVariable(const std::function<bool(Symbol)>& visit) {
+    ScopedCritSec lock(gVarIndexCrit);
+    for (const auto& entry : gVarIndices) {
+        if (!visit(entry.first)) {
+            break;
+        }
+    }
+}
+
 // Reconstructed from eboot.elf at 0x236F40.
 bool DataNode::CompatibleType(DataType type) const {
     if (mType == type) {

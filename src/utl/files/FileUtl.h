@@ -4,6 +4,20 @@
 // calls are declared; FileUtl.cpp reconstructs the path splitting, and
 // FileMakePath, FileRelativePath and FileMkDirRecur are not reconstructed.
 
+class FixedString;
+
+// Turns backslashes into slashes in place.
+char* FileNormalizeSlash(char* path);  // 0x2448D0
+// The drive before the colon ("data" of "data:/x"), in `buffer`; empty when
+// there is none.
+char* FileGetDrive(const char* path, char* buffer);  // 0x244F00
+// Whether the path matches the wildcard pattern. The map has
+// FileMatch(char const*, char const*).
+bool FileMatch(const char* path, const char* pattern, bool caseSensitive);  // 0x2454A0
+// "data:/x" to "/data/x" and back; false when the path has no drive. The
+// map also has char* versions.
+bool DriveColonToSlash(FixedString& path, bool lower);  // 0x246200
+bool DriveSlashToColon(FixedString& path, bool lower);  // 0x246270
 // Whether the path starts with a slash or a drive ("c:/").
 bool FileIsAbsolute(const char* path);  // 0x245820
 // Lower-cases the path in place and turns backslashes into slashes.

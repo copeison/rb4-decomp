@@ -134,6 +134,16 @@ public:
     float _GetAverageMs(unsigned long frame) const override;      // 0x24AD90
     float _GetWorstMs(unsigned long frame) const override;        // 0x24ADA0
 
+    // Starts timing the current frame, nesting under the running timer of
+    // the thread when there is one. False when the timer is disabled or its
+    // parent is collapsed. Inlined into its users; the binary keeps an
+    // out-of-line copy among the os/System.o functions. Name not in the
+    // reference map.
+    bool Start();  // 0x368B20
+    // Records `ms` as the current frame's time and updates its worst time
+    // and average. Name not in the reference map.
+    void UpdateMs(float ms);  // 0x24AA10
+
     // Closes the current frame: records its time, worst time, averages and
     // count, and settles the timer's parent. `reset` also clears the worst
     // times and averages of both frames. Name not in the reference map.

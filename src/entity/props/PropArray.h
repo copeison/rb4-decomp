@@ -70,6 +70,12 @@ public:
     // calling thread is imprinting. Not reconstructed.
     void _Copy(const PropArrayBase& other);  // 0xBA70
 
+    // Set on the calling thread while components copy themselves into an
+    // imprint (ScopedImprint). The binary reaches it through the
+    // thread-local descriptor at 0x19B0310, the map's TLSValue, which is
+    // modelled as thread_local as gDataThread is.
+    static thread_local bool sImprinting;
+
     void* mData;
     unsigned int mSize;
     unsigned int mCapacity;
@@ -86,6 +92,19 @@ static_assert(offsetof(PropArrayBase, mSize) == 16);
 static_assert(offsetof(PropArrayBase, mElemSize) == 24);
 static_assert(offsetof(PropArrayBase, mType) == 32);
 static_assert(sizeof(PropArrayBase) == 40);
+
+// Marks the calling thread as imprinting for the scope, restoring the
+// previous state when it ends. Every component's _Imprint opens one. The
+// destructor is inline.
+class ScopedImprint {
+public:
+    ScopedImprint();  // 0xB4D0
+    ~ScopedImprint() {
+        PropArrayBase::sImprinting = mWasImprinting;
+    }
+
+    bool mWasImprinting;  // Name not in the reference map.
+};
 
 // A typed PropArrayBase. The element operations are the template's, which
 // the compiler emits for each element type as the binary does.

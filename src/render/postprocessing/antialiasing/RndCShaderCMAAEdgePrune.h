@@ -4,8 +4,11 @@
 
 #include "render/shaders/RndShader.h"
 
+class RndBufferCollection;
+class RndContext;
+struct RndSceneDrawTarget;
+
 // Removes the non-dominant edges found by the edge detection.
-// The Dispatch function is not reconstructed yet.
 class RndCShaderCMAAEdgePrune : public RndShaderCompute {
 public:
     RndCShaderCMAAEdgePrune();  // 0x4508B0
@@ -18,6 +21,14 @@ public:
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
         RndShaderResourceConfig& resources) override;
+
+    // Prunes the edges into the edge buffer the parity selects. Not
+    // reconstructed. Name not in the reference map.
+    void Dispatch(
+        RndContext& context,
+        RndBufferCollection& buffers,
+        unsigned long parity,
+        float nonDominantEdgeThreshold);  // 0x450930
 
     // Field names are not in the reference map.
     unsigned long mSourceEdges;               // Resource indices.

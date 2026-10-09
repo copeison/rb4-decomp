@@ -5,6 +5,7 @@
 
 #include "os/system/System.h"
 #include "utl/data/DataArray.h"
+#include "utl/data/DataUtl.h"
 
 // Reconstructed from eboot.elf at 0x363030.
 Symbol PlatformSymbol(HxPlatform platform) {
@@ -43,4 +44,11 @@ eastl::vector<int> GetSupportedPlatforms() {
         platforms.push_back(config->Int(index));
     }
     return platforms;
+}
+
+// Reconstructed from eboot.elf at 0x363FE0.
+DataArray* MakeDataArray(const DataNode& node) {
+    auto* array = new DataArray(1);
+    array->Node(0) = node;
+    return array;
 }

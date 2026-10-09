@@ -4,8 +4,11 @@
 
 #include "render/shaders/RndShader.h"
 
+class RndBufferCollection;
+class RndContext;
+struct RndSceneDrawTarget;
+
 // Detects the color edges that CMAA blends along.
-// The Dispatch function is not reconstructed yet.
 class RndCShaderCMAAEdgeDetect : public RndShaderCompute {
 public:
     RndCShaderCMAAEdgeDetect();  // 0x450490
@@ -18,6 +21,14 @@ public:
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
         RndShaderResourceConfig& resources) override;
+
+    // Finds the edges of the target's source light accumulation with the
+    // threshold. Not reconstructed. Name not in the reference map.
+    void Dispatch(
+        RndContext& context,
+        RndBufferCollection& buffers,
+        const RndSceneDrawTarget& target,
+        float edgeThreshold);  // 0x450500
 
     // Field names are not in the reference map.
     unsigned long mSourceBuffer;       // Resource indices.

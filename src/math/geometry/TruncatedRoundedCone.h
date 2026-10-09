@@ -16,6 +16,14 @@ public:
         float angle,
         float topRadius,
         float length);  // 0x117E750
+    // Sets the cone from its top and bottom radii and its length, clamping
+    // them to what the shape allows. Matched to this map name by its
+    // arguments; RndLightSpotCom::_SyncGeometry (0x4A2A19) sizes its draw
+    // mesh with it.
+    void SetRadiiAndLength(
+        float topRadius,
+        float bottomRadius,
+        float length);  // 0x117E370
 
     float mAngle;         // Half-angle.
     float mTopRadius;     // Radius of the flat top at z = 0.

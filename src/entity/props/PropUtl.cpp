@@ -6,6 +6,8 @@
 // with the weak copies of entity/PropUtl.o's templates; this build places
 // them in the early shared code.
 
+thread_local bool PropArrayBase::sImprinting;
+
 // Reconstructed from eboot.elf at 0xA660. Shrinking destroys the dropped
 // elements; growing reallocates to exactly the size and value-initializes
 // the new elements.
@@ -33,6 +35,11 @@ void PropArrayBase::Resize(unsigned long size) {
         Copy(size - mSize, ElementAt(mSize), nullptr);
     }
     mSize = static_cast<unsigned int>(size);
+}
+
+// Reconstructed from eboot.elf at 0xB4D0.
+ScopedImprint::ScopedImprint() : mWasImprinting(PropArrayBase::sImprinting) {
+    PropArrayBase::sImprinting = true;
 }
 
 // Reconstructed from eboot.elf at 0x2ABE0. An element inside the array is

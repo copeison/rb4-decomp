@@ -22,7 +22,10 @@ enum class RndResourceState : std::uint32_t {
     kRenderTarget = 0x0004,
     kUnorderedAccess = 0x0008,
     kDepthWrite = 0x0010,
+    kNonPixelShaderResource = 0x0040,
     kPixelShaderResource = 0x0080,
+    // Both shader-resource states.
+    kAllShaderResource = 0x00C0,
     kStreamOutput = 0x0100,
     kCopyDestination = 0x0400,
     kResolveDestination = 0x1000,

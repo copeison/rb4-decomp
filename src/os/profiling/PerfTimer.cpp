@@ -41,6 +41,59 @@ PerfTimer::PerfTimer(Symbol name, const DataArray* config)
     }
 }
 
+// Reconstructed from eboot.elf at 0x24AA10.
+void PerfTimer::UpdateMs(float ms) {
+    Frame& frame = mFrames[gCurrentFrameIndex];
+    frame.mMs = ms;
+    if (!(ms < frame.mWorstMs)) {
+        frame.mWorstMs = ms;
+        frame.mWorstFrame = frame.mFrameNumber;
+    }
+    const float averageMs = frame.mAverageMs;
+    frame.mAverageMs = averageMs == 0.0F ? ms : (ms - averageMs) * gTimerAverageWeight + averageMs;
+}
+
+// Reconstructed from eboot.elf at 0x368B20.
+bool PerfTimer::Start() {
+    if (!mEnabled) {
+        return false;
+    }
+    Frame& frame = mFrames[gCurrentFrameIndex];
+    if (mRunningTimers != nullptr && frame.mDepth <= 0) {
+        PerfTimerBase* running = nullptr;
+        PerfTimerBase* parent = nullptr;
+        if (!mRunningTimers->empty()) {
+            running = mRunningTimers->back();
+            if (running != nullptr) {
+                running->mHasChildren = true;
+                if (!mIsolated && !running->mExpanded) {
+                    return false;
+                }
+                parent = running;
+            }
+        }
+        if (frame.mHasParent) {
+            if (parent != frame.mFrameParent) {
+                frame.mFrameParent = nullptr;
+                frame.mParentAmbiguous = true;
+            }
+        } else {
+            frame.mFrameParent = running;
+            frame.mHasParent = true;
+        }
+        mRunningTimers->push_back(this);
+    }
+    const int depth = frame.mDepth;
+    if (depth >= 0) {
+        frame.mDepth = depth + 1;
+        if (depth == 0) {
+            frame.mStartCycles = __builtin_ia32_rdtsc();
+        }
+    }
+    ++frame.mPendingCount;
+    return true;
+}
+
 // Reconstructed from eboot.elf at 0x24A820.
 void PerfTimer::EndFrame(bool reset) {
     const unsigned long index = gCurrentFrameIndex;

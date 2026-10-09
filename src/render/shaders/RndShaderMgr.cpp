@@ -97,7 +97,11 @@ void release_dynamic_resource(void*& storage) {
     }
 }
 
-// Reconstructed from eboot.elf at 0x645F20.
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x645F20. The map has it in an anonymous
+// namespace; RndLightFlareCom calls the same code (0x47D115), so it is
+// declared in the header.
 float sample_function_table(
     std::uint32_t function_index,
     float input) {
@@ -131,6 +135,8 @@ float sample_function_table(
     }
     return std::max(0.0F, std::min(1.0F, output));
 }
+
+namespace {
 
 struct ShaderConstantDefinition {
     const char* name;

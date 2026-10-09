@@ -5,6 +5,8 @@
 #include "utl/containers/Vector.h"
 #include "utl/time/Timer.h"
 
+class Entity;
+
 // The clocks' time units. The enumerator names are not in the reference map;
 // GetTimeUnitsName's tables spell them "seconds", "beats", "uiseconds" and
 // "tutorialseconds".
@@ -79,6 +81,10 @@ public:
     // Advances the real-time timer and the clocks by the frame's time.
     // Not reconstructed.
     void Poll();  // 0x25AE20
+    // The clocks of the nearest entity, from the entity up through the
+    // objects that instance it, whose root holds a "Timelines" component;
+    // the manager's own without one. Name not in the reference map.
+    Clock* GetClock(Entity* entity);  // 0x25A9B0
 
     // Field names are not in the reference map.
     unsigned char mOpaque0[200];  // Fields the debug overlays do not read.

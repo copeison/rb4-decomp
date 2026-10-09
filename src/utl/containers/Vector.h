@@ -181,6 +181,31 @@ public:
         emplace_back(value);
     }
 
+    // Inserts a copy of the value before the position, moving the later
+    // elements up, as EASTL's insert (DoInsertValue) does; the value may
+    // live in the vector. RndLightProbeCom::StateInserted (0x4984C0) inlines
+    // it.
+    T* insert(T* position, const T& value) {
+        const auto index = static_cast<unsigned long>(position - mpBegin);
+        T copy(value);
+        if (mpEnd == mpCapacity) {
+            const auto count = size();
+            reserve(count == 0 ? 1 : count * 2);
+        }
+        position = mpBegin + index;
+        if (position == mpEnd) {
+            new (mpEnd) T(std::move(copy));
+        } else {
+            new (mpEnd) T(std::move(*(mpEnd - 1)));
+            for (auto* element = mpEnd - 1; element != position; --element) {
+                *element = std::move(*(element - 1));
+            }
+            *position = std::move(copy);
+        }
+        ++mpEnd;
+        return position;
+    }
+
     void clear() {
         DestroyElements();
         mpEnd = mpBegin;

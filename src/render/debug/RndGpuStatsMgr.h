@@ -127,24 +127,28 @@ public:
     // frame; -1 selects the last resolved frame. Unknown names give the
     // timings of an empty frame.
     float GetAverageMs(Symbol name, unsigned long frame);  // 0x62C710
+    // The worst milliseconds of the named statistic's total in a history
+    // frame, like GetAverageMs.
+    float GetWorstMs(Symbol name, unsigned long frame);  // 0x62C840
     // Returns zero in this build; the GPU timer graph uses it as its
     // budget. Name not in the reference map.
     float GetBudget(Symbol name);  // 0x62C610
-    // Replaces `timers` with the statistics, ordered for the GPU timers
-    // overlay's display and sort modes. Name not in the reference map.
+    // Appends the statistics for the GPU timers overlay's display mode to
+    // `timers`, sorted by full name without regard to case. The sort mode
+    // is not used. Name not in the reference map.
     void GatherTimers(
         unsigned int displayMode,
         int sortMode,
         eastl::vector<PerfTimerBase*>& timers);  // 0x62C150
+    // Clears the history frames of every statistic and total.
+    void ResetTimers();  // 0x62C970
     // Not located in this build.
     float GetMs(Symbol name);
-    float GetWorstMs(Symbol name, unsigned long frames);
-    void ResetTimers();
     void PrintCSV(TextStream& stream);
 
     void _GatherStats();  // 0x62B9E0
-    // Inlined into EndFrame.
-    void _NextFrame();
+    // Also inlined into EndFrame.
+    void _NextFrame();  // 0x62C0E0
 
     // Not located in this build.
     void _Print(TextStream& stream);

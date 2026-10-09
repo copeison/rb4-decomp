@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 668 entries. The audio
+executable. The latest unresolved-symbol report contains 900 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -222,7 +222,8 @@ The latest focused commits, newest first, are:
 | `3be3757` | Foundation runtime (string formatting, script data, threads, time, perf timers) and the audio voices, pitch DSP, `SoundManager`, `FModSystem` and bank resource |
 | `c58714e` | Resource system, entity and game-object core, `FusionSampler`, modulators and the composite generator |
 | `608eab2` | Component base and property system, entity loaders, audio effects, interpolators, generator managers, `FusionGenerator` |
-| (this) | Message sources, poll dependencies, entity lifecycle and loading, audio emitter and listener components, SynthRack and MultiFusion generators |
+| `006db74` | Message sources, poll dependencies, entity lifecycle and loading, audio emitter and listener components, SynthRack and MultiFusion generators |
+| (this) | os memory, debug, system, files and keyboard; render scene, drawer, culler, lights, cameras, materials, meshes, particles, post-processing and options components |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |
@@ -510,8 +511,8 @@ The permutation bind (`0x638920`) is now source-owned too. The next rendering
 milestones are the per-pass draw functions that build program keys and call
 it. Each one belongs in its pass's domain folder:
 
-- blur at `0x634BB0`, a 3.8 KB function with an auto-vectorized Gaussian
-  weight loop that needs raw-assembly reading;
+- blur (`0x634BB0`), FXAA, and the DOF disc blur are done; see
+  [render-builtin-shaders.md](render-builtin-shaders.md);
 - 36 further callers of `RndShader::_SelectShaderCollection`. List them by
   cross-referencing `0x638920` in IDA; several still lack IDA function
   definitions (`0x5F8DF0`, a single-texture draw for a shader outside the built-in set,

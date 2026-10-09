@@ -5,6 +5,7 @@
 
 #include "os/threading/CritSec.h"
 #include "render/debug/RndGpuStatsMgr.h"
+#include "render/atmosphere/RndAtmosphereGlobals.h"
 #include "render/lighting/RndLightGlobals.h"
 #include "render/defaults/RndDefaults.h"
 #include "render/shaders/RndShaderMgr.h"
@@ -18,7 +19,6 @@ class RndBufferCollection;
 class RndConfig;
 class RndMaterialRuntimeData;
 class RndShaderCBuffer;
-class RndShaderFogDeferred;
 
 class RndWindow;
 class RndAudioTextures;
@@ -110,6 +110,12 @@ public:
     void ExecuteDeferredContext(unsigned long index);      // 0x3DEB80
     ConsoleState GetConsoleState() const;                  // 0x3DEC00
     void SetConsoleState(ConsoleState state);              // 0x3DEC10
+    // Folded with SetConsoleState at 0x3DEC10, which forwards its arguments
+    // to slot 12: RndMaterialCom::_OnResourcesLoaded (0x4F3D12) calls it per
+    // quality level with the material's blend mode, the level's usage hints
+    // and its shader graph's data at +0xF8. Name not in the reference map;
+    // the evidence is weak.
+    void PrecacheMaterialShaders(int blendMode, unsigned int usageHints, void* graphShaders);
     void SyncFreeMaterialData(RndMaterialRuntimeData* data);  // 0x3DEC20
     void _InstallMainWindow(RndWindow* window);  // 0x3DED70
     void _DestroyMainWindow();                             // 0x3DED80
@@ -160,7 +166,7 @@ public:
     RndDefaults mDefaults;
     RndShaderMgr mShaderMgr;
     RndLightGlobals mLighting;
-    RndShaderFogDeferred* mFogDeferred;
+    RndAtmosphereGlobals mAtmosphere;
     RndPrimitiveMeshes* mPrimitiveMeshes;
     RndAudioTextures* mAudioTextures;
     RndGpuStatsMgr mGpuStats;
@@ -202,7 +208,7 @@ static_assert(offsetof(RndDevice, mCapabilities) == 312);
 static_assert(offsetof(RndDevice, mDefaults) == 1976);
 static_assert(offsetof(RndDevice, mShaderMgr) == 2544);
 static_assert(offsetof(RndDevice, mLighting) == 3256);
-static_assert(offsetof(RndDevice, mFogDeferred) == 3560);
+static_assert(offsetof(RndDevice, mAtmosphere) == 3560);
 static_assert(offsetof(RndDevice, mPrimitiveMeshes) == 3568);
 static_assert(offsetof(RndDevice, mAudioTextures) == 3576);
 static_assert(offsetof(RndDevice, mGpuStats) == 3584);

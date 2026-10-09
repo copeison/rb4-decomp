@@ -87,6 +87,18 @@ public:
         ++mSize;
     }
 
+    // Links a new node after the anchor, as EASTL's push_front does (for
+    // example Debug::AddExitCallback, inlined at 0x402CCF).
+    void push_front(const T& value) {
+        auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
+        new (&node->mValue) T(value);
+        node->mpNext = mNode.mpNext;
+        node->mpPrev = mNode.mpNext->mpPrev;
+        mNode.mpNext->mpPrev->mpNext = node;
+        mNode.mpNext->mpPrev = node;
+        ++mSize;
+    }
+
     // Frees every node and leaves the anchor linked to itself.
     void clear() {
         DoClear();
@@ -106,11 +118,83 @@ public:
         return iterator(next);
     }
 
+    // Sorts the nodes with a stable merge sort by relinking them, as
+    // EASTL's list::sort does (its DoSort is instantiated per element type,
+    // for example at 0x379110 for String).
+    template <typename Compare>
+    void sort(Compare compare) {
+        if (mSize < 2) {
+            return;
+        }
+        ListNodeBase* first = mNode.mpNext;
+        mNode.mpPrev->mpNext = nullptr;
+        first = MergeSort(first, mSize, compare);
+        // Relink the backward pointers and the anchor.
+        ListNodeBase* prev = &mNode;
+        for (ListNodeBase* node = first; node != nullptr; node = node->mpNext) {
+            node->mpPrev = prev;
+            prev->mpNext = node;
+            prev = node;
+        }
+        prev->mpNext = &mNode;
+        mNode.mpPrev = prev;
+    }
+    void sort() {
+        sort([](const T& a, const T& b) { return a < b; });
+    }
+
+    // Erases each node equal to the one before it.
+    void unique() {
+        ListNodeBase* node = mNode.mpNext;
+        if (node == &mNode) {
+            return;
+        }
+        for (ListNodeBase* next = node->mpNext; next != &mNode; next = node->mpNext) {
+            if (static_cast<node_type*>(node)->mValue == static_cast<node_type*>(next)->mValue) {
+                erase(iterator(next));
+            } else {
+                node = next;
+            }
+        }
+    }
+
     ListNodeBase mNode;
     unsigned long mSize;
     Allocator mAllocator;
 
 private:
+    // Sorts `count` forward-linked nodes starting at `first`.
+    template <typename Compare>
+    static ListNodeBase* MergeSort(ListNodeBase* first, unsigned long count, Compare& compare) {
+        if (count < 2) {
+            if (first != nullptr) {
+                first->mpNext = nullptr;
+            }
+            return first;
+        }
+        const unsigned long half = count / 2;
+        ListNodeBase* second = first;
+        for (unsigned long i = 0; i < half; ++i) {
+            second = second->mpNext;
+        }
+        ListNodeBase* left = MergeSort(first, half, compare);
+        ListNodeBase* right = MergeSort(second, count - half, compare);
+        ListNodeBase head;
+        ListNodeBase* tail = &head;
+        while (left != nullptr && right != nullptr) {
+            if (compare(static_cast<node_type*>(right)->mValue, static_cast<node_type*>(left)->mValue)) {
+                tail->mpNext = right;
+                right = right->mpNext;
+            } else {
+                tail->mpNext = left;
+                left = left->mpNext;
+            }
+            tail = tail->mpNext;
+        }
+        tail->mpNext = left != nullptr ? left : right;
+        return head.mpNext;
+    }
+
     void DoClear() {
         ListNodeBase* node = mNode.mpNext;
         while (node != &mNode) {

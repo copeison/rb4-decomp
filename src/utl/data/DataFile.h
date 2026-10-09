@@ -11,3 +11,5 @@ class TextStream;
 DataArrayPtr DataReadString(const char* str);  // 0x2203A0
 // Writes the array's nodes from `start` on, one per line.
 void DataWriteStream(TextStream* stream, const DataArray* data, int start);  // 0x220810
+// Reads the file into a new array, from the cache when `cached` is set.
+DataArrayPtr DataReadFile(const char* path, bool cached);  // 0x2205E0

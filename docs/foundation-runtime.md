@@ -122,5 +122,8 @@ from its arguments uses. `KeyboardKeyMsg` is a `Message<5>`:
 - the wrapping constructor is at `0x392240`;
 - `Message<5>`'s destructor is at `0x392150`.
 
-`KeyboardOverride` (`0x3A1970`) swaps the override sink at `0x1A03960`. The
-keyboard's subscriber object (`0x1A03958`) is not modelled.
+`KeyboardOverride` (`0x3A1970`) swaps the override sink at `0x1A03960`.
+The subscribers are a `SyncMsgSource` (`gKeyboardSource`, `0x1A03958`)
+guarded by the critical section at `0x1A03948`. A sent message goes to the
+override when one is set; `KeyboardSendMsgBypassOverride` (`0x3A1AA0`)
+always exports it to the subscribers.

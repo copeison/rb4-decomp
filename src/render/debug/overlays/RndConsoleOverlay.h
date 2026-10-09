@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "os/threading/CritSec.h"
+#include "render/debug/overlays/ConsoleLineEditor.h"
 #include "render/debug/overlays/RndOverlayTextBase.h"
 #include "utl/text/Str.h"
 
@@ -11,49 +12,43 @@
 // 0x19393B0.
 class RndConsoleOverlay : public RndOverlayTextBase {
 public:
-    // The command line: the line editor at 0x11AECB0 (vtable 0x19A5818,
-    // destructor 0x11AF060) specialised for the console. The editor's
-    // methods replace the map's _History*, _TabCompletion* and
+    // The command line: the script line editor specialised for the
+    // console, whose command output the console's reflection collects. The
+    // editor's methods replace the map's _History*, _TabCompletion* and
     // _ExecuteCommand members. The vtable is at 0x1939418. Name not in the
-    // reference map; the editor and the members are not reconstructed.
-    class ConsoleInput {
+    // reference map.
+    class ConsoleInput : public ConsoleLineEditor {
     public:
-        // Inlined into the console's constructor, which builds the editor
-        // with the argument 3 and then the members below.
-        explicit ConsoleInput(RndConsoleOverlay* owner);
+        // Edits every key (kEditKeys and kCursorKeys).
+        explicit ConsoleInput(RndConsoleOverlay* owner);  // 0x6E18C0
         // Slots 0-1: 0x6E1210, 0x6E1CC0.
-        virtual ~ConsoleInput();
-        // Slots 2 to 5 implement the editor's pure accessors for the input
-        // line and the cursor. Slots 6 and 7 (0x6E1910, 0x6E1930) pass the
-        // owner to TheDebug and are not declared. Names not in the
-        // reference map.
+        ~ConsoleInput() override;
         // Slot 2 at 0x6E1D00.
-        virtual const char* _GetText() const {
+        const char* _GetText() const override {
             return mText.c_str();
         }
         // Slot 3 at 0x6E1D10.
-        virtual void _SetText(const char* text) {
+        void _SetText(const char* text) override {
             mText = text;
         }
         // Slot 4 at 0x6E1D90: the cursor's index in the input line.
-        virtual unsigned long _GetCursor() const {
+        unsigned long _GetCursor() const override {
             return mCursor;
         }
         // Slot 5 at 0x6E1DA0.
-        virtual void _SetCursor(unsigned long cursor) {
+        void _SetCursor(unsigned long cursor) override {
             mCursor = cursor;
         }
+        // Slots 6 and 7: the console's reflection receives the debug
+        // output while a command runs.
+        void _BeginCommand() override;  // 0x6E1910
+        void _EndCommand() override;    // 0x6E1930
+        // Slot 8: forgets the kept output lines.
+        void _ClearOutput() override;  // 0x6E1950
+        // Slot 9: waits for a print in progress on another thread.
+        void _FlushOutput() override;  // 0x6E1990
 
-        // The editor's key handling.
-        bool HandleKeyboardMsg(const KeyboardKeyMsg& msg);  // 0x11AF1C0
-
-        // The editor's members. Field names are not in the reference map.
-        // The state of the unreconstructed line editor base (0x11AECB0):
-        // its history and tab-completion buffers.
-        unsigned char mEditorState[560];
-        // The kind of output being printed; ConsoleDebugReflection tags
-        // each new line with it.
-        int mOutputType;
+        // Field names are not in the reference map.
         RndConsoleOverlay* mOwner;
         String mText;  // The input line.
         unsigned long mCursor;

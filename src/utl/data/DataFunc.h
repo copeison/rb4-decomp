@@ -13,3 +13,6 @@ extern eastl::map<Symbol, DataFunc> gDataFuncs;
 
 // Makes a script function callable by name.
 void DataRegisterFunc(Symbol name, DataFunc func);  // 0x2221F0
+// The registered script functions. Name not in the reference map. Not
+// reconstructed.
+eastl::map<Symbol, DataFunc>& GetDataFuncs();  // 0x2222B0

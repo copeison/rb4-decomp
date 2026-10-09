@@ -42,6 +42,12 @@ public:
         bool mKeepState = false;   // Keeps the blend, depth and cull state.
     };
 
+    // A 2D quad rotated about its center. RndLightFlareCom::_DrawSubflare
+    // (0x47CE60) builds one. Field names are not in the reference map.
+    struct RotatedQuad2DParams : Quad2DParams {
+        float mRotation = 0.0F;  // Counterclockwise, in radians.
+    };
+
     // A 2D line: its space, color and blend mode. Field names are not in
     // the reference map.
     struct Line2DParams {
@@ -88,6 +94,10 @@ public:
     // Draws the quad with an identity view-projection. A quad covering the
     // whole target is drawn as one oversized triangle.
     static void DrawQuad2D(RndContext& context, Quad2DParams& params);  // 0x3E0C50
+    // Draws the quad rotated by mRotation about its center.
+    static void DrawRotatedQuad2D(
+        RndContext& context,
+        RotatedQuad2DParams& params);  // 0x3E1180
     // Draws the segment through DrawLines2D.
     static void DrawLine2D(
         RndContext& context,
@@ -144,6 +154,7 @@ public:
 static_assert(offsetof(RndDrawUtl::Line2DParams, mBlendMode) == 20);
 static_assert(offsetof(RndDrawUtl::Line2DParams, mThickLines) == 24);
 static_assert(sizeof(RndDrawUtl::Line2DParams) == 28);
+static_assert(offsetof(RndDrawUtl::RotatedQuad2DParams, mRotation) == 76);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mShadowColor) == 24);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mBlendMode) == 40);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mFont) == 48);

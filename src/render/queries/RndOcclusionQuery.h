@@ -27,6 +27,11 @@ public:
     virtual void _BeginPredicationImpl(RndContext& context) = 0;  // slot 4
     virtual void _EndPredicationImpl(RndContext& context) = 0;    // slot 5
 
+    // Writes the query's index (mFrame) and mResult into the context's
+    // occlusion constant buffer and selects it. RndLightFlareCom draws its
+    // subflares with it (0x47D1C9).
+    void SetShaderConstants(RndContext& context);  // 0x5F7E00
+
     DELETE_OVERLOAD
 
     // Field names are not in the reference map.

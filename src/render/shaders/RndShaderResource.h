@@ -55,6 +55,8 @@ public:
         unsigned long slot,
         unsigned int flags,
         unsigned long extra);
+    // Copies the source into the resource on the GPU ("GPU Copy Resource").
+    void GpuCopyFrom(RndContext& context, RndShaderResource& source);  // 0x642810
 
     // Render-system frame epoch of the most recent bind. Name not in the
     // reference map.

@@ -63,3 +63,17 @@ Overrides:
 
 The error-shader permutation bind used by the default fallback (`0x63E6C0`)
 remains an adapter boundary.
+
+## Per-pass selection
+
+Bloom's `Select` (`0x6346E0`) set the pattern; these draws now follow it:
+
+| Function | Address | Notes |
+| --- | ---: | --- |
+| `RndShaderBlur::Select` | `0x634BB0` | Gaussian kernel (sigma = radius / 2, up to 31 taps, 63 when bilinear filtering lets Gaussian blur pair taps), offsets scaled by the direction's texel size, `gMaxOffset`, tile info; sample define rounded up to a power of two |
+| `RndShaderFXAA::Select` | `0x636570` | Binds the source with filter mode 2, restoring its own; 1600x900 fallback |
+| `RndCShaderDOFDiscBlur::Dispatch` | `0x6F2BC0` | One group per light tile; radius scaled by height / 1080 |
+| `RndContext::SetShaderNodeTexture` | `0x6BD390` | Binds a shader-graph texture source in every stage that declared it |
+| `RndMaterialRuntimeData::SelectShader` | `0x4F8D10` | Graph select (`RndShaderGraph::Select`, `0x4FE630`) or the error shader |
+
+`RndShaderResource::Select` also has an out-of-line copy at `0x505C20`.

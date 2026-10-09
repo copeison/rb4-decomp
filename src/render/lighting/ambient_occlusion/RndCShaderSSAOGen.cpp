@@ -19,6 +19,16 @@ RndCShaderSSAOGen::RndCShaderSSAOGen()
 
 RndCShaderSSAOGen::~RndCShaderSSAOGen() {}
 
+// Reconstructed from eboot.elf at 0x6D71B0.
+RndCShaderSSAOGen::Params::Params()
+    : mBuffers(nullptr),
+      mNoiseTexture(nullptr),
+      mCamera(nullptr),
+      mAngleBias(0.2F),
+      mRadius(50.0F),
+      mIntensity(1.0F),
+      mUseSceneMask(false) {}
+
 const char* RndCShaderSSAOGen::_GetClassNameImpl() const {
     return "RndCShaderSSAOGen";
 }

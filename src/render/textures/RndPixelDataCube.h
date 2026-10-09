@@ -20,6 +20,18 @@ public:
     unsigned long GetTotalBytes() const;
     // Reconstructed from eboot.elf at 0x68D010.
     void FreeBuffers();
+    // Creates every face `size` square with uninitialized pixels. The
+    // map's format parameter is an RndPixelFormat. Not reconstructed.
+    void CreateUninitialized(int size, int format);  // 0x68CE20
+    // Records every face's size and format without pixels. Not
+    // reconstructed.
+    void CreateEmpty(int size, int format);  // 0x68CF50
+    // Builds each face's mip chain. Not reconstructed.
+    void CreateMips();  // 0x68D0B0
+    // Copies each face's pixels into the existing buffers
+    // (RndPixelData::TryCopyFrom), stopping at the first face that does
+    // not match. Not reconstructed.
+    void CopyFrom(const RndPixelDataCube& other);  // 0x68D100
 
     RndPixelData mFaces[kNumFaces];  // Name not in the reference map.
 };

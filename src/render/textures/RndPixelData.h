@@ -34,6 +34,14 @@ public:
     // its size and format without pixels. The map's format parameter is an
     // RndPixelFormat.
     void CreateEmpty(int width, int height, int depth, int format);
+    // Frees the level and records the format with no size. The map's
+    // CreateEmpty(RndPixelFormat const&); this build takes the data format.
+    void CreateEmpty(int format);  // 0x683050
+    // Frees the level and records the size and format without pixels. The
+    // map's format parameter is an RndPixelFormat. Not reconstructed.
+    void CreateEmpty(const Vector3i& size, int format);  // 0x683170
+    // Builds the mip chain below the level. Not reconstructed.
+    void CreateMips();  // 0x683520
     // Reconstructed from eboot.elf at 0x682E80. The map's format parameter
     // is an RndPixelFormat.
     void Create(const Vector3i& size, int format, const void* pixels);

@@ -123,6 +123,22 @@ public:
     }
     DataArrayPtr(const DataArrayPtr&) = delete;
     DataArrayPtr& operator=(const DataArrayPtr&) = delete;
+    // Holds a reference to the new array and releases the old one. Inlined
+    // into its users, for example SystemInit (0x368000) and
+    // OverrideSystemConfig (0x369A30).
+    DataArrayPtr& operator=(DataArray* data) {
+        if (mData != data) {
+            DataArray* const old = mData;
+            mData = data;
+            if (data != nullptr) {
+                data->AddRef();
+            }
+            if (old != nullptr) {
+                old->Release();
+            }
+        }
+        return *this;
+    }
     ~DataArrayPtr() {
         if (mData != nullptr) {
             mData->Release();

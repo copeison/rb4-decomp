@@ -26,9 +26,15 @@ forward to one virtual slot. They take the file as `void*`, as the map does.
 | `0x378A80` | `FileEof` | `Eof` (`+0x50`) |
 | `0x378A90` | `FileSize` | `Size` (`+0x60`) |
 
-`File::NewFile` (`0x376D40`) has not been reconstructed. FMOD's file callbacks
-also call an inline prepare-for-reading slot (`+0x88`), which is declared
-beside them.
+`os/File.o` (`0x376CE0`-`0x378E00`) is reconstructed in
+`os/files/File.cpp`: the roots (`gRoot` `0x19FEE10`, `gExecRoot`
+`0x19FF010`, `gSystemRoot` `0x19FEC10`), `File::NewFile` (`0x376D40`), the
+instance limit, the pattern recursion and the file lists. `ArkFile` and
+`AsyncFile` are only declared. `os/FileUtl_PS4.o` (`0x379B50`-`0x37A410`)
+holds the mounts, `FileGetStat`, `FileDelete`, `FileMkDir`,
+`FileEnumerate` and the qualified-name builder. FMOD's file callbacks also
+call an inline prepare-for-reading slot (`+0x88`), which is declared beside
+them.
 
 ## BinStream
 
@@ -91,6 +97,9 @@ also set the fail flag.
   requests of 128 bytes or less to the small-block pool.
 - The thread-local temporary-heap scope `MemPushTemp` and `MemPopTemp`
   (`0x37AA30`, `0x37AAF0`).
+
+The whole of `os/MemMgr.o`, `os/MemHeap.o`, `os/PoolAlloc.o` and
+`os/Mem_PS4.o` is reconstructed; see [os-runtime.md](os-runtime.md).
 
 The global `operator new`/`new[]` (`0x37BF40`, `0x37BF60`) forward to
 `MemAlloc`, and `operator delete`/`delete[]` jump to `MemFree`. Classes whose

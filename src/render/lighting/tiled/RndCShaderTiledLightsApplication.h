@@ -16,13 +16,13 @@ struct RndTiledLightsComputeBuffer;
 class RndCShaderTiledLightsApplication : public RndShaderCompute {
 public:
     // Field names are not in the reference map. Bytes 16-56 are a copy of
-    // the first 41 bytes of the caller's RndSceneDrawParams
+    // the first 41 bytes of the caller's RndSceneDrawTarget
     // (_AccumTiledDeferredLight copies them at 0x485776); Dispatch reads
     // only mSceneContext from it.
     struct Params {
         const RndCameraContext* mCamera;
         RndBufferCollection* mBuffers;
-        // RndSceneDrawParams::mHeader.
+        // RndSceneDrawTarget::mBuffersIndex and mLightAccumIndex.
         unsigned char mDrawParamsHeader[16];
         // Selects the light-accumulation buffer when the collection draws a
         // partial-framerate scene.

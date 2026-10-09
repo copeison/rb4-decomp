@@ -19,6 +19,22 @@ class RndShaderCBuffer;
 class RndTextureBase;
 
 enum class RndBlendMode : std::int32_t;
+// Where a shader-graph texture sampler takes its texture from: the first
+// index of RndContext::mSourceTextureSlots and the case of the material
+// texture binder (0x4FE850). The map names the type; the enumerator names
+// are inferred from their users and are not in the reference map. Sources
+// 0 and 1 read the graph's own textures and the material's exposed ones
+// (weak evidence); sources 2 and 3 are bound per draw through
+// RndContext::SetShaderNodeTexture: the font page by
+// RndShaderNodeFontTexture (0x534DD0) and the scene by the shader-graph
+// post-processing stage. The remaining sources are not named.
+enum RndShaderNodeTextureType : int {
+    kShaderNodeTextureUnexposed = 0,
+    kShaderNodeTextureExposed = 1,
+    kShaderNodeTextureFont = 2,
+    kShaderNodeTextureScene = 3,
+    kNumShaderNodeTextureTypes = 33,
+};
 
 struct RndResourceBarrier;
 
@@ -200,6 +216,13 @@ public:
     // Sets the camera of the main view and copies it to the second; the
     // stereo target modes then refresh its target info.
     void SetCamera(const GameObject* camera);  // 0x6BD220
+    // Sets the projection rectangle of the main camera context (and of the
+    // stereo context for the stereo target modes).
+    void SetProjectionRect(const Hmx::Rect& rect);  // 0x6BD2B0
+    // Writes the batch index and instance count into the debug constants
+    // (RndShaderMgr::mBatchInfo) for the batch-visualization shading mode.
+    // Name not in the reference map.
+    void SetBatchInfo(unsigned int index, unsigned long count);  // 0x6BD770
     // Binds the color and depth targets, clearing those that ask, and sets
     // the viewport and the cameras' target info.
     void SetRenderTargets(const RenderTargetParams& params);  // 0x6BC730
@@ -214,12 +237,21 @@ public:
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
+    // Binds the texture, and its sampler state, at the slots the selected
+    // shaders declared for the shader-graph texture source in every
+    // program stage (mSourceTextureSlots).
+    void SetShaderNodeTexture(RndShaderNodeTextureType type, RndTextureBase& texture);  // 0x6BD390
     // Makes the camera constants come from the given camera context, or
     // from the context's own cameras when null, and resyncs them when it
     // changes.
     void SetCameraCBufferOverrideContext(const RndCameraContext* camera);  // 0x6BD370
     // Wireframe shading also draws lines with depth bias.
     void SetShadingMode(RndShadingMode mode);  // 0x6BD5D0
+    // Selects a debug view: the user shading mode, with the shading mode
+    // it applies to. Not reconstructed.
+    void SetShaderDebugMode(
+        RndUserShadingMode mode,
+        RndShadingMode shading);  // 0x6BD450
     // Writes the camera constants of the override camera, or of the
     // context's cameras for the current view-projection mode, then syncs
     // and selects the camera constant buffer.
@@ -284,16 +316,17 @@ public:
     // Global constant buffers created by Init; the last three are the
     // per-draw buffers of 16, 32, and 64 elements.
     RndShaderCBuffer* mCBuffers[9];
-    // For each of the 33 material texture sources and each program type,
-    // the texture and sampler slots a shader declared that source at, or
-    // ~0. The material texture binder (0x4FE850) records them for sources 2
-    // and 3, whose textures are bound later through 0x6BD390; BeginFrame
-    // resets them. Name not in the reference map.
+    // For each shader-graph texture source and each program type, the
+    // texture and sampler slots a shader declared that source at, or ~0.
+    // The material texture binder (0x4FE850) records them for the font and
+    // scene sources, whose textures SetShaderNodeTexture binds later;
+    // BeginFrame resets them. Name not in the reference map.
     struct SourceTextureSlots {
         unsigned long mTextureSlot;
         unsigned long mSamplerSlot;
     };
-    SourceTextureSlots mSourceTextureSlots[33][kNumShaderProgramTypes];
+    SourceTextureSlots
+        mSourceTextureSlots[kNumShaderNodeTextureTypes][kNumShaderProgramTypes];
     // The scene drawer (0x41AA10 and the passes it calls) reads the first
     // word and passes it with its address to its draw callbacks; nothing
     // in this build writes it. Name not in the reference map, and its

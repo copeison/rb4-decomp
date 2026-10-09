@@ -13,3 +13,7 @@
 void MakeEuler(const Hmx::Matrix3& matrix, Vector3& euler);  // 0x215B10
 // Whether z is the world up axis and x and y are level.
 bool IsVertical(const Hmx::Matrix3& matrix);  // 0x215BC0
+// The rotation of the Euler angles, in radians. With `useTable` the sines
+// come from the interpolated table (Sine), otherwise from the C library.
+// Not reconstructed.
+void MakeRotMatrix(const Vector3& euler, Hmx::Matrix3& matrix, bool useTable);  // 0x217090

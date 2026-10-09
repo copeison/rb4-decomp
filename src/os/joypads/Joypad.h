@@ -27,3 +27,22 @@ struct CalbertValues {
 };
 
 static_assert(sizeof(CalbertValues) == 0x104);
+
+// os/Joypad_PS4.o and os/Joypad.o. Not reconstructed.
+// Starts the pad service unless the joypad configuration disables it.
+void JoypadInit();  // 0x8CEFA0
+void JoypadTerminate();  // 0x8CF810
+// Reads the pads and refreshes the players' pad assignments. The frame loop
+// documentation's descriptive name; the map's JoypadPoll is the likely
+// match. Weak.
+void input_refresh_player_assignments();  // 0x8CF240
+// Sends the held-button repeats of every joypad client (os/JoypadClient.o).
+void JoypadClientPoll();  // 0x39FB50
+
+// The joypad information component ("Provides information about a
+// connected joypad"). Only its registration is declared. Name not in the
+// reference map.
+class EditorJoypadDataCom {
+public:
+    static void Init();  // 0x368D00
+};

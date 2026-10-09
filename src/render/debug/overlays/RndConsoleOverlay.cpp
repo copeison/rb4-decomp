@@ -7,6 +7,7 @@
 #include "render/context/RndContext.h"
 #include "render/debug/RndOverlayMgr.h"
 #include "render/drawing/RndDrawUtl.h"
+#include "os/debug/Debug.h"
 #include "utl/time/TimeMgr.h"
 
 namespace {
@@ -76,6 +77,10 @@ RndConsoleOverlay::RndConsoleOverlay()
 
 // Reconstructed from eboot.elf at 0x6E1070 (deleting variant at 0x6E1250).
 RndConsoleOverlay::~RndConsoleOverlay() {}
+
+// Reconstructed from eboot.elf at 0x6E1210. The deleting destructor is at
+// 0x6E1CC0.
+RndConsoleOverlay::ConsoleInput::~ConsoleInput() {}
 
 // Reconstructed from eboot.elf at 0x6E1270. The output is drawn only once
 // a line exists. The input line follows a "> " prompt on a band of twice
@@ -188,4 +193,32 @@ Hmx::Color RndConsoleOverlay::_GetTextColor() const {
 // Reconstructed from eboot.elf at 0x6E18A0.
 Hmx::Color RndConsoleOverlay::_GetBackgroundColor() const {
     return sBackgroundColor;
+}
+
+// Reconstructed from eboot.elf at 0x6E18C0.
+RndConsoleOverlay::ConsoleInput::ConsoleInput(RndConsoleOverlay* owner)
+    : ConsoleLineEditor(kEditKeys | kCursorKeys), mOwner(owner), mCursor(0) {}
+
+// Reconstructed from eboot.elf at 0x6E1910.
+void RndConsoleOverlay::ConsoleInput::_BeginCommand() {
+    TheDebug.AddReflect(&mOwner->mReflection);
+}
+
+// Reconstructed from eboot.elf at 0x6E1930.
+void RndConsoleOverlay::ConsoleInput::_EndCommand() {
+    TheDebug.RemoveReflect(&mOwner->mReflection);
+}
+
+// Reconstructed from eboot.elf at 0x6E1950.
+void RndConsoleOverlay::ConsoleInput::_ClearOutput() {
+    mOwner->mReflection.mCurrentLine = 0;
+    mOwner->mReflection.mNumLines = 0;
+    mOwner->mReflection.mLineOpen = false;
+}
+
+// Reconstructed from eboot.elf at 0x6E1990. Taking and releasing the
+// reflection's lock waits for a print in progress.
+void RndConsoleOverlay::ConsoleInput::_FlushOutput() {
+    mOwner->mReflection.mCritSec.Enter();
+    mOwner->mReflection.mCritSec.Exit();
 }

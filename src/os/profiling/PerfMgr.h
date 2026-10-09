@@ -87,3 +87,7 @@ static_assert(sizeof(PerfTimerMgr) == 96);
 // The manager, at 0x19E7CD0. The map names the PerfMgr.o object
 // thePerfMgr; that it is a PerfTimerMgr is inferred from the calls on it.
 extern PerfTimerMgr thePerfMgr;
+
+// Starts the timers: the cycle timer, the budget categories and thePerfMgr
+// with the "timer" configuration. Name not in the reference map.
+void PerfInit(DataArray* config);  // 0x249610

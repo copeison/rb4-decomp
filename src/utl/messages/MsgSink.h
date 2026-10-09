@@ -126,3 +126,25 @@ static_assert(sizeof(MsgSource::EventSink) == 40);
 static_assert(offsetof(MsgSource::EventSink, mLink) == 24);
 static_assert(offsetof(MsgSource, mEventSinks) == 8);
 static_assert(sizeof(MsgSource) == 24);
+
+class CritSec;
+
+// A MsgSource whose subscriptions and exports take a lock when it has one.
+// PlatformMgr is built on it. Its overrides sit in the second utl block
+// (0x11818D0-0x11819C0). Name not in the reference map; not reconstructed.
+class SyncMsgSource : public MsgSource {
+public:
+    // Inlined into its users, for example KeyboardInitCommon (0x3A18A0).
+    explicit SyncMsgSource(CritSec* lock) : mLock(lock) {}
+
+    // Slot 4.
+    void AddSink(EventSinkElem* elem, MsgSink* sink, Symbol event, Symbol handler) override;  // 0x11818D0
+    // Slot 5.
+    bool Export(DataArray* msg) override;  // 0x11819C0
+    // Slot 6.
+    void RemoveSink(EventSinkElem* elem) override;  // 0x1181960
+
+    CritSec* mLock;  // Name not in the reference map.
+};
+
+static_assert(sizeof(SyncMsgSource) == 32);

@@ -7,7 +7,7 @@
 #include "render/drawing/RndDrawUtl.h"
 #include "render/drawing/RndEditorDrawUtl.h"
 #include "render/drawing/RndTexturedQuadCom.h"
-#include "render/particles/RndParticleBouncePlaneEditCom.h"
+#include "render/particles/RndParticleCom.h"
 #include "render/queries/RndOcclusionQueryMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
@@ -28,7 +28,7 @@ void Rnd::Init(const RndInitParams& params) {
     RndEditorDrawUtl::Init();
     RndOcclusionQueryMgr::Init();
     RndOverlayMgr::Init();
-    RndParticleBouncePlaneEditCom::StaticInit();
+    RndParticleCom::StaticInit();
     RndTexturedQuadCom::PostInit();
     RndDebugFont::InitExtendedFonts();
     TheDebug.AddExitCallback(Terminate);
@@ -51,7 +51,7 @@ void Rnd::Terminate() {
     RndDrawUtl::Terminate();
     RndEditorDrawUtl::Terminate();
     RndOcclusionQueryMgr::Terminate();
-    RndParticleBouncePlaneEditCom::StaticTerminate();
+    RndParticleCom::StaticTerminate();
     RndTexturedQuadCom::Terminate();
     RndDebugFont::TerminateExtendedFonts();
     device->Terminate();

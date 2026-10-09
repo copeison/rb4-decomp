@@ -3,7 +3,8 @@
 #include "render/context/RndContext.h"
 #include "render/system/RndDevice.h"
 
-// Inlined into the draws.
+// Reconstructed from eboot.elf at 0x505C20, the out-of-line copy; most
+// draws inline it.
 void RndShaderResource::Select(
     RndContext& context,
     RndShaderProgramType type,

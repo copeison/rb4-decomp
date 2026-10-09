@@ -4,6 +4,9 @@
 
 #include "render/shaders/RndShader.h"
 
+class RndContext;
+class RndTextureBase;
+
 // Applies the accumulated volumetric scattering to the light accumulation
 // buffer.
 class RndCShaderVScatDeferred : public RndShaderCompute {
@@ -18,6 +21,19 @@ public:
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
         RndShaderResourceConfig& resources) override;
+
+    // Fogs and scatters the source light accumulation into the destination
+    // over the fog range. Not reconstructed. Name not in the reference map.
+    void Dispatch(
+        RndContext& context,
+        RndTextureBase* accumScattering,
+        RndTextureBase* srcLightAccum,
+        RndTextureBase* dstLightAccum,
+        RndTextureBase* linearDepth,
+        float startDist,
+        float endDist,
+        float fogDensity,
+        RndTextureBase* sceneMask);  // 0x6D3530
 
     // Field names are not in the reference map.
     RndShaderDefInfo mUseSceneMask;

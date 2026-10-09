@@ -53,6 +53,11 @@ embedded in `RndDevice` at 3584. In this build it has no vtable and no
 statistic by full name, and the per-name `StatBlock`s. Its lock is a
 `CritSec`. `BeginStatBlock` (0x62AF80) returns a query key, or -1 without a
 backend. `EndStatBlock` (0x62B5B0) ignores negative keys. `EndFrame`
-(0x62B960) advances the frame, and `_GatherStats` (0x62B9E0) resolves and
-smooths the results. The map's printing and query methods (`GetMs`,
-`PrintCSV`, `_Print*`) were not located in this build.
+(0x62B960) advances the frame through `_NextFrame` (0x62C0E0, also
+inlined), and `_GatherStats` (0x62B9E0) resolves and smooths the results.
+The overlays query it through `GatherTimers` (0x62C150; it appends the
+statistics or the per-name totals and sorts them by full name, ignoring the
+sort mode), `GetBudget` (0x62C610, zero), `GetAverageMs` (0x62C710) and
+`GetWorstMs` (0x62C840); `ResetTimers` (0x62C970) clears the history frames.
+The CSV and text printers at 0x62CA60-0x62D120 are not reconstructed, and
+`GetMs` was not located in this build.

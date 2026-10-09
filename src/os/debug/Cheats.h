@@ -10,7 +10,13 @@
 // not reconstructed. The vtable is at 0x18FBEA8.
 class CheatsManager : public MsgSink {
 public:
+    CheatsManager();  // 0x390540
+    ~CheatsManager() override;  // 0x390710
     DataNode Handle(DataArray* msg, bool warn) override;
+
+    // Appends "Cheats Used:" and the logged cheats, at most the configured
+    // number, to `out`.
+    void AppendLog(FixedString& out);  // 0x391E50
 
     // Field names are not in the reference map. The constructor (0x390540)
     // and destructor (0x390710) give the layout.
@@ -52,3 +58,7 @@ static_assert(sizeof(CheatsManager) == 232);
 // Created by CheatsInit unless the "cheats" configuration disables cheats;
 // null otherwise. At 0x1A01DE8.
 extern CheatsManager* theCheatsManager;
+
+// Creates theCheatsManager unless the cheats configuration disables them.
+void CheatsInit();  // 0x391D90
+void CheatsTerminate();  // 0x391E20

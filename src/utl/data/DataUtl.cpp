@@ -5,6 +5,9 @@
 #include "utl/data/DataArray.h"
 #include "utl/data/DataNode.h"
 
+// Reconstructed from eboot.elf at 0x23B7E0.
+void DataAppendStackTrace(FixedString&) {}
+
 // Reconstructed from eboot.elf at 0x23C2E0. Missing objects are reported;
 // the report is compiled out.
 Component* GetDataCom(DataArray* command) {

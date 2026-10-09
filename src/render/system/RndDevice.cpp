@@ -12,7 +12,6 @@
 #include "render/targets/RndBufferCollection.h"
 #include "render/audio/RndAudioTextures.h"
 #include "render/meshes/RndPrimitiveMeshes.h"
-#include "render/lighting/fog/RndShaderFogDeferred.h"
 #include "render/materials/RndMaterialRuntimeData.h"
 #include "render/video/BinkRenderMgr.h"
 #include "utl/time/Timer.h"
@@ -100,7 +99,6 @@ RndDevice::RndDevice()
       mSmoothedFrameRate(0.0F),
       mSettings(nullptr),
       mFactory(nullptr),
-      mFogDeferred(nullptr),
       mPrimitiveMeshes(nullptr),
       mAudioTextures(nullptr),
       mBuiltinCBuffers{},
@@ -151,7 +149,7 @@ void RndDevice::Init(const RndInitParams& params) {
     mShaderMgr.Init();
 
     mLighting.Init();
-    mFogDeferred = new RndShaderFogDeferred;  // 0x451C90
+    mAtmosphere.Init();
     mPrimitiveMeshes = new RndPrimitiveMeshes;
     mAudioTextures = new RndAudioTextures;
     mGpuStats.Init();
@@ -211,8 +209,7 @@ void RndDevice::Terminate() {
     mTerminating = true;
     _ProcessPendingFrees();
     mDefaults.Terminate();
-    delete mFogDeferred;  // 0x451CC0
-    mFogDeferred = nullptr;
+    mAtmosphere.Terminate();
     mLighting.Terminate();
     mShaderMgr.Terminate();
 

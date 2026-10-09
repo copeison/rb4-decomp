@@ -6,7 +6,8 @@ The math module (`src/math`) follows the map's `math/` object files.
 | --- | --- |
 | `Trig.o` | `TrigTableInit` (`0x219610`), `TrigTableTerminate`, `Sine` (`0x219690`), `FastSin` |
 | `Half.o` | `Half::Set` (`0x1179780`) |
-| `TruncatedRoundedCone.o` | the constructor and `SetAngleTopRadiusAndLength` |
+| `TruncatedRoundedCone.o` | the constructor, `SetRadiiAndLength` (`0x117E370`) and `SetAngleTopRadiusAndLength` |
+| `Capsule.o` (weak match) | the two-sphere hull's constructor (`0x117E050`) and `Set` (`0x117E1E0`) |
 | `Matrix3.o` | `Det` (`0x2152E0`) and `Hmx::Matrix3::sID` |
 | `Matrix4.o` | `Det` (`0x11798A0`), `Invert` (`0x1179A80`) and `Hmx::Matrix4::sID` |
 | `Interp.o` | `Interpolator` and its linear, exp, invexp, log, atan and cubic curves (`0x212590` to `0x214928`) |

@@ -43,7 +43,7 @@ RndCShaderTiledLightsInterpolation::~RndCShaderTiledLightsInterpolation() {}
 void RndCShaderTiledLightsInterpolation::Dispatch(
     RndContext& context,
     RndBufferCollection& buffers,
-    const RndSceneDrawParams& drawParams,
+    const RndSceneDrawTarget& drawTarget,
     RndTextureBase& srcLightAccum) {
     static Symbol sStatName;
     if (sStatName == Symbol()) {
@@ -75,7 +75,7 @@ void RndCShaderTiledLightsInterpolation::Dispatch(
         RndShaderResource::kSelectNoSampler,
         0);
     auto* dstLightAccum = buffers.mActiveSceneContext != 0
-        ? buffers.mLightAccum[drawParams.mSceneContext]
+        ? buffers.mLightAccum[drawTarget.mDstLightAccum]
         : buffers.mFrameIntervals.mData[buffers.mActiveFrameInterval]
               .mPartialLightAccum;
     dstLightAccum->Select(

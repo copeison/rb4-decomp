@@ -2,6 +2,8 @@
 
 #include "os/memory/MemMgr.h"
 #include "os/profiling/PerfTimer.h"
+#include "utl/profiling/BudgetCategories.h"
+#include "utl/time/Timer.h"
 
 namespace {
 
@@ -39,6 +41,14 @@ long DebugHeap() {  // Inlined; name not in the reference map.
 }  // namespace
 
 PerfTimerMgr thePerfMgr;
+
+// Reconstructed from eboot.elf at 0x249610. Two empty functions the binary
+// also calls, after the budget categories and after thePerfMgr, are left out.
+void PerfInit(DataArray* config) {
+    Hmx::Timer::Init();
+    InitBudgetCategories();
+    thePerfMgr.Init(config);
+}
 
 // Reconstructed from eboot.elf at 0x249650.
 void PerfTimerMgr::Init(DataArray* config) {

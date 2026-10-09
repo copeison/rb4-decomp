@@ -6,7 +6,7 @@
 
 class RndBufferCollection;
 class RndContext;
-class RndSceneDrawParams;
+struct RndSceneDrawTarget;
 class RndTextureBase;
 
 // Fills the pixels that tiled lighting skipped at half resolution by
@@ -31,7 +31,7 @@ public:
     void Dispatch(
         RndContext& context,
         RndBufferCollection& buffers,
-        const RndSceneDrawParams& drawParams,
+        const RndSceneDrawTarget& drawTarget,
         RndTextureBase& srcLightAccum);  // 0x6D9FA0
 
     // Field names are not in the reference map.

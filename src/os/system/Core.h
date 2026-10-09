@@ -17,3 +17,6 @@ void core_update_time();  // 0x219BD0
 // Both of the above. Only FmodAudioStreamResource's asynchronous decode
 // waits call it. Name not in the reference map.
 void core_poll_and_update_time();  // 0x219B80
+// Shuts down the core runtime. SystemTerminate calls it last. Name not in
+// the reference map.
+void core_terminate();  // 0x219BE0

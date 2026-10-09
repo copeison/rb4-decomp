@@ -465,6 +465,11 @@ void EntityResource::Save(BinStream& stream, bool cached) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x1011F0.
+bool EntityResource::UninlineResource(Resource* resource) {
+    return _UninlineResource(resource, true);
+}
+
 // Reconstructed from eboot.elf at 0x101A20. Only the classes the object
 // lacks, or holds as null, are created.
 bool EntityResource::CreateRequiredComponents(GameObject* object, const ComMetaData& metaData) {

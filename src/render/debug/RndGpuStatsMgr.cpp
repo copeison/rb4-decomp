@@ -5,6 +5,8 @@
 #include <cstring>
 #include <iterator>
 
+#include <strings.h>
+
 #include "render/context/RndContext.h"
 #include "os/system/System.h"
 #include "render/system/RndDevice.h"
@@ -287,8 +289,9 @@ void RndGpuStatsMgr::EndFrame() {
     _NextFrame();
 }
 
-// Inlined into EndFrame at 0x62B960. Advances to the next frame slot and
-// clears the query keys recorded there four frames ago.
+// Reconstructed from eboot.elf at 0x62C0E0. Also inlined into EndFrame.
+// Advances to the next frame slot and clears the query keys recorded there
+// four frames ago.
 void RndGpuStatsMgr::_NextFrame() {
     mCritSec.Enter();
     mFrameSlot = (static_cast<unsigned char>(mFrameSlot) + 1U) & 3U;
@@ -399,4 +402,99 @@ void RndGpuStatsMgr::_GatherStats() {
         timing.mAverageQueryCount = timing.mSeconds;
         timing.mWorstSeconds = std::max(timing.mSeconds, timing.mWorstSeconds);
     }
+}
+
+namespace {
+
+// The timers sort by their full names without regard to case. The binary
+// sorts with EASTL's introsort.
+bool FullNameCaseLess(const PerfTimerBase* a, const PerfTimerBase* b) {
+    return strcasecmp(a->mFullName.c_str(), b->mFullName.c_str()) < 0;
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x62C150. Display mode 0 lists every
+// statistic, 1 every per-name total, and 2 the totals of budget categories
+// and "GPU Total".
+void RndGpuStatsMgr::GatherTimers(
+    unsigned int displayMode,
+    int sortMode,
+    eastl::vector<PerfTimerBase*>& timers) {
+    static_cast<void>(sortMode);
+    mCritSec.Enter();
+    if (displayMode == 0) {
+        for (auto** stat = mStats.mBegin; stat != mStats.mEnd; ++stat) {
+            timers.push_back(*stat);
+        }
+    } else {
+        for (auto** item = mStatBlocks.mBegin; item != mStatBlocks.mEnd; ++item) {
+            StatBlock* block = *item;
+            if (displayMode == 2 && block->mTotal.mBudgetCategory == ~0U &&
+                block != mTotalBlock) {
+                continue;
+            }
+            timers.push_back(&block->mTotal);
+        }
+    }
+    std::sort(timers.begin(), timers.end(), FullNameCaseLess);
+    mCritSec.Exit();
+}
+
+// Reconstructed from eboot.elf at 0x62C610.
+float RndGpuStatsMgr::GetBudget(Symbol name) {
+    static_cast<void>(name);
+    return 0.0F;
+}
+
+// Reconstructed from eboot.elf at 0x62C710. The blocks are found by binary
+// search on the name's Symbol address.
+float RndGpuStatsMgr::GetAverageMs(Symbol name, unsigned long frame) {
+    mCritSec.Enter();
+    if (frame == static_cast<unsigned long>(-1)) {
+        frame = mResolvedFrame;
+    }
+    auto** pos = std::lower_bound(
+        mStatBlocks.mBegin, mStatBlocks.mEnd, name.Str(), NameLess);
+    Frame timing{};
+    if (pos != mStatBlocks.mEnd && (*pos)->mTotal.mName == name) {
+        timing = (*pos)->mTotal.mFrames[frame];
+    }
+    mCritSec.Exit();
+    return timing.mAverageSeconds * kMsPerSecond;
+}
+
+// Reconstructed from eboot.elf at 0x62C840.
+float RndGpuStatsMgr::GetWorstMs(Symbol name, unsigned long frame) {
+    mCritSec.Enter();
+    if (frame == static_cast<unsigned long>(-1)) {
+        frame = mResolvedFrame;
+    }
+    auto** pos = std::lower_bound(
+        mStatBlocks.mBegin, mStatBlocks.mEnd, name.Str(), NameLess);
+    Frame timing{};
+    if (pos != mStatBlocks.mEnd && (*pos)->mTotal.mName == name) {
+        timing = (*pos)->mTotal.mFrames[frame];
+    }
+    mCritSec.Exit();
+    return timing.mWorstSeconds * kMsPerSecond;
+}
+
+// Reconstructed from eboot.elf at 0x62C970. A split-frame display keeps two
+// history frames.
+void RndGpuStatsMgr::ResetTimers() {
+    mCritSec.Enter();
+    const auto numFrames =
+        static_cast<std::size_t>(static_cast<unsigned char>(mSplitFrameTiming)) + 1;
+    for (auto** stat = mStats.mBegin; stat != mStats.mEnd; ++stat) {
+        for (std::size_t i = 0; i < numFrames; ++i) {
+            (*stat)->mFrames[i] = Frame{};
+        }
+    }
+    for (auto** block = mStatBlocks.mBegin; block != mStatBlocks.mEnd; ++block) {
+        for (std::size_t i = 0; i < numFrames; ++i) {
+            (*block)->mTotal.mFrames[i] = Frame{};
+        }
+    }
+    mCritSec.Exit();
 }

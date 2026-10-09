@@ -17,8 +17,8 @@ namespace {
 // Tells the options component to rebuild its overlay list. Inlined into
 // RegisterOverlay and UnregisterOverlay; name not in the reference map.
 void MarkOverlaysChanged() {
-    if (RndOverlayOptionsCom::sInstance != nullptr) {
-        RndOverlayOptionsCom::sInstance->mOverlaysChanged = true;
+    if (theRndOverlayOpts != nullptr) {
+        theRndOverlayOpts->mOverlaysChanged = true;
     }
 }
 

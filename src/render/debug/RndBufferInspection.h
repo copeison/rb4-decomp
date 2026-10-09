@@ -2,7 +2,10 @@
 
 #include "utl/containers/VectorAdapter.h"
 
+class Entity;
+class RndBufferCollection;
 class RndContext;
+struct RndSceneDrawTarget;
 class RndShader;
 enum Rnd2DCoord : int;
 
@@ -33,6 +36,14 @@ public:
     // Inlined in this build: _DrawOneBuffer reads the shader directly.
     static RndShader* GetShader();
     static void Draw(RndContext& context, RndBufferInspectionMode mode);
+    // Draws the active inspection mode of the scene's buffers after a scene
+    // draw (RndSceneDrawer::_DrawFullFramerate). The map has only
+    // Draw(RndContext&, RndBufferInspectionMode).
+    static void Draw(
+        RndContext& context,
+        RndBufferCollection& buffers,
+        Entity* entity,
+        const RndSceneDrawTarget& target);  // 0x6B5560
 
     static const char* ToString(RndBufferInspectionMode mode);  // 0x6B4EE0
     // Matches the names ignoring ASCII case and returns -1 when none does.

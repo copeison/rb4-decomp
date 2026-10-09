@@ -150,6 +150,34 @@ void RndContext::SetUsingIdentityViewProjection(bool identity) {
     }
 }
 
+// Reconstructed from eboot.elf at 0x6BD390. The texture goes to every stage
+// whose selected program declared the source, without its sampler; a
+// declared sampler takes the texture's wrap and filter modes.
+void RndContext::SetShaderNodeTexture(
+    RndShaderNodeTextureType type,
+    RndTextureBase& texture) {
+    constexpr unsigned long kUnusedSlot = ~0UL;
+    for (unsigned int stage = 0; stage < kNumShaderProgramTypes; ++stage) {
+        const auto& slots = mSourceTextureSlots[type][stage];
+        const auto programType = static_cast<RndShaderProgramType>(stage);
+        if (slots.mTextureSlot != kUnusedSlot) {
+            texture.Select(
+                *this,
+                programType,
+                slots.mTextureSlot,
+                RndShaderResource::kSelectNoSampler,
+                0);
+        }
+        if (slots.mSamplerSlot != kUnusedSlot) {
+            _SetSamplerImpl(
+                programType,
+                static_cast<unsigned int>(slots.mSamplerSlot),
+                texture.WrapMode(),
+                texture.FilterMode());
+        }
+    }
+}
+
 // Reconstructed from eboot.elf at 0x6BD220. The stereo and per-eye target
 // modes draw the second eye with a copy of the camera.
 void RndContext::SetCamera(const GameObject* camera) {

@@ -36,13 +36,6 @@ constexpr QuadCorner kQuadCorners[4] = {
     {1.0F, -1.0F, 1.0F, 1.0F},
 };
 
-float ParticleFloat(
-    const RndParticleCollection& particles,
-    RndParticleCollection::Attribute attribute,
-    unsigned long particle) {
-    return particles[attribute].Get<float>(particle);
-}
-
 // The rotation that keeps world Z up and turns the X axis across the
 // camera's view. Inlined into _FillVertexBuffer at 0x6EC5B2. Name not in the
 // reference map.
@@ -139,9 +132,9 @@ void RndParticleBuffer::_ComputeParticleBasis(
 
     if (velocityAligned) {
         const Vector3 velocity = {
-            ParticleFloat(particles, RndParticleCollection::kVelocityX, particle),
-            ParticleFloat(particles, RndParticleCollection::kVelocityY, particle),
-            ParticleFloat(particles, RndParticleCollection::kVelocityZ, particle),
+            particles.mVelX[particle],
+            particles.mVelY[particle],
+            particles.mVelZ[particle],
         };
         const float length = std::sqrt(
             velocity.y * velocity.y + velocity.x * velocity.x + velocity.z * velocity.z);
@@ -170,7 +163,7 @@ void RndParticleBuffer::_ComputeParticleBasis(
         return;
     }
 
-    const float angle = ParticleFloat(particles, RndParticleCollection::kRotation, particle);
+    const float angle = particles.mRotationZ[particle];
     Hmx::Matrix3 spin = Hmx::Matrix3::sID;
     switch (alignment) {
     case RndParticleCom::kCameraAligned:
@@ -251,11 +244,11 @@ void RndParticleBuffer::_FillVertexBuffer(
             particles);
 
         const Hmx::Color& color =
-            particles[RndParticleCollection::kColor].Get<Hmx::Color>(particle);
+            particles.mColors[particle];
         const Vector3 position = {
-            ParticleFloat(particles, RndParticleCollection::kPositionX, particle),
-            ParticleFloat(particles, RndParticleCollection::kPositionY, particle),
-            ParticleFloat(particles, RndParticleCollection::kPositionZ, particle),
+            particles.mPosX[particle],
+            particles.mPosY[particle],
+            particles.mPosZ[particle],
         };
         const Hmx::Matrix3& m = xfm.m;
         Vector3 center = {
@@ -263,17 +256,17 @@ void RndParticleBuffer::_FillVertexBuffer(
             position.y * m.y.y + position.x * m.x.y + position.z * m.z.y + xfm.v.y,
             position.y * m.y.z + position.x * m.x.z + position.z * m.z.z + xfm.v.z,
         };
-        const float sizeX = ParticleFloat(particles, RndParticleCollection::kSizeX, particle);
-        const float sizeY = ParticleFloat(particles, RndParticleCollection::kSizeY, particle);
+        const float sizeX = particles.mSizeX[particle];
+        const float sizeY = particles.mSizeY[particle];
         const float pivotX =
-            ParticleFloat(particles, RndParticleCollection::kPivotX, particle) * 2.0F - 1.0F;
+            particles.mPivotX[particle] * 2.0F - 1.0F;
         const float pivotY =
-            ParticleFloat(particles, RndParticleCollection::kPivotY, particle) * 2.0F - 1.0F;
+            particles.mPivotY[particle] * 2.0F - 1.0F;
         float data[3] = {0.0F, 0.0F, 0.0F};
         if (mHasRotation) {
-            data[0] = ParticleFloat(particles, RndParticleCollection::kData0, particle);
-            data[1] = ParticleFloat(particles, RndParticleCollection::kData1, particle);
-            data[2] = ParticleFloat(particles, RndParticleCollection::kData2, particle);
+            data[0] = particles.mExtraData0[particle];
+            data[1] = particles.mExtraData1[particle];
+            data[2] = particles.mExtraData2[particle];
         }
 
         if (worldSpace) {
@@ -331,9 +324,9 @@ void RndParticleBuffer::_SortParticles(
         const Vector3& view = camera.mPrimaryView.mWorldXfm.m.y;
         for (unsigned long i = 0; i < mNumActive; ++i) {
             const float depth =
-                view.x * ParticleFloat(particles, RndParticleCollection::kPositionX, i) +
-                view.y * ParticleFloat(particles, RndParticleCollection::kPositionY, i) +
-                view.z * ParticleFloat(particles, RndParticleCollection::kPositionZ, i);
+                view.x * particles.mPosX[i] +
+                view.y * particles.mPosY[i] +
+                view.z * particles.mPosZ[i];
             sorts.push_back({-depth, i});
         }
         break;
@@ -341,12 +334,12 @@ void RndParticleBuffer::_SortParticles(
     case 1:
         for (unsigned long i = 0; i < mNumActive; ++i) {
             sorts.push_back(
-                {-ParticleFloat(particles, RndParticleCollection::kAge, i), i});
+                {-particles.mBirthTimes[i], i});
         }
         break;
     case 2:
         for (unsigned long i = 0; i < mNumActive; ++i) {
-            sorts.push_back({ParticleFloat(particles, RndParticleCollection::kAge, i), i});
+            sorts.push_back({particles.mBirthTimes[i], i});
         }
         break;
     }

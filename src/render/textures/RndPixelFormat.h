@@ -55,6 +55,14 @@ int RndFindSupportedDataFormat(
     const RndDataFormatInfo& info,
     HxPlatform platform);  // 0x68E4D0, 0x68E550
 
+// The data format a resolved pixel format stores its texels in, for the
+// platform (-1 for the running one). Name not in the reference map. Not
+// reconstructed.
+int RndResolveDataFormat(
+    const RndPixelFormat& format,
+    int platform,
+    long fallback);  // 0x6A4930
+
 // The data format's name, "Invalid" for -1, or null outside the list.
 // Name not in the reference map.
 const char* RndDataFormatName(int dataFormat);  // 0x68F200

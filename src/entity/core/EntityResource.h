@@ -188,6 +188,30 @@ public:
     // Inlines the resource into the layer unless it already is. Not
     // reconstructed.
     void InlineResource(Resource* resource, unsigned long layer);  // 0x100420
+    // The resource of the class inlined into any layer under the path, or
+    // null. Inlined into its users, for example RndMaterialCom::
+    // _InitRuntimeData at 0x4F3EF0.
+    template <class T>
+    ResourcePtr<T> TryGetInline(ResourcePath path) const {
+        ResourcePtr<T> found;
+        for (const LayerInfo& layer : mLayers) {
+            for (Resource* resource : layer.mInlineResources) {
+                if (resource->mPath == path) {
+                    found = static_cast<T*>(resource);
+                    return found;
+                }
+            }
+        }
+        return found;
+    }
+    // Removes the resource from its layer and fixes the references to it
+    // (0x101210 with true). Name not in the reference map.
+    bool UninlineResource(Resource* resource);  // 0x1011F0
+    // Removes the resource from its layer, releasing the layer's reference,
+    // and with `fixReferences` resets the object references the entity's
+    // components held into it. Not reconstructed. Name not in the reference
+    // map.
+    bool _UninlineResource(Resource* resource, bool fixReferences);  // 0x101210
     // Whether the layer exists; the main layer always does.
     bool LayerExists(unsigned long layer) const;  // 0xFFE80
     // Whether the component class may be created in the entity: true when

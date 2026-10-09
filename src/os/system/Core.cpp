@@ -1,5 +1,7 @@
 #include "os/system/Core.h"
 
+#include "os/debug/Debug.h"
+
 #include "utl/threading/ThreadCall.h"
 #include "utl/time/TimeMgr.h"
 
@@ -13,6 +15,9 @@ void resource_preload_poll();  // 0x1168140
 // Empty in this build; core_terminate (0x219BE0) calls its neighbour at
 // 0x112DC60. The name is a guess.
 void platform_poll();  // 0x112DC50
+
+// The map places it in utl/Base.o; core_initialize sets it.
+bool gHmxNoModal;
 
 // Reconstructed from eboot.elf at 0x219B80.
 void core_poll_and_update_time() {

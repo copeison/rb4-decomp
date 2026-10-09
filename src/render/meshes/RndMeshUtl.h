@@ -261,6 +261,11 @@ extern eastl::vector<float> gTmpUVIntervals;      // 0x1AA6A78
 // a transform for the positions and returns the sphere.
 Sphere ComputeBoundingSphere(const RndMesh& mesh, const Transform& xfm);  // 0x5D86E0
 
+// A new mesh with the mesh's geometry, converted to the vertex type unless
+// it is kVertexInvalid. RndMeshCom's unique usage calls it with
+// kVertexInvalid and true. Not reconstructed.
+RndMesh* Copy(const RndMesh& mesh, RndVertexType type, bool sync);  // 0x5D7030
+
 // The binary keeps out-of-line copies of these two; the builders inline them.
 RndMesh* _CreateMeshPrelude(const CreateMeshParams& params, const char* defaultName);  // 0x5DB660
 void _CreateMeshCoda(RndMesh& mesh, const CreateMeshParams& params);  // 0x5DB6B0

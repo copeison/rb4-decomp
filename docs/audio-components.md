@@ -90,5 +90,5 @@ pad's id (`+0x18`); `+0x1C` is the flag `HasJoypadEmitter` reads.
 
 - `AudioEmitter` as the interface's name, `HasMixGroup`, `mTempo`/`mSpeed`
   and the `SongPos` field names before the measure.
-- `mOptionsSwitch` on `RndOverlayOptionsCom` and the listener's
-  `mHardwareMapped`, `mHardwareMapping` and `mHardwareMappingIndex`.
+- The listener's `mHardwareMapped`, `mHardwareMapping` and
+  `mHardwareMappingIndex`.

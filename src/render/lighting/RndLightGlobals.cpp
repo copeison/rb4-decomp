@@ -1,5 +1,7 @@
 #include "render/lighting/RndLightGlobals.h"
 
+#include "entity/core/Entity.h"
+#include "os/files/File.h"
 #include "render/buffers/RndComputeBuffer.h"
 #include "math/scalar/Trig.h"
 #include "render/meshes/RndMesh.h"
@@ -22,6 +24,7 @@
 #include "render/postprocessing/tonemap/RndTonemapShader.h"
 #include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
+#include "render/textures/RndTextureUtilityCom.h"
 
 namespace {
 
@@ -62,7 +65,8 @@ void SafeDelete(T*& object) {
     object = nullptr;
 }
 
-void ReleaseResource(ResourcePtr<Resource>& resource) {
+template <class T>
+void ReleaseResource(ResourcePtr<T>& resource) {
     if (resource.mResource != nullptr) {
         resource.mResource->ReleaseRef();
     }
@@ -111,7 +115,7 @@ RndLightGlobals::RndLightGlobals()
       mTiledLightsApplicationShader(nullptr),
       mTiledLightsInterpolationShader(nullptr),
       mTiledLightsStereoToMonoShader(nullptr),
-      mInlineLightingData{},
+      mHairReflectanceTextures{},
       mTonemapShader(nullptr),
       mTonemapCShader(nullptr),
       mProbeCaptureBuffers(nullptr),
@@ -215,8 +219,8 @@ void RndLightGlobals::Terminate() {
     ReleaseResource(mErrorLightCookie);
     ReleaseResource(mSkinDiffusion);
     ReleaseResource(mInlineLightingTextures);
-    mInlineLightingData[0] = nullptr;
-    mInlineLightingData[1] = nullptr;
+    mHairReflectanceTextures[0] = nullptr;
+    mHairReflectanceTextures[1] = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x47FDE0. The volume is a truncated
@@ -309,4 +313,34 @@ RndTextureBase* RndLightGlobals::GetProbeCaptureDownsampleTexture(int size) {
 // Reconstructed from eboot.elf at 0x47FDA0.
 RndTextureBase* RndLightGlobals::GetProbeCaptureHelperTexture(int size) {
     return FindByWidth(mProbeCaptureHelperTextures, size);
+}
+
+// Reconstructed from eboot.elf at 0x47F8D0. The resources load when the
+// renderer initializes rendering or resources are being precached. The
+// typed loads are the GetOrLoad instantiations at 0x47FAA0 and 0x44B1A0.
+void RndLightGlobals::LoadResources(const RndInitParams& params) {
+    if (!gResourcePrecacheMode && !params.mInitRendering) {
+        return;
+    }
+    mInlineLightingTextures = Resource::GetOrLoad<EntityResource>(
+        ResourcePath("../../system/data/render/lighting/inline_lighting_textures.entity"),
+        false);
+    mSkinDiffusion = Resource::GetOrLoad<RndTexture2DResource>(
+        ResourcePath("../../system/data/render/lighting/skin_diffusion.bmp"),
+        false);
+    mHairReflectanceTextures[0] = nullptr;
+    mHairReflectanceTextures[1] = nullptr;
+    EntityResource* textures = mInlineLightingTextures;
+    if (textures == nullptr || textures->Fail()) {
+        return;
+    }
+    if (RndTextureUtilityCom* utility = textures->mEntity->GetRoot()->GetCom<RndTextureUtilityCom>()) {
+        mHairReflectanceTextures[0] = utility->GetHairReflectanceTex0();
+        mHairReflectanceTextures[1] = utility->GetHairReflectanceTex1();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x47FCD0.
+ResourcePath RndLightGlobals::GetSkinDiffusionTexPath() {
+    return ResourcePath("../../system/data/render/lighting/skin_diffusion.bmp");
 }
