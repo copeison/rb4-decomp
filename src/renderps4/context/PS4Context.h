@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "render/context/RndContext.h"
+#include "renderps4/buffers/PS4TransientBuffer.h"
 
 // PS4 context: two graphics contexts, compute queues, transient vertex
 // buffers, and submission state. Its own state is still reached through the
@@ -62,8 +63,16 @@ public:
     void _EndGpuStatsImpl(unsigned long key) override;          // 0x8EBBB0
     RndGpuStatSample _EvalAndRetireGpuStatsImpl(unsigned long key) override;  // 0x8EBC70
 
-    // Layout not yet modeled beyond the offsets the helpers use.
-    unsigned char mPS4[0x44890 - 0x5728];
+    // Layout not yet modeled beyond the offsets the helpers use. The byte
+    // array starts in RndContext's tail padding at 0x5721.
+    unsigned char mPS4[0x40DB8 - 0x5721];
+    // One bank per frame, indexed by vertex type. Name not in the reference
+    // map.
+    PS4TransientBuffer mTransientBuffers[2][8];
+    unsigned char mPS4Tail[0x44890 - 0x41838];
 };
 
+static_assert(offsetof(PS4Context, mPS4) == 0x5721);
+static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
+static_assert(offsetof(PS4Context, mPS4Tail) == 0x41838);
 static_assert(sizeof(PS4Context) == 0x44890);
