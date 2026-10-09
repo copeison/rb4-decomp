@@ -60,6 +60,12 @@ class RndCameraContext {
 public:
     RndCameraContext();
 
+    // Forgets the camera and its target. Not reconstructed yet.
+    void Clear();  // 0x3D88C0
+    // Writes the constants of a context without a camera for the target
+    // mode. Not reconstructed yet.
+    static void SetDefaultShaderConstants(RndTargetMode mode, RndShaderCBuffer& cbuffer);  // 0x3D9BC0
+
     unsigned char mUnknown[9312];
 };
 
@@ -138,7 +144,8 @@ public:
     virtual void _SignalFenceImpl(RndFence& fence);       // 0x6BDA50
     virtual void _WaitFenceImpl(const RndFence& fence);   // 0x6BDA60
     virtual void _FinishImpl();                           // 0x6BDA70
-    virtual void _BeginFrameImpl();                       // 0x6BDA80
+    // The map has _BeginFrameImpl(); this build passes BeginFrame's flags.
+    virtual void _BeginFrameImpl(unsigned int flags);     // 0x6BDA80
     virtual void _SetRenderTargetsImpl(
         RndTargetMode mode,
         const RenderTargetParams& params) = 0;
@@ -218,9 +225,13 @@ public:
     // Selects the camera constants for the current view-projection mode.
     // Not yet reconstructed.
     void _SyncCameraCBuffer();  // 0x6BCCD0
-    // Starts a frame with the given activation flags. Not yet reconstructed;
-    // name not in the reference map.
-    void BeginFrame(unsigned int flags);
+    // Resets the per-frame state, lets the platform start its frame, and
+    // selects the default constant buffers. Name not in the reference map;
+    // it may be the map's Reset().
+    void BeginFrame(unsigned int flags);  // 0x6BC3B0
+    // Writes the clip planes in the mask to the clip-plane buffer and
+    // selects it, or the device's default when no plane is enabled.
+    void _SyncClipPlanes(unsigned int mask);  // 0x6BC590
 
     // Statistic scopes opened on this context. Names not in the reference
     // map.
@@ -232,7 +243,7 @@ public:
     bool mFrameActive;
     bool mDisableComputeQueues;
     int mMode;
-    int mSliceMode;  // -1 selects a single render-target slice.
+    RndTargetMode mTargetMode;
     FixedVector<void*, 8> mUnknown24;
     // Set by the map's SetCameraCBufferOverrideContext.
     const RndCameraContext* mCameraCBufferOverride;
@@ -249,16 +260,13 @@ public:
     RndBlendMode mBlendMode;
     unsigned long mInputSlotLimits[kNumShaderProgramTypes];
     unsigned long mOutputSlotLimits[kNumShaderProgramTypes];
-    // Four light slots; a set enabled flag selects the context's light
+    // Four user clip planes; an enabled one selects the context's clip-plane
     // constant buffer. Names not in the reference map.
-    struct LightSlot {
+    struct ClipPlane {
         bool mEnabled = false;
-        int mUnknown4 = 0;
-        int mUnknown8 = 0;
-        float mUnknown12 = 1.0F;
-        int mUnknown16 = 0;
+        float mPlane[4] = {0.0F, 0.0F, 1.0F, 0.0F};
     };
-    LightSlot mLightSlots[4];
+    ClipPlane mClipPlanes[4];
     RndShadingMode mShadingMode;
     int mUnknown18972;
     int mUnknown18976;
@@ -275,7 +283,7 @@ public:
     bool mUnknown22304;
 };
 
-static_assert(offsetof(RndContext, mSliceMode) == 0x10);
+static_assert(offsetof(RndContext, mTargetMode) == 0x10);
 static_assert(offsetof(RndContext, mUnknown24) == 24);
 static_assert(offsetof(RndContext, mCameras) == 144);
 static_assert(offsetof(RndContext, mUsingIdentityViewProjection) == 18768);
@@ -284,8 +292,8 @@ static_assert(offsetof(RndContext, mActiveShaderStages) == 0x4960);
 static_assert(offsetof(RndContext, mBlendMode) == 0x4964);
 static_assert(offsetof(RndContext, mInputSlotLimits) == 0x4968);
 static_assert(offsetof(RndContext, mOutputSlotLimits) == 0x4998);
-static_assert(sizeof(RndContext::LightSlot) == 20);
-static_assert(offsetof(RndContext, mLightSlots) == 18888);
+static_assert(sizeof(RndContext::ClipPlane) == 20);
+static_assert(offsetof(RndContext, mClipPlanes) == 18888);
 static_assert(offsetof(RndContext, mShadingMode) == 0x4A18);
 static_assert(offsetof(RndContext, mActivePipe) == 0x4A24);
 static_assert(offsetof(RndContext, mActiveComputeSlot) == 0x4A28);

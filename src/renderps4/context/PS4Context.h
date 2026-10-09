@@ -54,7 +54,7 @@ public:
 
     void _SignalFenceImpl(RndFence& fence) override;            // 0x8EB730
     void _WaitFenceImpl(const RndFence& fence) override;        // 0x8EB7F0
-    void _BeginFrameImpl() override;                            // 0x8E8850
+    void _BeginFrameImpl(unsigned int flags) override;          // 0x8E8850
     void _SetRenderTargetsImpl(
         RndTargetMode mode,
         const RenderTargetParams& params) override;           // 0x8E8D20

@@ -390,7 +390,7 @@ bool RndShader::_SelectShaderCollection(
         _InitShaderCollection();
     }
 
-    const auto mode = context.mSliceMode;
+    const auto mode = context.mTargetMode;
     unsigned int slices = 0;
     if (mode == -1) {
         slices = 1;

@@ -1,13 +1,14 @@
 #include "render/context/RndContext.h"
 
-#include "render/system/RndConfig.h"
-#include "render/system/RndDevice.h"
-
 #include <cstring>
 
+#include "math/vector/Vector4.h"
+#include "os/platform/PlatformMgr.h"
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/system/RndDevice.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderMgr.h"
+#include "render/system/RndConfig.h"
+#include "render/system/RndDevice.h"
 
 namespace {
 
@@ -22,7 +23,7 @@ RndContext::RndContext(bool disableComputeQueues)
     : mFrameActive(false),
       mDisableComputeQueues(disableComputeQueues),
       mMode(disableComputeQueues ? 0 : -1),
-      mSliceMode(-1),
+      mTargetMode(kTargetModeNone),
       mCameraCBufferOverride(nullptr),
       mUnknown120{},
       mRenderTargetWidth(0.0F),
@@ -79,7 +80,7 @@ void RndContext::Terminate() {
 void RndContext::_SignalFenceImpl(RndFence&) {}
 void RndContext::_WaitFenceImpl(const RndFence&) {}
 void RndContext::_FinishImpl() {}
-void RndContext::_BeginFrameImpl() {}
+void RndContext::_BeginFrameImpl(unsigned int) {}
 void RndContext::_SetActivePipelineImpl(int, unsigned long) {}
 void RndContext::_ResourceBarrierImpl(unsigned long, const RndResourceBarrier*) {}
 void RndContext::_PushMarkerImpl(const char*) {}
@@ -121,10 +122,10 @@ void RndContext::_ReselectGlobalCBuffers() {
         : device->mBuiltinCBuffers[0];
     camera->_SelectImpl(*this);
 
-    const bool lit = mLightSlots[0].mEnabled || mLightSlots[1].mEnabled ||
-        mLightSlots[2].mEnabled || mLightSlots[3].mEnabled;
-    auto* lights = lit ? mCBuffers[2] : device->mBuiltinCBuffers[1];
-    lights->_SelectImpl(*this);
+    const bool clipped = mClipPlanes[0].mEnabled || mClipPlanes[1].mEnabled ||
+        mClipPlanes[2].mEnabled || mClipPlanes[3].mEnabled;
+    auto* clipPlanes = clipped ? mCBuffers[2] : device->mBuiltinCBuffers[1];
+    clipPlanes->_SelectImpl(*this);
 }
 
 // Reconstructed from eboot.elf at 0x6BD340. An overriding camera keeps its
@@ -169,5 +170,88 @@ void RndContext::SetActivePipeline(RndPipeline pipeline, unsigned long computeSl
         mActivePipe = pipeline;
         mActiveComputeSlot = slot;
         _SetActivePipelineImpl(previousPipeline, previousSlot);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BC3B0.
+void RndContext::BeginFrame(unsigned int flags) {
+    mTargetMode = kTargetModeNone;
+    mUnknown24.mSize = 0;
+    mCameraCBufferOverride = nullptr;
+    std::memset(mUnknown120, 0, sizeof(mUnknown120));
+    mRenderTargetWidth = 0.0F;
+    mRenderTargetHeight = 0.0F;
+    std::memset(mUnknown136, 0, sizeof(mUnknown136));
+    mUnknown140 = 1.0F;
+    mCameras[0].Clear();
+    mCameras[1].Clear();
+    mUsingIdentityViewProjection = false;
+    mUnknown18776 = 0;
+    RndCameraContext::SetDefaultShaderConstants(kTargetMode2D, *mCBuffers[1]);
+    mBlendMode = RndBlendMode::kSource;
+    mShadingMode = kShadingModeStandard;
+    mUnknown18972 = -1;
+    mUnknown18976 = -1;
+    mActiveShaderStages = 0;
+    std::memset(mUnknown19096, 0xFF, sizeof(mUnknown19096));
+    for (auto& limit : mInputSlotLimits) {
+        limit = 0;
+    }
+    for (auto& limit : mOutputSlotLimits) {
+        limit = 0;
+    }
+    _BeginFrameImpl(flags);
+
+    auto* device = TheRndDevice();
+    device->mBuiltinCBuffers[0]->_SelectImpl(*this);
+    for (auto& plane : mClipPlanes) {
+        plane.mEnabled = false;
+    }
+    _SyncClipPlanes(0xFFFFFFFF);
+
+    auto& drawState = *mCBuffers[3];
+    auto& shaders = device->mShaderMgr;
+    *static_cast<float*>(RndShaderDrawUtl::GetCBufferMember(drawState, shaders.mEnvironIndex)) = -1.0F;
+    drawState.mSyncPending = true;
+    std::memcpy(
+        RndShaderDrawUtl::GetCBufferMember(drawState, shaders.mSolidColor),
+        &Hmx::Color::GetZero(),
+        sizeof(Hmx::Color));
+    drawState.mSyncPending = true;
+    device->mBuiltinCBuffers[2]->_SelectImpl(*this);
+    device->mBuiltinCBuffers[3]->_SelectImpl(*this);
+}
+
+// Reconstructed from eboot.elf at 0x6BC590. Only platforms that support
+// clip planes write them.
+void RndContext::_SyncClipPlanes(unsigned int mask) {
+    auto* device = TheRndDevice();
+    if (!device->mCapabilities[kPlatformPS4].mEnabled) {
+        return;
+    }
+    for (unsigned int index = 0; index < 4; ++index) {
+        if ((mask & (1U << index)) == 0) {
+            continue;
+        }
+        auto& cbuffer = *mCBuffers[2];
+        const auto& plane = mClipPlanes[index];
+        std::memcpy(
+            RndShaderDrawUtl::GetCBufferMember(cbuffer, device->mShaderMgr.mClipPlanes + index),
+            plane.mEnabled ? static_cast<const void*>(plane.mPlane) : &Vector4::sZero,
+            sizeof(Vector4));
+        cbuffer.mSyncPending = true;
+    }
+
+    const bool clipped = mClipPlanes[0].mEnabled || mClipPlanes[1].mEnabled ||
+        mClipPlanes[2].mEnabled || mClipPlanes[3].mEnabled;
+    if (clipped) {
+        auto* cbuffer = mCBuffers[2];
+        if (cbuffer->mSyncPending) {
+            cbuffer->_SyncImpl(*this, 0, cbuffer->mNumElements);
+            cbuffer->mSyncPending = false;
+        }
+        cbuffer->_SelectImpl(*this);
+    } else {
+        device->mBuiltinCBuffers[1]->_SelectImpl(*this);
     }
 }

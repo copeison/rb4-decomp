@@ -64,3 +64,27 @@ whole-function adapter.
 
 Low-level audio sample extraction, Bink conversion draw setup, and the global
 phase callback registry remain behind focused adapters.
+
+## Context frame start
+
+`RndContext::BeginFrame(unsigned int)` (`0x6BC3B0`) resets the context before
+a frame. The name is not in the map, and it may be the map's `Reset()`.
+1. It clears the target mode to -1, the camera stack and override, the
+   render-target size and the two cameras (`RndCameraContext::Clear`).
+2. It writes the camera defaults for 2D targets
+   (`RndCameraContext::SetDefaultShaderConstants`).
+3. It resets the blend mode to Source, the shading mode to standard, the
+   active stages, and the slot limits.
+4. It passes the flags to `_BeginFrameImpl`.
+5. It selects the device's default camera buffer and disables the four clip
+   planes.
+6. It writes an environment index of -1 and a zero solid color into the
+   draw-state buffer, and selects the device's last two default buffers.
+
+`_SyncClipPlanes` (`0x6BC590`) only runs where the PS4 capabilities are
+enabled. It writes each plane in its mask to the clip-plane buffer, or zero
+when the plane is disabled. If any plane is enabled it syncs and selects that
+buffer; otherwise it selects the device's default.
+
+The four 20-byte slots at `+18888`, previously read as light slots, are these
+clip planes.

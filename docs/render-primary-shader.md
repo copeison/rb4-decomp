@@ -104,8 +104,8 @@ Enabled (global) records pack into the high 32 bits of the key.
 
 `RndShader::_SelectShaderCollection` (`0x638920`) takes five 64-bit program keys,
 indexed by variant program bit (vertex, tessellation, geometry, pixel,
-compute). It first initializes the backend if needed. The context's slice mode
-at `+0x10` maps through `{1, 2, 6, 1, ...}` to an `HX_NUM_RT_SLICES` value; -1
+compute). It first initializes the backend if needed. The context's target mode
+(`RndTargetMode`) at `+0x10` maps through `{1, 2, 6, 1, ...}` to an `HX_NUM_RT_SLICES` value; -1
 means one slice and out-of-range modes mean zero. That value goes into the
 global half of every key. Single-slice draws drop the geometry program unless
 slot 10 reports one.

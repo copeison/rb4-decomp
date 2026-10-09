@@ -353,7 +353,7 @@ void PS4Context::_ResetDrawState() {
 // turns the GS mode off and color writes on, unbinds every target, and resets
 // blending, depth-stencil, raster and color-write state and the shader
 // resources to their defaults.
-void PS4Context::_BeginFrameImpl() {
+void PS4Context::_BeginFrameImpl(unsigned int) {
     _ResetDrawState();
 
     RenderTargetParams params;

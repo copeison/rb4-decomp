@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct `RndContext::BeginFrame` and `_SyncClipPlanes`; name the clip
+  planes and the target mode, and pass the flags to `_BeginFrameImpl`.
 - [x] Read the `rnd` and `platform_mgr` configuration through `SystemConfig` and
   `DataArray` in `RndConfig`, `RndCapabilities`, `RndGfxApiForPlatform` and
   `GetSupportedPlatforms`; remove the configuration adapters.
