@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "render/system/RndWindow.h"
 
@@ -18,9 +19,16 @@ enum class ScreenshotResolution : std::uint32_t {
 void screenshot_request();
 bool screenshot_capture_pending();
 const char* screenshot_resolution_name(ScreenshotResolution resolution);
+// Captures one frame of the window at the chosen resolution, calling render
+// to draw it into the screenshot target.
 void screenshot_capture_frame(
     RndWindow& owner,
-    ScreenshotResolution resolution);
-void screenshot_capture_current_frame();
+    ScreenshotResolution resolution,
+    std::function<void()> render);  // 0x43B140
+void screenshot_capture_to_file(
+    const Vector2i& extent,
+    std::uint32_t shading_mode,
+    std::uint32_t inspection_mode,
+    std::function<void()> render);  // 0x43B240
 
 }  // namespace rb4

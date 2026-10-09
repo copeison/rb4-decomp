@@ -32,6 +32,13 @@ The helpers at `0x448730`, `0x448760`, and `0x4487C0` read the first render
 target's extent, material draw-debug mode, and buffer debug view. The capture
 copies both debug selections so screenshots match the displayed renderer view.
 
+`App::RunOneFrame` passes the main window, the configured resolution, and a
+`std::function<void()>` that calls `theUI->Draw()`. The binary copies it by
+value into `screenshot_capture_frame` and again into
+`screenshot_capture_to_file`; its vtable at `0x18DC010` is the standard
+library's `_Func_base` (`_Copy`, `_Move`, `_Do_call`, `_Target_type`,
+`_Delete_this`).
+
 `screenshot_capture_to_file` at `0x43B240` binds the screenshot target, invokes
 the supplied render callback, submits and resolves the target, reads its image
 data back, and writes `../screenshots/screenshot.png`. Platform command-buffer

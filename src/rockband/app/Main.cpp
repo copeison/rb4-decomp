@@ -10,6 +10,7 @@
 #include "rb_meta/profiles/RBProfileMgr.h"
 #include "rb_meta/state/RBMetaStateCom.h"
 #include "render/debug/screenshot_capture.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/system/RndInit.h"
 #include "ui/layout/UILayoutId.h"
@@ -144,9 +145,9 @@ bool App::Initialize(int argc, char** argv) {
 bool App::RunOneFrame() {
     UpdateFrameSubsystems();
 
-    if (TheRndDevice() != nullptr) {
-        TheRndDevice()->PollMainWindow();
-    }
+    // The binary polls without a null check, then rereads the device because
+    // the poll can destroy it.
+    TheRndDevice()->PollMainWindow();
     if (TheRndDevice() == nullptr) {
         return false;
     }
@@ -156,7 +157,10 @@ bool App::RunOneFrame() {
         TheRndDevice()->ForceIncrementFrameCount();
     } else {
         if (rb4::screenshot_capture_pending()) {
-            rb4::screenshot_capture_current_frame();
+            rb4::screenshot_capture_frame(
+                *TheRndDevice()->mMainWindow,
+                TheRndDevice()->mSettings->mScreenshotResolution,
+                [] { theUI->Draw(); });
         }
 
         if (TheRndDevice()->BeginMainWindowFrame()) {

@@ -72,11 +72,23 @@ const char* screenshot_resolution_name(ScreenshotResolution resolution) {
     return nullptr;
 }
 
-// Reconstructed from eboot.elf at 0x43B140 and 0x43B240.
+// Reconstructed from eboot.elf at 0x43B140.
 void screenshot_capture_frame(
     RndWindow& owner,
-    ScreenshotResolution resolution) {
+    ScreenshotResolution resolution,
+    std::function<void()> render) {
     const auto extent = extent_for_resolution(owner, resolution);
+    const auto shading_mode = owner.GetShadingMode();
+    const auto inspection_mode = owner.GetBufferInspectionMode();
+    screenshot_capture_to_file(extent, shading_mode, inspection_mode, render);
+}
+
+// Reconstructed from eboot.elf at 0x43B240.
+void screenshot_capture_to_file(
+    const Vector2i& extent,
+    std::uint32_t shading_mode,
+    std::uint32_t inspection_mode,
+    std::function<void()> render) {
     if (extent.x == 0 || extent.y == 0) {
         return;
     }
@@ -92,31 +104,17 @@ void screenshot_capture_frame(
         return;
     }
 
-    g_screenshot_draw_mode = owner.GetShadingMode();
-    g_screenshot_debug_view = owner.GetBufferInspectionMode();
+    g_screenshot_draw_mode = shading_mode;
+    g_screenshot_debug_view = inspection_mode;
 
     screenshot_bind_render_target(
         *g_screenshot_target,
         g_screenshot_draw_mode,
         g_screenshot_debug_view);
-    screenshot_invoke_render_callback();
+    render();
     screenshot_submit_render_target(*g_screenshot_target);
     screenshot_copy_render_target_to_readback(*g_screenshot_target);
     screenshot_write_readback_png(kScreenshotPath);
-}
-
-void screenshot_capture_current_frame() {
-    auto* system = TheRndDevice();
-    if (system == nullptr) {
-        return;
-    }
-
-    auto* owner = system->mMainWindow;
-    if (owner != nullptr) {
-        screenshot_capture_frame(
-            *owner,
-            system->mSettings->mScreenshotResolution);
-    }
 }
 
 }  // namespace rb4
