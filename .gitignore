@@ -29,3 +29,6 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Reference linker maps from other builds
+/files/*.map
