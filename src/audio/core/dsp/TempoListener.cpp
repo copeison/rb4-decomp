@@ -1,5 +1,6 @@
 #include "audio/core/dsp/TempoListener.h"
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/core/generators/AudioGenerator.h"
 
 // This build's object for TempoListener (0x5B2A0 to 0x5B56C) is not in the

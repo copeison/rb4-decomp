@@ -43,10 +43,11 @@ public:
     Symbol GetId() const override;                   // slot 1: 0x102630
     bool IsA(Symbol type) const override;            // slot 2: 0x1026D0
     // Slot 4. Loads the entity through _LoadEntity, then its resources,
-    // timed as "EntityLoad" when entity load profiling is on. Not
-    // reconstructed.
+    // and ends the "EntityLoad" progress task when the load was reported.
     bool Load(BinStream& stream, bool cached) override;  // 0xFE380
-    // Slot 5. Not reconstructed.
+    // Slot 5. Writes the revision, the layer files, the root data (dropped
+    // from cached files while precaching), the load step count and the
+    // entity; a cached file adds each layer's inlined resources.
     void Save(BinStream& stream, bool cached) override;  // 0x100760
     // Slot 6: a resource without an entity failed to load.
     bool Fail() const override;  // 0x102700
@@ -56,8 +57,8 @@ public:
 
     // Slot 13: creates the entity with its "root" object.
     virtual Entity* CreateEntity();  // 0xFD6A0
-    // Slot 14: reads the entity from the stream. Not reconstructed. Name not
-    // in the reference map.
+    // Slot 14: reads the entity from the stream, replacing the old one and
+    // its inlined resources. Name not in the reference map.
     virtual bool _LoadEntity(BinStream& stream, bool cached);  // 0xFEC20
     // Slot 15 at 0x5C290: runs after the entity and its resources loaded;
     // true here. Name not in the reference map.
@@ -119,9 +120,9 @@ public:
         return false;
     }
     // Slot 31 at 0x5C2F0: false here; _LoadEntity creates the entity's
-    // poll, post-poll, enter and destroy timers only when it is false. Name
+    // poll, post-poll, enter and destroy timers only when it is true. Name
     // not in the reference map.
-    virtual bool _SkipPerfTimers() {
+    virtual bool _WantsPerfTimers() {
         return false;
     }
     // Slot 32: reads the entity's root. The map's
@@ -158,9 +159,35 @@ public:
     void DestroyLayerEntity(Entity* entity);  // 0xFD970
     // Loads the entity's resources.
     bool LoadResources();  // 0xFD990
-    // Whether the resource is the one the calling thread is loading while
-    // entity load profiling is on. Name not in the reference map.
+    // Whether the resource is the one whose load the calling thread reports
+    // to the load-progress listeners. Name not in the reference map.
     bool IsProfilingLoad() const;  // 0xFE530
+    // Reports this resource's loads to the load-progress listeners. Name
+    // not in the reference map.
+    static void SetProfileLoadPath(ResourcePath path);  // 0xFD5D0
+    // Rewrites the components' stale object ids of a resource saved before
+    // revision 18; `final` marks the fixup done. The map's signature is
+    // _FixupStaleIds(). Not reconstructed.
+    void _FixupStaleIds(bool final);  // 0xFE5C0
+    // The load step count: the stream's from revision 15, else 100, plus
+    // the counts of the layer files when `countLayers` is set and the
+    // stream is not cached. Name not in the reference map. Not
+    // reconstructed.
+    unsigned int _ReadLoadStepCount(BinStream& stream, int rev, bool cached, bool countLayers);  // 0xFF640
+    // Starts reporting the load as the "EntityLoad" task. Name not in the
+    // reference map.
+    void _BeginLoadProgress(bool cached, unsigned int steps);  // 0xFF810
+    // Ends the reported load. No caller remains; Load inlines it. Name not
+    // in the reference map.
+    static void _EndLoadProgress();  // 0x1006D0
+    // Reads the layer's inlined resources; false when one fails, which
+    // destroys the entity. Not reconstructed.
+    bool _LoadInlineResources(BinStream& stream, unsigned long layer, bool cached);  // 0xFF940
+    // Writes the layer's inlined resources. Not reconstructed.
+    void _SaveInlineResources(BinStream& stream, unsigned long layer, bool cached);  // 0x100C50
+    // Inlines the resource into the layer unless it already is. Not
+    // reconstructed.
+    void InlineResource(Resource* resource, unsigned long layer);  // 0x100420
     // Whether the layer exists; the main layer always does.
     bool LayerExists(unsigned long layer) const;  // 0xFFE80
     // Whether the component class may be created in the entity: true when
@@ -175,6 +202,9 @@ public:
     ResourcePath GetLayerPath(unsigned long layer) const;  // 0x101CF0
 
     static ResourceMetaData sMetaData;  // 0x19E3008
+    // The path whose loads are reported (SetProfileLoadPath). Name not in
+    // the reference map.
+    static ResourcePath sProfileLoadPath;  // 0x19E3000
 
     // Field names are not in the reference map.
     Entity* mEntity;
@@ -208,3 +238,8 @@ static_assert(offsetof(EntityResource, mPollTimer) == 128);
 static_assert(offsetof(EntityResource, mMissingComponents) == 160);
 static_assert(offsetof(EntityResource, mHasStaleIds) == 192);
 static_assert(sizeof(EntityResource) == 200);
+
+// The folder of the entity file being read or written, for the paths in
+// it, and "." otherwise; it points into the loader's buffer while a file
+// is open. Name not in the reference map.
+extern const char* gEntityLoadDir;  // 0x19B02E0

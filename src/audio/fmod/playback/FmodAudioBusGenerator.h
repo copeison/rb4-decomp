@@ -120,9 +120,9 @@ public:
     bool _DeleteGeneratorPool() override;  // slot 15: 0x268A60
     ~FmodAudioBusGeneratorManager() override;  // slots 16-17: 0x268B10, 0x268B20
     // Slot 18 at 0x268B40. The map has _GetGenerator(Symbol,
-    // AudioEmitterCom*, bool).
+    // AudioEmitter*, bool).
     virtual FmodAudioBusGenerator* _GetGenerator(
-        AudioRenderTarget* target, AudioEmitterCom* emitter);
+        AudioRenderTarget* target, AudioEmitter* emitter);
 
     FmodAudioBusGenerator* mPool;  // Name not in the reference map.
 };

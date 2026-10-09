@@ -87,6 +87,14 @@ public:
         ++mSize;
     }
 
+    // Frees every node and leaves the anchor linked to itself.
+    void clear() {
+        DoClear();
+        mNode.mpNext = &mNode;
+        mNode.mpPrev = &mNode;
+        mSize = 0;
+    }
+
     iterator erase(iterator position) {
         ListNodeBase* const node = position.mpNode;
         ListNodeBase* const next = node->mpNext;

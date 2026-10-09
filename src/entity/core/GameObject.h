@@ -8,6 +8,7 @@
 class BinStream;
 class Component;
 class Entity;
+class PollDepBase;
 
 enum DestroyType : int;
 
@@ -67,7 +68,7 @@ public:
           mEntered(false),
           mPollOrderDirty(false),
           mComsAdded(false),
-          mReserved(nullptr),
+          mEarlyFreeDep(nullptr),
           mAllComsFlagged(false) {}
 
     // Reads the object's name and components, and its poll order from
@@ -137,6 +138,20 @@ public:
     // reference map.
     void _ExitComponents(DestroyType type);      // 0x1179F0
     void _EditExitComponents(DestroyType type);  // 0x117A40
+    // Enters every component in the game mode, re-sorts them and returns
+    // _UpdateAllComsFlagged. Emitted in entity/Entity.o after
+    // Entity::Enter. Name not in the reference map.
+    bool _EnterComponents();  // 0xF4FF0
+    // Polls every component in the game mode, then releases the early-free
+    // job. Emitted in entity/Entity.o. Name not in the reference map.
+    void _PollComponents();  // 0xF6290
+    // Sets and returns mAllComsFlagged: whether every component's class
+    // sets ComMetaData::mLightweight. Name not in the reference map. Not
+    // reconstructed.
+    bool _UpdateAllComsFlagged();  // 0x118890
+    // Destructs the object and frees it unless it lives in an imprint. Not
+    // reconstructed.
+    void _Destroy();  // 0x117520
 
     // The component with the class or base-class symbol, or null; the empty
     // symbol matches a component registered without a class. Inlined into
@@ -227,8 +242,10 @@ public:
     // Set by _CreateComponent when it adds a component.
     bool mComsAdded;
     unsigned char mPadding2[3];  // Never read or written.
-    // Cleared by the allocator; its readers are not identified.
-    void* mReserved;
+    // A job the entity releases early once the object's components polled
+    // in the game mode (PollDepBase::EarlyFreeToPoll); _PollComponents
+    // clears it. Its writer is not identified.
+    PollDepBase* mEarlyFreeDep;
     // Set by _SortComponents when every component's metadata has the flag
     // at +82 set; cleared when a component is added. The flag's meaning is
     // not identified.

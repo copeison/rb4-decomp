@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/fmod/platform/orbis/FmodPlatform_PS4.h"
 
 // The AudioGenerator defaults are inline in the map's build, emitted with the
@@ -115,7 +116,7 @@ bool AudioGeneratorManager::Destroy() {
 }
 
 // Reconstructed from eboot.elf at 0x40570.
-AudioGenerator* AudioGeneratorManager::Play(Symbol name, AudioEmitterCom* emitter, bool paused) {
+AudioGenerator* AudioGeneratorManager::Play(Symbol name, AudioEmitter* emitter, bool paused) {
     PlayArgs args;
     args.mName = name;
     args.mEmitter = emitter;
@@ -124,7 +125,7 @@ AudioGenerator* AudioGeneratorManager::Play(Symbol name, AudioEmitterCom* emitte
 }
 
 // Reconstructed from eboot.elf at 0x406C0.
-AudioGenerator* AudioGeneratorManager::Prepare(Symbol name, AudioEmitterCom* emitter) {
+AudioGenerator* AudioGeneratorManager::Prepare(Symbol name, AudioEmitter* emitter) {
     return Play(name, emitter, true);
 }
 

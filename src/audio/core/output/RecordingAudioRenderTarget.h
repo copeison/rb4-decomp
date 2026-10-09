@@ -5,7 +5,7 @@
 #include "audio/core/output/AudioRenderTarget.h"
 #include "utl/threading/Thread.h"
 
-class AudioEmitterCom;
+class AudioEmitter;
 class BinStream;
 class TransEntityResource;
 class WaveFile;
@@ -70,7 +70,7 @@ public:
     bool mFinished;
     float mGain;
     TransEntityResource* mEntityResource;
-    AudioEmitterCom* mEmitter;
+    AudioEmitter* mEmitter;
 };
 
 static_assert(offsetof(RecordingAudioRenderTarget, mMixBuffer) == 280);

@@ -8,7 +8,7 @@
 #include "utl/messages/MsgSink.h"
 #include "utl/text/Symbol.h"
 
-class AudioEmitterCom;
+class AudioEmitter;
 class AudioGenerator;
 class AudioGeneratorManager;
 class Component;
@@ -71,7 +71,7 @@ public:
     // Field names are not in the reference map.
     struct JoypadEmitterAndListenerEntry {
         TransEntityResource* mResource;
-        AudioEmitterCom* mEmitter;
+        AudioEmitter* mEmitter;
         // The entity's listener component (class "AudioListener").
         Component* mListener;
     };
@@ -118,7 +118,7 @@ public:
     // identification is weak.
     static int SoundPollFunc(void* context);
 
-    AudioEmitterCom* GetDefault2DEmitter() const;  // 0x5C20
+    AudioEmitter* GetDefault2DEmitter() const;  // 0x5C20
     // The default emitter's component. At 0x5C50. Name not in the reference
     // map.
     Component* GetDefault2DEmitterComponent() const;
@@ -128,13 +128,13 @@ public:
     // At 0x5EB0. The second argument is the listener's platform id.
     void SetJoypadEmitterPlatformId(int index, int platformId);
     // The entry's emitter, or the default emitter past the list. At 0x5ED0.
-    AudioEmitterCom* GetJoypadEmitter(int index);
+    AudioEmitter* GetJoypadEmitter(int index);
     // Whether the entry's listener is active. At 0x5F10.
     bool HasJoypadEmitter(int index);
     // Clears the default emitter when it is the given one. At 0x5F50. Name
     // not in the reference map.
-    void ClearDefault2DEmitter(AudioEmitterCom* emitter);
-    void SetDefault2DEmitter(AudioEmitterCom* emitter);  // 0x5F60. Name not in the reference map.
+    void ClearDefault2DEmitter(AudioEmitter* emitter);
+    void SetDefault2DEmitter(AudioEmitter* emitter);  // 0x5F60. Name not in the reference map.
     // The language of localized banks, "eng" by default. Setting a new one
     // reloads the localized banks. Names not in the reference map.
     void SetLanguage(Symbol language);  // 0x5F70
@@ -189,7 +189,7 @@ public:
     // grouping several results under a composite generator. Returns the
     // handle, or zero.
     unsigned int PlaySound(const PlayArgs& args);  // 0x7A00
-    unsigned int PlaySound(Symbol name, AudioEmitterCom* emitter, bool paused);  // 0x7C70
+    unsigned int PlaySound(Symbol name, AudioEmitter* emitter, bool paused);  // 0x7C70
     // Pauses or resumes the bus (by default "master_pause_bus_path") and
     // records the state. At 0x7DC0. Name not in the reference map.
     void SetPaused(bool paused, const char* busPath, bool immediate);
@@ -255,7 +255,7 @@ public:
     eastl::vector<AudioGeneratorManager*> mManagers;
     CompositeGeneratorManager* mCompositeGenMgr;
     TransEntityResource* mDefaultEmitterResource;
-    AudioEmitterCom* mDefault2DEmitter;
+    AudioEmitter* mDefault2DEmitter;
     Transform mListenerXfm;
     Symbol mLanguage;
     eastl::vector<JoypadEmitterAndListenerEntry> mJoypadEmitters;
@@ -280,7 +280,7 @@ extern SoundManager theSoundManager;
 
 // The default emitter of theSoundManager. At 0x5C10, inlined into
 // GetJoypadEmitter. Name not in the reference map.
-AudioEmitterCom* GetDefaultAudioEmitter();
+AudioEmitter* GetDefaultAudioEmitter();
 // Its component. At 0x5C30. Name not in the reference map.
 Component* GetDefaultAudioEmitterComponent();
 

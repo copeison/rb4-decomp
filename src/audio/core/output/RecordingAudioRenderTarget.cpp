@@ -3,6 +3,7 @@
 #include <new>
 #include <unistd.h>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/core/formats/WaveFile.h"
 #include "audio/core/generators/AudioGenerator.h"
 #include "entity/core/Entity.h"
@@ -20,23 +21,6 @@ constexpr auto kRecordingFileMode = static_cast<FileMode>(4);
 // Full scale of a 16-bit sample, at 0x136B90C. Name not in the reference
 // map.
 constexpr float kSampleScale = 32767.0F;
-
-// The emitter component's layout as _CreateEmitter reaches it: the name of
-// the render target it plays into, and its emitter interface. Both belong to
-// the component's RuntimeData (constructed at 0x37710), which starts at
-// +104. Names not in the reference map.
-struct EmitterComponentView {
-    // The Component base.
-    unsigned char mComponentBase[104];
-    // RuntimeData's members before the render target: the
-    // CompositeGenerator at +128 in it and the emitter's lists and locks.
-    unsigned char mRuntimeData[440];
-    Symbol mRenderTarget;
-    AudioEmitterCom mEmitter;
-};
-
-static_assert(offsetof(EmitterComponentView, mRenderTarget) == 544);
-static_assert(offsetof(EmitterComponentView, mEmitter) == 552);
 
 }  // namespace
 
@@ -96,14 +80,14 @@ void RecordingAudioRenderTarget::_ResetState() {
 void RecordingAudioRenderTarget::_CreateEmitter() {
     mEntityResource = new TransEntityResource();
     GameObject* object = mEntityResource->CreateEntity()->CreateObject(0, 0);
-    auto* component = reinterpret_cast<EmitterComponentView*>(
-        object->CreateComponent(gAudioEmitterComClass, false));
-    mEmitter = &component->mEmitter;
+    auto* component = static_cast<AudioEmitterCom*>(
+        object->CreateComponent(AudioEmitterCom::sClassName, false));
+    mEmitter = &component->mRuntime.mEmitter;
     mEmitter->Set2D(true);
 
     const bool savedFlag = gEntityThreadState.mEnterImmediately;
     gEntityThreadState.mEnterImmediately = false;
-    component->mRenderTarget = GetOutputTarget()->mName;
+    component->mRuntime.mRenderTarget = GetOutputTarget()->mName;
     mEntityResource->LoadResources();
     mEntityResource->EnterEntity(mEntityResource->mEntity);
     gEntityThreadState.mEnterImmediately = savedFlag;

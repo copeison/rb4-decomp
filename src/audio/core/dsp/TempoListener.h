@@ -5,7 +5,7 @@
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "os/threading/CritSec.h"
 
-class AudioEmitterCom;
+class AudioEmitter;
 
 // Receives tempo and speed changes, for example the HMX DSP plugins and
 // Delay. The map emits its destructor in audio/DelayPlugin.o; this build
@@ -36,7 +36,7 @@ public:
     LinkedListSizeTracked::Node mNode;  // In the emitter's listener list.
     // The emitter interface that registered the listener (+0x228 in the
     // AudioEmitterCom component); slot 2 removes it.
-    AudioEmitterCom* mOwner;
+    AudioEmitter* mOwner;
 };
 
 static_assert(offsetof(TempoListener, mNode) == 8);

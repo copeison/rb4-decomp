@@ -168,13 +168,9 @@ its file name, and its destructor removes it. `NeedsReload` (slot 12)
 returns true in two cases: there is no patch, or a keyzone's sample changed
 on disk or must itself be reloaded.
 
-Slots 8 and 9 of the binary also override `Resource`:
-
-- Slot 8 (`0x5C280`) returns true.
-- Slot 9 (`0x5B890`) collects each keyzone's sample, with that sample's own
-  dependencies, into an `eastl::vector<ResourcePtr<Resource>>`.
-
-`Resource.h` still declares those slots as `PrintCsvStatsHeader` and
-`PrintCsvStats`, so the emitted vtable keeps `0x5CF90` and `0x5CFA0` there.
+`HasDependencies` (slot 8, `0x5C280`) returns true, and `GetDependencies`
+(slot 9, `0x5B890`) appends each keyzone's sample, after that sample's own
+dependencies, to an `eastl::vector<ResourcePtr<Resource>>`. The emitted
+vtable matches `0x18E2660` slot for slot.
 `IsModified` (`0x5BFF0`) is declared only. The function at `0x5C170`
 returns zero and is not identified.

@@ -68,8 +68,8 @@ struct RndCameraSettings {
     // The component's vtable pointer; never read here.
     unsigned char mVtable[8];
     GameObject* mOwner;
-    // The rest of the Component base (its flags, with Component::mEnabled
-    // at 22); never read here.
+    // The rest of the Component base (its flags) and its tail padding;
+    // never read here.
     unsigned char mComponentFlags[8];
     float mNearPlane;
     float mFarPlane;

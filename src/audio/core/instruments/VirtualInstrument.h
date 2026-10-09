@@ -49,9 +49,10 @@ public:
     // Slot 15. The float is a start offset in milliseconds, which
     // FusionSampler adds to the patch's start point.
     virtual void NoteOn(signed char note, signed char velocity, signed char channel, float startOffsetMs) = 0;
-    // Slot 16: whether a note-on is pending or a voice plays the note. Name
-    // not in the reference map.
-    virtual bool IsNotePlaying(signed char note) = 0;
+    // Slot 16: whether a note-on is pending or a voice plays the note. The
+    // MultiFusion generator picks the channel's instrument by the second
+    // argument; FusionSampler ignores it. Name not in the reference map.
+    virtual bool IsNotePlaying(signed char note, signed char channel) = 0;
     // Slot 17. HandleMidiMessage sends note-off messages here.
     virtual void NoteOff(signed char note, signed char channel) = 0;
     virtual void SetExtraPitchBend(float bend, signed char channel);  // slot 18: empty here (0x52340)

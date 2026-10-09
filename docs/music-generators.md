@@ -67,14 +67,28 @@ an unreferenced lookup; `Play` inlines its own.
 
 ## Declared, not reconstructed
 
+The three generators depend on `MusicGenerator`'s 130-slot interface and on
+the song maps (tempo, measure and beat maps) and MIDI cursors it drives,
+none of which is modelled, so their objects stay declared.
+
 The generators are large and are only declared, with their bases, exact
 sizes, the `AudioGenerator` slots they override and the members their
 managers use:
 
-- `MusicGenerator` (`MusicGenerator.h`, 344 bytes, vtable `0x18E18A8`,
-  constructor `0x52780`, destructor `0x52C00`) implements `Pause`,
-  `Continue`, `Stop`, `GetLengthMs`, `SetSpeed`, `GetSpeed`, `IsMusic` and
-  `Kill`. Its own slots from 32 on are not declared.
+- `MusicGenerator` (`MusicGenerator.h`, 344 bytes, vtable `0x18E18A8`
+  with 130 slots, constructor `0x52780`, destructor `0x52C00`) implements
+  `Pause`, `Continue`, `Stop`, `GetLengthMs`, `SetSpeed`, `GetSpeed`,
+  `IsMusic` and `Kill`. Its own slots 32-43 are declared: the pure
+  `IsReady` (a weak name; the Mogg music generator asks its Mogg voice),
+  the content and song ticks and positions, the smoothed position, the
+  section name and index and `GetCurrentBPM` (`0x55EF0`), which the emitter
+  component reads. The slots from 44 on are not declared.
+- `PlayMusicArgs` (160 bytes, format 1) adds `MusicPlayOptions` (`+0x68`,
+  32 bytes: the sync option, the master handle, the timeline mapping, the
+  unmute point and a velocity-like 64), which `MusicGenerator`'s setup
+  (`0x52AF0`) copies, and two scales of one. `MusicSyncOptions` has
+  `kMaster` (1) and `kSlave` (2) from `SymbolToMusicSyncOptions`
+  (`0x559D0`).
 - `MidiPlayCursor` (`MidiPlayCursor.h`, 600 bytes, vtable `0x18E5460`,
   constructor `0xAA200`, destructor `0xAA270`).
 - `MidiMusicGenerator` is `MusicGenerator`, `MidiPlayCursor` and

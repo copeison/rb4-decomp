@@ -19,12 +19,15 @@ enum InstrumentSlaveType : int {
 };
 
 // A VirtualInstrument that plays as a pooled AudioGenerator: the map's
-// instrument interface, which FusionSampler and MultiInstrumentGenerator
-// implement and which Scheduler and MultiInstrumentGenerator::SetInstrument
-// take. The map has no members of its own, so the class is taken to hold the
-// virtuals both implementations share after VirtualInstrument's; their
-// order is FusionSampler's vtable (0x18E4D68). The AudioGenerator base is at
-// +312.
+// instrument interface, which FusionSampler, MultiFusionGenerator and
+// SynthRackGenerator implement and which Scheduler and
+// MultiInstrumentGenerator::SetInstrument take. Its own vtable at 0x18E15F0
+// has 51 slots: VirtualInstrument's 38 and the 13 below; the
+// AudioGenerator vtable at 0x18E1798 has no overrides. The pool
+// constructors install both vtables, and the implicit destructor (0x521F0,
+// 0x52280) is emitted with the MultiFusion generator. The AudioGenerator
+// base is at +312. The defaults below are emitted where they are first
+// used; their addresses are noted.
 class InstrumentGenerator : public VirtualInstrument, public AudioGenerator {
 public:
     explicit InstrumentGenerator(const char* name) : VirtualInstrument(name) {}
@@ -33,35 +36,60 @@ public:
     // has these names on FusionGenerator and MultiInstrumentGenerator.
     virtual void AddAudioThreadClient(AudioBusCallable* client) = 0;
     virtual void RemoveAudioThreadClient(AudioBusCallable* client) = 0;
-    // Slot 40. Name not in the reference map; it rests on the slot's
-    // position after the client members and is weak.
-    virtual bool SupportsAudioThreadClients() const = 0;
-    // Slot 41. FusionGenerator jumps to FusionSampler::LoadPatch. Name not
-    // in the reference map.
-    virtual void SetPatch(const ResourcePtr<FusionPatchResource>& patch) = 0;
-    // Slots 42-43: register a slave generator by handle.
-    virtual bool AddSlave(unsigned int handle, InstrumentSlaveType type) = 0;
-    virtual bool RemoveSlave(unsigned int handle) = 0;
-    // Slots 44-46: FusionGenerator clears, stores and tests an int with
-    // them; FusionSampler::_DumpAllInstrumentSlaves calls slot 44 on each
-    // slave. Names not in the reference map; behaviour only, the evidence is
-    // weak.
-    virtual void ClearGeneratorFlag() = 0;
-    virtual void SetGeneratorFlag(int flag) = 0;
-    virtual bool HasGeneratorFlag() const = 0;
-    // Slots 47-48: a transpose in semitones added to each note-on. Names not
-    // in the reference map.
-    virtual void SetTranspose(int semitones) = 0;
-    virtual int GetTranspose() const = 0;
-    // Slots 49-50: a time-stretch mode for every voice. Names not in the
-    // reference map.
-    virtual void SetTimeStretchMode(int algorithm, int formantMode) = 0;
-    virtual bool GetTimeStretchMode(int* algorithm, int* formantMode) const = 0;
-    // Slots 51-54 also override AudioGenerator's slots 8, 9, 25 and 26.
-    void SetSpeed(float speed, bool immediate) override = 0;
-    float GetSpeed(bool* changing) override = 0;
-    void SetPlayScale(float scale) override = 0;
-    float GetPlayScale() override = 0;
+    // Slot 40 at 0x43D20: true here, and no class overrides it. Name not in
+    // the reference map; it rests on the slot's position after the client
+    // members and is weak.
+    virtual bool SupportsAudioThreadClients() const {
+        return true;
+    }
+    // Slot 41: loads the patch on the channel's instrument; FusionGenerator
+    // jumps to FusionSampler::LoadPatch and ignores the channel. The map
+    // has the name on FusionGenerator.
+    virtual void SetPatch(const ResourcePtr<FusionPatchResource>& patch, int channel) = 0;
+    // Slots 42-43 at 0x51F20 and 0x51F30: register a slave generator by
+    // handle. False here; FusionSampler keeps slaves.
+    virtual bool AddSlave(unsigned int handle, InstrumentSlaveType type) {
+        static_cast<void>(handle);
+        static_cast<void>(type);
+        return false;
+    }
+    virtual bool RemoveSlave(unsigned int handle) {
+        static_cast<void>(handle);
+        return false;
+    }
+    // Slot 44 at 0x51F40: the master dropped this slave
+    // (FusionSampler::_DumpAllInstrumentSlaves). Empty here; FusionGenerator
+    // forgets its master's handle.
+    virtual void DetachedFromMaster() {}
+    // Slots 45-46 at 0x51F50 and 0x51F60: FusionGenerator stores and tests
+    // its master's handle with them. Empty and false here. Names not in the
+    // reference map; they mirror DetachedFromMaster.
+    virtual void AttachedToMaster(unsigned int masterHandle) {
+        static_cast<void>(masterHandle);
+    }
+    virtual bool IsAttachedToMaster() const {
+        return false;
+    }
+    // Slots 47-48 at 0x52360 and 0x52370: a transpose in semitones added to
+    // each note-on. Ignored and zero here. Names not in the reference map.
+    virtual void SetTranspose(int semitones) {
+        static_cast<void>(semitones);
+    }
+    virtual int GetTranspose() const {
+        return 0;
+    }
+    // Slots 49-50 at 0x52380 and 0x52390: a time-stretch mode for every
+    // voice; Get reports whether one is set. Ignored and false here. Names
+    // not in the reference map.
+    virtual void SetTimeStretchMode(int algorithm, int formantMode) {
+        static_cast<void>(algorithm);
+        static_cast<void>(formantMode);
+    }
+    virtual bool GetTimeStretchMode(int* algorithm, int* formantMode) const {
+        static_cast<void>(algorithm);
+        static_cast<void>(formantMode);
+        return false;
+    }
 };
 
 static_assert(sizeof(VirtualInstrument) == 312);

@@ -12,7 +12,7 @@
 #include "utl/text/Symbol.h"
 #include "os/threading/CritSec.h"
 
-class AudioEmitterCom;
+class AudioEmitter;
 class AudioGenerator;
 class AudioGeneratorManager;
 class AudioRenderTarget;
@@ -24,14 +24,20 @@ class TextStream;
 class Transform;
 
 // Music request options of the map's AudioEmitterCom::PlayMusic overloads.
-// Their values are not modelled.
-enum MusicSyncOptions : int;
+// MusicGenerator::SymbolToMusicSyncOptions (0x559D0) maps "kMaster" and
+// "kSlave" to 1 and 2 and any other name to 0; the name of 0 is not in the
+// reference map. The other options' values are not modelled.
+enum MusicSyncOptions : int {
+    kNoSync = 0,
+    kMaster = 1,
+    kSlave = 2,
+};
 enum MusicTimelineMapping : int;
 enum MusicUnmutePoint : int;
 
 // Playback request shared by every generator manager. The constructor and destructor are
 // inlined into each builder, for example
-// AudioGeneratorManager::Play(Symbol, AudioEmitterCom*, bool) at 0x40570.
+// AudioGeneratorManager::Play(Symbol, AudioEmitter*, bool) at 0x40570.
 // Field names are not in the reference map.
 struct PlayArgs {
     struct ParameterValue {
@@ -69,7 +75,7 @@ struct PlayArgs {
     }
 
     Symbol mName;
-    AudioEmitterCom* mEmitter;
+    AudioEmitter* mEmitter;
     bool mStartPaused;
     bool mStartMuted;
     // The gain fields start a new 4-byte group and the route a new 8-byte
@@ -111,93 +117,6 @@ static_assert(offsetof(PlayArgs, mParameters) == 88);
 static_assert(offsetof(PlayArgs, mFormat) == 96);
 static_assert(offsetof(PlayArgs, mStreaming) == 101);
 static_assert(sizeof(PlayArgs) == 104);
-
-// The emitter interface of the audio emitter component. The component's
-// RuntimeData (constructed at 0x37710, at +104 in the component) holds it at
-// +0x228 in the component, with a back pointer to the component after it;
-// the vtable is at 0x18DF628. Most slots forward to the component's own
-// methods, whose names come from the map's AudioEmitterCom; the slots the
-// map does not name are marked. Slot 18 onward drive the component's
-// "is_2D" (+0x20) and "allow_dialog_overlap" (+0x21) properties and its
-// dialog handle (+0x1B4) and interruptible flag (+0x1B8).
-class AudioEmitterCom {
-public:
-    // Slot 0 at 0x379D0: the component's CompositeGenerator (at +0xE8), the
-    // parent of every sound the emitter plays. Name not in the reference
-    // map.
-    virtual AudioGenerator* GetCompositeGenerator();
-    // Slot 1 at 0x379E0: adds a tempo listener and sends it the current
-    // tempo. AudioGenerator::RegisterTempoListener forwards here.
-    virtual void RegisterTempoListener(TempoListener* listener);
-    // Slot 2 at 0x379F0: false when the listener was not registered. Name
-    // not in the reference map.
-    virtual bool UnregisterTempoListener(TempoListener* listener);
-    // Slots 3-10 at 0x37A00 and 0x37AB0 through 0x37B10 return the new
-    // handle.
-    virtual unsigned int PlaySound(PlayArgs& args);
-    virtual unsigned int PlaySound(Symbol name);
-    virtual unsigned int PrepareSound(Symbol name);
-    virtual unsigned int PlayMusic(PlayMusicArgs& args);
-    virtual unsigned int PlayMusic(
-        Symbol name, MusicSyncOptions sync, MusicTimelineMapping mapping, MusicUnmutePoint unmute);
-    virtual unsigned int PlayMusic(Symbol name, Symbol sync);
-    virtual unsigned int PrepareMusic(Symbol name, MusicSyncOptions sync);
-    virtual unsigned int PrepareMusic(Symbol name, Symbol sync);
-    // Slots 11-14 at 0x37B20 through 0x37B80 stop, kill, pause and continue
-    // the composite generator. RecordingAudioRenderTarget kills its emitter's
-    // sounds through slot 0 instead.
-    virtual void StopAllSounds();
-    virtual void KillAllSounds();
-    virtual void PauseAllSounds();
-    virtual void ContinueAllSounds();
-    // Slot 15 at 0x37BA0: the handle of the music the emitter follows.
-    virtual unsigned int GetMasterMusic();
-    // Slot 16 at 0x37BB0: the emitter's mix group, or null. When present,
-    // the FMOD generators route through its channel group, whose getter is
-    // inlined as null in this build. Name not in the reference map.
-    virtual void* GetMixGroup();
-    // Slot 17 at 0x37BC0: the component's world transform, or the listener's
-    // for a 2D emitter. Name not in the reference map.
-    virtual const Transform& GetWorldXfm();
-    // Slot 18 at 0x37BE0: builds a DialogPlayArgs and plays it, stopping the
-    // current line unless overlap is allowed. The last argument is an object
-    // reference (the map's ObjPtr). Name not in the reference map.
-    virtual unsigned int PlayDialog(
-        Symbol name,
-        bool interruptible,
-        const std::function<void(AudioEmitterCom*, Symbol, void*)>& sink,
-        const void* object);
-    // Slot 19 at 0x37CB0: the same for a prepared request. Name not in the
-    // reference map.
-    virtual unsigned int PlayDialog(DialogPlayArgs& args);
-    // Slot 20 at 0x37CC0: whether the dialog handle still names a generator
-    // ("dialog_is_playing"). Name not in the reference map.
-    virtual bool IsDialogPlaying();
-    // Slot 21 at 0x37CD0: a dialog handle is held and its line is not interruptible.
-    // Name not in the reference map.
-    virtual bool IsDialogUninterruptible();
-    // Slot 22 at 0x37CE0: sets the current line's interruptible flag when the handle
-    // names a dialog generator. Name not in the reference map.
-    virtual bool SetDialogInterruptible(bool interruptible);
-    // Slot 23 at 0x37D00: the "allow_dialog_overlap" property. Name not in the
-    // reference map.
-    virtual void SetAllowDialogOverlap(bool allow);
-    // Slots 24-27 at 0x37D20 through 0x37D50 read and write the "is_2D"
-    // property; a 2D emitter is not
-    // positioned. Names not in the reference map.
-    virtual bool Is2D();
-    virtual bool Is3D();
-    virtual void Set2D(bool is2D);
-    virtual void Set3D(bool is3D);
-    // Slot 28 at 0x37D60: the owning component. Name not in the reference
-    // map.
-    virtual Component* GetComponent();
-};
-
-// The class symbol of the emitter component, at 0x19C7770. The component's
-// registration at 0x32110 names the class "AudioEmitterCom"; the interface
-// above sits at +0x228 in it. Name not in the reference map.
-extern Symbol gAudioEmitterComClass;
 
 // Linear gain ramp advanced by each generator's Poll. Its members are
 // inlined at every use, for example in FmodAudioStreamGenerator::SetGain at
@@ -419,7 +338,7 @@ public:
     std::atomic<int> mRefCount;
     unsigned int mHandle;
     LinkedListSizeTracked::Node mPoolNode;
-    AudioEmitterCom* mEmitter;
+    AudioEmitter* mEmitter;
     AudioRenderTarget* mRenderTarget;
 };
 
@@ -443,8 +362,8 @@ public:
         LinkedListSizeTracked::List<AudioGenerator, &AudioGenerator::mPoolNode>;
 
     virtual AudioGenerator* Play(const PlayArgs& args) = 0;  // slot 0
-    virtual AudioGenerator* Play(Symbol name, AudioEmitterCom* emitter, bool paused);  // slot 1: 0x40570
-    virtual AudioGenerator* Prepare(Symbol name, AudioEmitterCom* emitter);  // slot 2: 0x406C0
+    virtual AudioGenerator* Play(Symbol name, AudioEmitter* emitter, bool paused);  // slot 1: 0x40570
+    virtual AudioGenerator* Prepare(Symbol name, AudioEmitter* emitter);  // slot 2: 0x406C0
     virtual void Init();                              // slot 3: 0x40500
     virtual bool Destroy();                           // slot 4: 0x40540
     virtual void Poll() {}                            // slot 5: 0xDD20

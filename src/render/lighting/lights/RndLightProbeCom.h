@@ -23,6 +23,9 @@ public:
     // Field names are not in the reference map; the members take the names
     // of the properties the probe's registry (0x49B290) binds to their
     // offsets. The constructor is at 0x498170.
+    // Placed in the Component base's tail padding. Cleared to switch the
+    // probe off, as RndDefaults does with lights.
+    bool mEnabled;
     float mFalloffStart;
     float mFalloffEnd;
     std::int32_t mFalloffFunction;
@@ -43,6 +46,7 @@ public:
     bool mDirty;
 };
 
+static_assert(offsetof(RndLightProbeCom, mEnabled) == 22);
 static_assert(offsetof(RndLightProbeCom, mFalloffStart) == 24);
 static_assert(offsetof(RndLightProbeCom, mFalloffEnd) == 28);
 static_assert(offsetof(RndLightProbeCom, mFalloffFunction) == 32);

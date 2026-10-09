@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
 #include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/resources/FmodAudioStreamResource.h"
@@ -425,7 +426,7 @@ FmodAudioStreamGenerator* FmodAudioStreamGeneratorManager::PlayWithCallback(
 // Reconstructed from eboot.elf at 0x268D80.
 FmodAudioStreamGenerator* FmodAudioStreamGeneratorManager::_AllocateAndSetUpGenerator(
     ResourcePtr<FmodAudioStreamResource> resource, const PlayArgs& args) {
-    AudioEmitterCom* emitter =
+    AudioEmitter* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator = GeneratorPool::Allocate<FmodAudioStreamGenerator>(*this, target, emitter);

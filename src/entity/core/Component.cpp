@@ -1,6 +1,7 @@
 #include "entity/core/Component.h"
 
 #include <kernel.h>
+#include <strings.h>
 
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Entity.h"
@@ -10,6 +11,7 @@
 #include "entity/props/PropRegistry.h"
 #include "entity/props/PropUtl.h"
 #include "entity/resources/Resource.h"
+#include "os/memory/MemMgr.h"
 #include "utl/data/DataArray.h"
 #include "utl/streams/BinStream.h"
 #include "utl/text/MakeString.h"
@@ -22,6 +24,31 @@ constexpr int kComponentSaveRev = 3;
 // The size of the buffer the compiled-out failure reports print the path
 // into. Name not in the reference map.
 constexpr unsigned long kPathStringSize = 512;
+
+// The FNV-1a constants of the class CRC, and the value the dependency hash
+// starts from when there are dependencies. Names not in the reference map.
+constexpr unsigned int kFnvBasis = 2166136261U;
+constexpr unsigned int kFnvPrime = 16777619U;
+constexpr unsigned int kOrderDepsSeed = 671913016U;
+
+// Sorts the symbols by their text without regard to case; equal symbols
+// keep no particular order. The binary's EASTL introsort and insertion
+// sort (0xE9170, 0xE9370) give the same order. Name not in the reference
+// map.
+void SortSymbolsNoCase(eastl::vector<Symbol>& symbols) {
+    Symbol* const begin = symbols.begin();
+    const unsigned long count = symbols.size();
+    for (unsigned long index = 1; index < count; ++index) {
+        const Symbol value = begin[index];
+        unsigned long position = index;
+        while (position != 0 && begin[position - 1] != value &&
+               strcasecmp(value.Str(), begin[position - 1].Str()) < 0) {
+            begin[position] = begin[position - 1];
+            --position;
+        }
+        begin[position] = value;
+    }
+}
 
 // What remains of a failure report: the class id is read and the path is
 // printed into a cleared buffer. Name not in the reference map.
@@ -76,6 +103,60 @@ void Component::Destroy() {
 // Reconstructed from eboot.elf at 0xE7220.
 bool Component::IsValid(Symbol id) {
     return sFactory.find(id) != sFactory.end();
+}
+
+// Reconstructed from eboot.elf at 0xE72A0.
+unsigned int Component::GetClassCRC(Symbol id) {
+    unsigned int temp;
+    MemPushTemp(temp, true, true);
+    unsigned int crc = kFnvBasis;
+    const auto factory = sFactory.find(id);
+    if (factory != sFactory.end()) {
+        if (Component* const component = factory->second()) {
+            crc = component->_GetOrderDepsCRC();
+            delete component;
+        }
+    }
+    MemPopTemp(temp);
+    return crc;
+}
+
+// Reconstructed from eboot.elf at 0xE7380. Each list has room for three
+// classes before the virtuals fill it. The hash of non-empty lists starts
+// from a fixed value rather than the basis.
+unsigned int Component::_GetOrderDepsCRC() {
+    unsigned int temp;
+    MemPushTemp(temp, true, true);
+    eastl::vector<Symbol> pollFollows;
+    eastl::vector<Symbol> pollPrecedes;
+    eastl::vector<Symbol> comFollows;
+    eastl::vector<Symbol> comPrecedes;
+    pollFollows.reserve(3);
+    pollPrecedes.reserve(3);
+    comFollows.reserve(3);
+    comPrecedes.reserve(3);
+    _GetPollOrderDeps(pollFollows, pollPrecedes);
+    _GetComponentOrderDeps(comFollows, comPrecedes);
+    unsigned int crc = kFnvBasis;
+    if (!pollFollows.empty() || !pollPrecedes.empty() || !comFollows.empty() || !comPrecedes.empty()) {
+        eastl::vector<Symbol>* const lists[] = {&pollFollows, &pollPrecedes, &comFollows, &comPrecedes};
+        crc = kOrderDepsSeed;
+        for (unsigned long list = 0; list < 4; ++list) {
+            SortSymbolsNoCase(*lists[list]);
+        }
+        for (unsigned long list = 0; list < 4; ++list) {
+            for (const Symbol& name : *lists[list]) {
+                for (const char* c = name.Str(); *c != '\0'; ++c) {
+                    crc = kFnvPrime * (crc ^ static_cast<unsigned char>(*c));
+                }
+            }
+            if (list != 3) {
+                crc = kFnvPrime * (crc ^ '-');
+            }
+        }
+    }
+    MemPopTemp(temp);
+    return crc;
 }
 
 // Reconstructed from eboot.elf at 0xE78E0.

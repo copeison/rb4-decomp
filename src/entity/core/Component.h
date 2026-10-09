@@ -21,6 +21,17 @@ class TextStream;
 // enumerator names are not in the reference map. Only the values the
 // reconstructed code passes are declared.
 enum DestroyType : int {
+    // No destroy is in progress on the thread (Entity.o's thread-local
+    // gDestroyType starts here).
+    kDestroyUnset = -1,
+    // A top-level entity exits or is destroyed (Entity::Exit, 0xF50D0).
+    kDestroyRoot = 0,
+    // An instanced entity whose resource is an editor entity (bit 11 of the
+    // entity's flags); the evidence for the name is weak.
+    kDestroyEditorInstance = 1,
+    // An instanced entity. A nested entity keeps the lowest type of the
+    // entities around it.
+    kDestroyInstance = 2,
     // The object exits or is destroyed with its components (0x116890).
     kDestroyObject = 3,
     // The component alone is destroyed, or exits to reload its resources
@@ -186,6 +197,16 @@ public:
 
     // Whether a factory is registered for the class.
     static bool IsValid(Symbol id);  // 0xE7220
+    // The hash of the class's poll-order and component-order dependencies,
+    // which ComMetaData::Init folds into the class CRC: a component of the
+    // class is created through its factory to answer and destroyed. The
+    // FNV-1a basis for a class without a factory. Name not in the
+    // reference map.
+    static unsigned int GetClassCRC(Symbol id);  // 0xE72A0
+    // The FNV-1a hash of the four dependency lists (slots 17 and 18), each
+    // sorted without regard to case, with '-' between them; the basis when they
+    // are all empty. Name not in the reference map.
+    unsigned int _GetOrderDepsCRC();  // 0xE7380
     // Destroys the component, freeing it unless it lives in an imprint.
     // Name not in the reference map.
     void Destroy();  // 0xE7210
@@ -260,16 +281,17 @@ public:
     bool mEntered;
     // Cleared by the constructor; no reader is identified.
     bool mReserved;
-    // Cleared to switch the component off. RndDefaults::_LoadLighting
-    // (0x6BEF40) and _SyncEnabledLights (0x6BFA60) write it on RndLightCom
-    // and RndLightProbeCom components; the constructor does not set it.
-    bool mEnabled;
+    // The constructor stores the four bytes from mResourcesRequested to
+    // mReserved together. Subclasses place their first member in the tail
+    // padding at 22: AudioEmitterCom's "is_named_emitter", the "Options"
+    // base of RndOverlayOptionsCom (0x46A870), and the flag RndDefaults
+    // writes on RndLightCom and RndLightProbeCom (0x6BEF40, 0x6BFA60).
 };
 
 static_assert(offsetof(Component, mObject) == 8);
 static_assert(offsetof(Component, mImprinted) == 16);
 static_assert(offsetof(Component, mEntered) == 20);
-static_assert(offsetof(Component, mEnabled) == 22);
+static_assert(offsetof(Component, mReserved) == 21);
 static_assert(sizeof(Component) == 24);
 
 // Visits the component's saved resource-path and property-reference

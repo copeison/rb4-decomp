@@ -77,10 +77,10 @@ the FMOD platform for its loaded events. It returns an array with one
 
 ## Not reconstructed
 
-- The inline `Init` of `AudioEmitterCom` (`0x42F0`) and `FusionPatchCom`
-  (`0x5350`): their headers do not declare it, so `_InitComponents` omits
-  the calls.
-- The component and resource `Init` bodies, which the map emits in this
+- The component and resource `Init` bodies (among them
+  `AudioEmitterCom::Init` at `0x42F0`, `AudioListenerCom::Init` at
+  `0x4B70` and `FusionPatchCom::Init` at `0x5350`, which `_InitComponents`
+  calls in the binary's order), which the map emits in this
   object, are declared only; `FusionPatchResource::Init` is inline in its
   header. `CompositeGeneratorManager`'s members
   (`0xDD10` to `0xE3C0`) are reconstructed with the composite generator.

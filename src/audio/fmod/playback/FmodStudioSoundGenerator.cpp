@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
 #include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/system/FmodPlatform.h"
@@ -355,7 +356,7 @@ AudioGenerator* FmodStudioSoundGeneratorManager::Play(const PlayArgs& args) {
     if (system->mStudioSystem->lookupID(path, &id) != FMOD_OK) {
         return nullptr;
     }
-    AudioEmitterCom* emitter =
+    AudioEmitter* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     auto* generator = GeneratorPool::Allocate<FmodStudioSoundGenerator>(*this, target, emitter);
     if (generator != nullptr && generator->_Setup(path, args, nullptr, nullptr)) {

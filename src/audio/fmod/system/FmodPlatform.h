@@ -71,6 +71,16 @@ public:
     // ignored. Name not in the reference map.
     virtual bool SetBusPaused(bool paused, const char* path, bool immediate);
     virtual bool SetMasterPaused(bool paused);   // slot 5: 0x2794B0
+    // Slots 6-7 at 0x279AA0 and 0x279C60: add the bus's channel group to a
+    // group attached to the "musicbus" (port type 0) or "copyrightmusic"
+    // (port type 4) output port, created on first use. Names not in the
+    // reference map.
+    virtual bool AttachBusToMusicPort(const char* path);
+    virtual bool AttachBusToCopyrightMusicPort(const char* path);
+    // Slot 8 at 0x279800: replaces the list with the tempo listeners of the
+    // HMX DSPs on the bus; false when the bus is not loaded. Name not in the
+    // reference map.
+    virtual bool GetBusTempoListeners(Symbol path, eastl::vector<TempoListener*>& listeners);
 };
 
 extern FmodBusInterface* gFmodBusInterface;

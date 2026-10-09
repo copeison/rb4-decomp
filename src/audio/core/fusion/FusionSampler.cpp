@@ -233,7 +233,7 @@ void FusionSampler::_DumpAllInstrumentSlaves() {
         if (generator->IsInstrument()) {
             InstrumentGenerator* slave = static_cast<InstrumentGenerator*>(generator);
             if (slave != nullptr) {
-                slave->ClearGeneratorFlag();
+                slave->DetachedFromMaster();
                 --slave->mRefCount;
             }
         } else {
@@ -286,7 +286,8 @@ void FusionSampler::NoteOn(signed char note, signed char velocity, signed char, 
 }
 
 // Reconstructed from eboot.elf at 0x97530.
-bool FusionSampler::IsNotePlaying(signed char note) {
+bool FusionSampler::IsNotePlaying(signed char note, signed char channel) {
+    static_cast<void>(channel);
     if (mVoicePool == nullptr) {
         return false;
     }

@@ -135,6 +135,10 @@ public:
     // Func and Property accessors into this body.
     DataArray* Command(const DataArray* source) const;  // 0x237E30
 
+    // Whether the values differ. Symbols compare equal to strings with the
+    // same text and integers to equal floats.
+    bool operator!=(const DataNode& other) const;  // 0x2385C0
+
     // Whether a value of the type may stand in for this node's value.
     bool CompatibleType(DataType type) const;  // 0x236F40
     // Whether the evaluated value is set: a non-empty symbol, string or

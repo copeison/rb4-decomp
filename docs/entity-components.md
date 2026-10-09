@@ -21,10 +21,12 @@ the entity objects that hold the components are in
 
 ## Component
 
-`Component` is 24 bytes: the vtable, the owning `GameObject`, and seven
+`Component` is 24 bytes: the vtable, the owning `GameObject`, and six
 flags (imprinted, props synced, resources requested, resources ready,
-entered, a flag nothing reads, enabled). Subclasses place their first
-member in the tail padding at 23, as `RndOverlayOptionsCom` does.
+entered, a flag nothing reads). Subclasses place their first member in the
+tail padding at 22: `AudioEmitterCom`'s `is_named_emitter`, the "Options"
+base of `RndOverlayOptionsCom` (constructor `0x46A870`), and the flag
+`RndDefaults` writes on light components.
 
 The vtable at `0x18E6518` has 41 slots; the emitted vtable matches it slot
 for slot (`orbis-objdump -r`). The pure slots 4, 5, 7-10, 22 and 23 are each
@@ -58,6 +60,19 @@ entity resource classes it may live in, its aliases, required, default and
 dependent classes, exported events and property registry. `Init`
 (`0xE5B80`, not reconstructed) fills the dependency lists of the classes it
 names and adds the class to `sComMetaDataList` (`0x19E28B8`).
+`AddExportedEvent` reserves room for 32 events and returns the new event's
+parameter registry.
+
+The class CRC takes `Component::GetClassCRC` (`0xE72A0`): a component of
+the class, created through its factory, hashes its poll-order and
+component-order dependencies (`_GetOrderDepsCRC`, `0xE7380`). Each list is
+sorted without regard to case and hashed with FNV-1a, with `'-'` between
+lists; the hash of non-empty lists starts from `671913016` rather than the
+basis. Both names are inferred. `Dump` and `_ImprintRegistry` remain
+declared: they walk the registry through property visitors (`0xE9930`,
+`0xE9C30`) and `PropUtl` helpers that are not modelled. Slots 12 and 13
+(`0x107220`, `0x107300`) belong to the prop-storage serializer outside
+`Component.o` and remain declared.
 
 `GameObject::_CreateComponent` keeps one component per interface and, unless
 the class sets `mAllowMultiple`, one per class. It refuses classes the

@@ -70,7 +70,7 @@ AudioGenerator* MidiMusicGeneratorManager::Play(const PlayArgs& args) {
         }
         resource = it->second;
     }
-    AudioEmitterCom* emitter =
+    AudioEmitter* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator = GeneratorPool::Allocate<MidiMusicGenerator>(*this, target, emitter);

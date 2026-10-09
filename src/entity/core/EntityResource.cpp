@@ -1,19 +1,74 @@
 #include "entity/core/EntityResource.h"
 
+#include <kernel.h>
+
 #include "entity/core/ComMetaData.h"
 #include "entity/core/EditorCom.h"
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/InstanceCom.h"
+#include "entity/progress/LoadProgress.h"
+#include "os/files/File.h"
+#include "os/profiling/PerfMgr.h"
+#include "utl/files/FileUtl.h"
+#include "utl/streams/BinStream.h"
+#include "utl/text/MakeString.h"
 
-// The class's metadata at 0x19E3008.
+// The profiled path at 0x19E3000 and the class's metadata at 0x19E3008.
+ResourcePath EntityResource::sProfileLoadPath;
 ResourceMetaData EntityResource::sMetaData;
+
+// The folder at 0x19B02E0.
+const char* gEntityLoadDir = ".";
+
+namespace {
+
+// The task the entity loads report to the load-progress listeners. Name
+// not in the reference map.
+constexpr const char kEntityLoadTask[] = "EntityLoad";
+
+// The revision Save writes and the newest _LoadEntity reads. Name not in
+// the reference map.
+constexpr int kEntityResourceSaveRev = 18;
+
+// The id of no object, at 0x19E2FF8; EntityResource.o's initializer
+// (0x103726) sets it. Name not in the reference map.
+GameObjectId gNullObjectId = {0xFFFFFFFFu};
+
+// The resource whose load the calling thread reports: a TLSValue whose
+// descriptor and offset are at 0x19B02E8. Name not in the reference map.
+thread_local const EntityResource* gProfilingLoad;
+
+// Releases each layer's inlined resources from the last, after clearing
+// their inlined flag. Inlined into the destructor and _LoadEntity; the
+// map's ClearAllInlineResources() presumably. Name not in the reference
+// map.
+void ReleaseInlineResources(eastl::vector<EntityResource::LayerInfo>& layers) {
+    const unsigned long numLayers = layers.size();
+    for (unsigned long layer = 0; layer < numLayers; ++layer) {
+        eastl::vector<Resource*>& resources = layers[layer].mInlineResources;
+        for (unsigned long index = resources.size(); index-- != 0;) {
+            Resource* const resource = resources[index];
+            resources.erase(resources.begin() + index);
+            resource->mInlined = false;
+            resource->ReleaseRef();
+        }
+    }
+}
+
+}  // namespace
 
 // The class symbol of the component that instances an entity resource,
 // whose registration at 0x118E60 describes it as "Used to load an entity
 // resource". Its class name is not recovered. Name not in the reference
 // map.
 extern Symbol gEntityInstanceComId;  // 0x19E3280
+
+// Reconstructed from eboot.elf at 0xFD5D0.
+void EntityResource::SetProfileLoadPath(ResourcePath path) {
+    static_cast<void>(scePthreadSelf());
+    sProfileLoadPath = path;
+}
 
 // Reconstructed from eboot.elf at 0xFD610. The binary forwards the
 // arguments to Entity::_LoadRoot.
@@ -172,16 +227,7 @@ EntityResource::EntityResource()
 // Reconstructed from eboot.elf at 0xFDB10. Each layer's inlined resources
 // are released from the last, after their inlined flag is cleared.
 EntityResource::~EntityResource() {
-    const unsigned long numLayers = mLayers.size();
-    for (unsigned long layer = 0; layer < numLayers; ++layer) {
-        eastl::vector<Resource*>& resources = mLayers[layer].mInlineResources;
-        for (unsigned long index = resources.size(); index-- != 0;) {
-            Resource* const resource = resources[index];
-            resources.erase(resources.begin() + index);
-            resource->mInlined = false;
-            resource->ReleaseRef();
-        }
-    }
+    ReleaseInlineResources(mLayers);
     DestroyEntity();
     mMissingComponents.clear();
 }
@@ -194,12 +240,229 @@ void EntityResource::_Init(ResourceMetaData& metaData) {
     metaData.mTypeOption = 1;
 }
 
+// Reconstructed from eboot.elf at 0xFE380. A source file has its stale ids
+// fixed around the resource load, with the objects' entered state reset
+// first. The binary inlines _EndLoadProgress.
+bool EntityResource::Load(BinStream& stream, bool cached) {
+    const bool loaded = _LoadEntity(stream, cached);
+    const bool profiling = IsProfilingLoad();
+    bool result = false;
+    if (loaded) {
+        if (!cached) {
+            _FixupStaleIds(false);
+            mEntity->ResetEntered();
+        }
+        if (mEntity->_LoadResources(false)) {
+            if (!cached) {
+                _FixupStaleIds(true);
+            }
+            result = _PostLoad(stream, cached);
+        }
+    }
+    if (profiling) {
+        _EndLoadProgress();
+    }
+    return result;
+}
+
+// Reconstructed from eboot.elf at 0xFE530.
+bool EntityResource::IsProfilingLoad() const {
+    if (!HasLoadProgressListeners()) {
+        return false;
+    }
+    return gProfilingLoad == this;
+}
+
+// Reconstructed from eboot.elf at 0xFEC20. Revisions 12 to 18 start with
+// the layer files and, from 16, the root data; older streams are read
+// from the entity on, unless cached. Source files before revision 17 get
+// the root's EditorCom (before 13) and InstanceCom when they lack them;
+// the root's id is compared with the null id first. A cached file fails
+// when a layer file is missing or not older than the resource.
+bool EntityResource::_LoadEntity(BinStream& stream, bool cached) {
+    const ResourcePath path = mPath;
+    if (mPollTimer == -1) {
+        const bool wantsTimers = _WantsPerfTimers();
+        if (path.mPath != Symbol() && wantsTimers) {
+            const char* const name = FileGetName(path.Str());
+            FormatString poll("poll: %s");
+            poll << name;
+            mPollTimer = static_cast<long>(thePerfMgr.GetTimerIndex(Symbol(poll.Str())));
+            FormatString postPoll("post_poll: %s");
+            postPoll << name;
+            mPostPollTimer = static_cast<long>(thePerfMgr.GetTimerIndex(Symbol(postPoll.Str())));
+            FormatString enterExit("enter_exit: %s");
+            enterExit << name;
+            mEnterExitTimer = static_cast<long>(thePerfMgr.GetTimerIndex(Symbol(enterExit.Str())));
+            FormatString destroy("destroy: %s");
+            destroy << name;
+            mDestroyTimer = static_cast<long>(thePerfMgr.GetTimerIndex(Symbol(destroy.Str())));
+        }
+    }
+    if (mEntity != nullptr) {
+        ReleaseInlineResources(mLayers);
+        DestroyEntity();
+        mMissingComponents.clear();
+    }
+
+    char dir[512] = {};
+    gEntityLoadDir = FileGetPath(stream.Name(), dir);
+    int rev = 0;
+    stream.ReadEndian(&rev, sizeof(rev));
+    mHasStaleIds = rev < kEntityResourceSaveRev;
+    if (rev < 12 || rev > kEntityResourceSaveRev) {
+        if (cached) {
+            return false;
+        }
+        stream.Seek(-4, kSeekCur);
+    } else {
+        unsigned int numLayers;
+        stream.ReadEndian(&numLayers, sizeof(numLayers));
+        mLayers.resize(numLayers);
+        for (unsigned int layer = 0; layer < numLayers; ++layer) {
+            stream >> mLayers[layer].mPath.mPath;
+        }
+    }
+    if (rev >= 16) {
+        unsigned int size;
+        stream.ReadEndian(&size, sizeof(size));
+        mRootData.resize(size);
+        if (size != 0) {
+            stream.Read(mRootData.data(), size);
+        }
+    }
+
+    PushFixupEntity fixup;
+    if (!HasLoadProgressListeners() || path.mPath == Symbol()) {
+        _ReadLoadStepCount(stream, rev, cached, false);
+    } else {
+        const ResourcePath profiled = sProfileLoadPath;
+        const unsigned int steps = _ReadLoadStepCount(stream, rev, cached, profiled == path);
+        if (profiled == path) {
+            _BeginLoadProgress(cached, steps);
+        }
+    }
+    if (!cached) {
+        mEntity = Entity::_LoadUncached(stream, this);
+        if (rev <= 11) {
+            _LoadInlineResources(stream, 0, false);
+        }
+        GameObject* root = nullptr;
+        if (!gResourcePrecacheMode && rev <= 16 && gFileArchiveMode == 0 && gNullObjectId.mId != 0) {
+            root = mEntity->GetRoot();
+        }
+        if (root != nullptr) {
+            if (rev < 13 && root->GetCom<EditorCom>() == nullptr) {
+                InitObject(root);
+            }
+            if (root->GetCom<InstanceCom>() == nullptr) {
+                root->CreateComponent(InstanceCom::sClassName, false);
+            }
+        }
+        gEntityLoadDir = ".";
+        return mEntity != nullptr;
+    }
+
+    mEntity = Entity::_LoadCached(stream, this);
+    gEntityLoadDir = ".";
+    if (mEntity == nullptr) {
+        return false;
+    }
+    for (unsigned long layer = 1; layer < mLayers.size(); ++layer) {
+        const ResourcePath& layerPath = mLayers[layer].mPath;
+        if (layerPath.mPath == Symbol() || gFileArchiveMode != 0) {
+            continue;
+        }
+        const FileStat stamp = FileTimestamp(layerPath.Str());
+        const bool missing = stamp.mSeconds == 0 && stamp.mFraction == 0;
+        const bool stale = mFileTime.mSeconds == stamp.mSeconds ? mFileTime.mFraction <= stamp.mFraction
+                                                                : mFileTime.mSeconds < stamp.mSeconds;
+        if (missing || stale) {
+            DestroyEntity();
+            return false;
+        }
+    }
+    for (unsigned long layer = 0; layer < mLayers.size(); ++layer) {
+        if (layer == 0 || mLayers[layer].mPath.mPath != Symbol()) {
+            if (!_LoadInlineResources(stream, layer, true)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0xFF810.
+void EntityResource::_BeginLoadProgress(bool cached, unsigned int steps) {
+    gProfilingLoad = this;
+    FormatString text("Loading %s (%s)");
+    text << mPath.mPath << (cached ? "cached" : "uncached");
+    LoadProgressBegin(kEntityLoadTask, text.Str(), steps, 0);
+}
+
 // Reconstructed from eboot.elf at 0xFFE80.
 bool EntityResource::LayerExists(unsigned long layer) const {
     if (layer == 0) {
         return true;
     }
     return layer < mLayers.size() && mLayers[layer].mPath.mPath != Symbol();
+}
+
+// Reconstructed from eboot.elf at 0x1006D0.
+void EntityResource::_EndLoadProgress() {
+    gProfilingLoad = nullptr;
+    LoadProgressEnd(kEntityLoadTask);
+}
+
+// Reconstructed from eboot.elf at 0x100760. A source file holds the main
+// layer; a cached file holds every layer, counted for the load steps, with
+// each layer's inlined resources after the entity, and the entity's
+// resources are loaded afterwards unless they are. The root data is
+// written byte by byte, as an empty copy while precaching a cached file.
+void EntityResource::Save(BinStream& stream, bool cached) {
+    char dir[512] = {};
+    gEntityLoadDir = FileGetPath(stream.Name(), dir);
+    int rev = kEntityResourceSaveRev;
+    stream.WriteEndian(&rev, sizeof(rev));
+    unsigned int numLayers = static_cast<unsigned int>(mLayers.size());
+    stream.WriteEndian(&numLayers, sizeof(numLayers));
+    for (unsigned long layer = 0; layer < mLayers.size(); ++layer) {
+        stream << mLayers[layer].mPath.mPath;
+    }
+    const eastl::vector<unsigned char> empty;
+    const eastl::vector<unsigned char>& rootData =
+        gResourcePrecacheMode && cached ? empty : mRootData;
+    unsigned int size = static_cast<unsigned int>(rootData.size());
+    stream.WriteEndian(&size, sizeof(size));
+    for (const unsigned char& value : rootData) {
+        unsigned char byte = value;
+        stream.Write(&byte, 1);
+    }
+    if (!cached) {
+        // The main layer, the constant 0 at 0x124EEA0.
+        unsigned int steps = mEntity->mLayers[0].GetLoadStepCount(0, mEntity);
+        stream.WriteEndian(&steps, sizeof(steps));
+        mEntity->_SaveUncached(stream);
+        gEntityLoadDir = ".";
+        return;
+    }
+    unsigned int steps = 0;
+    for (unsigned long layer = 0; layer < mLayers.size(); ++layer) {
+        if (layer == 0 || mLayers[layer].mPath.mPath != Symbol()) {
+            steps += mEntity->mLayers[layer].GetLoadStepCount(layer, mEntity);
+        }
+    }
+    stream.WriteEndian(&steps, sizeof(steps));
+    mEntity->_SaveCached(stream);
+    for (unsigned long layer = 0; layer < mLayers.size(); ++layer) {
+        if (layer == 0 || mLayers[layer].mPath.mPath != Symbol()) {
+            _SaveInlineResources(stream, layer, true);
+        }
+    }
+    gEntityLoadDir = ".";
+    if ((mEntity->mFlags & 0x20) == 0) {
+        mEntity->_LoadResources(false);
+    }
 }
 
 // Reconstructed from eboot.elf at 0x101A20. Only the classes the object

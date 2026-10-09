@@ -2,6 +2,7 @@
 
 #include <kernel.h>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/core/system/SoundManager.h"
 
 Symbol CompositeGenerator::kTypeId;

@@ -1,6 +1,7 @@
 #include "audio/core/resources/FusionPatchResource.h"
 
 #include <cstring>
+#include <utility>
 
 #include "audio/core/fusion/FusionGenerator.h"
 #include "audio/core/fusion/FusionPatchCom.h"
@@ -50,6 +51,23 @@ bool FusionPatchResource::NeedsReload() {
 // Reconstructed from eboot.elf at 0x5B830.
 FusionPatchCom* FusionPatchResource::GetPatch() const {
     return mEntity->GetRoot()->GetCom<FusionPatchCom>();
+}
+
+// Reconstructed from eboot.elf at 0x5B890. The binary inlines GetPatch.
+void FusionPatchResource::GetDependencies(eastl::vector<ResourcePtr<Resource>>& dependencies) const {
+    const FusionPatchCom* const patch = GetPatch();
+    if (patch == nullptr) {
+        return;
+    }
+    for (unsigned int index = 0; index < patch->mNumKeyzones; ++index) {
+        AudioSampleResource* const sample = patch->mKeyzones[index].mSample;
+        if (sample == nullptr) {
+            continue;
+        }
+        sample->GetDependencies(dependencies);
+        ResourcePtr<Resource> dependency(sample);
+        dependencies.emplace_back(std::move(dependency));
+    }
 }
 
 // Reconstructed from eboot.elf at 0x5B9D0. A patch that loads registers
@@ -181,4 +199,9 @@ bool FusionPatchResource::IsA(Symbol type) const {
 // Reconstructed from eboot.elf at 0x5C260.
 bool FusionPatchResource::Fail() const {
     return !mLoaded;
+}
+
+// Reconstructed from eboot.elf at 0x5C280.
+bool FusionPatchResource::HasDependencies() const {
+    return true;
 }

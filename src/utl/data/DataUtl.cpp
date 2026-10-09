@@ -22,3 +22,14 @@ Component* GetDataCom(DataArray* command) {
     const Symbol com = command->Evaluate(1).LiteralSym(nullptr);
     return found->FindCom(com);
 }
+
+// Reconstructed from eboot.elf at 0x23F780. The variable's index is looked
+// up once.
+void DataSetDefaultEntity(Entity* entity) {
+    gDataThread.mDefaultEntity = entity;
+    static const unsigned long sEntityVar = DataVarIndex(Symbol("entity"));
+    DataNode value;
+    value.mValue.object = gDataThread.mDefaultEntity;
+    value.mType = kDataObject;
+    DataVariable(sEntityVar) = value;
+}

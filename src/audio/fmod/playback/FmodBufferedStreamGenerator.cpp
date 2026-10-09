@@ -801,7 +801,7 @@ AudioGenerator* FmodBufferedStreamGeneratorManager::Play(const PlayArgs& args) {
 // Reconstructed from eboot.elf at 0x26AC30.
 FmodBufferedStreamGenerator* FmodBufferedStreamGeneratorManager::_AllocateAndSetUpGenerator(
     ResourcePtr<FmodAudioStreamResource> resource, const PlayArgs& args) {
-    AudioEmitterCom* emitter =
+    AudioEmitter* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     auto* generator =

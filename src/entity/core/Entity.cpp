@@ -1,11 +1,17 @@
 #include "entity/core/Entity.h"
 
+#include <kernel.h>
+
 #include "entity/core/Component.h"
 #include "entity/core/EntityConstants.h"
 #include "entity/core/EntityResource.h"
+#include "entity/core/InstanceCom.h"
 #include "os/files/File.h"
+#include "os/memory/MemMgr.h"
+#include "utl/data/DataUtl.h"
 #include "utl/streams/BinStream.h"
 #include "utl/text/MakeString.h"
+#include "utl/threading/PollMgr.h"
 
 namespace {
 
@@ -13,8 +19,50 @@ namespace {
 // sets. Each object that uses it has its own copy. Name not in the
 // reference map.
 GameObjectId gNullObjectId = {0xFFFFFFFFu};
+// The id of the root object, at 0x19E2E3C, set by the same initializer.
+// Name not in the reference map.
+GameObjectId gRootObjectId = {0};
+
+// The type the objects of the entities the thread is exiting or destroying
+// exit and are destroyed with: the map's TLSValue<DestroyType>, which the
+// initializer starts at kDestroyUnset; its descriptor and offset are at
+// 0x19B02B8. Name not in the reference map.
+thread_local DestroyType gDestroyType = kDestroyUnset;
+
+// Sets the thread's destroy type for the entity's objects and returns the
+// previous one: the entity's instance type, or the enclosing entities'
+// when that is lower, and kDestroyRoot for a top-level entity. Inlined
+// into Exit and _Destroy. Name not in the reference map.
+DestroyType PushDestroyType(const Entity& entity) {
+    const DestroyType previous = gDestroyType;
+    if (entity.mParentObject != nullptr) {
+        DestroyType type = (entity.mFlags & 0x800) != 0 ? kDestroyEditorInstance : kDestroyInstance;
+        if (previous != kDestroyUnset && type > previous) {
+            type = previous;
+        }
+        gDestroyType = type;
+    } else if (previous == kDestroyUnset) {
+        gDestroyType = kDestroyRoot;
+    }
+    return previous;
+}
 
 }  // namespace
+
+// Reconstructed from eboot.elf at 0xEBB70. The flags are a 17-bit field;
+// the constructor keeps the bits above it.
+Entity::Entity(unsigned long numLayers)
+    : mResource(nullptr),
+      mPollWindowStart(0),
+      mPollWindowEnd(0),
+      mFlags(0x1C0),
+      mParentObject(nullptr),
+      mTag() {
+    mLayers.Resize(numLayers);
+}
+
+// Reconstructed from eboot.elf at 0xEBCC0.
+Entity::~Entity() {}
 
 // Reconstructed from eboot.elf at 0xEE880. Components that a load adds to
 // an object restart its pass with the object's poll order rebuilt. A
@@ -339,4 +387,250 @@ bool Entity::LayerExists(unsigned long layer) const {
 // Reconstructed from eboot.elf at 0xF3050.
 ResourcePath Entity::GetLayerPath(unsigned long layer) const {
     return mResource->GetLayerPath(layer);
+}
+
+// Reconstructed from eboot.elf at 0xF4D10. The default entity is this one
+// while the objects enter. In the game mode the entity's poll weight is a
+// tenth of its component count.
+void Entity::Enter(unsigned int flags) {
+    mFlags = (mFlags & ~0xEu) + 2 * (flags & 1) + 10;
+    _UpdatePollOrder();
+    Entity* const defaultEntity = gDataThread.mDefaultEntity;
+    DataSetDefaultEntity(this);
+    if ((flags & 2) == 0) {
+        const unsigned int mode = (mFlags >> 1) & 3;
+        if (mode == 1) {
+            for (unsigned long index = 0; index < mPollOrder.mSize; ++index) {
+                GetObject(mPollOrder[index])->_EnterComponents();
+            }
+        } else if (mode == 2) {
+            for (unsigned long index = 0; index < mPollOrder.mSize; ++index) {
+                GetObject(mPollOrder[index])->_EditEnterComponents();
+            }
+        }
+    }
+    gDataThread.mThisObject = nullptr;
+    DataSetDefaultEntity(defaultEntity);
+    const unsigned int mode = mFlags & 6;
+    mFlags = (mFlags & ~0x8000u) | 0x10;
+    if (mode == 2) {
+        bool drivesParent = false;
+        if (mParentObject != nullptr) {
+            drivesParent = GetRoot()->GetExistingCom<InstanceCom>()->mDrivesParent;
+        }
+        mFlags |= static_cast<unsigned int>(drivesParent) << 15;
+        SetPollWeight(static_cast<unsigned int>(GetNumComs(false) / 10), false);
+    }
+    mFlags &= ~8u;
+}
+
+// Reconstructed from eboot.elf at 0xF4FF0. Each component is marked
+// entered before its _Enter.
+bool GameObject::_EnterComponents() {
+    mEntered = true;
+    gDataThread.mThisObject = this;
+    const int count = static_cast<int>(mComs.mSize);
+    for (int index = 0; index < count; ++index) {
+        Component* const component = mComs[index].mCom;
+        component->mEntered = true;
+        component->_Enter();
+    }
+    _SortComponents();
+    return _UpdateAllComsFlagged();
+}
+
+// Reconstructed from eboot.elf at 0xF50D0. The objects exit in reverse poll
+// order with the thread's destroy type; the binary assumes the poll order
+// is not empty. Inactive objects that are still entered exit after them.
+void Entity::Exit(unsigned int flags) {
+    static_cast<void>(scePthreadSelf());
+    const DestroyType previous = PushDestroyType(*this);
+    _UpdatePollOrder();
+    if ((mFlags & 6) == 2) {
+        _RemovePostPoll();
+        if ((mFlags & 0x1000) != 0) {
+            _Reset();
+            mFlags &= ~0x1000u;
+        }
+    }
+    if ((flags & 1) == 0) {
+        for (unsigned int index = mPollOrder.mSize - 1;; --index) {
+            GameObject* const object = GetObject(mPollOrder[index]);
+            const unsigned int mode = (mFlags >> 1) & 3;
+            if (mode == 2) {
+                object->_EditExitComponents(gDestroyType);
+            } else if (mode == 1) {
+                object->_ExitComponents(gDestroyType);
+            }
+            if (index == 0) {
+                break;
+            }
+        }
+        for (unsigned long layer = 0; layer < mLayers.mSize; ++layer) {
+            const PropArray<GameObject*>& objects = mLayers[layer].mObjects;
+            const unsigned long count = objects.mSize;
+            for (unsigned long index = 0; index != count; ++index) {
+                GameObject* const object = objects[index];
+                if (object == nullptr || object->mActive || !object->mEntered) {
+                    continue;
+                }
+                const unsigned int mode = (mFlags >> 1) & 3;
+                if (mode == 2) {
+                    object->_EditExitComponents(gDestroyType);
+                } else if (mode == 1) {
+                    object->_ExitComponents(gDestroyType);
+                }
+            }
+        }
+    }
+    mFlags &= ~0x16u;
+    gDestroyType = previous;
+}
+
+// Reconstructed from eboot.elf at 0xF57C0. An entity that drives its parent
+// polls only while every such ancestor may.
+bool Entity::IsPollEnabled() const {
+    const Entity* entity = this;
+    while ((entity->mFlags & 0x2140) == 0x140) {
+        if ((entity->mFlags & 0x8000) == 0) {
+            return true;
+        }
+        entity = entity->mParentObject->mEntity;
+    }
+    return false;
+}
+
+// Reconstructed from eboot.elf at 0xF5960.
+void Entity::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    mResource->PollEntity(this);
+}
+
+// Reconstructed from eboot.elf at 0xF5FC0. The default entity is this one
+// while the objects poll.
+void Entity::_Poll() {
+    if ((mFlags & 0x100) == 0) {
+        return;
+    }
+    Entity* const defaultEntity = gDataThread.mDefaultEntity;
+    DataSetDefaultEntity(this);
+    const unsigned int flags = mFlags;
+    _UpdatePollOrder();
+    const unsigned int mode = (mFlags >> 1) & 3;
+    if (mode == 2) {
+        const int count = static_cast<int>(mPollOrder.mSize);
+        for (int index = 0; index < count; ++index) {
+            GameObject* const object = GetObject(mPollOrder[index]);
+            gDataThread.mThisObject = object;
+            const int numComs = static_cast<int>(object->mComs.mSize);
+            for (int com = 0; com < numComs; ++com) {
+                object->mComs[com].mCom->_EditPoll();
+            }
+        }
+    } else if (mode == 1) {
+        for (unsigned int index = mPollWindowStart; index < mPollWindowEnd; ++index) {
+            GetObject(mPollOrder[index])->_PollComponents();
+        }
+    }
+    if ((flags & 0x4000) != 0) {
+        mFlags &= ~0x4000u;
+    }
+    gDataThread.mThisObject = nullptr;
+    DataSetDefaultEntity(defaultEntity);
+}
+
+// Reconstructed from eboot.elf at 0xF6290.
+void GameObject::_PollComponents() {
+    gDataThread.mThisObject = this;
+    const int count = static_cast<int>(mComs.mSize);
+    for (int index = 0; index < count; ++index) {
+        mComs[index].mCom->_Poll();
+    }
+    if (mEarlyFreeDep != nullptr) {
+        if ((mEntity->mFlags & 0x16) == 0x12) {
+            mEntity->EarlyFreeToPoll(mEarlyFreeDep);
+        }
+        mEarlyFreeDep = nullptr;
+    }
+}
+
+// Reconstructed from eboot.elf at 0xF65C0. Every object but the root is
+// destroyed first, then the root, each with the thread's destroy type.
+// The root's id is compared with the null id before the root is taken. An
+// entity built in place is destructed, and freed unless flag 0x200 keeps
+// its storage; the binary reads that flag after the destructor ran.
+void Entity::_Destroy() {
+    if ((mFlags & 6) != 0) {
+        Exit(0);
+    }
+    const DestroyType previous = PushDestroyType(*this);
+    RemoveAllSinks();
+    GameObject* const root = gNullObjectId.mId != gRootObjectId.mId ? GetRoot() : nullptr;
+    for (unsigned long layer = 0; layer < mLayers.mSize; ++layer) {
+        const PropArray<GameObject*>& objects = mLayers[layer].mObjects;
+        const unsigned long count = objects.mSize;
+        const DestroyType type = gDestroyType;
+        for (unsigned long index = 0; index != count; ++index) {
+            GameObject* const object = objects[index];
+            if (object == nullptr || object->mId.mId == gRootObjectId.mId) {
+                continue;
+            }
+            const GameObjectId id = object->mId;
+            mFlags |= 0x400;
+            object->_PreDestroy(type);
+            object->_Destroy();
+            mLayers[id.Layer()].mObjects[id.Index()] = nullptr;
+        }
+    }
+    if (root != nullptr) {
+        const GameObjectId id = root->mId;
+        mFlags |= 0x400;
+        root->_PreDestroy(gDestroyType);
+        root->_Destroy();
+        mLayers[id.Layer()].mObjects[id.Index()] = nullptr;
+    }
+    if (gEntityThreadState.mPollMgr != nullptr) {
+        gEntityThreadState.mPollMgr->DequeueForLoadResourcesIfNeeded(this);
+    }
+    if ((mFlags & 1) != 0) {
+        const bool keepStorage = (mFlags & 0x200) != 0;
+        this->~Entity();
+        if (!keepStorage) {
+            MemFree(this);
+        }
+    } else {
+        delete this;
+    }
+    gDestroyType = previous;
+}
+
+// Reconstructed from eboot.elf at 0xF7550.
+unsigned int Entity::Layer::GetLoadStepCount(unsigned long layer, const Entity* entity) const {
+    return mObjects.mSize + static_cast<unsigned int>(entity->mResource->mLayers[layer].mInlineResources.size());
+}
+
+// Reconstructed from eboot.elf at 0xF7910.
+void* Entity::GetSinkObject() {
+    return this;
+}
+
+// Reconstructed from eboot.elf at 0xF7920.
+void Entity::PostPoll() {
+    if ((mFlags & 0x100) != 0) {
+        _PostPoll();
+    }
+}
+
+// Reconstructed from eboot.elf at 0xF7930.
+void Entity::_OnAddPollDep() {
+    if ((mFlags & 0x16) == 0x12 && mResource != nullptr) {
+        mResource->ReadyEntity(this);
+    }
+}
+
+// Reconstructed from eboot.elf at 0xF7960.
+void Entity::_OnRemovePollDep() {
+    if ((mFlags & 0x16) == 0x12 && mResource != nullptr) {
+        mResource->ReadyEntity(this);
+    }
 }

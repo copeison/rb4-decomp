@@ -14,8 +14,12 @@ public:
     static RndOverlayOptionsCom* sInstance;
 
     // Field names are not in the reference map.
-    // Placed in the Component base's tail padding. Set when an overlay registers or unregisters; _Init (0x5F9AD0)
-    // clears it as it rebuilds the overlay options.
+    // The flag of the class's "Options" base (constructor 0x46A870, vtable
+    // 0x1904718), which is not modelled: 0x469CB0 copies a global switch
+    // into every "Options" component. The name rests on that and is weak.
+    bool mOptionsSwitch;
+    // Set when an overlay registers or unregisters; _Init (0x5F9AD0) clears
+    // it as it rebuilds the overlay options.
     bool mOverlaysChanged;
 };
 

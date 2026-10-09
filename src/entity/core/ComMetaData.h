@@ -92,8 +92,8 @@ public:
     static EditorRestriction InheritEditorRestrictions(
         EditorRestriction restrictions,
         EditorRestriction inherited);  // 0xE6870
-    // Adds an exported event and returns its parameter registry. Not
-    // reconstructed.
+    // Adds an exported event, reserving room for 32 the first time, and
+    // returns its parameter registry.
     PropRegistry& AddExportedEvent(Symbol name, String description);  // 0xE68A0
 
     // The class's description and author, shown in the editor.

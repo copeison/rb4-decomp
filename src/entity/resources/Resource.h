@@ -111,14 +111,20 @@ public:
     virtual bool SupportsCompanionFile() const {
         return false;
     }
-    // Slots 8-9 at 0x5CF90 and 0x5CFA0 are never overridden or called in
-    // this build; the map has them in Resource.o. Slot 8 returns zero.
-    virtual int PrintCsvStatsHeader(TextStream& stream) const {
-        static_cast<void>(stream);
-        return 0;
+    // Slots 8-9 at 0x5CF90 and 0x5CFA0: whether the resource keeps other
+    // resources loaded, and those resources, each appended after its own
+    // dependencies. False and nothing here; FusionPatchResource,
+    // MidiMusicResource, MoggMusicResource and MultiFusionResource
+    // (vtables 0x18E2660, 0x18E2830, 0x18E2918, 0x18E2B30) override both.
+    // The map's Resource.o has PrintCsvStatsHeader(TextStream&) and
+    // PrintCsvStats(TextStream&) in these places; the overrides show this
+    // build's signatures. Names not in the reference map; no caller other
+    // than the overrides was found, so the evidence is weak.
+    virtual bool HasDependencies() const {
+        return false;
     }
-    virtual void PrintCsvStats(TextStream& stream) const {
-        static_cast<void>(stream);
+    virtual void GetDependencies(eastl::vector<ResourcePtr<Resource>>& dependencies) const {
+        static_cast<void>(dependencies);
     }
     // Slots 10-11: 0x1ADD70, 0x1ADE90. Removes the resource from the map.
     virtual ~Resource();

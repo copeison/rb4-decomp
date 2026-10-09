@@ -104,6 +104,9 @@ public:
     void push_back(T& item) {
         InsertBefore(Access::ToNode(item), mHead);
     }
+    void push_front(T& item) {
+        InsertBefore(Access::ToNode(item), *mHead.mNext);
+    }
     void remove(T& item) {
         Access::ToNode(item).Remove();
     }

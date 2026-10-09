@@ -3,6 +3,7 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
 #include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/system/FmodPlatform.h"
@@ -226,7 +227,7 @@ FMOD_RESULT FmodAudioBusGenerator::_EventProgrammerCallback(
 
         generator->mFrequency = static_cast<float>(generator->mRenderTarget->mSampleRate);
         channelGroup->addDSP(FMOD_CHANNELCONTROL_DSP_TAIL, generator->mDSP);
-        AudioEmitterCom* emitter = generator->mEmitter;
+        AudioEmitter* emitter = generator->mEmitter;
         if (emitter != nullptr && emitter->GetMixGroup() != nullptr) {
             // The mix group's channel group is inlined as null in this build.
             FMOD::ChannelGroup* parentGroup = nullptr;
@@ -638,6 +639,6 @@ FmodAudioBusGeneratorManager::~FmodAudioBusGeneratorManager() {}
 
 // Reconstructed from eboot.elf at 0x268B40.
 FmodAudioBusGenerator* FmodAudioBusGeneratorManager::_GetGenerator(
-    AudioRenderTarget* target, AudioEmitterCom* emitter) {
+    AudioRenderTarget* target, AudioEmitter* emitter) {
     return GeneratorPool::Allocate<FmodAudioBusGenerator>(*this, target, emitter);
 }

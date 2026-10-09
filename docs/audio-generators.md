@@ -18,7 +18,7 @@ The 80-byte base has its vtable at `0x18DCD58`:
 | `+0x20` | `mRefCount` | Atomic reference count taken by `LockIfOwned`. |
 | `+0x24` | `mHandle` | Encoded handle; `-1` when unused. |
 | `+0x28` | `mPoolNode` | Free-list node (`LinkedListSizeTracked`). |
-| `+0x40` | `mEmitter` | `AudioEmitterCom` that owns the sound. |
+| `+0x40` | `mEmitter` | `AudioEmitter` interface that owns the sound. |
 | `+0x48` | `mRenderTarget` | `AudioRenderTarget` that mixes it. |
 
 The 32 virtual slots are, in order: `Pause`, `Continue`, `Stop`, a state
@@ -42,7 +42,7 @@ handle, so a stale handle cannot retain a reused slot.
 ## AudioGeneratorManager
 
 The manager's vtable at `0x18DFF18` has 18 slots: `Play(PlayArgs const&)`,
-`Play(Symbol, AudioEmitterCom*, bool)`, `Prepare`, `Init`, `Destroy`, the
+`Play(Symbol, AudioEmitter*, bool)`, `Prepare`, `Init`, `Destroy`, the
 empty `Poll`, `GetIndex`, `GetId`, `GetResourceExt`, `LockIfOwned`,
 `SendStopToAllGenerators`, `SendKillToAllGenerators`, an active-handle
 collector, `_SetManagerIndex`, `_InitGeneratorPool`, `_DeleteGeneratorPool`
@@ -102,16 +102,12 @@ See [fmod-audio-bus-generator.md](fmod-audio-bus-generator.md),
 
 ## Emitter interface
 
-`AudioEmitterCom` in the source is the emitter interface that the audio
-emitter component keeps at `+0x228` (vtable `0x18DF628`). Its 29 slots
-forward to the component, and their names come from the map's
-`AudioEmitterCom` members: `GetCompositeGenerator`, `RegisterTempoListener`,
-`UnregisterTempoListener`, the `PlaySound`, `PrepareSound`, `PlayMusic` and
-`PrepareMusic` overloads, `StopAllSounds`, `KillAllSounds`,
-`PauseAllSounds`, `ContinueAllSounds`, `GetMasterMusic`, `GetMixGroup`,
-`GetWorldXfm`, two `PlayDialog` overloads, the dialog queries and setters,
-`Is2D`, `Is3D`, `Set2D`, `Set3D` and `GetComponent`. The names the map lacks
-are marked in the header.
+Generators, play requests and the sound manager keep the emitter as the
+`AudioEmitter` interface (vtable `0x18DF628`) that `AudioEmitterCom` holds
+at `+0x228`; the map's signatures that take an `AudioEmitterCom*` take this
+interface in this build. Its 29 slots forward to the component, whose
+member names come from the map. See
+[audio-components.md](audio-components.md).
 
 `PlayArgs` (104 bytes) carries the request. `mGlobalSoundHandle` (`+0x48`)
 registers the new handle with the state graph's global sound handles;

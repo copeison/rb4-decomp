@@ -13,7 +13,7 @@ accumulating implementation files. Names and classes follow
 | `src/os` | Platform services | `files`, `joypads`, `memory`, `platform`, `system`, `threading` |
 | `src/render` | Platform-neutral renderer (`Rnd*`) | `audio`, `buffers`, `context`, `debug`, `defaults`, `depth`, `distance_fields`, `frame`, `lighting`, `masking`, `meshes`, `postprocessing`, `queries`, `shaders`, `system`, `targets`, `textures`, `video` |
 | `src/renderps4` | PS4 backend (`PS4*`) | `buffers`, `context`, `meshes`, `queries`, `shaders`, `system`, `textures`, `video` |
-| `src/entity` | Resources, entities, objects and components | `core`, `props`, `resources` |
+| `src/entity` | Resources, entities, objects and components | `core`, `progress`, `props`, `resources` |
 | `src/audio` | Audio engine and FMOD integration | `core`, `fmod` |
 | `src/rockband` | Game startup and main loop (`App`, `main`) | `app` |
 | `src/rb_game` | Game logic | `stagepresence` |
@@ -25,8 +25,8 @@ Every renderer file now sits in a domain folder of `src/render` or
 `src/render/platform/orbis` trees are gone. The screenshot capture code (`render/debug/screenshot_capture.cpp`)
 and a few adapter headers (`*_adapters.h`) still carry descriptive names
 because the map has no match for them. Audio utilities are under
-`src/audio/core` (domains such as `dsp`, `fusion`, `generators`,
-`instruments`, `music`, `resources` and `system`), and FMOD integration is
+`src/audio/core` (domains such as `components`, `dsp`, `fusion`,
+`generators`, `instruments`, `music`, `resources` and `system`), and FMOD integration is
 under `src/audio/fmod`.
 
 New work should enter the narrowest fitting domain in its original module.

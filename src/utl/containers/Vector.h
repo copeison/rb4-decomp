@@ -59,7 +59,45 @@ public:
           mAllocator(other.mAllocator) {
         other.mpBegin = other.mpEnd = other.mpCapacity = nullptr;
     }
-    vector& operator=(const vector&) = delete;
+    // Copies the other vector's elements, reallocating exactly its size
+    // only when the capacity is too small, as EASTL's operator= does. Its
+    // users inline it, for example AddGameWideEmitterName at 0x35450.
+    vector& operator=(const vector& other) {
+        if (this == &other) {
+            return *this;
+        }
+        const auto count = other.size();
+        if (count > capacity()) {
+            auto* storage = static_cast<T*>(mAllocator.allocate(count * sizeof(T)));
+            auto* output = storage;
+            for (const auto* input = other.mpBegin; input != other.mpEnd; ++input, ++output) {
+                new (output) T(*input);
+            }
+            DestroyElements();
+            Free();
+            mpBegin = storage;
+            mpEnd = storage + count;
+            mpCapacity = storage + count;
+        } else if (count > size()) {
+            const auto* input = other.mpBegin;
+            for (auto* output = mpBegin; output != mpEnd; ++input, ++output) {
+                *output = *input;
+            }
+            for (; input != other.mpEnd; ++input, ++mpEnd) {
+                new (mpEnd) T(*input);
+            }
+        } else {
+            auto* output = mpBegin;
+            for (const auto* input = other.mpBegin; input != other.mpEnd; ++input, ++output) {
+                *output = *input;
+            }
+            for (auto* element = output; element != mpEnd; ++element) {
+                element->~T();
+            }
+            mpEnd = output;
+        }
+        return *this;
+    }
     ~vector() {
         DestroyElements();
         Free();

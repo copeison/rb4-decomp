@@ -7,7 +7,7 @@
 
 // Receives the emitter, the sound name and the request's context. Name not in
 // the reference map.
-using DialogSoundSink = std::function<void(AudioEmitterCom*, Symbol, void*)>;
+using DialogSoundSink = std::function<void(AudioEmitter*, Symbol, void*)>;
 
 // Request for a dialog generator, marked by PlayArgs::mFormat 4. Names not in
 // the reference map.
@@ -15,10 +15,14 @@ struct DialogPlayArgs : public PlayArgs {
     // Optional sink for the names of the sounds the event creates.
     DialogSoundSink mSink;
     void* mContext;
+    // Whether the line may be interrupted; the emitter component records it
+    // with the line's handle (0x35110).
+    bool mInterruptible;
 };
 
 static_assert(offsetof(DialogPlayArgs, mSink) == 112);
 static_assert(offsetof(DialogPlayArgs, mContext) == 160);
+static_assert(offsetof(DialogPlayArgs, mInterruptible) == 168);
 
 // Abstract generator for spoken dialog. _InitTypeId at 0x11276B0 registers
 // the type name "DialogGenerator"; the map has no object for it. It forwards

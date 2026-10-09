@@ -109,7 +109,7 @@ bool Delete(AudioGeneratorManager& manager, Generator* pool) {
 // Takes the first idle voice and binds it to a render target and emitter.
 template <class Generator>
 Generator* Allocate(
-    AudioGeneratorManager& manager, AudioRenderTarget* target, AudioEmitterCom* emitter) {
+    AudioGeneratorManager& manager, AudioRenderTarget* target, AudioEmitter* emitter) {
     AudioRenderTarget* boundTarget = gAudioRenderTargets.mDefault;
     ScopedCritSecPtr tracker(&manager.mCritSec);
     if (manager.mFreeList.mSize == 0) {

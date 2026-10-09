@@ -14,14 +14,6 @@ class FusionPatchCom;
 // from a ".sxt" file, from the ".fusion" text format or from its cache, and
 // registers itself with FusionGeneratorManager under its file name. The
 // vtable is at 0x18E2660; the object is 0xD0 bytes.
-//
-// The binary also overrides Resource's slots 8 and 9: slot 8 (0x5C280)
-// returns true, and slot 9 (0x5B890) appends each keyzone's sample, after
-// the sample's own slot-9 dependencies, to an
-// eastl::vector<ResourcePtr<Resource>>. Resource.h still declares those
-// slots as the map's PrintCsvStatsHeader and PrintCsvStats, so the
-// overrides wait for its correction; until then the emitted vtable keeps
-// Resource's 0x5CF90 and 0x5CFA0 in slots 8 and 9.
 class FusionPatchResource : public EntityResource {
 public:
     // The class id, created on first use and inlined into its users. The
@@ -60,6 +52,11 @@ public:
     void Save(BinStream& stream, bool cached) override;
     // Slot 6 at 0x5C260.
     bool Fail() const override;
+    // Slot 8 at 0x5C280: true.
+    bool HasDependencies() const override;
+    // Slot 9 at 0x5B890: each keyzone's sample, after the sample's own
+    // dependencies.
+    void GetDependencies(eastl::vector<ResourcePtr<Resource>>& dependencies) const override;
     // Slots 10-11: 0x5B5E0, 0x5B610. The patch leaves FusionGeneratorManager.
     ~FusionPatchResource() override;
     // Slot 12 at 0x5B770: true without a patch, or when a keyzone's sample

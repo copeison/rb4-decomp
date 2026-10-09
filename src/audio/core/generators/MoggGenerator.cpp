@@ -78,7 +78,7 @@ AudioGenerator* MoggGeneratorManager::PlayWithCallback(
 // Reconstructed from eboot.elf at 0x47FC0.
 MoggGenerator* MoggGeneratorManager::_AllocateAndSetUpGenerator(
     const char* file, const PlayArgs& args, AudioBusCallable* callback) {
-    AudioEmitterCom* emitter = args.mEmitter;
+    AudioEmitter* emitter = args.mEmitter;
     if (emitter == nullptr) {
         emitter = theSoundManager.GetDefault2DEmitter();
     }

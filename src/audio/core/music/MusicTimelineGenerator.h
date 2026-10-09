@@ -30,6 +30,7 @@ public:
     void _InitTypeId() override;                 // slot 28: 0x57F60
     AudioGenerator* GetGeneratorOfType(Symbol type) override;  // slot 30: 0x57FB0
     Symbol GetTypeId() override;                 // slot 31: 0x57FD0
+    bool IsReady() override;                     // slot 32: 0x57FE0
     // The AudioBusCallable slot 2; its thunk is at 0x574A0.
     bool _PrepareToMakeSamples(
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock) override;

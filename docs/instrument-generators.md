@@ -1,8 +1,8 @@
 # Mogg and instrument generator managers
 
 Three objects own the managers that play Mogg files and instrument racks.
-Their managers are reconstructed; the generators they pool are declared
-only. Every manager has the 18-slot `AudioGeneratorManager` vtable, keeps
+Their managers are reconstructed, and so are the two instrument generators;
+`MoggGenerator` is declared only. Every manager has the 18-slot `AudioGeneratorManager` vtable, keeps
 its typed pool at `+0x40` and uses the shared pool sequence of
 `GeneratorPool.h` (see [audio-generators.md](audio-generators.md)).
 
@@ -51,7 +51,9 @@ functions, so its 32 slots (vtable `0x18E0AD0`) are declared in order. Its
 constructor (`0x4B830`) and destructor (`0x48E60`) are out of line. The rest
 of its layout stays opaque: at `+0x50` it embeds an object whose vtable
 (`0x18E5B58`) is the one `StandardStream`'s constructor (`0xC9C40`)
-installs, followed by the audio-bus and bus-generator vectors.
+installs, followed by the audio-bus and bus-generator vectors. The
+generator stays declared until `StandardStream` and the stream readers it
+drives are modelled.
 
 ## Instrument generators
 
@@ -65,15 +67,28 @@ pool constructors are inlined into `_InitGeneratorPool` (`0x51930`,
 `0x18E11A0` and `0x18E21E8`). The destructors are out of line (`0x4F790`,
 `0x587F0`).
 
-The primary vtables have 75 slots: the 51 of the intermediate
-`InstrumentGenerator` vtable (`0x18E15F0`) and 24 entries for the
-overridden `AudioGenerator` and `AudioBusCallable` functions in an order
-the declarations do not reproduce. The pools call `Init` (slot 54) and
-`Stop` (slot 57) through those entries; the source calls them through
-`AudioGenerator`. The intermediate vtable has no entries for the four
-`SetSpeed`, `GetSpeed`, `SetPlayScale` and `GetPlayScale` overrides that
-`InstrumentGenerator.h` places at slots 51-54; that header follows
-FusionSampler's vtable.
+`InstrumentGenerator`'s own vtable (`0x18E15F0`) has 51 slots:
+`VirtualInstrument`'s 38, then `AddAudioThreadClient`,
+`RemoveAudioThreadClient`, `SupportsAudioThreadClients` (true),
+`SetPatch(patch, channel)`, `AddSlave` and `RemoveSlave` (false),
+`DetachedFromMaster` (the map's name, slot 44), `AttachedToMaster`,
+`IsAttachedToMaster`, and the transpose and time-stretch pairs. Slots 38,
+39 and 41 are pure; the others have empty defaults emitted in the
+MultiInstrumentGenerator object. `FusionSampler` (`0x18E4D68`, 55 slots)
+adds its `SetSpeed`, `GetSpeed`, `SetPlayScale` and `GetPlayScale`
+overrides as slots 51-54, and `FusionGenerator` its 20 overrides as slots
+55-74. `VirtualInstrument::IsNotePlaying` takes the channel as a second
+argument, which the MultiFusion generator uses.
+
+The primary vtables of the two generators have 75 slots: the 51 and 24
+entries for the overridden `AudioGenerator` and `AudioBusCallable`
+functions, in the order `GetGeneratorOfType`, `GetTypeId`, `_InitTypeId`,
+`Init`, `Pause`, `Continue`, `Stop`, `GetElapsedMs`, `GetTimelineMs`,
+`SeekToMs`, `SetGain`, `GetGain`, `SetMute`, `GetMute`, `SetParameter`,
+`GetParameter`, `SetSpeed`, `GetSpeed`, `Poll`, `Release`,
+`_PrepareToMakeSamples`, `SetPlayScale`, `GetPlayScale` and `Kill`. The
+emitted vtables match the binary's slot for slot, so the pools call `Init`
+(slot 54) and `Stop` (slot 57) directly.
 
 Both play through a bus voice of `gAudioBusGeneratorManager`
 (`0x19E26A8`), the `FmodAudioBusGeneratorManager` that the FMOD platform's
@@ -91,15 +106,20 @@ sets the state to playing or paused.
 `UnregisterMultiFusionResource` (`0x4E8A0`) erases a resource's names. `Play`
 (`0x4E970`) accepts a registered name or the bare name `.multifusion` (its
 own static at `0x19C8718`), binds a voice and calls `Setup(args,
-resource)` (`0x4EC90`) or the inline `Setup(args)`; a failed setup releases
-the voice. The resource extension is `.multifusion`.
+resource)` (`0x4EC90`) or `Setup(args)` (`0x4EDA0`, inlined there); a
+failed setup releases the voice. The resource extension is `.multifusion`.
 
-Generator fields used: the transpose (`+0x300`), the time-stretch
-algorithm and formant mode (`+0x304`, `+0x308`) and the bus voice
-(`+0x310`). Before them are the 16 channels' instrument generators
-(`+0x1B0`), names (`+0x230`), a float (`+0x2B0`) and a flag (`+0x2F0`);
-after them the audio-thread clients, their lock and the resource.
-`kTypeId` is at `0x19C8728`.
+The generator keeps 16 channels: instrument generators (`+0x1B0`), names
+(`+0x230`), volumes in decibels (`+0x2B0`) and mutes (`+0x2F0`), then the
+transpose, the time-stretch mode, the bus voice (`+0x310`), the
+audio-thread clients and their lock, and the `MultiFusionResource`
+(`+0x340`). `SetResource` (`0x4F230`, an inferred name) takes a Fusion
+generator for each channel's patch from `FusionGeneratorManager` until none
+is free; when the resource's flag at `+0x138` is set, the other channels
+become slaves of channel 0. The MIDI overrides pass each call to the
+channel's instrument; `Process` mixes the instruments that are not slaves.
+`MultiFusionResource` (320 bytes, vtable `0x18E2B20`) is declared in
+`src/audio/core/resources`. `kTypeId` is at `0x19C8728`.
 
 ### SynthRackGeneratorManager
 
@@ -109,10 +129,15 @@ again. `GetResourceExt` reports `.multi_inst`, apparently left from the
 multi-instrument manager. `Id()`'s static (`0x19C85A8`) is emitted with the
 Fusion generator object, which also reaches this manager through it.
 
-Generator fields used: the transpose (`+0x1D0`), the beat (`+0x1D4`), the
-time-stretch mode (`+0x1D8`, `+0x1DC`) and the bus voice (`+0x1E0`). Before
-them is a vector of the rack's instruments; after them the audio-thread
-clients and their lock. `kTypeId` is at `0x19C8788`.
+The rack is a vector of 24-byte slots (`+0x1B0`): an instrument, a name, a
+channel volume and a mute that `SetInstrument` (`0x58FF0`) applies. The
+transpose (`+0x1D0`), the beat (`+0x1D4`), the time-stretch mode and the
+bus voice (`+0x1E0`) follow, then the audio-thread clients and their lock.
+The indexed members at `0x592A0`-`0x59B10` reach one slot's instrument;
+their names are inferred, and `GetPitchBend` and `GetController` index the
+rack by the channel, as the binary does. `Process` renders each instrument
+at the rack's beat and mixes the ones that are not silent. `kTypeId` is at
+`0x19C8788`.
 
 ## Unidentified statics
 

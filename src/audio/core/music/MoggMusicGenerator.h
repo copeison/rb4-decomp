@@ -45,6 +45,8 @@ public:
     void _InitTypeId() override;                 // slot 28: 0x4DEF0
     AudioGenerator* GetGeneratorOfType(Symbol type) override;  // slot 30: 0x4DF40
     Symbol GetTypeId() override;                 // slot 31: 0x4DF70
+    // Slot 32 at 0x4DF80: whether the Mogg voice is ready.
+    bool IsReady() override;
     // The AudioBusCallable slot 2; its thunk is at 0x4D3C0.
     bool _PrepareToMakeSamples(
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock) override;

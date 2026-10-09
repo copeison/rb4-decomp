@@ -1,5 +1,6 @@
 #include "audio/fmod/playback/FmodDialogGenerator.h"
 
+#include "audio/core/components/AudioEmitterCom.h"
 #include "audio/fmod/io/FmodRecordingAudioRenderTarget.h"
 #include "audio/core/generators/GeneratorPool.h"
 #include "audio/fmod/system/FmodPlatform.h"
@@ -201,7 +202,7 @@ AudioGenerator* FmodDialogGeneratorManager::Play(const PlayArgs& args) {
     if (studio->lookupID(path, &id) != FMOD_OK) {
         return nullptr;
     }
-    AudioEmitterCom* emitter =
+    AudioEmitter* emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     auto* generator = GeneratorPool::Allocate<FmodDialogGenerator>(*this, target, emitter);
     if (generator == nullptr) {

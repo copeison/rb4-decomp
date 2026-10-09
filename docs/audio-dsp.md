@@ -271,8 +271,8 @@ callbacks and is not reconstructed.
 
 This build gives `TempoListener` an object of its own (`0x5B2A0` to
 `0x5B56C`, `TempoListener.cpp`); the map emits its destructor in
-`DelayPlugin.o`. The owner is the `AudioEmitterCom` interface (`+0x228` in
-the component): its slot 1 stores itself in the listener and slot 2
+`DelayPlugin.o`. The owner is the `AudioEmitter` interface (`+0x228` in
+`AudioEmitterCom`): its slot 1 stores itself in the listener and slot 2
 removes the listener. `Unregister` (`0x5B390`) calls slot 2 under
 `sCritSec` (`0x19C87A8`), which `GetCritSec` (`0x5B4C0`) returns for the
 component's own locking. The object's static initializer (`0x5B4D0`) also

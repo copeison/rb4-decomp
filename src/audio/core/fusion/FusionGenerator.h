@@ -13,7 +13,7 @@
 #include "utl/containers/Map.h"
 #include "utl/containers/Vector.h"
 
-class AudioEmitterCom;
+class AudioEmitter;
 class AudioRenderTarget;
 
 // Request for a Fusion generator, marked by PlayArgs::mFormat 2. A request
@@ -89,20 +89,20 @@ public:
         int numSamples, float sampleRate, int mixCount, int block, bool lastBlock) override;
     void AddAudioThreadClient(AudioBusCallable* client) override;     // slot 38: 0x42840
     void RemoveAudioThreadClient(AudioBusCallable* client) override;  // slot 39: 0x428B0
-    // Slot 41 at 0x43D30. The map has SetPatch(ResourcePtr<FusionPatchResource>
-    // const&, int).
-    void SetPatch(const ResourcePtr<FusionPatchResource>& patch) override {
+    // Slot 41 at 0x43D30.
+    void SetPatch(const ResourcePtr<FusionPatchResource>& patch, int channel) override {
+        static_cast<void>(channel);
         LoadPatch(patch);
     }
-    // Slots 44-46 at 0x43D40, 0x43D50 and 0x43D60 clear, store and test the
-    // master handle. The map names slot 44 DetachedFromMaster.
-    void ClearGeneratorFlag() override {
+    // Slot 44 at 0x43D40: forgets the master's handle.
+    void DetachedFromMaster() override {
         mMasterHandle = 0;
     }
-    void SetGeneratorFlag(int flag) override {
-        mMasterHandle = flag;
+    // Slots 45-46 at 0x43D50 and 0x43D60 store and test the master's handle.
+    void AttachedToMaster(unsigned int masterHandle) override {
+        mMasterHandle = masterHandle;
     }
-    bool HasGeneratorFlag() const override {
+    bool IsAttachedToMaster() const override {
         return mMasterHandle != 0;
     }
 
@@ -235,9 +235,9 @@ public:
 
     // Takes an idle generator for another instrument, such as a
     // MultiFusion generator's part, bound to the target's voice pool and
-    // reset. The map has GetFreeGenerator(AudioEmitterCom*); this build
+    // reset. The map has GetFreeGenerator(AudioEmitter*); this build
     // passes the render target too. At 0x422C0.
-    FusionGenerator* GetFreeGenerator(AudioRenderTarget* target, AudioEmitterCom* emitter);
+    FusionGenerator* GetFreeGenerator(AudioRenderTarget* target, AudioEmitter* emitter);
 
     // Registers the patch under the name. At 0x41F90.
     static void AddPatch(Symbol name, FusionPatchResource* patch);

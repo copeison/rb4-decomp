@@ -3,6 +3,9 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "audio/core/components/AudioEmitterCom.h"
+#include "audio/core/components/AudioListenerCom.h"
+#include "audio/core/fusion/FusionPatchCom.h"
 #include "audio/core/generators/AudioGenerator.h"
 #include "audio/core/generators/CompositeGenerator.h"
 #include "audio/core/generators/MoggGenerator.h"
@@ -17,6 +20,7 @@
 #include "audio/core/output/AudioRenderTarget.h"
 #include "audio/core/resources/FusionPatchResource.h"
 #include "audio/core/resources/MoggResource.h"
+#include "audio/core/resources/MultiFusionResource.h"
 #include "audio/fmod/platform/orbis/FmodPlatform_PS4.h"
 #include "audio/fmod/system/FmodPlatform.h"
 #include "entity/core/Entity.h"
@@ -57,10 +61,6 @@ void RemoveFmodBusPremixCallback(FmodBusInterface* bus);  // 0xBF790
 // the evidence is weak.
 void SetMoggDecodeOptions(bool preDecode, bool threaded);  // 0x65620
 void TerminateMoggDecodeThread();                          // 0x12ED0
-// Records an emitter name the game keeps alive across entities. The
-// emitter component's object.
-void AddGameWideEmitterName(Symbol name);  // 0x35450
-
 // The resource and component types whose registrations the sound manager
 // runs. Each Init is inline in its class and emitted in this object: the
 // resources at 0x1510 through 0x1F20 and the components at 0x2090 through
@@ -74,10 +74,6 @@ public:
 class MoggSampleResource {
 public:
     static void Init();  // 0x17F0
-};
-class MultiFusionResource {
-public:
-    static void Init();  // 0x1AD0
 };
 class MidiFileResource {
 public:
@@ -119,12 +115,6 @@ class DefaultEmitterProxyCom {
 public:
     static void Init();  // 0x46D0, class "DefaultEmitterProxy"
 };
-class AudioListenerCom {
-public:
-    static void Init();  // 0x4B70, class "AudioListener"
-    // Stores the platform (pad) id at +0x18. At 0x39AC0.
-    void SetPlatformId(int platformId);
-};
 class PreloaderCom {
 public:
     static void Init();  // 0x4F70, class "Preloader"
@@ -134,46 +124,6 @@ public:
     static void Init();  // 0x5730, class "MidiMsgBroadcaster"
 };
 
-namespace {
-
-// The emitter component as the sound manager reaches it. Field names are
-// not in the reference map.
-struct EmitterComponentView {
-    unsigned char mComponentBase[56];
-    // Set by the constructor (0x31D80) and cleared for the default emitter;
-    // the component checks it when it releases its banks (0x33C70). The
-    // meaning is not established.
-    bool mReleaseBanks;
-    unsigned char mRuntimeData[367];
-    // The joypad emitter's listener component.
-    Component* mListener;
-    unsigned char mRuntimeDataTail[120];
-    AudioEmitterCom mEmitter;
-};
-
-static_assert(offsetof(EmitterComponentView, mReleaseBanks) == 56);
-static_assert(offsetof(EmitterComponentView, mListener) == 0x1A8);
-static_assert(offsetof(EmitterComponentView, mEmitter) == 0x228);
-
-// The listener component's fields that the joypad queries read. Names not
-// in the reference map.
-struct ListenerComponentView {
-    unsigned char mComponentBase[24];
-    int mPlatformId;
-    bool mActive;
-};
-
-static_assert(offsetof(ListenerComponentView, mActive) == 0x1C);
-
-EmitterComponentView* EmitterComponent(Component* component) {
-    return reinterpret_cast<EmitterComponentView*>(component);
-}
-
-}  // namespace
-
-// The class symbol of the listener component, at 0x19C7C88. Name not in the
-// reference map.
-extern Symbol gAudioListenerComClass;
 
 // The globals at 0x19C5638 through 0x19C5E90, in the binary's order.
 SoundManager theSoundManager;
@@ -306,10 +256,7 @@ void SoundManager::_InitAudioDataFuncs() {
     DataRegisterFunc(Symbol("sound_set_param"), _OnSoundSetParameter);
 }
 
-// Reconstructed from eboot.elf at 0x1130. The binary also registers
-// AudioEmitterCom (0x42F0) after AudioBusEmitterCom and FusionPatchCom
-// (0x5350) after PreloaderCom; their Init declarations are missing from
-// the classes' headers, so those two calls are left out.
+// Reconstructed from eboot.elf at 0x1130.
 void SoundManager::_InitComponents() {
     AudioAnalyzerCom::Init();
     AudioClipCom::Init();
@@ -319,9 +266,11 @@ void SoundManager::_InitComponents() {
     AudioClipRepeatableCom::Init();
     AudioClipFusionCom::Init();
     AudioBusEmitterCom::Init();
+    AudioEmitterCom::Init();
     DefaultEmitterProxyCom::Init();
     AudioListenerCom::Init();
     PreloaderCom::Init();
+    FusionPatchCom::Init();
     MidiMsgBroadcasterCom::Init();
     InitFmodPlatformComponents(gFmodPlatformInterface);
 }
@@ -332,11 +281,11 @@ void SoundManager::_InitDefaultEmitter(bool threadPoll) {
     mDefaultEmitterResource = new TransEntityResource();
     GameObject* object = mDefaultEmitterResource->CreateEntity()->CreateObject(0, 0);
     object->SetName(Symbol("default_audio_emitter"));
-    EmitterComponentView* component =
-        EmitterComponent(object->CreateComponent(gAudioEmitterComClass, false));
-    mDefault2DEmitter = &component->mEmitter;
+    auto* component =
+        static_cast<AudioEmitterCom*>(object->CreateComponent(AudioEmitterCom::sClassName, false));
+    mDefault2DEmitter = &component->mRuntime.mEmitter;
     mDefault2DEmitter->Set2D(true);
-    component->mReleaseBanks = false;
+    component->mTempoAwareBusProps.mUsePreloadedBank = false;
     mDefaultEmitterResource->LoadResources();
     mDefaultEmitterResource->EnterEntity(mDefaultEmitterResource->mEntity);
 
@@ -398,12 +347,12 @@ int SoundManager::SoundPollFunc(void* context) {
 }
 
 // Reconstructed from eboot.elf at 0x5C10.
-AudioEmitterCom* GetDefaultAudioEmitter() {
+AudioEmitter* GetDefaultAudioEmitter() {
     return theSoundManager.mDefault2DEmitter;
 }
 
 // Reconstructed from eboot.elf at 0x5C20.
-AudioEmitterCom* SoundManager::GetDefault2DEmitter() const {
+AudioEmitter* SoundManager::GetDefault2DEmitter() const {
     return mDefault2DEmitter;
 }
 
@@ -434,12 +383,12 @@ void SoundManager::InitJoypadEmitters(int count) {
         JoypadEmitterAndListenerEntry& entry = mJoypadEmitters[i];
         entry.mResource = new TransEntityResource();
         GameObject* object = entry.mResource->CreateEntity()->CreateObject(0, 0);
-        EmitterComponentView* emitter =
-            EmitterComponent(object->CreateComponent(gAudioEmitterComClass, false));
-        entry.mEmitter = &emitter->mEmitter;
+        auto* emitter =
+            static_cast<AudioEmitterCom*>(object->CreateComponent(AudioEmitterCom::sClassName, false));
+        entry.mEmitter = &emitter->mRuntime.mEmitter;
         entry.mEmitter->Set2D(true);
-        entry.mListener = object->CreateComponent(gAudioListenerComClass, false);
-        emitter->mListener = entry.mListener;
+        entry.mListener = object->CreateComponent(AudioListenerCom::sClassName, false);
+        emitter->mRuntime.mListener = entry.mListener;
         entry.mResource->LoadResources();
         entry.mResource->EnterEntity(entry.mResource->mEntity);
     }
@@ -447,11 +396,11 @@ void SoundManager::InitJoypadEmitters(int count) {
 
 // Reconstructed from eboot.elf at 0x5EB0.
 void SoundManager::SetJoypadEmitterPlatformId(int index, int platformId) {
-    reinterpret_cast<AudioListenerCom*>(mJoypadEmitters[index].mListener)->SetPlatformId(platformId);
+    static_cast<AudioListenerCom*>(mJoypadEmitters[index].mListener)->SetHardwareMapId(platformId);
 }
 
 // Reconstructed from eboot.elf at 0x5ED0.
-AudioEmitterCom* SoundManager::GetJoypadEmitter(int index) {
+AudioEmitter* SoundManager::GetJoypadEmitter(int index) {
     if (index < static_cast<int>(mJoypadEmitters.size())) {
         return mJoypadEmitters[index].mEmitter;
     }
@@ -463,18 +412,18 @@ bool SoundManager::HasJoypadEmitter(int index) {
     if (index < 0 || index >= static_cast<int>(mJoypadEmitters.size())) {
         return false;
     }
-    return reinterpret_cast<ListenerComponentView*>(mJoypadEmitters[index].mListener)->mActive;
+    return static_cast<AudioListenerCom*>(mJoypadEmitters[index].mListener)->mHardwareMapped;
 }
 
 // Reconstructed from eboot.elf at 0x5F50.
-void SoundManager::ClearDefault2DEmitter(AudioEmitterCom* emitter) {
+void SoundManager::ClearDefault2DEmitter(AudioEmitter* emitter) {
     if (mDefault2DEmitter == emitter) {
         mDefault2DEmitter = nullptr;
     }
 }
 
 // Reconstructed from eboot.elf at 0x5F60.
-void SoundManager::SetDefault2DEmitter(AudioEmitterCom* emitter) {
+void SoundManager::SetDefault2DEmitter(AudioEmitter* emitter) {
     mDefault2DEmitter = emitter;
 }
 
@@ -696,7 +645,7 @@ namespace {
 // starting it paused or playing. At 0x7B90. Name not in the reference map.
 CompositeGenerator* GroupGenerators(
     CompositeGeneratorManager& manager,
-    AudioEmitterCom* emitter,
+    AudioEmitter* emitter,
     AudioGenerator* first,
     AudioGenerator* second,
     bool paused) {
@@ -742,7 +691,7 @@ unsigned int SoundManager::PlaySound(const PlayArgs& args) {
     if (generator == nullptr) {
         return 0;
     }
-    AudioEmitterCom* emitter = args.mEmitter != nullptr ? args.mEmitter : mDefault2DEmitter;
+    AudioEmitter* emitter = args.mEmitter != nullptr ? args.mEmitter : mDefault2DEmitter;
     static_cast<CompositeGenerator*>(emitter->GetCompositeGenerator())->AddGenerator(generator);
     generator->mName = args.mName;
     const unsigned int handle = generator->mHandle;
@@ -753,7 +702,7 @@ unsigned int SoundManager::PlaySound(const PlayArgs& args) {
 }
 
 // Reconstructed from eboot.elf at 0x7C70.
-unsigned int SoundManager::PlaySound(Symbol name, AudioEmitterCom* emitter, bool paused) {
+unsigned int SoundManager::PlaySound(Symbol name, AudioEmitter* emitter, bool paused) {
     PlayArgs args;
     args.mName = name;
     args.mEmitter = emitter;
@@ -980,6 +929,5 @@ const char* SoundManager::GetAudioRootPath() {
 // unused; the handlers that tested it are compiled out.
 DataNode SoundManager::Handle(DataArray* msg, bool warn) {
     static_cast<void>(msg->Sym(1));
-    // The component's vtable begins with MsgSink's slots.
-    return reinterpret_cast<MsgSink*>(GetDefault2DEmitterComponent())->Handle(msg, warn);
+    return GetDefault2DEmitterComponent()->Handle(msg, warn);
 }

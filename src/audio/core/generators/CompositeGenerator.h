@@ -143,8 +143,8 @@ public:
 
     // Takes an idle generator for the emitter, bound to the default render
     // target. The map's AudioGeneratorManager::_AllocateGenerator(
-    // AudioEmitterCom*), emitted in SoundManager.o; this build inlines it.
-    CompositeGenerator* _AllocateGenerator(AudioEmitterCom* emitter) {
+    // AudioEmitter*), emitted in SoundManager.o; this build inlines it.
+    CompositeGenerator* _AllocateGenerator(AudioEmitter* emitter) {
         AudioRenderTarget* target = gAudioRenderTargets.mDefault;
         ScopedCritSec lock(mCritSec);
         if (mFreeList.mSize == 0) {

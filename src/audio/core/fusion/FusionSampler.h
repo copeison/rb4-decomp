@@ -78,7 +78,7 @@ public:
     // Slot 15 at 0x974A0: queued for the next block; a note keeps its
     // loudest velocity.
     void NoteOn(signed char note, signed char velocity, signed char channel, float startOffsetMs) override;
-    bool IsNotePlaying(signed char note) override;  // slot 16: 0x97530
+    bool IsNotePlaying(signed char note, signed char channel) override;  // slot 16: 0x97530
     void NoteOff(signed char note, signed char channel) override;  // slot 17: 0x975D0
     void SetExtraPitchBend(float bend, signed char channel) override;  // slot 18: 0x9A5F0
     void SetPitchBend(float bend, signed char channel) override;       // slot 19: 0x9A490
@@ -109,19 +109,10 @@ public:
     bool GetMidiChannelMute(signed char) const override {
         return mChannelMute;
     }
-    // Slots 38-39 and 41 stay pure; FusionGenerator implements them.
-    // Slot 40 at 0x43D20: true here and in FusionGenerator.
-    bool SupportsAudioThreadClients() const override {
-        return true;
-    }
+    // Slots 38-39 and 41 stay pure; FusionGenerator implements them. Slot
+    // 40 and slots 44-46 stay InstrumentGenerator's.
     bool AddSlave(unsigned int handle, InstrumentSlaveType type) override;  // slot 42: 0x9CA40
     bool RemoveSlave(unsigned int handle) override;                         // slot 43: 0x9CD90
-    // Slots 44-46 at 0x51F40, 0x51F50 and 0x51F60: empty here.
-    void ClearGeneratorFlag() override {}
-    void SetGeneratorFlag(int) override {}
-    bool HasGeneratorFlag() const override {
-        return false;
-    }
     void SetTranspose(int semitones) override {  // slot 47: 0x43D70
         mTranspose = semitones;
     }
@@ -140,6 +131,9 @@ public:
         *formantMode = mTimeStretchFormantMode;
         return (mTimeStretchAlgorithm | mTimeStretchFormantMode) != 0;
     }
+    // Slots 51-54 are the first overrides of AudioGenerator functions, so
+    // they take entries in the primary vtable after InstrumentGenerator's;
+    // FusionGenerator appends its own after them.
     // Slot 51 at 0x975F0; AudioGenerator's slot 8 reaches it through 0x97860.
     // A non-positive speed becomes 0.0001. The flag is unused.
     void SetSpeed(float speed, bool immediate) override;

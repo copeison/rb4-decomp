@@ -150,3 +150,15 @@ ComMetaData::EditorRestriction ComMetaData::InheritEditorRestrictions(
     }
     return static_cast<EditorRestriction>((inherited & 0xA) | combined);
 }
+
+// Reconstructed from eboot.elf at 0xE68A0. The event is built with a copy
+// of the description and an empty registry, then copied in.
+PropRegistry& ComMetaData::AddExportedEvent(Symbol name, String description) {
+    if (mExportedEvents.capacity() < 32) {
+        mExportedEvents.reserve(32);
+    }
+    const String text(description);
+    const ExportedEvent event = {name, text, {}};
+    mExportedEvents.push_back(event);
+    return mExportedEvents.back().mParams;
+}

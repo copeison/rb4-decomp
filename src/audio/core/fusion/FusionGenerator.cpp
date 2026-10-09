@@ -68,7 +68,7 @@ bool FusionGeneratorManager::RemovePatch(FusionPatchResource* patch) {
 // Reconstructed from eboot.elf at 0x422C0. The voice pool comes from the
 // target passed in, which must not be null.
 FusionGenerator* FusionGeneratorManager::GetFreeGenerator(
-    AudioRenderTarget* target, AudioEmitterCom* emitter) {
+    AudioRenderTarget* target, AudioEmitter* emitter) {
     FusionGenerator* const generator =
         GeneratorPool::Allocate<FusionGenerator>(*this, target, emitter);
     if (generator != nullptr) {
@@ -90,7 +90,7 @@ AudioGenerator* FusionGeneratorManager::Play(const PlayArgs& args) {
         }
         patch = it->second;
     }
-    AudioEmitterCom* const emitter =
+    AudioEmitter* const emitter =
         args.mEmitter != nullptr ? args.mEmitter : theSoundManager.GetDefault2DEmitter();
     AudioRenderTarget* const target = gAudioRenderTargets.Find(args.mRenderTarget, true);
     FusionGenerator* const generator =
@@ -294,7 +294,7 @@ void FusionGenerator::Release() {
         ScopedCritSec lock(mClientListLock);
         UnlinkAll(mAudioThreadClients);
     }
-    SetPatch(ResourcePtr<FusionPatchResource>());
+    SetPatch(ResourcePtr<FusionPatchResource>(), 0);
     _DumpAllInstrumentSlaves();
     GeneratorPool::Release(*this);
 }

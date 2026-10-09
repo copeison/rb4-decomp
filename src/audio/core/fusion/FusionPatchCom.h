@@ -24,6 +24,13 @@ public:
     // reference map.
     static Symbol sClassName;  // 0x19C8BC0
 
+    // Registers the class: the metadata heap, _Init with the property
+    // registry at 0x19C8BD0 and the metadata at 0x19C8C70, the factories and
+    // the class's ComMetaData. Inline in the map; this build emits it in
+    // audio/SoundManager.o at 0x5350. Not reconstructed: the registration
+    // helpers it inlines are not modelled.
+    static void Init();
+
     // The patch loaders FusionPatchResource uses; true when the patch
     // loaded. _LoadFromDTAFile reads the ".fusion" text file and passes it
     // to _LoadFromDataArray, whose name is not in the reference map.
