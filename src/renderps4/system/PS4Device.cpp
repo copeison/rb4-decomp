@@ -8,7 +8,6 @@
 #include <video_out.h>
 
 #include "os/memory/MemMgr.h"
-#include "render/platform/orbis/context/orbis_render_context.h"
 #include "render/system/RndConfig.h"
 #include "render/targets/RndBufferCollection.h"
 #include "renderps4/context/PS4Context.h"
@@ -128,12 +127,12 @@ void PS4Device::_BeginFrameImpl(bool) {
     if (mBeginFramePending) {
         _FlushPendingBeginFrame();
     }
-    orbis_render_context_reset_active_frame(Context());
+    Context()._ResetFrame();
 }
 
 // Reconstructed from eboot.elf at 0x8D8140.
 void PS4Device::WaitForIdle() {
-    while (!orbis_render_context_submissions_complete(Context())) {
+    while (!Context()._SubmissionsComplete()) {
         scePthreadYield();
         if (mBeginFramePending) {
             _FlushPendingBeginFrame();
@@ -177,7 +176,7 @@ void PS4Device::_EndFrameImpl(
         _FlushPendingBeginFrame();
     }
 
-    orbis_render_context_submit_frame(Context());
+    Context().SubmitFrame();
     for (unsigned long i = 0; i < windows.mSize; ++i) {
         (reinterpret_cast<PS4Window*>(windows.mData[i]))->AdvanceFrame();
     }
@@ -222,7 +221,7 @@ void PS4Device::_InitImpl(const RndInitParams*) {
     _InitIdentityInstanceBuffers();
     _InstallFactory(new PS4Factory);
     _InstallMainWindow(new PS4Window);
-    static_cast<void>(orbis_render_context_create(*this));
+    static_cast<void>(PS4Context::_CreateImmediate(*this));
 
     mSubmitCondition.Init(mSubmitCritSec);
     mSubmitThread.Create(
@@ -389,8 +388,7 @@ void PS4Device::_ProcessEndOfPipe(PS4SubmitDoneState& state) {
     scePthreadMutexLock(&mSubmitCritSec.mCritSec);
     ++mSubmitCritSec.mEntryCount;
 
-    bool submitDone = orbis_render_context_frame_submissions_complete(
-        Context(), state.mNextBuffer);
+    bool submitDone = Context()._FrameSubmissionsComplete(state.mNextBuffer);
     if (!submitDone) {
         const auto now = Hmx::Timer::GetCycleCounter();
         state.mPendingSubmitTicks += now - state.mLastSubmitCheck;

@@ -1,16 +1,69 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include "render/context/RndContext.h"
 #include "renderps4/buffers/PS4TransientBuffer.h"
 
+class PS4Device;
+
+namespace rb4 {
+struct OrbisGpuDepthRenderTarget;
+struct OrbisGpuRenderTarget;
+struct OrbisRenderCommandContext;
+}  // namespace rb4
+
 // PS4 context: two graphics contexts, compute queues, transient vertex
-// buffers, and submission state. Its own state is still reached through the
-// orbis_render_context_* helpers by offset. The vtable is at 0x195FDB0; the
-// constructor at 0x8E72B0 and the slot bodies are in the orbis context files.
+// buffers, and submission state. The vtable is at 0x195FDB0.
 class PS4Context : public RndContext {
 public:
+    // Frame slots, compute contexts and transient vertex formats. Names not
+    // in the reference map.
+    static constexpr std::size_t kFrameSlotCount = 2;
+    static constexpr std::size_t kComputeContextCount = 18;
+    static constexpr std::size_t kComputeContextsPerFrame = 9;
+    static constexpr std::size_t kTransientFormatCount = 8;
+
+    // GPU timestamp pair for one statistic key; the map keys an
+    // eastl::map<unsigned long, GpuStatBlock*> by it. Field names are not in
+    // the reference map.
+    struct GpuStatBlock {
+        bool mActive = false;
+        std::uint8_t mPadding[7] = {};
+        volatile std::uint64_t* mBegin = nullptr;
+        volatile std::uint64_t* mEnd = nullptr;
+    };
+
+    // End-of-pipe event used for a timestamp write. Name not in the
+    // reference map.
+    enum class GpuTimestampEvent : std::uint32_t {
+        kGraphicsComplete = 0x04,
+        kComputeComplete = 0x28,
+    };
+
+    // A resource signalled by a split barrier, with the frame it was
+    // signalled in. Name not in the reference map.
+    struct ResourceSignal {
+        const void* mResource = nullptr;
+        volatile std::uint32_t* mLabel = nullptr;
+        std::uint64_t mRenderEpoch = 0;
+    };
+
+    // Viewport of a render-target binding. Name not in the reference map.
+    struct ViewportRect {
+        float mX;
+        float mY;
+        float mWidth;
+        float mHeight;
+    };
+
+    // GPU range a depth or HTILE clear fills. Name not in the reference map.
+    struct DepthClearRange {
+        std::uint64_t mGpuAddress = 0;
+        std::uint32_t mDwordCount = 0;
+    };
+
     PS4Context();            // 0x8E72B0
     ~PS4Context() override;  // 0x8E8070, 0x8E82B0
 
@@ -63,16 +116,214 @@ public:
     void _EndGpuStatsImpl(unsigned long key) override;          // 0x8EBBB0
     RndGpuStatSample _EvalAndRetireGpuStatsImpl(unsigned long key) override;  // 0x8EBC70
 
-    // Layout not yet modeled beyond the offsets the helpers use. The byte
-    // array starts in RndContext's tail padding at 0x5721.
-    unsigned char mPS4[0x40DB8 - 0x5721];
-    // One bank per frame, indexed by vertex type. Name not in the reference
-    // map.
-    PS4TransientBuffer mTransientBuffers[2][8];
-    unsigned char mPS4Tail[0x44890 - 0x41838];
+    // Creates the immediate context and installs it on the device. Name not
+    // in the reference map.
+    static PS4Context* _CreateImmediate(PS4Device& device);
+
+    void SubmitFrame();  // 0x8E82D0
+    // Resets the active frame's command state before recording. Name not in
+    // the reference map; it may be the map's _ResetImpl().
+    void _ResetFrame();  // 0x8E8450
+    // Whether every submission of the active or the given frame has
+    // retired. Names not in the reference map.
+    bool _SubmissionsComplete() const;
+    bool _FrameSubmissionsComplete(std::size_t frame) const;
+    // The map has _ClearDepthStencil(float, unsigned char); this build also
+    // passes the depth target and returns whether HTILE was cleared.
+    bool _ClearDepthStencil(
+        const rb4::OrbisGpuDepthRenderTarget& target,
+        float depth,
+        unsigned char stencil);  // 0x8E99E0
+    void _FlushClear();          // 0x8EBDA0
+
+private:
+    // Construction and teardown. Names not in the reference map; they are
+    // not yet reconstructed unless an address is given.
+    void _InitCommandState();
+    void _ConstructComputeSlot(std::size_t slot);
+    void _InitStateDefaults();
+    void _InitAllocationMap();
+    void _CreateGfxContext();  // 0x8E7AF0
+    void _InitGfxSlot(
+        std::size_t slot,
+        std::size_t cueHeapSize,
+        std::size_t drawCommandBufferSize,
+        std::size_t resourceBufferSize,
+        std::size_t constantUpdateSize,
+        std::size_t scratchBufferSize);
+    void _CreateGpuTimestampPool();  // 0x8E7DF0
+    void _InitTimestampRecords(std::size_t timestampBufferSize);
+    void _InitComputeQueue(
+        std::size_t queue,
+        std::uint32_t pipe,
+        std::uint32_t priority,
+        std::size_t ringSize,
+        std::size_t ringAlignment);
+    void _InitComputeContext(
+        std::size_t slot,
+        std::size_t cueSlotCount,
+        std::size_t commandBufferSize);
+    void _InitLabelPool(std::size_t initialCapacity);
+    void _ReleaseLabelPool();
+    void _ReleaseTimestampPool();
+    void _DestructComputeSlot(std::size_t slot);
+    void _DestructCommandState();
+
+    // Frame submission and reset. Names not in the reference map; not yet
+    // reconstructed.
+    rb4::OrbisRenderCommandContext& _ActiveGfxContext();
+    void _EmitEndOfFrameEvent(std::size_t frame);
+    void _EmitComputeCompletion(std::size_t frame, std::size_t slot);
+    void _SubmitCompute(std::size_t frame, std::size_t slot, std::size_t queue);
+    void _EmitGfxCompletion(std::size_t frame);
+    void _SubmitGfx(std::size_t frame);
+    void _ResetGfxSlot(std::size_t frame);
+    void _InitGfxHardwareState(std::size_t frame);
+    void _ClearFrameDrawCount(std::size_t frame);
+    void _ResetComputeSlot(std::size_t frame, std::size_t slot);
+    void _InitFrameCommandState(std::size_t frame);
+    void _EmitDefaultControlState(std::size_t frame);
+
+    // Pipeline state. _SyncDepthStencilControl and _SyncPrimitiveSetup are
+    // map names; the others are not in the reference map. Not yet
+    // reconstructed.
+    void _BindColorTarget(std::size_t slot, const rb4::OrbisGpuRenderTarget* target);
+    void _BindDepthTarget(const rb4::OrbisGpuDepthRenderTarget* target);
+    void _SetViewportAndScissor(const ViewportRect& viewport);
+    void _BeginRenderTargetSync();
+    void _PrepareColorTarget(const RenderTargetParams& params, std::size_t slot);
+    bool _PrepareDepthTarget(
+        const rb4::OrbisGpuDepthRenderTarget& target,
+        const RenderTargetParams& params);
+    void _FinishRenderTargetSync();
+    void _SetGnmBlendControl(std::size_t targetSlot, std::uint32_t blendControl);
+    void _ResetCachedPipelineState();
+    void _SetDefaultRasterState();
+    void _SetDefaultDepthStencilState();
+    void _DisableStreamOutput();
+    void _ClearShaderResources();
+    void _CacheDepthMode(std::uint32_t depthMode);
+    void _CacheStencilState(
+        std::uint32_t stencilMode,
+        std::uint8_t reference,
+        std::uint8_t readMask,
+        std::uint8_t writeMask);
+    void _SyncDepthStencilControl();
+    void _CacheFrontFace(bool counterClockwise);
+    void _CacheCullMode(RndCullMode cullMode);
+    void _CachePolygonFill(bool enabled);
+    void _SyncPrimitiveSetup();
+    void _SetGnmRenderTargetMask(std::uint32_t writeMask);
+    void _CacheColorWriteMask(std::uint8_t targetMask, RndWriteMaskChannelSet writeMode);
+
+    // Command recording. Names not in the reference map; not yet
+    // reconstructed.
+    bool _RecordingGraphics() const;
+    bool _RecordingCompute() const;
+    void _PrepareGraphicsDispatch();
+    void _DispatchGraphics(std::uint32_t x, std::uint32_t y, std::uint32_t z);
+    void _FinishGraphicsDispatch();
+    void _PrepareComputeDispatch();
+    void _DispatchCompute(std::uint32_t x, std::uint32_t y, std::uint32_t z);
+    void _PushGraphicsMarker(const char* name, std::uint32_t color);
+    void _PushComputeMarker(const char* name, std::uint32_t color);
+    void _PopGraphicsMarker();
+    void _PopComputeMarker();
+
+    // Depth clears. Names not in the reference map; not yet reconstructed.
+    void _FlushDepthMetadata();
+    void _DispatchDepthClear(const DepthClearRange& range, std::uint32_t clearValue);
+    void _BeginRasterDepthClear(float depth, std::uint8_t stencil);
+    void _FinishRasterDepthClear();
+    void _BindDepthClearShader();
+    void _SetDepthClearDrawState(bool enabled);
+    void _UnbindPixelShader();
+    void _SubmitDepthClearDraw();
+
+    // Fences. Names not in the reference map; not yet reconstructed.
+    void _EmitGraphicsFenceSignal(std::uint32_t* address, std::uint32_t value);
+    void _EmitComputeFenceSignal(std::uint32_t* address, std::uint32_t value);
+    void _EmitGraphicsFenceWait(const std::uint32_t* address, std::uint32_t value);
+    void _EmitComputeFenceWait(const std::uint32_t* address, std::uint32_t value);
+
+    // GPU statistics. Names not in the reference map; not yet reconstructed.
+    // _EmitGpuTimestamp may be the map's _WriteGpuTimestamp(void*).
+    GpuTimestampEvent _GpuTimestampEventType() const;
+    GpuStatBlock& _AcquireGpuStatBlock();
+    void _StoreGpuStatBlock(std::uint64_t key, GpuStatBlock& block);
+    GpuStatBlock& _FindGpuStatBlock(std::uint64_t key);
+    void _RemoveGpuStatBlock(std::uint64_t key);
+    void _EmitGpuTimestamp(volatile std::uint64_t* destination, GpuTimestampEvent event);
+
+    // Resource barriers. Names not in the reference map; not yet
+    // reconstructed unless an address is given.
+    void _SyncBarrierPhase(
+        const RndResourceBarrier& barrier,
+        std::uint32_t barrierCacheActions,
+        volatile std::uint32_t*& sharedLabel,
+        std::uint32_t& cacheActions,
+        bool& needsCompletionWait);
+    void _ResolveTextureMetadata(
+        const RndResourceBarrier& barrier,
+        bool resolveDepth,
+        bool& needsCompletionWait);
+    void _ProcessTransition(
+        const RndResourceBarrier& barrier,
+        volatile std::uint32_t*& sharedLabel,
+        std::uint32_t& cacheActions,
+        bool& needsCompletionWait);
+    std::uint64_t _ActiveComputeQueue() const;
+    void _SelectGraphics();
+    void _SelectCompute(std::uint64_t queueIndex);
+    void _WaitForRenderTarget(const void* resource);
+    void _ResolveColorMetadata(const void* resource, std::uint64_t subresource);
+    void _ResolveDepthMetadata(const void* resource, std::uint64_t subresource);
+    void _EmitTransitionCompletionWait(std::uint32_t cacheActions);
+    void _FlushTransitionCaches(std::uint32_t cacheActions);
+
+    // Split-barrier resource signals. Names not in the reference map; not
+    // yet reconstructed unless an address is given.
+    void _SignalResource(
+        const void* resource,
+        volatile std::uint32_t*& sharedLabel);  // 0x8EB3E0
+    void _WaitForResource(const void* resource);  // 0x8EB590
+    volatile std::uint32_t* _AllocateResourceLabel();
+    void _EmitGraphicsResourceSignal(volatile std::uint32_t* label, std::uint32_t value);
+    void _EmitComputeResourceSignal(volatile std::uint32_t* label, std::uint32_t value);
+    void _TrackResourceSignal(const ResourceSignal& signal);
+    ResourceSignal* _FindResourceSignal(const void* resource);
+    void _EmitGraphicsResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
+    void _EmitComputeResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
+    void _RemoveResourceSignalGroup(const volatile std::uint32_t* label);
+
+public:
+    // Layout is modeled only where the offsets are known. Field names are
+    // not in the reference map. The first range starts in RndContext's tail
+    // padding at 0x5721.
+    unsigned char mUnknown22305[7];
+    // One Gnmx graphics context per frame slot.
+    unsigned char mGfxContexts[kFrameSlotCount][0xE888];
+    unsigned char mUnknown141368[0x48];
+    // Nonzero while a frame's graphics (0) or compute (1-9) submission is
+    // in flight.
+    volatile std::int32_t mSubmissionPending[kFrameSlotCount][10];
+    unsigned char mUnknown141520[0x1E4C0];
+    std::size_t mActiveFrame;
+    unsigned char mUnknown265624[0x20];
+    // One bank per frame, indexed by vertex type.
+    PS4TransientBuffer mTransientBuffers[kFrameSlotCount][kTransientFormatCount];
+    unsigned char mUnknown268344[0x44890 - 0x41838];
 };
 
-static_assert(offsetof(PS4Context, mPS4) == 0x5721);
+static_assert(sizeof(PS4Context::GpuStatBlock) == 24);
+static_assert(sizeof(PS4Context::ResourceSignal) == 24);
+static_assert(offsetof(PS4Context, mUnknown22305) == 0x5721);
+static_assert(offsetof(PS4Context, mGfxContexts) == 0x5728);
+static_assert(offsetof(PS4Context, mUnknown141368) == 0x22838);
+static_assert(offsetof(PS4Context, mSubmissionPending) == 0x22880);
+static_assert(offsetof(PS4Context, mUnknown141520) == 0x228D0);
+static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);
+static_assert(offsetof(PS4Context, mUnknown265624) == 0x40D98);
 static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
-static_assert(offsetof(PS4Context, mPS4Tail) == 0x41838);
+static_assert(offsetof(PS4Context, mUnknown268344) == 0x41838);
 static_assert(sizeof(PS4Context) == 0x44890);
