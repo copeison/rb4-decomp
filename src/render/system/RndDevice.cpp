@@ -11,7 +11,6 @@
 #include "render/core/system/render_system_frame_adapters.h"
 #include "render/targets/RndBufferCollection.h"
 #include "render/resources/audio/audio_analysis_textures.h"
-#include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
 #include "render/lighting/fog/RndShaderFogDeferred.h"
 #include "render/resources/video/bink_render_manager.h"
@@ -108,7 +107,6 @@ RndDevice::RndDevice()
       mBuiltinCBuffers{},
       mUnknown3792(nullptr),
       mConsoleState() {
-    render_lighting_resources_construct(mLighting);
     gRndDevice = this;
 
     for (const auto platform : render_supported_platform_ids()) {
@@ -128,13 +126,12 @@ RndDevice::RndDevice()
 }
 
 // Reconstructed from eboot.elf at 0x3DD790. The members with destructors
-// (the pending-free queue, the default resources, the platform
-// configurations, the vectors, and the CritSecs) are destroyed after the body.
+// (the pending-free queue, the lighting globals, the default resources, the
+// platform configurations, the vectors, and the CritSecs) are destroyed after
+// the body.
 RndDevice::~RndDevice() {
     render_settings_release(mSettings);
     mSettings = nullptr;
-
-    render_lighting_resources_destruct(mLighting);
 }
 
 void RndDevice::_ProcessDeferredDeletion() {}
@@ -156,7 +153,7 @@ void RndDevice::Init(const RndInitParams& params) {
     _InitImpl(&params);
     mShaderMgr.Init();
 
-    render_lighting_resources_initialize(mLighting);
+    mLighting.Init();
     mFogDeferred = new RndShaderFogDeferred;  // 0x451C90
     mPrimitiveMeshes = static_cast<RenderPrimitiveMeshSet*>(
         operator new(sizeof(RenderPrimitiveMeshSet)));
@@ -223,7 +220,7 @@ void RndDevice::Terminate() {
     mDefaults.Terminate();
     delete mFogDeferred;  // 0x451CC0
     mFogDeferred = nullptr;
-    render_lighting_resources_shutdown(mLighting);
+    mLighting.Terminate();
     mShaderMgr.Terminate();
 
     if (mPrimitiveMeshes != nullptr) {
