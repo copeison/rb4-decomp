@@ -110,8 +110,7 @@ public:
     // Fills the type metadata at 0x19F2D98. At 0x271D00.
     static void _Init(ResourceMetaData& metaData);
 
-    // At 0x19F2D98. Name not in the reference map.
-    static ResourceMetaData sMetaData;
+    static ResourceMetaData sMetaData;  // 0x19F2D98
 
     float GetLengthMs();                    // 0x272770
     void WaitForAsyncProcessToComplete();   // 0x272C30

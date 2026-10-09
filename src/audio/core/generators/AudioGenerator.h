@@ -6,6 +6,7 @@
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/system/Audio.h"
+#include "audio/core/system/SoundManager.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
@@ -504,36 +505,3 @@ static_assert(sizeof(EnumValueDesc) == 40);
 // editors that construct the descriptor at 0x2ADB0 and 0x2FF50. At 0x408C0.
 // Name not in the reference map.
 eastl::vector<EnumValueDesc> GetPlayArgsRouteValues();
-
-// The sound manager's default 2D emitter, used when a request names none.
-// At 0x5C20; the map has SoundManager::GetDefault2DEmitter() const.
-class SoundManager {
-public:
-    AudioEmitterCom* GetDefault2DEmitter() const;
-    // The registered generator manager whose GetId matches, or null. At
-    // 0x8090. In the map.
-    AudioGeneratorManager* _GetManager(Symbol id);
-    // Adds a generator manager and returns its index. The map has
-    // _RegisterGeneratorManager(AudioGeneratorManager*, Symbol); this build
-    // passes the manager's resource extension.
-    int _RegisterGeneratorManager(AudioGeneratorManager* manager, Symbol ext);  // 0x7820
-    // The generator with the handle, retained, or null when the handle is
-    // stale or names no manager.
-    AudioGenerator* LockIfOwned(unsigned int handle);  // 0x5FB0
-    // Updates the FMOD systems, emitters and registered sounds once per frame.
-    void Poll();  // 0x7560
-    // Prints the FMOD state and each generator manager's pool usage. The
-    // map's signature is DumpGeneratorStats(); the identification rests on
-    // the pool counts printed.
-    void DumpGeneratorStats(TextStream& stream);  // 0x8A30
-
-    // Field names are not in the reference map. The sound manager has not
-    // been reconstructed; mOpaque0 covers the fields before the managers.
-    unsigned char mOpaque0[72];
-    // Registered generator managers; a handle's bits 24-30 index them.
-    eastl::vector<AudioGeneratorManager*> mManagers;
-};
-
-static_assert(offsetof(SoundManager, mManagers) == 72);
-
-extern SoundManager theSoundManager;

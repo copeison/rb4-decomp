@@ -129,8 +129,8 @@ public:
           mPitchDetector(48000),
           mPitch(0.0F),
           mLevel(0.0F),
-          mPeriodicity(0.0F),
-          mVoicing(0.0F) {
+          mWindowLevel(0.0F),
+          mInputPeak(0.0F) {
         mRecentBuffer.Init(kRecentBufferSize);
         mContinuousBuffer.Init(kContinuousBufferSize);
     }
@@ -203,8 +203,9 @@ public:
     PitchDetector mPitchDetector;
     float mPitch;
     float mLevel;  // Smoothed detector energy in [0, 1].
-    float mPeriodicity;
-    float mVoicing;
+    // PitchDetector's window level and input-envelope peak.
+    float mWindowLevel;
+    float mInputPeak;
 };
 
 static_assert(offsetof(Mic, mSampleRate) == 8);

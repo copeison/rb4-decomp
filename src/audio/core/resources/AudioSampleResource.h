@@ -13,6 +13,14 @@ class String;
 // noted.
 class AudioData {
 public:
+    // The values GetEncodedFormat returns; AudioDecoder takes them. Value
+    // names not in the reference map.
+    enum EncodedFormat : int {
+        kEncodedPcm = 0,
+        kEncodedXma = 1,
+        kEncodedMogg = 2,
+    };
+
     virtual ~AudioData();                          // slots 0-1
     virtual int GetMemoryUsage() const;            // slot 2
     virtual bool Save(BinStream& stream);          // slot 3: writes the data

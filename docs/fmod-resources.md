@@ -50,21 +50,44 @@ resource's pointer to it under the resource lock.
 ## FModBankResource
 
 A Studio bank loaded into every Studio system. The vtable is at
-`0x18F0C78`; `_Init` at `0x273AF0` registers the `bank` extension under the
-`FMod Banks` category. Every live bank is also kept in a global list at
-`0x19F2E50`. `Fail` reports a resource with no loaded banks.
+`0x18F0C78` and the object is `0x78` bytes; the source is
+`src/audio/fmod/resources/FmodBankResource.cpp`. `_Init` at `0x273AF0`
+registers the `bank` extension under the `FMod Banks` category. The
+constructor adds every bank to the live list at `0x19F2E50` under the
+CritSec at `0x19F2E40`, and the destructor removes it and unloads it.
+`LockLoadedBanks` and `UnlockLoadedBanks` (`0x273AB0`, `0x273AD0`) expose the
+list to the platform's localized-bank reload. `Fail` reports a resource with
+no loaded banks.
 
-The loaders use EASTL maps and are only declared:
+| Offset | Field | Meaning |
+| ---: | --- | --- |
+| `+0x30` | `mBanks` | EASTL map from Studio system to its `Bank`. |
+| `+0x68` | `mBankData` | Freed by `_UnloadAll`; never set in this build. |
+| `+0x70` | `mLocalized` | Set when an English bank was localized. |
 
-- `_ResolvePlatformPath` at `0x274710` replaces a `desktop` or `Desktop` path
-  component with `PS4` and localizes `_eng.bank` and `/eng.bank` through the
-  sound manager.
-- `_Load` at `0x274200` loads the bank into each Studio system through
-  `_LoadIntoSystem` at `0x274A80`, which loads the sample data, updates Studio
-  until it is loaded, locks every bus channel group and flushes commands.
+- `_Load` at `0x274200` does nothing while the runtime builds its precache.
+  It resolves the path, then loads the bank into each Studio system from
+  `FModSystem::GetAllStudioSystems` through `_LoadIntoSystem` at `0x274A80`,
+  which loads the sample data, updates Studio until it is loaded, locks every
+  bus channel group and flushes commands. A failed load unloads every copy.
+- The master bank and its strings bank are kept at `0x19F2E70` and
+  `0x19F2E78`. Loading either one drops both references, then loads the
+  other; the flags at `0x19F2ED8` and `0x19F2ED9` stop the companion load
+  from recursing. The first load of any other bank also loads the localized
+  master bank when none is loaded.
+- `_ResolvePlatformPath` at `0x274710` starts from the uncached resource
+  path (`0x1AE5B0`), replaces a `desktop` or `Desktop` component with `PS4`,
+  and replaces the `eng` of `_eng.bank` and `/eng.bank` with the sound
+  manager's language.
 - `_UnloadAll` at `0x273980` unloads each bank and keeps updating its Studio
   system while it reports `UNLOADING`.
 - `GetEvents` at `0x273C10` and `GetBuses` at `0x273F00` list up to 2,048
-  event or bus paths from the first loaded bank.
+  event or bus paths from the first loaded bank. `GetAllBankPaths` at
+  `0x274F20` has no caller.
 - The helpers at `0x274920`, `0x274C40` and `0x274CF0` derive the localized
   master bank, the strings bank and the master bank paths.
+
+`FmodAudioStreamResource::_Init` at `0x271D00` registers the `mp3`, `wav`,
+`aac`, `ogg` and `m4a` extensions under `Streaming Audio`. Both metadata
+objects (`0x19F2D98`, `0x19F2E80`) are built by `ResourceMetaData`'s
+constructor at `0x1AF130`.

@@ -1,6 +1,5 @@
 #include "audio/fmod/system/FmodPlatform.h"
 
-#include <cerrno>
 #include <cstdio>
 #include <cstring>
 
@@ -17,12 +16,14 @@
 #include "audio/fmod/mixing/TremoloPlugin.h"
 #include "audio/fmod/mixing/VibePlugin.h"
 #include "audio/fmod/mixing/WahPlugin.h"
+#include "audio/fmod/platform/orbis/FmodPlatform_PS4.h"
 #include "audio/core/generators/AudioGenerator.h"
 #include "math/transform/Transform.h"
 #include "utl/time/Timer.h"
 #include "os/threading/CritSec.h"
 
 FModSystem* FModSystem::sSystem;
+eastl::vector<FModSystem*> FModSystem::sSystems;
 
 namespace {
 
@@ -30,13 +31,6 @@ constexpr double kPercent = 100.0;
 
 FMOD_VECTOR ConvertVector(const Vector3& v) {
     return {-v.x, v.y, v.z};
-}
-
-// Waits on the mix semaphore, retrying when a signal interrupts the wait.
-void WaitForMix(sem_t& semaphore) {
-    while (sem_wait(&semaphore) != 0) {
-        (void)errno;
-    }
 }
 
 // HMX.BufferedOutput, the FMOD output plugin of the recording target. The
@@ -128,6 +122,26 @@ constexpr int kRawSpeakerCounts[] = {1, 2, 6, 8};
 
 constexpr FMOD_SYSTEM_CALLBACK_TYPE kMixCallbacks =
     FMOD_SYSTEM_CALLBACK_PREMIX | FMOD_SYSTEM_CALLBACK_POSTMIX;
+
+// Capacity each deferred-release vector reserves up front.
+constexpr unsigned long kDeferredReleaseCapacity = 64;
+
+// AudioRenderTarget keys its timers by the interned name.
+unsigned long TimerKey(Symbol name) {
+    return reinterpret_cast<unsigned long>(name.Str());
+}
+
+// Appends a per-source timer and registers it under its name. Inlined
+// three times into _InitTimers at 0x276FD0, which grows the list through
+// its resize (0x278FA0) with a default timer. Name not in the reference
+// map.
+void AddSourceTimer(FModSystem& system, Symbol name) {
+    system.mSourceTimers.push_back(AudioCpuTimer());
+    auto* node = static_cast<eastl::list<AudioCpuTimer>::node_type*>(
+        system.mSourceTimers.mNode.mpPrev);
+    node->mValue.mName = name;
+    system.SetTimer(TimerKey(name), &node->mValue);
+}
 
 }  // namespace
 
@@ -255,6 +269,108 @@ double AudioRollingCpuTimer::GetMaxPercent() const {
     return mMaxMs / (mWindowSize * Audio::sMsPerBuffer) * kPercent;
 }
 
+// Reconstructed from eboot.elf at 0x276DB0.
+AudioRollingCpuTimer::~AudioRollingCpuTimer() {
+    delete[] mWindow;
+}
+
+// Reconstructed from eboot.elf at 0x276D40. Only the inherited callback node
+// is unlinked.
+FModSystem::DeferredReleaser::~DeferredReleaser() {}
+
+// Reconstructed from eboot.elf at 0x276530. Each system joins sSystems, and
+// both deferred-release vectors start with room for 64 entries. The
+// buffered-output callback starts as a lambda that reports
+// FMOD_ERR_NOTREADY; the recording target replaces it.
+FModSystem::FModSystem(Symbol name, int sampleRate)
+    : AudioRenderTarget(name, sampleRate),
+      mStudioSystem(nullptr),
+      mLowLevelSystem(nullptr),
+      mDspBufferLength(0),
+      mMaxChannels(0),
+      mShuttingDown(false),
+      mBufferedOutputCallback([](FMOD_OUTPUT_STATE*) { return FMOD_ERR_NOTREADY; }),
+      mOwnerTarget(nullptr),
+      mMixCount(0),
+      mUnusedHandle(-1),
+      mInMix(false),
+      mUpdateStudio(true),
+      mDeferredBuffer(0),
+      mDeferredReleaser(this) {
+    mType = kTypeFmodSystem;
+    sSystems.push_back(this);
+    mDeferredReleases[0].reserve(kDeferredReleaseCapacity);
+    mDeferredReleases[1].reserve(kDeferredReleaseCapacity);
+}
+
+// Reconstructed from eboot.elf at 0x276A40. The Studio system is released
+// here unless the platform already terminated FMOD.
+FModSystem::~FModSystem() {
+    mShuttingDown = true;
+    if (mStudioSystem != nullptr && !gFmodPlatformInterface->IsTerminated()) {
+        mStudioSystem->setUserData(nullptr);
+        mLowLevelSystem->setUserData(nullptr);
+        mStudioSystem->release();
+        mStudioSystem = nullptr;
+        mLowLevelSystem = nullptr;
+    }
+
+    const int count = static_cast<int>(sSystems.size());
+    for (int index = 0; index < static_cast<int>(sSystems.size()); ++index) {
+        if (sSystems[index] == this) {
+            sSystems[index] = sSystems[count - 1];
+            sSystems.pop_back();
+            break;
+        }
+    }
+
+}
+
+// Reconstructed from eboot.elf at 0x276E00. Systems without a Studio system
+// are skipped.
+void FModSystem::GetAllStudioSystems(eastl::vector<FMOD::Studio::System*>& systems) {
+    systems.clear();
+    for (FModSystem* system : sSystems) {
+        if (system->mStudioSystem != nullptr) {
+            systems.push_back(system->mStudioSystem);
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x276FD0. Registers the hmx, fmod and
+// buffer_set timers, sizes the rolling window to the buffer count, and adds
+// the mogg, vibe and fusion source timers.
+void FModSystem::_InitTimers(int bufferSetWindow) {
+    static Symbol sHmx;
+    if (sHmx == Symbol()) {
+        sHmx = Symbol("hmx");
+    }
+    mHmxTimer.mName = sHmx;
+    SetTimer(TimerKey(sHmx), &mHmxTimer);
+
+    static Symbol sFmod;
+    if (sFmod == Symbol()) {
+        sFmod = Symbol("fmod");
+    }
+    mFmodTimer.mName = sFmod;
+    SetTimer(TimerKey(sFmod), &mFmodTimer);
+
+    static Symbol sBufferSet;
+    if (sBufferSet == Symbol()) {
+        sBufferSet = Symbol("buffer_set");
+    }
+    mBufferSetTimer.mName = sBufferSet;
+    SetTimer(TimerKey(sBufferSet), &mBufferSetTimer);
+
+    mBufferSetTimer.mWindowSize = bufferSetWindow;
+    delete[] mBufferSetTimer.mWindow;
+    mBufferSetTimer.mWindow = new double[mBufferSetTimer.mWindowSize]();
+
+    AddSourceTimer(*this, Symbol("mogg"));
+    AddSourceTimer(*this, Symbol("vibe"));
+    AddSourceTimer(*this, Symbol("fusion"));
+}
+
 // Reconstructed from eboot.elf at 0x276F30.
 int FModSystem::Init(
     Symbol name,
@@ -266,7 +382,7 @@ int FModSystem::Init(
     int maxChannels,
     bool initFmod) {
     InitBase(name);
-    sem_init(&mMixSemaphore, 0, 1);
+    mMixSemaphore.Create(1, 1);
     mBufferSize = bufferLength;
     mNumBuffers = numBuffers;
     mMaxChannels = maxChannels;
@@ -344,7 +460,7 @@ int FModSystem::InitWithStudioSystem(
     int sampleRate) {
     mUpdateStudio = false;
     InitBase(name);
-    sem_init(&mMixSemaphore, 0, 1);
+    mMixSemaphore.Create(1, 1);
     mNumBuffers = numBuffers;
     mBufferSize = bufferLength;
     mSampleRate = sampleRate;
@@ -370,15 +486,15 @@ void FModSystem::SetStudioSystem(FMOD::Studio::System* system) {
         return;
     }
     if (system == nullptr) {
-        WaitForMix(mMixSemaphore);
+        mMixSemaphore.Wait();
         mShuttingDown = true;
         mDeferredCritSec.Enter();
-        mDeferredReleases[0].mEnd = mDeferredReleases[0].mBegin;
-        mDeferredReleases[1].mEnd = mDeferredReleases[1].mBegin;
+        mDeferredReleases[0].clear();
+        mDeferredReleases[1].clear();
         mDeferredCritSec.Exit();
         mStudioSystem = nullptr;
         mLowLevelSystem = nullptr;
-        sem_post(&mMixSemaphore);
+        mMixSemaphore.Release();
         return;
     }
 
@@ -405,7 +521,7 @@ void FModSystem::SetStudioSystem(FMOD::Studio::System* system) {
     mMixer.SetSampleRate(mSampleRate);
     RegisterPlugins();
     mShuttingDown = false;
-    sem_post(&mMixSemaphore);
+    mMixSemaphore.Release();
     mLowLevelSystem->setCallback(_SystemCallback, kMixCallbacks);
     mStudioSystem->isValid();
     mStudioSystem->update();
@@ -413,15 +529,15 @@ void FModSystem::SetStudioSystem(FMOD::Studio::System* system) {
 
 // Reconstructed from eboot.elf at 0x277A80.
 void FModSystem::Terminate() {
-    WaitForMix(mMixSemaphore);
+    mMixSemaphore.Wait();
     mShuttingDown = true;
     mDeferredCritSec.Enter();
-    mDeferredReleases[0].mEnd = mDeferredReleases[0].mBegin;
-    mDeferredReleases[1].mEnd = mDeferredReleases[1].mBegin;
+    mDeferredReleases[0].clear();
+    mDeferredReleases[1].clear();
     mDeferredCritSec.Exit();
     mStudioSystem = nullptr;
     mLowLevelSystem = nullptr;
-    sem_post(&mMixSemaphore);
+    mMixSemaphore.Release();
 }
 
 // Reconstructed from eboot.elf at 0x277B20.
@@ -436,13 +552,13 @@ int FModSystem::ResumeMixer() {
 
 // Reconstructed from eboot.elf at 0x277B40.
 bool FModSystem::TryBeginMix() {
-    WaitForMix(mMixSemaphore);
+    mMixSemaphore.Wait();
     return true;
 }
 
 // Reconstructed from eboot.elf at 0x277B80.
 bool FModSystem::EndMix() {
-    sem_post(&mMixSemaphore);
+    mMixSemaphore.Release();
     return true;
 }
 
@@ -506,27 +622,26 @@ FMOD_RESULT FModSystem::_SystemCallback(
         return FMOD_OK;
     }
 
-    auto* const sentinel = system->mSourceTimers.Sentinel();
     if (type == FMOD_SYSTEM_CALLBACK_POSTMIX) {
         if (!system->mInMix) {
             return FMOD_OK;
         }
         system->mFmodTimer.AudioCpuTimer::Stop();
         system->mBufferSetTimer.AudioRollingCpuTimer::Stop();
-        for (auto* node = system->mSourceTimers.mNext; node != sentinel; node = node->mNext) {
-            reinterpret_cast<AudioCpuTimer*>(node + 1)->Stop();
+        for (AudioCpuTimer& timer : system->mSourceTimers) {
+            timer.Stop();
         }
         system->mInMix = false;
-        sem_post(&system->mMixSemaphore);
+        system->mMixSemaphore.Release();
         return FMOD_OK;
     }
     if (type != FMOD_SYSTEM_CALLBACK_PREMIX) {
         return FMOD_OK;
     }
 
-    WaitForMix(system->mMixSemaphore);
+    system->mMixSemaphore.Wait();
     if (system->mStudioSystem == nullptr) {
-        sem_post(&system->mMixSemaphore);
+        system->mMixSemaphore.Release();
         return FMOD_OK;
     }
     system->mInMix = true;
@@ -534,10 +649,9 @@ FMOD_RESULT FModSystem::_SystemCallback(
     system->mHmxTimer.Start();
     system->mFmodTimer.Start();
     system->mBufferSetTimer.Start();
-    for (auto* node = system->mSourceTimers.mNext; node != sentinel; node = node->mNext) {
-        auto* timer = reinterpret_cast<AudioCpuTimer*>(node + 1);
-        timer->mElapsedCycles = 0;
-        timer->mRunning = 0;
+    for (AudioCpuTimer& timer : system->mSourceTimers) {
+        timer.mElapsedCycles = 0;
+        timer.mRunning = 0;
     }
     system->ExecutePremixCallbacks(system->mMixCount);
     system->mHmxTimer.AudioCpuTimer::Stop();
@@ -593,25 +707,7 @@ void FModSystem::DeferRelease(FMOD::ChannelControl* channel, FMOD::DSP* dsp) {
     if (mStudioSystem == nullptr) {
         return;
     }
-    auto& list = mDeferredReleases[mDeferredBuffer];
-    if (list.mEnd >= list.mCapacity) {
-        const unsigned long count = list.mEnd - list.mBegin;
-        const unsigned long capacity = count != 0 ? count * 2 : 1;
-        auto* storage = static_cast<DeferredRelease*>(HmxAllocator::gStlAllocator.allocate(
-            capacity * sizeof(DeferredRelease)));
-        for (unsigned long index = 0; index < count; ++index) {
-            storage[index] = list.mBegin[index];
-        }
-        if (list.mBegin != nullptr) {
-            HmxAllocator::gStlAllocator.deallocate(
-                list.mBegin,
-                (list.mCapacity - list.mBegin) * sizeof(DeferredRelease));
-        }
-        list.mBegin = storage;
-        list.mEnd = storage + count;
-        list.mCapacity = storage + capacity;
-    }
-    *list.mEnd++ = {channel, dsp};
+    mDeferredReleases[mDeferredBuffer].push_back({channel, dsp});
 }
 
 // Reconstructed from eboot.elf at 0x278DF0. Swaps the double buffer, then
@@ -624,12 +720,12 @@ void FModSystem::DeferredReleaser::ExecutePremix(int, unsigned long) {
     system->mDeferredCritSec.Exit();
 
     auto& list = system->mDeferredReleases[buffer];
-    for (auto* release = list.mBegin; release != list.mEnd; ++release) {
-        FMOD::DSP* dsp = release->mDSP;
-        release->mChannel->stop();
+    for (DeferredRelease& release : list) {
+        FMOD::DSP* dsp = release.mDSP;
+        release.mChannel->stop();
         dsp->release();
     }
-    list.mEnd = list.mBegin;
+    list.clear();
 }
 
 // Reconstructed from eboot.elf at 0x278C40.

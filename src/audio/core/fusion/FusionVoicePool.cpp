@@ -252,7 +252,9 @@ unsigned int FusionVoicePool::FastReleaseExcessVoices(FusionSampler* sampler) {
             }
             unsigned char priority = VoicePriority(voice);
             unsigned char victimPriority = VoicePriority(victim);
-            if (priority > victimPriority || (priority == victimPriority && voice->mAge > victim->mAge)) {
+            unsigned int age = voice->mAmpEnvelope.mSamplesElapsed;
+            unsigned int victimAge = victim->mAmpEnvelope.mSamplesElapsed;
+            if (priority > victimPriority || (priority == victimPriority && age > victimAge)) {
                 victim = voice;
                 victimIndex = i;
             }
@@ -431,19 +433,19 @@ FusionVoice* FusionVoicePool::GetFreeVoice(
             chosen = voice;
             continue;
         }
-        bool chosenReleasing = chosen->mState == FusionVoice::kStateReleasing;
-        bool voiceReleasing = voice->mState == FusionVoice::kStateReleasing;
+        bool chosenReleasing = chosen->mAmpEnvelope.mStage == ADSR::State::kStageRelease;
+        bool voiceReleasing = voice->mAmpEnvelope.mStage == ADSR::State::kStageRelease;
         if (chosenReleasing != voiceReleasing) {
             if (voiceReleasing) {
                 chosen = voice;
             }
             continue;
         }
-        if (voice->mAge > chosen->mAge) {
+        if (voice->mAmpEnvelope.mSamplesElapsed > chosen->mAmpEnvelope.mSamplesElapsed) {
             chosen = voice;
             continue;
         }
-        if (voice->mAge != chosen->mAge) {
+        if (voice->mAmpEnvelope.mSamplesElapsed != chosen->mAmpEnvelope.mSamplesElapsed) {
             continue;
         }
         float voiceLevel = voice->mLevels[1] > voice->mLevels[0] ? voice->mLevels[1] : voice->mLevels[0];
@@ -486,7 +488,7 @@ FusionVoice* FusionVoicePool::GetFreeVoice(
             }
         }
         mCritSec.Exit();
-        pitchShift->SetShift(keyzone->mShiftCoarse, keyzone->mShiftFine);
+        pitchShift->SetTimeStretchMode(keyzone->mTimeStretchAlgorithm, keyzone->mFormantMode);
     }
     if (chosen->AssignIDs(sampler, keyzone, id, pitchShift)) {
         result = chosen;

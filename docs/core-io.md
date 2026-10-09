@@ -118,3 +118,30 @@ each mip level in the chain:
 - later revisions store each level's size.
 
 Flag 4 at `+0x30` stops after the first level.
+
+## Strings
+
+`utl/Str.o` spans `0x254280`-`0x25681F`. `FixedString` (vtable `0x18E7FE0`)
+views caller storage whose capacity word sits before the text; in this build
+it also carries the editing methods the map gives to `String` (`replace`,
+`insert`) and a few newer ones (`append`, `startswith`, `endswith`).
+`String` (vtable `0x18EF668`) allocates `capacity + 5` bytes from
+`MemOrPoolAlloc` with the label `"StringBuf"`. Empty strings point at the
+shared text at `0x19E8250`, whose zero capacity word is at `0x19E824C`.
+
+The object also holds the number formatters: `PrintBytes` (`0x2560B0`, unit
+table `0x18EF6A0`), `PrintIntWithCommas` (`0x2562F0`), `IntToStaticString`
+(`0x256410`, table `0x18EF6F0`) and `IntToOrdinalStaticString` (`0x256430`,
+suffixes `0x18EFB00`). It also holds the C-string helpers `StringToInt`,
+`RemoveSpaces`, `FilterString` and `StrNCopy`.
+
+`utl/UTF8.o` spans `0x1184750`-`0x1186EDF`. It holds the UTF-8 and 16-bit
+conversions, which handle sequences of one to three bytes. It also holds the
+CJK line-break rules that `FindLineBreaks` uses:
+- `IsCJKChar` tests code point ranges.
+- `CanBeginLine` and `CanEndLine` look the character up in two
+  `eastl::set<unsigned short>`s, at `0x1B5D2A8` and `0x1B5D2E0`.
+
+The static initializer at `0x1186E60` builds those sets from the arrays at
+`0x136DD00` and `0x136DE10`. Each range ends `sizeof(array)` elements past its
+start, so each set also takes in the data after its array.

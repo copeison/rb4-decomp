@@ -94,16 +94,16 @@ void Mic::_AnalyzeRecentSamples() {
     }
     GetRecentSamples(mAnalysisSamples, kAnalysisSize);
     float pitch = 0.0F;
-    float periodicity = 0.0F;
+    float level = 0.0F;
     float energy = 0.0F;
     mPitchDetector.AnalyzeBlock(
         GetName().Str(), mAnalysisSamples, kAnalysisSize, mDetectorSensitivity, mDetectorGain, pitch, energy,
-        periodicity, mVoicing);
+        level, mInputPeak);
     float scaled = energy * kLevelScale;
     float clamped = scaled > 1.0F ? 1.0F : (0.0F > scaled ? 0.0F : scaled);
     float weight = clamped > mLevel ? kLevelRiseWeight : kLevelFallWeight;
     mLevel = (1.0F - weight) * mLevel + weight * clamped;
-    mPeriodicity = periodicity;
+    mWindowLevel = level;
     mPitch = pitch;
 }
 

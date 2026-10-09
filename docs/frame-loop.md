@@ -9,7 +9,7 @@ the loop in `main`.
 | Order | Address | Name | Evidence |
 | ---: | --- | --- | --- |
 | 1 | `0x369940` | `SystemPoll` | Fans out to core runtime, input assignment, platform, timing, and file-system updates. |
-| 2 | `0x7560` | `SoundManager::Poll` | Updates FMOD state, emitters, and registered sound objects. |
+| 2 | `0x7560` | `SoundManager::Poll` | Polls the default and joypad emitter entities, every generator manager, the default render target, the FMOD platform and the mics (`docs/sound-manager.md`). |
 | 3 | `0x8ECAC0` | unresolved optional service | Invokes three virtual update methods when its global object exists. |
 | 4 | `0x33B510` | `dingo_update` | Dispatches the Dingo backend's per-frame virtual method. |
 | 5 | `0xD20C10` | `async_callback_queue_update` | Drains queued asynchronous callbacks on the current thread. |

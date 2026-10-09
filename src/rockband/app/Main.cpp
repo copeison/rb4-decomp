@@ -1,9 +1,6 @@
 #include "rockband/app/Main.h"
 
-#include <cstdint>
-#include <limits>
-
-#include "audio/core/generators/AudioGenerator.h"
+#include "audio/core/system/SoundManager.h"
 #include "os/files/File.h"
 #include "os/system/System.h"
 #include "rb_game/stagepresence/RBStagePresenceEnum.h"
@@ -24,12 +21,6 @@ struct DingoService;
 struct UILayoutController;
 
 void core_initialize();
-void sound_manager_initialize(
-    void* config,
-    std::uint32_t device_index,
-    bool option2,
-    void* option3,
-    void* option4);
 void engine_register_types();
 void animation_register_types();
 void physics_register_types();
@@ -109,12 +100,7 @@ bool App::Initialize(int argc, char** argv) {
     StagePresence::InitEnumMacros();
     SystemInit("config/rockband.dta");
 
-    sound_manager_initialize(
-        nullptr,
-        std::numeric_limits<std::uint32_t>::max(),
-        false,
-        nullptr,
-        nullptr);
+    SoundManager::Init(nullptr, -1, false, nullptr, nullptr);
 
     engine_register_types();
     animation_register_types();

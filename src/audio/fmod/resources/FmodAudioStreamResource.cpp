@@ -60,6 +60,8 @@ char* NormalizeSlashes(char* path) {
 
 }  // namespace
 
+ResourceMetaData FmodAudioStreamResource::sMetaData;
+
 // Reconstructed from eboot.elf at 0x271660.
 FmodAudioStreamResource::FmodAudioStreamResource()
     : mFile(""),
@@ -78,6 +80,20 @@ FmodAudioStreamResource::~FmodAudioStreamResource() {
     if (mFile != EmptySymbol()) {
         _Unregister();
     }
+}
+
+// Reconstructed from eboot.elf at 0x271D00.
+void FmodAudioStreamResource::_Init(ResourceMetaData& metaData) {
+    metaData.mExtensions.push_back(Symbol("mp3"));
+    metaData.mExtensions.push_back(Symbol("wav"));
+    metaData.mExtensions.push_back(Symbol("aac"));
+    metaData.mExtensions.push_back(Symbol("ogg"));
+    metaData.mExtensions.push_back(Symbol("m4a"));
+    metaData.mCategory = Symbol("Streaming Audio");
+    metaData.mTypeFlags[0] = false;
+    metaData.mTypeFlags[4] = true;
+    metaData.mTypeFlags[6] = true;
+    metaData.mTypeOption = 1;
 }
 
 // Reconstructed from eboot.elf at 0x272D10.

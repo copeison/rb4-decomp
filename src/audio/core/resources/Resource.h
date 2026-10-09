@@ -15,13 +15,21 @@ class TextStream;
 // bool)). Field names are not in the reference map.
 class ResourceMetaData {
 public:
+    ResourceMetaData();  // 0x1AF130
+
     // The file extensions of the type, such as "mp3" and "wav" for
     // FmodAudioStreamResource; Init registers each in the extension map.
     eastl::vector<Symbol> mExtensions;
-    // An empty Symbol, four flags the constructor sets, three it clears and
-    // an int. Init skips the extension registration when the flag at +44 is
-    // set; Resource's companion-file check (0x1AD310) reads the one at +45.
-    unsigned char mTypeSettings[24];
+    // The type's category, such as "FMod Banks"; empty by default.
+    Symbol mCategory;
+    // Four flags the constructor sets (+40 to +43) and three it clears (+44
+    // to +46). Init skips the extension registration when mTypeFlags[4] is
+    // set; Resource's companion-file check (0x1AD310) reads mTypeFlags[5].
+    // Both FMOD types set mTypeFlags[6]; its reader is not identified.
+    bool mTypeFlags[7];
+    // Zero by default; both FMOD types set it to one. Its reader is not
+    // identified, so the name is weakly supported.
+    int mTypeOption;
     // Returns the platform folder symbol; the constructor stores 0x1AF1A0,
     // which returns PlatformSymbol(7).
     Symbol (*mPlatformSymbolFunc)();
@@ -31,7 +39,9 @@ public:
     ResourceMetaData* mParent;
 };
 
-static_assert(offsetof(ResourceMetaData, mTypeSettings) == 32);
+static_assert(offsetof(ResourceMetaData, mCategory) == 32);
+static_assert(offsetof(ResourceMetaData, mTypeFlags) == 40);
+static_assert(offsetof(ResourceMetaData, mTypeOption) == 48);
 static_assert(offsetof(ResourceMetaData, mPlatformSymbolFunc) == 56);
 static_assert(offsetof(ResourceMetaData, mId) == 64);
 static_assert(offsetof(ResourceMetaData, mInitialized) == 72);
@@ -50,6 +60,13 @@ public:
 
     Symbol mPath;  // Name not in the reference map.
 };
+
+// The path a resource's file is read from. In archive mode, a path whose
+// file is not in the archive gains the platform folder ("%s/%s" with
+// PlatformSymbol(7)) unless it already starts with it. At 0x1AE5B0. The map
+// has GetUncachedResourcePath(ResourcePath) in Resource.o; the match rests
+// on that signature and is weakly supported.
+const char* GetUncachedResourcePath(ResourcePath path);
 
 template <class T>
 class ResourcePtr;

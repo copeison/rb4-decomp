@@ -26,7 +26,8 @@ FmodRecordingAudioRenderTarget::FmodRecordingAudioRenderTarget(
     float gain,
     int speakerConfig)
     : RecordingAudioRenderTarget(
-          name, path, bufferLength, maxChannels, sampleRate, gain, speakerConfig) {
+          name, path, bufferLength, maxChannels, sampleRate, gain, speakerConfig),
+      mFModSystem(name, sampleRate) {
     mRecordThread.Init("Unknown Thread!");
     mType = kTypeRecording;
     mFModSystem.Init(

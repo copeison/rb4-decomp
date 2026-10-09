@@ -123,6 +123,28 @@ public:
         unsigned char mPadding68[4];  // Never read or written.
     };
 
+    // Reads the timer's settings and its "enabled" flag from the
+    // configuration entry when there is one. The map's signature is
+    // PerfTimer(PerfTimerCfg const&).
+    PerfTimer(Symbol name, const DataArray* config);  // 0x24A730
+
+    int _GetCount(unsigned long frame) const override;            // 0x24B190
+    float _GetAverageCount(unsigned long frame) const override;   // 0x24B1A0
+    float _GetMs(unsigned long frame) const override;             // 0x24B1B0
+    float _GetAverageMs(unsigned long frame) const override;      // 0x24AD90
+    float _GetWorstMs(unsigned long frame) const override;        // 0x24ADA0
+
+    // Closes the current frame: records its time, worst time, averages and
+    // count, and settles the timer's parent. `reset` also clears the worst
+    // times and averages of both frames. Name not in the reference map.
+    void EndFrame(bool reset);  // 0x24A820
+
+    // The frame the timers record into, at 0x19E7E60. The map has
+    // PerfTimer::gCurrentFrameIndex.
+    static unsigned long gCurrentFrameIndex;
+    // The frames after which a worst time expires, 600, at 0x19B03B0.
+    static int kWorstResetFrames;
+
     // Field names are not in the reference map.
     Frame mFrames[2];
     // Cleared by the timer's "enabled" setting; a disabled timer does not

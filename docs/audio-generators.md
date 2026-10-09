@@ -145,11 +145,10 @@ The platform-neutral generator code is reconstructed in
 `LinkedListSizeTracked` nodes and lists gained the inlined constructors and
 destructors that every owner's destructor repeats.
 
-`SoundManager::LockIfOwned` (`0x5FB0`) and `_GetManager` (`0x8090`) are in
-`src/audio/core/system/SoundManager.cpp`; the handle's bits 24-30 index the
-registered managers at `+0x48`. The rest of the sound manager is still
-undefined, as are the FMOD platform's event queries and `String`'s move
-constructor at `0x255280`.
+The sound manager, which registers the managers and resolves handles, is
+described in `docs/sound-manager.md`. `CompositeGenerator` and its manager
+are declared in `src/audio/core/generators/CompositeGenerator.h`; only the
+members the sound manager uses are modelled.
 
 Slots 25-27 are now `SetPlayScale`, `GetPlayScale` and
 `GetPrimaryStreamValue`. Only the Fusion and music generators override

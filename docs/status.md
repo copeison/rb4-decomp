@@ -751,6 +751,13 @@
   names inferred from the binary (see [naming.md](naming.md)).
 - [x] Replace the remaining audio placeholders (the `AudioEmitterCom` slots,
   `PlayArgs` fields and the `IsVirtualInstrument` callable slot).
+- [x] Reconstruct `FusionVoice`, `SoundManager`, `PitchDetector` with
+  `SndAnalysis` and `IIRFilter`, `SmbPitchShift`, the FMOD gain and
+  pitch-shift plug-ins, `FModSystem`'s construction and timers and the
+  `FModBankResource` object; `FusionSampler` is partly done (see
+  [sound-manager.md](sound-manager.md), [audio-dsp.md](audio-dsp.md),
+  [audio-render-target.md](audio-render-target.md),
+  [fmod-system.md](fmod-system.md) and [fmod-resources.md](fmod-resources.md)).
 - [x] Establish a compatible PS4 object-build and structural-comparison loop.
 - [ ] Link a complete reconstructed executable after recovering the remaining
   engine adapters and external FMOD libraries.

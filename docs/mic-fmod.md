@@ -30,7 +30,10 @@ recent ring of 8,192 samples for analysis and a continuous ring of 16,384
 for readers (`RingBuffer`, inline in this build). `Poll` (`0xE1810`) runs the
 platform's `_Poll`, which stores new samples, and, while analysis is on,
 runs the `PitchDetector` over the latest 8,192 samples and smooths its
-energy into a level that rises faster than it falls.
+energy into a level that rises faster than it falls. The detector's outputs
+are the MIDI pitch, the energy, the window level and the input envelope's
+peak, which `Mic` stores as `mPitch`, `mLevel`, `mWindowLevel` and `mInputPeak` (see
+[audio-dsp.md](audio-dsp.md)).
 
 ## MicHwManager_FMOD
 

@@ -1,6 +1,8 @@
 #pragma once
 
+class AudioRenderTarget;
 struct EventParameterInfo;
+struct GenManagerConfig;
 class FmodAudioStreamResource;
 class ResourcePath;
 template <class T>
@@ -27,8 +29,9 @@ void FmodSetListenerXfm(bool fmodEnabled, const Transform& xfm);
 class FmodPlatformInterface {
 public:
     virtual ~FmodPlatformInterface();  // slots 0-1: 0x2625A0, 0x2625B0
-    // Slot 2 at 0x262300; FmodSetListenerXfm above.
-    virtual void SetListenerXfm(bool fmodEnabled, const Transform& xfm);
+    // Slot 2 at 0x262300; FmodSetListenerXfm above, whose flag is the
+    // object's FMOD-enabled byte at +14.
+    virtual void SetListenerXfm(const Transform& xfm);
     // Slot 3 at 0x262270: once, releases the engine's FMOD systems
     // (0x19F29D0 through 0x19F29E0) and marks the platform terminated.
     virtual void Terminate();
@@ -63,6 +66,25 @@ public:
     virtual bool GetEventParameterByIndex(const char* event, int index, EventParameterInfo* info);
     // Slot 15 at 0x2631C0.
     virtual bool GetEventParameter(const char* event, const char* parameter, EventParameterInfo* info);
+    // Slots 16-22 were added for the sound manager; their signatures are not
+    // established unless noted.
+    // Slot 16 at 0x263260: creates a FmodRecordingAudioRenderTarget.
+    virtual AudioRenderTarget* CreateRecordingTarget();
+    // Slot 17 at 0x2632D0: returns null.
+    virtual void* GetReserved();
+    // Slot 18 at 0x260AD0: registers the FMOD resource types; reached
+    // through the wrapper at 0xC0E90.
+    virtual void InitResources();
+    // Slot 19 at 0x260DC0: registers more FMOD resource types; reached
+    // through the wrapper at 0xC0EA0.
+    virtual void InitComponents();
+    // Slot 20 at 0x261210: creates the FMOD generator managers with the
+    // configuration's pool sizes; reached through the wrapper at 0xC0EB0.
+    virtual void InitGenManagers(const GenManagerConfig& config);
+    // Slot 21 at 0x261F30: registers the FMOD mic platform.
+    virtual bool InitMicPlatform();
+    // Slot 22 at 0x262380: empty; SoundManager::Poll calls it each frame.
+    virtual void Poll();
 };
 
 // Name not in the reference map.

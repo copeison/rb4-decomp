@@ -68,6 +68,12 @@ int Thread::_Join() {
     return mEntry.mResult;
 }
 
+// Reconstructed from eboot.elf at 0x25C3A0.
+void Thread::_InitMainThreadAffinity(unsigned long* processorCount) {
+    *processorCount = 6;
+    scePthreadSetaffinity(scePthreadSelf(), 1 << 3);
+}
+
 // Reconstructed from eboot.elf at 0x25C3C0.
 void Thread::_ForceKillThread() {
     if (mHandle != nullptr) {

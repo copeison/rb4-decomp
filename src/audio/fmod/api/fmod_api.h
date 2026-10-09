@@ -10,12 +10,14 @@
 
 enum FMOD_RESULT : std::int32_t {
     FMOD_OK = 0,
+    FMOD_ERR_DSP_DONTPROCESS = 6,
     FMOD_ERR_FILE_BAD = 13,
     FMOD_ERR_FILE_EOF = 16,
     FMOD_ERR_FILE_NOTFOUND = 18,
     FMOD_ERR_HEADER_MISMATCH = 20,
     FMOD_ERR_INVALID_HANDLE = 30,
     FMOD_ERR_INVALID_PARAM = 31,
+    FMOD_ERR_NOTREADY = 46,
     FMOD_ERR_STUDIO_NOT_LOADED = 76,
 };
 
@@ -258,11 +260,105 @@ struct FMOD_GUID {
 
 static_assert(sizeof(FMOD_GUID) == 16);
 
-// Plugin state passed to every DSP callback. Only the instance pointer is
-// read by the engine.
-struct FMOD_DSP_STATE {
-    void* instance;
+struct FMOD_DSP_STATE;
+
+// Services FMOD offers a DSP plug-in. Only the sample-rate query is typed.
+struct FMOD_DSP_STATE_FUNCTIONS {
+    void* alloc;
+    void* realloc;
+    void* free;
+    FMOD_RESULT (*getsamplerate)(FMOD_DSP_STATE* dsp_state, std::int32_t* rate);
+    void* getblocksize;
+    void* dft;
+    void* pan;
+    void* getspeakermode;
+    void* getclock;
+    void* getlistenerattributes;
+    void* log;
+    void* getuserdata;
 };
+
+static_assert(offsetof(FMOD_DSP_STATE_FUNCTIONS, getsamplerate) == 24);
+
+// Plugin state passed to every DSP callback.
+struct FMOD_DSP_STATE {
+    void* instance;  // The FMOD::DSP.
+    void* plugindata;
+    FMOD_CHANNELMASK channelmask;
+    std::int32_t source_speakermode;
+    float* sidechaindata;
+    std::int32_t sidechainchannels;
+    FMOD_DSP_STATE_FUNCTIONS* functions;
+    std::int32_t systemobject;
+};
+
+static_assert(offsetof(FMOD_DSP_STATE, plugindata) == 8);
+static_assert(offsetof(FMOD_DSP_STATE, functions) == 40);
+
+enum FMOD_DSP_PARAMETER_TYPE : std::int32_t {
+    FMOD_DSP_PARAMETER_TYPE_FLOAT = 0,
+    FMOD_DSP_PARAMETER_TYPE_INT = 1,
+    FMOD_DSP_PARAMETER_TYPE_BOOL = 2,
+    FMOD_DSP_PARAMETER_TYPE_DATA = 3,
+};
+
+enum FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE : std::int32_t {
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_LINEAR = 0,
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO = 1,
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR = 2,
+};
+
+struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
+    std::int32_t numpoints;
+    float* pointparamvalues;
+    float* pointpositions;
+};
+
+struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE type;
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR piecewiselinearmapping;
+};
+
+struct FMOD_DSP_PARAMETER_DESC_FLOAT {
+    float min;
+    float max;
+    float defaultval;
+    FMOD_DSP_PARAMETER_FLOAT_MAPPING mapping;
+};
+
+struct FMOD_DSP_PARAMETER_DESC_INT {
+    std::int32_t min;
+    std::int32_t max;
+    std::int32_t defaultval;
+    bool goestoinf;
+    const char* const* valuenames;
+};
+
+struct FMOD_DSP_PARAMETER_DESC_BOOL {
+    bool defaultval;
+    const char* const* valuenames;
+};
+
+struct FMOD_DSP_PARAMETER_DESC_DATA {
+    std::int32_t datatype;
+};
+
+struct FMOD_DSP_PARAMETER_DESC {
+    FMOD_DSP_PARAMETER_TYPE type;
+    char name[16];
+    char label[16];
+    const char* description;
+    union {
+        FMOD_DSP_PARAMETER_DESC_FLOAT floatdesc;
+        FMOD_DSP_PARAMETER_DESC_INT intdesc;
+        FMOD_DSP_PARAMETER_DESC_BOOL booldesc;
+        FMOD_DSP_PARAMETER_DESC_DATA datadesc;
+    };
+};
+
+static_assert(offsetof(FMOD_DSP_PARAMETER_DESC, description) == 40);
+static_assert(offsetof(FMOD_DSP_PARAMETER_DESC, floatdesc) == 48);
+static_assert(sizeof(FMOD_DSP_PARAMETER_DESC) == 96);
 
 struct FMOD_DSP_BUFFER_ARRAY {
     std::int32_t numbuffers;

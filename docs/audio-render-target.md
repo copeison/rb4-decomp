@@ -104,10 +104,51 @@ limit is clamped to 1-256 and the soft limit to the hard one.
 `GetFreeVoice` (`0xA15C0`) releases voices already playing the request's
 id and takes a free voice or steals one: never one whose keyzone priority is
 zero or below the new keyzone's, otherwise the lowest priority, a released
-voice before a held one, the largest age and then the quieter envelope.
+voice before a held one, the most samples since the volume envelope last
+stopped and then the quieter channel peak.
 `FastReleaseExcessVoices` (`0xA0DE0`) fast-releases voices over a sampler's
 limit, or over the soft limit, in the same order. The flag set at `0xA1250`
 stops each voice creating its own Mogg and XMA decoders.
+
+## Sampler voices
+
+`FusionVoice` (`0x9D920` to `0xA0340`) is the whole of `audio/FusionVoice.o`.
+`AssignIDs` binds a keyzone, the sampler's two `ADSR` envelopes and two
+`LFO`s (`src/audio/core/modulation`, declarations only) and the first of the
+PCM, Mogg and XMA `AudioDecoder`s that takes the sample's format, and counts
+the voice on the sampler. `AttackWithTargetNote` turns the note's distance
+from the root key plus `SetPitchOffset`'s offset into a pitch ratio (clamped
+to `kMaxPitchOffsetCents`, twelve octaves), resets the LFOs (retriggered or
+joined to the sampler's free-running ones), the gains, the filter and the
+pan mix, and starts both envelopes. A start offset past the end of the
+sample kills the voice.
+
+`Process` (`0x9F2A0`) renders in control blocks of four frames: the decoder
+writes each block straight into the output channels with the volume
+envelope and a gain stepped towards the new output gain (trim, channel,
+mute and expression gains, the velocity and keyzone volume, and -3 dB of
+headroom). The playback rate combines the pitch bend, the portamento and
+pitch LFOs (two semitones at full depth), the keyzone's fine tune and the
+sample-rate ratio; time-stretched keyzones get the pitch ratio and a time
+ratio separately, and tempo-synced ones correct their speed by 1% whenever
+they drift more than 5 ms from the sampler's beat. A `BiquadFilter` (direct
+form II, in `src/audio/core/dsp`) then runs over the block unless it passes
+the signal through. The filter cutoff follows the LFOs (five octaves) and
+the assignable envelope (ten octaves); a jump of more than an octave first
+dips an `SPL::Ramper` gain over 10 ms, then ramps the coefficients over
+15 ms (`_UpdateFilterSettings`) and the gain back (`_RestoreFilterGain`).
+The pan mix, a 2x2 matrix scaled by the keyzone's channel gains, ramps
+across the call. The channel peaks are kept in `mLevels`; a voice whose
+envelope has finished or that has run out of sample dies once both peaks
+fall below 0.0001, unless the sampler's portamento holds it. The map's
+`PlaySampleSlice` has no counterpart in this build.
+
+`FusionSampler` (`audio/FusionSampler.o`, about `0x95C40` to `0x9D920`) is
+only partly reconstructed: its vtable and the members the voices use are
+declared, with `VirtualInstrument` (`src/audio/core/instruments`) as its
+primary base and `AudioGenerator` at `+312`. `FusionSampler.cpp` defines
+`SetVoicePool`, `VoicePoolWillDestruct`, `SetBeat`, `GetMaxNumVoices`, the
+pitch-bend, channel-gain and mute accessors and the `_Get*` getters.
 
 ## Buffers and wave files
 

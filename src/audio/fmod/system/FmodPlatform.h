@@ -3,14 +3,16 @@
 #include <atomic>
 #include <cstddef>
 #include <functional>
-#include <semaphore.h>
 
 #include "audio/core/containers/LinkedListSizeTracked.h"
 #include "audio/core/output/AudioRenderTarget.h"
 #include "audio/fmod/api/fmod_api.h"
+#include "utl/containers/List.h"
 #include "utl/containers/Std.h"
+#include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
 #include "os/threading/CritSec.h"
+#include "os/threading/Semaphore.h"
 
 class Transform;
 class Vector3;
@@ -65,7 +67,9 @@ public:
     virtual ~FmodBusInterface();                 // slots 0-1: 0x279140, 0x279E10
     virtual bool IsBusLoaded(Symbol path);       // slot 2: 0x279730
     virtual bool IsBusKnown(Symbol path);        // slot 3: 0x279790
-    virtual bool SetBusPaused(bool paused, Symbol path);  // slot 4: 0x279440
+    // Slot 4 at 0x279440. The path is passed as raw text; the third flag is
+    // ignored. Name not in the reference map.
+    virtual bool SetBusPaused(bool paused, const char* path, bool immediate);
     virtual bool SetMasterPaused(bool paused);   // slot 5: 0x2794B0
 };
 
@@ -75,6 +79,27 @@ extern FmodBusInterface* gFmodBusInterface;
 // vtable is at 0x18F0EF0. Name not in the reference map.
 class AudioCpuTimer {
 public:
+    // Inlined into FModSystem's constructor at 0x276530 and _InitTimers at
+    // 0x276FD0.
+    AudioCpuTimer()
+        : mTotalMs(0.0),
+          mCount(0),
+          mMaxMs(0.0),
+          mStatsLock(0),
+          mStartCycles(0),
+          mElapsedCycles(0),
+          mRunning(0) {}
+    // Copies the statistics but not the run state, as the source-timer
+    // list's resize at 0x278FA0 does.
+    AudioCpuTimer(const AudioCpuTimer& other)
+        : mName(other.mName),
+          mTotalMs(other.mTotalMs),
+          mCount(other.mCount),
+          mMaxMs(other.mMaxMs),
+          mStatsLock(other.mStatsLock.load()),
+          mStartCycles(0),
+          mElapsedCycles(0),
+          mRunning(0) {}
     virtual ~AudioCpuTimer() {}             // slots 0-1: 0x276DD0, 0x278C70
     virtual void Stop();                    // slot 2: 0x278880
     virtual double GetAveragePercent() const;  // slot 3: 0x278C80
@@ -115,6 +140,12 @@ static_assert(sizeof(AudioCpuTimer) == 72);
 // is at 0x18F0F28. Name not in the reference map.
 class AudioRollingCpuTimer : public AudioCpuTimer {
 public:
+    // Inlined into FModSystem's constructor at 0x276530: a window of one
+    // buffer.
+    AudioRollingCpuTimer() : mWindowTotalMs(0.0), mWindowIndex(0) {
+        mWindowSize = 1;
+        mWindow = new double[mWindowSize]();
+    }
     ~AudioRollingCpuTimer() override;          // slots 0-1: 0x276DB0, 0x278CD0
     void Stop() override;                      // slot 2: 0x278910
     double GetAveragePercent() const override;  // slot 3: 0x278D10
@@ -143,18 +174,11 @@ public:
         FMOD::DSP* mDSP;
     };
 
-    // EASTL vector of deferred releases. Name not in the reference map.
-    struct DeferredReleaseList {
-        DeferredRelease* mBegin;
-        DeferredRelease* mEnd;
-        DeferredRelease* mCapacity;
-        void* mAllocator;
-    };
-
     // Premix client that drains the deferred releases. The vtable is at
     // 0x18F0F60. Name not in the reference map.
     class DeferredReleaser : public FmodPremixCallback {
     public:
+        explicit DeferredReleaser(FModSystem* system) : mSystem(system) {}
         ~DeferredReleaser() override;  // slots 0-1: 0x276D40, 0x278D80
         // Slot 2 at 0x278DF0.
         void ExecutePremix(int numSamples, unsigned long mixCount) override;
@@ -162,8 +186,9 @@ public:
         FModSystem* mSystem;
     };
 
-    // The map has FModSystem(bool).
-    FModSystem();                 // 0x276530
+    // The map has FModSystem(bool); this build passes the name and sample
+    // rate through to AudioRenderTarget.
+    FModSystem(Symbol name, int sampleRate);  // 0x276530
     ~FModSystem() override;       // slots 0-1: 0x276A40, 0x276DE0
 
     int SuspendMixer() override;  // slot 2: 0x277B20
@@ -241,6 +266,10 @@ public:
         void* commandData2,
         void* userData);
 
+    // Collects the Studio system of every live FModSystem. At 0x276E00.
+    // Name not in the reference map.
+    static void GetAllStudioSystems(eastl::vector<FMOD::Studio::System*>& systems);
+
     static FModSystem* Get() {
         return sSystem;
     }
@@ -254,6 +283,9 @@ public:
     // The engine's primary system at 0x19F29D8. Name not in the reference
     // map.
     static FModSystem* sSystem;
+    // Every live system, added by the constructor and removed by the
+    // destructor. At 0x19F2F20. Name not in the reference map.
+    static eastl::vector<FModSystem*> sSystems;
 
     // Field names are not in the reference map.
     FMOD::Studio::System* mStudioSystem;
@@ -271,18 +303,17 @@ public:
     AudioCpuTimer mHmxTimer;
     AudioCpuTimer mFmodTimer;
     AudioRollingCpuTimer mBufferSetTimer;
-    // EASTL list of per-source AudioCpuTimer entries.
-    LinkedListSizeTracked::ListBase mSourceTimers;
-    void* mSourceTimersAllocator;
+    // Per-source timers ("mogg", "vibe" and "fusion").
+    eastl::list<AudioCpuTimer> mSourceTimers;
     // Set to -1 by the constructor and never read in this build; the name
     // only records the invalid-handle value. The evidence is weak.
     long mUnusedHandle;
     bool mInMix;
-    // Eight-byte aligned in the binary; bytes 673-679 are never accessed.
-    alignas(8) sem_t mMixSemaphore;
+    // Held across each mix.
+    Semaphore mMixSemaphore;
     bool mUpdateStudio;
     CritSec mDeferredCritSec;
-    DeferredReleaseList mDeferredReleases[2];
+    eastl::vector<DeferredRelease> mDeferredReleases[2];
     int mDeferredBuffer;
     DeferredReleaser mDeferredReleaser;
 };
@@ -300,7 +331,7 @@ static_assert(offsetof(FModSystem, mFmodTimer) == 456);
 static_assert(offsetof(FModSystem, mBufferSetTimer) == 528);
 static_assert(offsetof(FModSystem, mSourceTimers) == 632);
 static_assert(offsetof(FModSystem, mInMix) == 672);
-static_assert(offsetof(FModSystem, mMixSemaphore) == 680);
+static_assert(offsetof(FModSystem, mMixSemaphore) == 676);
 static_assert(offsetof(FModSystem, mUpdateStudio) == 696);
 static_assert(offsetof(FModSystem, mDeferredCritSec) == 704);
 static_assert(offsetof(FModSystem, mDeferredReleases) == 720);

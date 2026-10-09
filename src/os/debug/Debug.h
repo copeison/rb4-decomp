@@ -18,7 +18,14 @@ public:
     // TheDebug + 0x48; the list is not modelled. Name not in the reference
     // map, which has RemoveExitCallback(void (*)()).
     void AddExitCallback(void (*callback)());
+
+    // Reports a failure. This build's release body only runs the fail
+    // callbacks on the "failure" heap, guarded against reentry.
+    void Fail(const char* msg);  // 0x35C4C0
 };
 
 // The global debug stream, at 0x19FDB40.
 extern Debug TheDebug;
+
+// Reports a failure through TheDebug.
+void HmxFail(const char* msg);  // 0x35CC30

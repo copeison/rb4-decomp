@@ -118,7 +118,7 @@ int RndConsoleOverlay::Draw(RndContext& context, int y) {
     RndDrawUtl::DrawQuad2D(context, background);
     RndDrawUtl::DrawText2D(context, line, position, params, nullptr, nullptr);
 
-    if (std::fmod(TheTimeMgr->mClock.Seconds(), 0.6F) < 0.3F) {
+    if (std::fmod(TheTimeMgr->mClock.UISeconds(), 0.6F) < 0.3F) {
         line[sPromptLength + mInput._GetCursor()] = '\0';
         Vector2 cursor = {0.0F, 0.0F};
         const Vector2 size = context.mViewportSize;
