@@ -14,6 +14,7 @@
 
 class RndContext;
 class RndFactory;
+class RndBufferCollection;
 class RndShaderCBuffer;
 
 class RndWindow;
@@ -23,7 +24,6 @@ struct AudioAnalysisTextureSet;
 struct FogDeferredShaderResource;
 struct RenderPrimitiveMeshSet;
 struct RenderSettings;
-struct RenderTargetState;
 }  // namespace rb4
 
 // Startup options copied into the device by Init. The game builds them in
@@ -92,8 +92,7 @@ public:
     void PollMainWindow();                                 // 0x3DE0E0
     bool BeginMainWindowFrame();                           // 0x3DE130
     void EndMainWindowFrame();                             // 0x3DE7C0
-    // The map's parameter is RndBufferCollection*.
-    void BeginOffscreenFrame(rb4::RenderTargetState* buffers);  // 0x3DE8F0
+    void BeginOffscreenFrame(RndBufferCollection* buffers);  // 0x3DE8F0
     void EndOffscreenFrame();                              // 0x3DE9E0
     void ForceIncrementFrameCount();                       // 0x3DEAA0
     RndContext* AcquireDeferredContext(unsigned long index);  // 0x3DEB20
@@ -135,7 +134,7 @@ public:
     unsigned int mHdrOutputMode;
     RndWindow* mMainWindow;
     RndWindow* mCurrentWindow;
-    eastl::vector<rb4::RenderTargetState*> mCurrentTargets;
+    eastl::vector<RndBufferCollection*> mCurrentTargets;
     unsigned long mFrameCount;
     unsigned long mOffscreenFrameCount;
     bool mInFrame;

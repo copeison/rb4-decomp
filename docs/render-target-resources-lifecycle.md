@@ -1,14 +1,14 @@
 # Render-target resource-owner initialization
 
-`render_target_resources_construct` at `0x6AFEA0` initializes the exact
+`RndBufferCollection::RndBufferCollection` at `0x6AFEA0` initializes the exact
 1,552-byte owner layout. The owner embeds storage for 38 registered-resource
 pointers and four 216-byte scene blocks; construction points both containers
 at their inline storage, sets their capacities, selects primary block zero,
 and initializes the active scene context to `-1`.
-`render_target_resources_destruct` at `0x6AFFC0` restores the base dispatch
+`RndBufferCollection::~RndBufferCollection` at `0x6AFFC0` restores the base dispatch
 table before running the common release path.
 
-The 32-byte `RenderTargetState` header is the prefix of this owner. Its state
+The 32-byte `RndBufferCollection` header is the prefix of this owner. Its state
 flags map to owner flags, its reserved word maps to resource mode, draw/debug
 values occupy the owner's reserved 64-bit field, and width/height map to the
 owner extent. The concrete state constructor at `0x6B40A0` runs the common
@@ -66,7 +66,7 @@ the recovered alternating half-float voxel pattern as source data; the common
 texture constructor copies that temporary data before its local allocation is
 released. Existing depth-by-depth reuse behavior is preserved.
 
-`render_target_resources_initialize` at `0x6B0760` first releases the owner's
+`RndBufferCollection::InstallBackBuffer` at `0x6B0760` first releases the owner's
 old contents, derives its extent from the supplied `RenderTexture`, binds that
 texture as the owner source, and registers it in the owner's resource list.
 It then dispatches the owner-level resource groups in this order:
@@ -94,7 +94,7 @@ registered resource. Flag `0x20000000` forces the 64-bit light-accumulation
 format, while flag `0x80000000` marks the source texture as externally owned
 during release.
 
-`render_target_resources_release` at `0x6AFFE0` conditionally releases the
+`RndBufferCollection::Destroy` at `0x6AFFE0` conditionally releases the
 source texture, tears down every owner-level target group, and visits every
 active per-scene block. The block pass releases partial-frame state, depth,
 GBuffer, linear depth, ambient occlusion, tiled-light buffers, and volumetric
@@ -108,14 +108,14 @@ unclassified-resource adapters.
 
 Three adjacent owner helpers complete the active-block controls:
 
-- `render_target_resources_set_resource_mode` at `0x6B28D0` updates the owner
+- `RndBufferCollection::SetTargetMode` at `0x6B28D0` updates the owner
   mode only when it changes, then propagates it to registered resources.
-- `render_target_resources_acquire_partial_frame_state` at `0x6B2910` maps a
+- `RndBufferCollection::ObtainPartialFramerateData` at `0x6B2910` maps a
   partial-scene index to block `index + 1`, grows and initializes the block
   array as needed, and returns the block's 80-byte state. That state is now a
   typed allocation with the exact constructor defaults recovered from
   `0x6D18A0`; block teardown releases it directly.
-- `render_target_resources_select_partial_frame` at `0x6B2A20` stores the
+- `RndBufferCollection::SelectPartialFramerateBuffers` at `0x6B2A20` stores the
   active block index and scene context. Passing `-1, -1` selects the primary
   block and clears the context.
 

@@ -1,6 +1,6 @@
 # Shadow-contribution targets
 
-`render_shadow_contribution_targets_create` at `0x6B1970` returns immediately
+`RndBufferCollection::_AllocShadowBlurBuffers` at `0x6B1970` returns immediately
 when `max_shadow_contrib_buffers` is zero. Otherwise it creates a `Shadow
 Contrib TexArray` whose layer count comes from that setting.
 
@@ -15,7 +15,7 @@ The texture array, stencil, scratch pair, and soften-tile pair occupy owner
 offsets `0x240`, `0x248`, `0x250`/`0x258`, and `0x260`/`0x268`. Each resource
 uses the matching slot from a previous owner as its reuse input and is
 registered with the new owner. Resource flag `0x400` controls this group. The
-matching portion of `render_target_resources_release` at `0x6AFFE0` virtually
+matching portion of `RndBufferCollection::Destroy` at `0x6AFFE0` virtually
 deletes and clears all six slots.
 
 The exact target descriptors, including the texture-array and stencil factory

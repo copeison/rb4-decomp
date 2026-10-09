@@ -1,6 +1,6 @@
 # Render-target resource blocks
 
-`render_target_resource_block_initialize` at `0x6B2660` populates one
+`RndBufferCollection::_AllocFrameIntervalBuffers` at `0x6B2660` populates one
 216-byte per-scene resource block. The primary block registers its targets
 with the enclosing owner. Secondary partial-frame blocks allocate an 80-byte
 state object at block offset zero and retain their resources through the
@@ -19,7 +19,7 @@ The initializer dispatches these resource flags in binary order:
 
 Flag `0x0008` also creates the partial light-accumulation target for secondary
 blocks. The primary light-accumulation targets belong to the enclosing owner
-and are created earlier by `render_target_resources_initialize`.
+and are created earlier by `RndBufferCollection::InstallBackBuffer`.
 
 The primary tiled-light block creates its interpolation target. It first tries
 the corresponding target from a reusable block; if that is absent, it can

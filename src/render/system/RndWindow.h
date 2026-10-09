@@ -3,7 +3,14 @@
 #include <cstddef>
 
 #include "render/core/frame/render_extent.h"
-#include "render/core/targets/render_target.h"
+
+class RndBufferCollection;
+
+// The buffer collections a window draws into. Name not in the reference map.
+struct RndBufferCollectionList {
+    RndBufferCollection** mCollections;
+    unsigned long mCount;
+};
 
 // Render window: a presentation surface with one or more buffer collections.
 // The vtable is at 0x1901F38; the constructor and the non-virtual helpers are
@@ -15,7 +22,7 @@ public:
 
     // Slots 2, 3, and 6 are not in the reference map.
     virtual unsigned long _GetActiveBufferIndex() const = 0;           // slot 2
-    virtual rb4::RenderTargetStateHandle GetBufferCollections() const = 0;  // slot 3
+    virtual RndBufferCollectionList GetBufferCollections() const = 0;  // slot 3
     virtual void Poll();            // slot 4 at 0x448820
     // Called as each frame starts drawing the window.
     virtual void CheckForResize();  // slot 5 at 0x448830
@@ -43,13 +50,13 @@ public:
     ~RndBufferedWindow() override;  // 0x11B2D40, 0x11B2D90
 
     unsigned long _GetActiveBufferIndex() const override;           // 0x11B2DE0
-    rb4::RenderTargetStateHandle GetBufferCollections() const override;  // 0x11B2DF0
-    void SetBufferCollection(rb4::RenderTargetState* buffers);       // 0x11B2E00
+    RndBufferCollectionList GetBufferCollections() const override;  // 0x11B2DF0
+    void SetBufferCollection(RndBufferCollection* buffers);       // 0x11B2E00
 
     // Field names are not in the reference map.
     bool mOwnsBuffers;
-    rb4::RenderTargetState* mBuffers;
-    rb4::RenderTargetState* mActiveBuffers;
+    RndBufferCollection* mBuffers;
+    RndBufferCollection* mActiveBuffers;
 };
 
 static_assert(offsetof(RndBufferedWindow, mOwnsBuffers) == 12);

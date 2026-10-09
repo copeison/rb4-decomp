@@ -1,6 +1,6 @@
 # Scene-mask tiles
 
-`render_scene_mask_tiles_create` at `0x6B2140` creates two `Scene Mask`
+`RndBufferCollection::_AllocSceneMaskTileBuffers` at `0x6B2140` creates two `Scene Mask`
 render targets and a position-only `Scene Mask Mesh` when target-resource flag
 `0x4000` is set. Their extent is the output width and height divided upward by
 the renderer's 32-pixel light tile size.
@@ -15,5 +15,5 @@ triangles are populated.
 
 The two targets occupy owner offsets `0x270` and `0x278`; the mesh occupies
 `0x280`. Target creation accepts the matching resources from a prior owner for
-reuse. The corresponding portion of `render_target_resources_release` at
+reuse. The corresponding portion of `RndBufferCollection::Destroy` at
 `0x6AFFE0` virtually deletes and clears all three slots.

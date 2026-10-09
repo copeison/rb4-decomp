@@ -1,6 +1,6 @@
 # Volumetric-scattering textures
 
-`render_volumetric_scattering_textures_create` at `0x6B3730` runs when the
+`RndBufferCollection::_AllocVolumetricScatteringBuffers` at `0x6B3730` runs when the
 volumetric-scattering setting is enabled and resource flag `0x1000` selects the
 per-scene resource group. It divides the output width and height by
 `volumetric_scattering_tile_size`, rounds up, then aligns both tile dimensions

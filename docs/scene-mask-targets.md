@@ -1,6 +1,6 @@
 # Scene-mask targets
 
-`render_scene_mask_targets_create` at `0x6B1760` creates three owned render
+`RndBufferCollection::_AllocSceneMaskBuffer` at `0x6B1760` creates three owned render
 targets when target-resource flag `0x200` is set. `Mask Buffer` and
 `Mask Scratch Buffer` use the full target extent. `Mask Tile Buffer` uses
 `ceil(width / mask_tile_size)` by `ceil(height / mask_tile_size)`, where the
@@ -12,6 +12,6 @@ the new targets are also registered in the owner's resource list. The exact
 render-target descriptor assembly and virtual factory call remain behind a
 narrow adapter until the common target-resource owner is reconstructed.
 
-The matching portion of `render_target_resources_release` at `0x6AFFE0`
+The matching portion of `RndBufferCollection::Destroy` at `0x6AFFE0`
 invokes each target's virtual deleting destructor in slot order and clears all
 three pointers.

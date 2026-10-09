@@ -26,15 +26,16 @@ The original tree is flat by module, with one class per object file:
 
 These were checked against the binary in IDA.
 
-- **Missing resource registration.** The binary adds every target it creates
+- **Missing resource registration.** *(Fixed in the buffer-collection
+  conversion.)* The binary adds every target it creates
   to the owner's registered-resource list; the source registers none.
   - Sky targets: 0x6B0E80, source `render/sky/sky_targets.cpp`.
   - Scaled targets: 0x6B12D0, source `render/intermediate/scaled_targets.cpp`.
   - Light-accumulation targets: 0x6B0B20, source
     `render/lighting/accumulation/light_accumulation_targets.cpp`.
-- **CMAA color target.** The binary registers it only when it is non-null;
+- **CMAA color target.** *(Fixed.)* The binary registers it only when it is non-null;
   `render/lighting/.../cmaa_targets.cpp` registers it unconditionally.
-- **Light-accumulation factory.** It takes a signed attachment selector and a
+- **Light-accumulation factory.** *(Fixed.)* It takes a signed attachment selector and a
   target-flags argument. The source narrows the first to `bool` and hard-codes
   the second.
 - **Wrong address label.** *(Fixed in the render-device conversion.)*
@@ -57,14 +58,14 @@ These were checked against the binary in IDA.
   and the `shader_field` / `primary_shader` helpers, are re-declared in about
   24 files, some with `void*` parameter types. They should come from
   `render/resources/shaders/primary_shader_dispatch.h`.
-- **Target-file helpers are duplicated.** `divide_round_up`, `target_slot`,
+- **Target-file helpers are duplicated.** *(Fixed: the files are merged into `RndBufferCollection.cpp`.)* `divide_round_up`, `target_slot`,
   `reusable_target`, `release_target` and the registration push are each
   copied into 6-12 `*_targets.cpp` files.
 - **Copy-pasted mesh files.** Seven Orbis mesh files differ only in vertex
   type; they were one template (`PS4MeshTyped<T>`).
 - **Copy-pasted generator pools.** Five audio generator managers copy the same
   pool code; the original shares a base (`_InitGeneratorPool`, `GetIndex`, …).
-- **Duplicate layouts for one object.** `RenderTargetState` and
+- **Duplicate layouts for one object.** *(Fixed: both are `RndBufferCollection`.)* `RenderTargetState` and
   `RenderTargetResources` describe the same object.
   `TiledLightTargetResources` duplicates `RenderTargetResourceBlock`.
 - **`RenderSystem` layout lives in raw offsets.** *(Fixed: `RndDevice` and

@@ -13,8 +13,7 @@
 #include "render/system/RndWindow.h"
 #include "render/core/settings/render_settings.h"
 #include "render/system/RndDevice.h"
-#include "render/core/targets/render_target.h"
-#include "render/core/targets/render_target_resources.h"
+#include "render/targets/RndBufferCollection.h"
 #include "render/platform/orbis/context/orbis_render_context.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Factory.h"
@@ -60,9 +59,8 @@ void for_each_output_texture(
     Callback callback) {
     auto* frame_owner = system.mMainWindow;
     const auto states = frame_owner->GetBufferCollections();
-    for (std::size_t index = 0; index < states.count; ++index) {
-        auto* texture = reinterpret_cast<RenderTargetResources&>(
-            *states.states[index]).source_texture;
+    for (std::size_t index = 0; index < states.mCount; ++index) {
+        auto* texture = states.mCollections[index]->mBackBuffer;
         if (texture != nullptr) {
             callback(reinterpret_cast<PS4Texture2D&>(*texture));
         }

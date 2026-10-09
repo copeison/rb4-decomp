@@ -575,6 +575,10 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the render targets to `RndBufferCollection` and
+  `RndBufferCollection2D`, merging the 17 per-buffer files into the map's
+  object and restoring the missing buffer registrations (see
+  [render-buffer-collection.md](render-buffer-collection.md)).
 - [x] Convert the render windows to `RndWindow`, `RndBufferedWindow`, and
   `PS4Window` with their seven-slot vtables (see
   [render-window.md](render-window.md)).

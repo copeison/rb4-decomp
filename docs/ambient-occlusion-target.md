@@ -7,7 +7,7 @@ corresponding resource from a previous block for reuse.
 
 The primary scene registers the target with the enclosing resource owner.
 Partial-frame scenes retain it through their own blocks. The matching section
-of `render_target_resources_release` at `0x6AFFE0` invokes the target's virtual
+of `RndBufferCollection::Destroy` at `0x6AFFE0` invokes the target's virtual
 deleting destructor and clears the slot.
 
 The exact format-28 descriptor assembly and owner factory dispatch remain

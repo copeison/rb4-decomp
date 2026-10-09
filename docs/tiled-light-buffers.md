@@ -35,7 +35,7 @@ The matching section of the lighting-system destructor at `0x480AD0` invokes
 each buffer's virtual deleting destructor and clears all five owner slots in
 the same order.
 
-`render_tiled_light_target_buffers_create` at `0x6B3380` allocates two
+`RndBufferCollection::_AllocTiledLightingBuffers` at `0x6B3380` allocates two
 light-ID buffers and one range buffer for each target. The number of ranges is
 `ceil(width / tile_size) * ceil(height / tile_size) * depth_slices`. Range
 records are 32 bytes. Light IDs are 16-bit values packed two per four-byte

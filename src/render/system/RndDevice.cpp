@@ -9,7 +9,7 @@
 #include "render/system/RndWindow.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_frame_adapters.h"
-#include "render/core/targets/render_target_resources.h"
+#include "render/targets/RndBufferCollection.h"
 #include "render/resources/audio/audio_analysis_textures.h"
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
@@ -65,12 +65,9 @@ void TransitionWindowTargets(RndDevice& device, RndContext& context) {
         }
 
         const auto targets = window.GetBufferCollections();
-        for (std::size_t t = 0; t < targets.count; ++t) {
-            const auto& resources =
-                reinterpret_cast<const RenderTargetResources&>(
-                    *targets.states[t]);
+        for (std::size_t t = 0; t < targets.mCount; ++t) {
             auto& barrier = barriers[count++];
-            barrier.mResource = resources.source_texture;
+            barrier.mResource = targets.mCollections[t]->mBackBuffer;
             barrier.mSubresource = ~0UL;
             barrier.mBefore = RndResourceState::kRenderTarget;
         }
@@ -347,8 +344,8 @@ bool RndDevice::_DoBeginDrawingWindow(RndWindow& window) {
     mFrameWindows.mData[mFrameWindows.mSize++] = &window;
 
     const auto targets = window.GetBufferCollections();
-    mCurrentTargets.resize(targets.count);
-    std::copy_n(targets.states, targets.count, mCurrentTargets.begin());
+    mCurrentTargets.resize(targets.mCount);
+    std::copy_n(targets.mCollections, targets.mCount, mCurrentTargets.begin());
 
     mImmediateContext->BeginFrame(0);
     return true;
@@ -399,7 +396,7 @@ void RndDevice::_DoEndDrawingBufferCollection() {
 }
 
 // Reconstructed from eboot.elf at 0x3DE8F0.
-void RndDevice::BeginOffscreenFrame(RenderTargetState* buffers) {
+void RndDevice::BeginOffscreenFrame(RndBufferCollection* buffers) {
     _DoBeginFrame(true);
     mCurrentTargets.resize(buffers == nullptr ? 0 : 1);
     if (buffers != nullptr) {
