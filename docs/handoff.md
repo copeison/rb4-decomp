@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 660 entries, most of the
+executable. The latest unresolved-symbol report contains 650 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `PS4Context` sampler, shader-deactivation, deselect-all and counter-copy on the Gnm SDK |
+| (this) | `PS4Context` resource signals, waits and label ring |
+| `da75c56` | `PS4Context` sampler, shader-deactivation, deselect-all and counter-copy on the Gnm SDK |
 | `cc007e5` | `PS4RenderStateUtl` builders and the `PS4Context` blend, depth-stencil, raster and write-mask setters |
 | `2ccadc2` | `PS4Context` GPU statistics with an `eastl::map` model |
 | `96981e6` | `PS4Context` fences, dispatch and markers on the Gnm SDK |

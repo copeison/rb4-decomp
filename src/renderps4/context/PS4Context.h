@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 #include <gnm/buffer.h>
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
@@ -174,8 +175,6 @@ private:
         std::size_t slot,
         std::size_t cueSlotCount,
         std::size_t commandBufferSize);
-    void _InitLabelPool(std::size_t initialCapacity);
-    void _ReleaseLabelPool();
     void _DestructCommandState();
 
     // Frame submission and reset. Names not in the reference map; not yet
@@ -262,14 +261,10 @@ private:
         const void* resource,
         volatile std::uint32_t*& sharedLabel);  // 0x8EB3E0
     void _WaitForResource(const void* resource);  // 0x8EB590
-    volatile std::uint32_t* _AllocateResourceLabel();
-    void _EmitGraphicsResourceSignal(volatile std::uint32_t* label, std::uint32_t value);
-    void _EmitComputeResourceSignal(volatile std::uint32_t* label, std::uint32_t value);
-    void _TrackResourceSignal(const ResourceSignal& signal);
-    ResourceSignal* _FindResourceSignal(const void* resource);
-    void _EmitGraphicsResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
-    void _EmitComputeResourceWait(const volatile std::uint32_t* label, std::uint32_t value);
-    void _RemoveResourceSignalGroup(const volatile std::uint32_t* label);
+    // Hands out the next label of the ring, growing it when it would reach
+    // the labels the previous frame may still use. Name not in the
+    // reference map.
+    volatile std::uint32_t* _AllocateResourceLabel();  // 0x8E7EB0
 
 public:
     // Layout is modeled only where the offsets are known. Field names are
@@ -282,7 +277,18 @@ public:
     // Nonzero while a frame's graphics (0) or compute (1-9) submission is
     // in flight.
     volatile std::int32_t mSubmissionPending[kFrameSlotCount][10];
-    unsigned char mUnknown141520[0x100];
+    // Resources signalled by split barriers, and the label ring their
+    // signals use: the labels, the first label of each frame parity, the
+    // frame the ring was last used in, the next label and the capacity.
+    // Names not in the reference map.
+    std::vector<ResourceSignal> mResourceSignals;
+    std::uint32_t* mLabels;
+    unsigned long mLabelFrameStarts[2];
+    unsigned long mLabelFrame;
+    unsigned long mNextLabel;
+    unsigned long mLabelCapacity;
+    // The two compute queues. Not yet modeled.
+    unsigned char mUnknown141600[0xB0];
     // Nine compute contexts per frame slot.
     sce::Gnmx::ComputeContext mComputeContexts[kFrameSlotCount][kComputeContextsPerFrame];
     std::size_t mActiveFrame;
@@ -325,7 +331,11 @@ static_assert(offsetof(PS4Context, mUnknown22305) == 0x5721);
 static_assert(offsetof(PS4Context, mGfxContexts) == 0x5728);
 static_assert(offsetof(PS4Context, mUnknown141368) == 0x22838);
 static_assert(offsetof(PS4Context, mSubmissionPending) == 0x22880);
-static_assert(offsetof(PS4Context, mUnknown141520) == 0x228D0);
+static_assert(sizeof(std::vector<PS4Context::ResourceSignal>) == 32);
+static_assert(offsetof(PS4Context, mResourceSignals) == 0x228D0);
+static_assert(offsetof(PS4Context, mLabels) == 0x228F0);
+static_assert(offsetof(PS4Context, mLabelCapacity) == 0x22918);
+static_assert(offsetof(PS4Context, mUnknown141600) == 0x22920);
 static_assert(sizeof(sce::Gnmx::ComputeContext) == 0x1AE0);
 static_assert(offsetof(PS4Context, mComputeContexts) == 0x229D0);
 static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);

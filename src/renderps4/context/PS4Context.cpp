@@ -138,6 +138,11 @@ PS4Context* PS4Context::_CreateImmediate(PS4Device& device) {
 // not yet modeled.
 PS4Context::PS4Context()
     : RndContext(false),
+      mLabels(nullptr),
+      mLabelFrameStarts{0, 0},
+      mLabelFrame(0),
+      mNextLabel(0),
+      mLabelCapacity(0),
       mDepthMode(0),
       mStencilMode(0),
       mFrontFace(1),
@@ -178,7 +183,9 @@ PS4Context::PS4Context()
     for (std::size_t slot = 0; slot < kComputeContextCount; ++slot) {
         _InitComputeContext(slot, kCueSlotCount, kComputeCommandBufferSize);
     }
-    _InitLabelPool(kInitialLabelCapacity);
+    mResourceSignals.reserve(kInitialLabelCapacity);
+    mLabelCapacity = kInitialLabelCapacity;
+    _AllocateResourceLabel();
 }
 
 // Reconstructed from eboot.elf at 0x8E7AF0.
@@ -217,7 +224,7 @@ void PS4Context::_CreateGpuTimestampPool() {
 // them are not yet modeled.
 PS4Context::~PS4Context() {
     MemFree(mGpuTimestamps);
-    _ReleaseLabelPool();
+    MemFree(mLabels);
     _DestructCommandState();
 }
 
@@ -754,43 +761,122 @@ void PS4Context::_ResourceBarrierImpl(unsigned long count, const RndResourceBarr
     }
 }
 
-// Reconstructed from eboot.elf at 0x8EB3E0.
+// Reconstructed from eboot.elf at 0x8E7EB0. Labels are handed out in a ring.
+// When the ring would reach the first label of the previous frame, it is
+// replaced by one twice the size. A new frame records where it starts; two
+// frames on, every label is free again, and one frame on only the signals of
+// the last frame are kept.
+volatile std::uint32_t* PS4Context::_AllocateResourceLabel() {
+    auto frame = static_cast<unsigned long>(gPS4Device->mFrameCount);
+    if (mLabelFrame != frame) {
+        if (mLabelFrame + 1 == frame) {
+            auto keep = mResourceSignals.end();
+            while (keep != mResourceSignals.begin()) {
+                if (frame - static_cast<unsigned long>((keep - 1)->mRenderEpoch) > 1) {
+                    break;
+                }
+                --keep;
+            }
+            mResourceSignals.erase(mResourceSignals.begin(), keep);
+        } else {
+            mNextLabel = 0;
+            if (mLabels != nullptr) {
+                mLabelFrameStarts[0] = mLabelCapacity - 1;
+                mLabelFrameStarts[1] = mLabelCapacity - 1;
+            } else {
+                mLabelFrameStarts[0] = 0;
+                mLabelFrameStarts[1] = 0;
+            }
+        }
+        mLabelFrame = frame;
+        mLabelFrameStarts[frame & 1] = mNextLabel;
+        frame = mLabelFrame;
+    }
+
+    auto* labels = mLabels;
+    if (mNextLabel == mLabelFrameStarts[(frame & 1) == 0 ? 1 : 0]) {
+        if (labels != nullptr) {
+            gPS4Device->DeferredDelete(labels);
+        }
+        const auto capacity = mLabelCapacity;
+        mLabelCapacity = 2 * capacity;
+        mNextLabel = 0;
+        mLabelFrameStarts[0] = 2 * capacity - 1;
+        mLabelFrameStarts[1] = 2 * capacity - 1;
+        labels = static_cast<std::uint32_t*>(MemAlloc(8 * capacity, "labels", 0));
+        mLabels = labels;
+    }
+    auto* label = labels + mNextLabel;
+    const auto next = mNextLabel + 1;
+    mNextLabel = next != mLabelCapacity ? next : 0;
+    return label;
+}
+
+// Reconstructed from eboot.elf at 0x8EB3E0. A barrier's first resource
+// allocates the shared label and signals it at end of pipe; every resource
+// is recorded against it.
 void PS4Context::_SignalResource(
     const void* resource,
     volatile std::uint32_t*& sharedLabel) {
     if (sharedLabel == nullptr) {
-        sharedLabel = _AllocateResourceLabel();
-        *sharedLabel = 0;
-
-        if (_RecordingGraphics()) {
-            _EmitGraphicsResourceSignal(sharedLabel, kResourceReadyValue);
-        } else if (_RecordingCompute()) {
-            _EmitComputeResourceSignal(sharedLabel, kResourceReadyValue);
+        auto* label = _AllocateResourceLabel();
+        sharedLabel = label;
+        *label = 0;
+        if (mActivePipe == 1) {
+            _ActiveComputeContext().writeReleaseMemEvent(
+                sce::Gnm::kReleaseMemEventCsDone,
+                sce::Gnm::kEventWriteDestMemory,
+                const_cast<std::uint32_t*>(label),
+                sce::Gnm::kEventWriteSource32BitsImmediate,
+                kResourceReadyValue,
+                sce::Gnm::kCacheActionNone,
+                sce::Gnm::kCachePolicyLru);
+        } else if (mActivePipe == 0) {
+            _ActiveGfxContext().writeAtEndOfPipe(
+                sce::Gnm::kEopCbDbReadsDone,
+                sce::Gnm::kEventWriteDestMemory,
+                const_cast<std::uint32_t*>(label),
+                sce::Gnm::kEventWriteSource32BitsImmediate,
+                kResourceReadyValue,
+                sce::Gnm::kCacheActionNone,
+                sce::Gnm::kCachePolicyLru);
         }
     }
 
-    const ResourceSignal signal = {
-        resource,
-        sharedLabel,
-        TheRndDevice()->mFrameCount,
-    };
-    _TrackResourceSignal(signal);
+    ResourceSignal signal;
+    signal.mResource = resource;
+    signal.mLabel = sharedLabel;
+    signal.mRenderEpoch = gPS4Device->mFrameCount;
+    mResourceSignals.push_back(signal);
 }
 
-// Reconstructed from eboot.elf at 0x8EB590.
+// Reconstructed from eboot.elf at 0x8EB590. Waits for the first signal of the
+// resource, then forgets every resource that shared its label.
 void PS4Context::_WaitForResource(const void* resource) {
-    auto* signal = _FindResourceSignal(resource);
-    if (signal == nullptr) {
+    auto it = mResourceSignals.begin();
+    while (it != mResourceSignals.end() && it->mResource != resource) {
+        ++it;
+    }
+    if (it == mResourceSignals.end()) {
         return;
     }
 
-    if (_RecordingGraphics()) {
-        _EmitGraphicsResourceWait(signal->mLabel, kResourceReadyValue);
-    } else if (_RecordingCompute()) {
-        _EmitComputeResourceWait(signal->mLabel, kResourceReadyValue);
+    auto* label = const_cast<std::uint32_t*>(it->mLabel);
+    if (mActivePipe == 0) {
+        _ActiveGfxContext().waitOnAddress(
+            label, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncEqual, kResourceReadyValue);
+    } else if (mActivePipe == 1) {
+        _ActiveComputeContext().waitOnAddress(
+            label, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncEqual, kResourceReadyValue);
     }
 
-    _RemoveResourceSignalGroup(signal->mLabel);
+    const volatile std::uint32_t* signalled = it->mLabel;
+    mResourceSignals.erase(
+        std::remove_if(
+            mResourceSignals.begin(),
+            mResourceSignals.end(),
+            [signalled](const ResourceSignal& signal) { return signal.mLabel == signalled; }),
+        mResourceSignals.end());
 }
 
 // Fences, dispatch and markers -----------------------------------------------
