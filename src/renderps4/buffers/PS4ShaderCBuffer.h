@@ -24,16 +24,13 @@ public:
     void* mFrameData;
     void* mGpuData;
     unsigned long mGpuSize;
+    // RndDevice::mFrameCount when mFrameData was allocated.
     unsigned long mFrame;
 
 private:
     // Reconstructed from eboot.elf at 0x8E3880. Name not in the reference
     // map.
     void _FreeGpuData();
-    // Stand-ins for code inlined into _SelectImpl; not yet reconstructed.
-    // Names not in the reference map.
-    void _PrepareFrameData(RndContext& context);
-    void _SelectStages(RndContext& context) const;
 };
 
 static_assert(offsetof(PS4ShaderCBuffer, mFrameData) == 80);

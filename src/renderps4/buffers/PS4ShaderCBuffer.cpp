@@ -1,12 +1,23 @@
 #include "renderps4/buffers/PS4ShaderCBuffer.h"
-#include "renderps4/system/PS4Device.h"
 
 #include <algorithm>
 #include <cstring>
+#include <gnm/buffer.h>
+
+#include "render/system/RndDevice.h"
+#include "renderps4/context/PS4Context.h"
+#include "renderps4/system/PS4Device.h"
 
 namespace {
 
 constexpr unsigned long kElementSize = 16;
+
+// RndShaderCBuffer::mStageMask bits. Names not in the reference map.
+constexpr unsigned int kStageVertex = 1;
+constexpr unsigned int kStageTessellation = 2;
+constexpr unsigned int kStageGeometry = 4;
+constexpr unsigned int kStagePixel = 8;
+constexpr unsigned int kStageCompute = 0x10;
 
 }  // namespace
 
@@ -57,8 +68,57 @@ void PS4ShaderCBuffer::_SyncImpl(
     mFrameData = nullptr;
 }
 
-// Reconstructed from eboot.elf at 0x8E39C0.
+// Reconstructed from eboot.elf at 0x8E39C0. The constants are copied into
+// the active command buffer once per render frame and bound to every stage
+// in the buffer's stage mask.
 void PS4ShaderCBuffer::_SelectImpl(RndContext& context) {
-    _PrepareFrameData(context);
-    _SelectStages(context);
+    auto& ps4 = static_cast<PS4Context&>(context);
+    const auto slot = static_cast<int>(mIndex);
+    const auto stages = mStageMask;
+
+    const auto frame = TheRndDevice()->mFrameCount;
+    if (mFrame != frame) {
+        mFrame = frame;
+        mFrameData = nullptr;
+    }
+    if (mFrameData == nullptr) {
+        const auto size = static_cast<unsigned int>(mGpuSize);
+        if (context.mActivePipe == 1) {
+            mFrameData = ps4._ActiveComputeContext().allocateFromCommandBuffer(
+                size, sce::Gnm::kEmbeddedDataAlignment4);
+        } else if (context.mActivePipe == 0) {
+            mFrameData = ps4._ActiveGfxContext().allocateFromCommandBuffer(
+                size, sce::Gnm::kEmbeddedDataAlignment4);
+        }
+    }
+    std::memcpy(mFrameData, mGpuData, mGpuSize);
+
+    sce::Gnm::Buffer buffer;
+    buffer.initAsConstantBuffer(mFrameData, static_cast<unsigned int>(mGpuSize));
+    buffer.setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
+
+    if (context.mActivePipe == 0) {
+        auto& gfx = ps4._ActiveGfxContext();
+        if ((stages & kStageVertex) != 0) {
+            gfx.setConstantBuffers(sce::Gnm::kShaderStageVs, slot, 1, &buffer);
+        }
+        if ((stages & kStageTessellation) != 0) {
+            gfx.setConstantBuffers(sce::Gnm::kShaderStageHs, slot, 1, &buffer);
+            gfx.setConstantBuffers(sce::Gnm::kShaderStageLs, slot, 1, &buffer);
+        }
+        if ((stages & kStageGeometry) != 0) {
+            gfx.setConstantBuffers(sce::Gnm::kShaderStageGs, slot, 1, &buffer);
+        }
+        if ((stages & kStagePixel) != 0) {
+            gfx.setConstantBuffers(sce::Gnm::kShaderStagePs, slot, 1, &buffer);
+        }
+    }
+    if ((stages & kStageCompute) != 0) {
+        if (context.mActivePipe == 1) {
+            ps4._ActiveComputeContext().setConstantBuffers(slot, 1, &buffer);
+        } else if (context.mActivePipe == 0) {
+            ps4._ActiveGfxContext().setConstantBuffers(
+                sce::Gnm::kShaderStageCs, slot, 1, &buffer);
+        }
+    }
 }

@@ -6,6 +6,7 @@
 #include <gnm/depthrendertarget.h>
 #include <gnm/rendertarget.h>
 #include <gnm/sampler.h>
+#include <gnmx/computecontext.h>
 #include <gnmx/gfxcontext.h>
 
 #include "render/context/RndContext.h"
@@ -125,6 +126,12 @@ public:
     // skipping state the context already holds. The map has
     // SetupDraw(RndContext::Primitive); this build's enum is RndPrimitive.
     void SetupDraw(RndPrimitive primitive);  // 0x8EA560
+    // Enables or disables color-buffer writes, skipping the packet when the
+    // state is unchanged.
+    void SetCbEnabled(bool enabled);  // 0x8EA7D0
+    // The compute context of the active frame slot and compute slot. Name
+    // not in the reference map.
+    sce::Gnmx::ComputeContext& _ActiveComputeContext();
     // The active frame's graphics context. Name not in the reference map.
     sce::Gnmx::GfxContext& _ActiveGfxContext();
 
@@ -164,11 +171,10 @@ public:
 private:
     // Construction and teardown. Names not in the reference map; they are
     // not yet reconstructed unless an address is given. The graphics
-    // contexts are members, so the compiler constructs and destroys them as
-    // the binary does; _InitCommandState and _DestructCommandState stand for
-    // the rest of the command state.
+    // and compute contexts are members, so the compiler constructs and
+    // destroys them as the binary does; _InitCommandState and
+    // _DestructCommandState stand for the rest of the command state.
     void _InitCommandState();
-    void _ConstructComputeSlot(std::size_t slot);
     void _InitStateDefaults();
     void _InitAllocationMap();
     void _CreateGfxContext();  // 0x8E7AF0
@@ -194,7 +200,6 @@ private:
     void _InitLabelPool(std::size_t initialCapacity);
     void _ReleaseLabelPool();
     void _ReleaseTimestampPool();
-    void _DestructComputeSlot(std::size_t slot);
     void _DestructCommandState();
 
     // Frame submission and reset. Names not in the reference map; not yet
@@ -356,7 +361,9 @@ public:
     // Nonzero while a frame's graphics (0) or compute (1-9) submission is
     // in flight.
     volatile std::int32_t mSubmissionPending[kFrameSlotCount][10];
-    unsigned char mUnknown141520[0x1E4C0];
+    unsigned char mUnknown141520[0x100];
+    // Nine compute contexts per frame slot.
+    sce::Gnmx::ComputeContext mComputeContexts[kFrameSlotCount][kComputeContextsPerFrame];
     std::size_t mActiveFrame;
     unsigned char mUnknown265624[0x20];
     // One bank per frame, indexed by vertex type.
@@ -368,7 +375,9 @@ public:
     sce::Gnm::ActiveShaderStages mCachedShaderStages;
     sce::Gnm::PrimitiveType mCachedPrimitiveType;
     bool mGsModeEnabled;
-    unsigned char mUnknown280713[7];
+    // SetCbEnabled's last state. Name not in the reference map.
+    bool mCbEnabled;
+    unsigned char mUnknown280714[6];
 };
 
 static_assert(sizeof(sce::Gnmx::GfxContext) == 0xE888);
@@ -379,6 +388,8 @@ static_assert(offsetof(PS4Context, mGfxContexts) == 0x5728);
 static_assert(offsetof(PS4Context, mUnknown141368) == 0x22838);
 static_assert(offsetof(PS4Context, mSubmissionPending) == 0x22880);
 static_assert(offsetof(PS4Context, mUnknown141520) == 0x228D0);
+static_assert(sizeof(sce::Gnmx::ComputeContext) == 0x1AE0);
+static_assert(offsetof(PS4Context, mComputeContexts) == 0x229D0);
 static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);
 static_assert(offsetof(PS4Context, mUnknown265624) == 0x40D98);
 static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
@@ -386,5 +397,6 @@ static_assert(offsetof(PS4Context, mUnknown268344) == 0x41838);
 static_assert(offsetof(PS4Context, mCachedShaderStages) == 0x44880);
 static_assert(offsetof(PS4Context, mCachedPrimitiveType) == 0x44884);
 static_assert(offsetof(PS4Context, mGsModeEnabled) == 0x44888);
-static_assert(offsetof(PS4Context, mUnknown280713) == 0x44889);
+static_assert(offsetof(PS4Context, mCbEnabled) == 0x44889);
+static_assert(offsetof(PS4Context, mUnknown280714) == 0x4488A);
 static_assert(sizeof(PS4Context) == 0x44890);

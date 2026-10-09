@@ -20,7 +20,8 @@ RndContext::RndContext(bool disableComputeQueues)
       mDisableComputeQueues(disableComputeQueues),
       mMode(disableComputeQueues ? 0 : -1),
       mSliceMode(-1),
-      mUnknown112{},
+      mCameraCBufferOverride(nullptr),
+      mUnknown120{},
       mUnknown140(1.0F),
       mUnknown18768(false),
       mUnknown18776(0),
@@ -28,16 +29,11 @@ RndContext::RndContext(bool disableComputeQueues)
       mUnknown18788(5),
       mInputSlotLimits{},
       mOutputSlotLimits{},
-      mUnknown18888(false),
-      mUnknown18892(0),
-      mUnknown18896(0),
-      mUnknown18900(1.0F),
-      mUnknown18904(0),
-      mUnknown18908{},
       mShadingMode(0),
       mUnknown18972(-1),
       mUnknown18976(-1),
-      mUnknown18980{},
+      mActivePipe(0),
+      mActiveComputeSlot(0),
       mCBuffers{},
       mUnknown22304(false) {
     mUnknown24.mData = mUnknown24.mStorage;
@@ -107,4 +103,23 @@ void RndContext::PushGpuStatScope(const RndGpuStatScope& scope) {
 
 void RndContext::PopGpuStatScope() {
     --mGpuStatScopes.mpEnd;
+}
+
+// Reconstructed from eboot.elf at 0x6BD930.
+void RndContext::_ReselectGlobalCBuffers() {
+    auto* device = TheRndDevice();
+    mCBuffers[1]->_SelectImpl(*this);
+    mCBuffers[5]->_SelectImpl(*this);
+    device->mBuiltinCBuffers[2]->_SelectImpl(*this);
+    device->mBuiltinCBuffers[3]->_SelectImpl(*this);
+
+    auto* camera = mUnknown24.mSize != 0 || mCameraCBufferOverride != nullptr
+        ? mCBuffers[0]
+        : device->mBuiltinCBuffers[0];
+    camera->_SelectImpl(*this);
+
+    const bool lit = mLightSlots[0].mEnabled || mLightSlots[1].mEnabled ||
+        mLightSlots[2].mEnabled || mLightSlots[3].mEnabled;
+    auto* lights = lit ? mCBuffers[2] : device->mBuiltinCBuffers[1];
+    lights->_SelectImpl(*this);
 }

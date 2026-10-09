@@ -136,9 +136,6 @@ PS4Context* PS4Context::_CreateImmediate(PS4Device& device) {
 PS4Context::PS4Context() : RndContext(false) {
     _InitCommandState();
 
-    for (std::size_t slot = 0; slot < kComputeContextCount; ++slot) {
-        _ConstructComputeSlot(slot);
-    }
     _InitStateDefaults();
     _InitAllocationMap();
     _CreateGfxContext();
@@ -191,10 +188,11 @@ void PS4Context::_CreateGpuTimestampPool() {
 PS4Context::~PS4Context() {
     _ReleaseLabelPool();
     _ReleaseTimestampPool();
-    for (std::size_t slot = kComputeContextCount; slot-- > 0;) {
-        _DestructComputeSlot(slot);
-    }
     _DestructCommandState();
+}
+
+sce::Gnmx::ComputeContext& PS4Context::_ActiveComputeContext() {
+    return mComputeContexts[mActiveFrame][mActiveComputeSlot];
 }
 
 sce::Gnmx::GfxContext& PS4Context::_ActiveGfxContext() {
@@ -462,6 +460,16 @@ void PS4Context::SetupDraw(RndPrimitive primitive) {
     if (mCachedPrimitiveType != primitiveType) {
         _ActiveGfxContext().setPrimitiveType(primitiveType);
         mCachedPrimitiveType = primitiveType;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8EA7D0.
+void PS4Context::SetCbEnabled(bool enabled) {
+    if (enabled != mCbEnabled) {
+        _ActiveGfxContext().setCbControl(
+            enabled ? sce::Gnm::kCbModeNormal : sce::Gnm::kCbModeDisable,
+            sce::Gnm::kRasterOpCopy);
+        mCbEnabled = enabled;
     }
 }
 

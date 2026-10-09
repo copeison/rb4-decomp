@@ -147,6 +147,9 @@ public:
 
     // Reconstructed from eboot.elf at 0x6BD420.
     void DeactivateShaderProgramType(RndShaderProgramType type);
+    // Selects the context's global constant buffers, falling back to the
+    // device's defaults for the camera and the lights when none are set.
+    void _ReselectGlobalCBuffers();  // 0x6BD930
     // Starts a frame with the given activation flags. Not yet reconstructed;
     // name not in the reference map.
     void BeginFrame(unsigned int flags);
@@ -163,7 +166,9 @@ public:
     int mMode;
     int mSliceMode;  // -1 selects a single render-target slice.
     FixedVector<void*, 8> mUnknown24;
-    unsigned char mUnknown112[28];
+    // Set by the map's SetCameraCBufferOverrideContext.
+    const RndCameraContext* mCameraCBufferOverride;
+    unsigned char mUnknown120[20];
     float mUnknown140;
     RndCameraContext mCameras[2];
     bool mUnknown18768;
@@ -172,16 +177,22 @@ public:
     int mUnknown18788;
     unsigned long mInputSlotLimits[kNumShaderProgramTypes];
     unsigned long mOutputSlotLimits[kNumShaderProgramTypes];
-    bool mUnknown18888;
-    int mUnknown18892;
-    int mUnknown18896;
-    float mUnknown18900;
-    int mUnknown18904;
-    unsigned char mUnknown18908[60];
+    // Four light slots; a set enabled flag selects the context's light
+    // constant buffer. Names not in the reference map.
+    struct LightSlot {
+        bool mEnabled = false;
+        int mUnknown4 = 0;
+        int mUnknown8 = 0;
+        float mUnknown12 = 1.0F;
+        int mUnknown16 = 0;
+    };
+    LightSlot mLightSlots[4];
     int mShadingMode;
     int mUnknown18972;
     int mUnknown18976;
-    unsigned char mUnknown18980[12];
+    // 0 records on the graphics context, 1 on a compute context.
+    int mActivePipe;
+    unsigned long mActiveComputeSlot;
     eastl::vector<RndContextRecord16> mUnknown18992;
     // Global constant buffers created by Init; the last three are the
     // per-draw buffers of 16, 32, and 64 elements.
@@ -200,9 +211,11 @@ static_assert(offsetof(RndContext, mActiveShaderStages) == 0x4960);
 static_assert(offsetof(RndContext, mUnknown18788) == 0x4964);
 static_assert(offsetof(RndContext, mInputSlotLimits) == 0x4968);
 static_assert(offsetof(RndContext, mOutputSlotLimits) == 0x4998);
-static_assert(offsetof(RndContext, mUnknown18888) == 18888);
+static_assert(sizeof(RndContext::LightSlot) == 20);
+static_assert(offsetof(RndContext, mLightSlots) == 18888);
 static_assert(offsetof(RndContext, mShadingMode) == 0x4A18);
-static_assert(offsetof(RndContext, mUnknown18980) == 0x4A24);
+static_assert(offsetof(RndContext, mActivePipe) == 0x4A24);
+static_assert(offsetof(RndContext, mActiveComputeSlot) == 0x4A28);
 static_assert(offsetof(RndContext, mUnknown18992) == 18992);
 static_assert(offsetof(RndContext, mCBuffers) == 0x4A50);
 static_assert(offsetof(RndContext, mUnknown19096) == 19096);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnmx/shaderbinary.h>
 
 #include "render/shaders/RndShaderProgram.h"
 
@@ -10,19 +11,18 @@ public:
     PS4ShaderProgramCompute();            // 0x8E3D20
     ~PS4ShaderProgramCompute() override;  // 0x8E3D50, 0x8E3D80
 
-    // Slots 2-4 are not yet reconstructed.
-    bool _CreateImpl(BinStream& stream) override;  // 0x8E3DC0
-    void _SelectImpl(RndContext& context) override;  // 0x8E3F40
-    void _FreeImpl() override;                       // 0x8E4030
+    bool _CreateImpl(BinStream& stream) override;        // 0x8E3DC0
+    void _SelectImpl(RndContext& context) override;      // 0x8E3F40
+    void _FreeImpl() override;                           // 0x8E4030
     RndShaderProgramType _GetTypeImpl() const override;  // 0x8E4070
 
-    // Backend program state; its layout has not been recovered.
-    unsigned char mBackend[24];
-
-private:
-    // Stand-in for the backend defaults inlined into the constructor; not yet
-    // reconstructed. Name not in the reference map.
-    void _InitBackend();
+    // Field names are not in the reference map. The constructor leaves them
+    // uninitialized.
+    const sce::Gnmx::CsShader* mCsShader;
+    void* mShaderData;
+    void* mShaderCode;
 };
 
+static_assert(offsetof(PS4ShaderProgramCompute, mCsShader) == 40);
+static_assert(offsetof(PS4ShaderProgramCompute, mShaderCode) == 56);
 static_assert(sizeof(PS4ShaderProgramCompute) == 64);
