@@ -440,6 +440,8 @@
   stage binding, context stage unbinding, and the error-shader fallback bind.
 - [x] Reconstruct the bloom draw function with shared pass-draw helpers for
   pixel texture binding, per-draw constant buffers, and key packing.
+- [x] Reconstruct the output-conversion draw function and the shared
+  sRGB-to-linear color conversion.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

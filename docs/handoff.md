@@ -3,11 +3,11 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct bloom draw` milestone, which added the first pass
-draw function on top of compiled-shader loading and binding. The working tree was clean when the
+`decomp: reconstruct output conversion draw` milestone, which added the
+second pass draw function on top of compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
-The current PS4 object build compiles **184 C++ translation units**. It creates
+The current PS4 object build compiles **185 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
 executable. The latest unresolved-symbol report contains 589 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Bloom draw and shared pass-draw helpers |
+| (this) | Output-conversion draw and sRGB conversion |
+| `b94af4c` | Bloom draw and shared pass-draw helpers |
 | `0139c87` | Primary-shader permutation bind and error-shader fallback |
 | `d7172aa` | Primary-shader backend initialization and cache loading |
 | `5a02e7f` | Shader permutation enumeration and layout hash |
@@ -421,7 +422,6 @@ milestones are the per-pass draw functions that build program keys and call
 it. Each one belongs in its pass's domain folder:
 
 - blur at `0x634BB0`;
-- output conversion at `0x636840`;
 - downsample at `0x636080`.
 
 Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared

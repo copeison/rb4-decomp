@@ -1,14 +1,18 @@
-#include "render/resources/shaders/builtin_shader_resources.h"
+#include "render/postprocessing/output/output_conversion_shader.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
+#include "core/color/color_space.h"
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -162,6 +166,57 @@ void render_output_conversion_shader_construct(void* shader) {
     shader_field(shader, 360) = 0;
     shader_field(shader, 368) = -1;
     shader_field(shader, 376) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x636840. Uploads the linearized minimum
+// intensity before binding the source and optional HMD mask with binding flag
+// 2. The HMD-mask permutation is global, so it is written into every program
+// key; the color-space and transfer-function permutations are pixel-only.
+void render_output_conversion_shader_draw(
+    void* shader,
+    RenderContext& context,
+    const RenderOutputConversionDrawParameters& parameters) {
+    constexpr std::size_t kPixelKey = 3;
+    constexpr std::uint32_t kTextureFlags = 2;
+
+    const auto extent = static_cast<std::uint64_t>(shader_field(shader, 360));
+    auto& buffer = render_shader_select_constant_buffer(context, extent);
+    const float intensity[4] = {
+        parameters.minimum_intensity,
+        parameters.minimum_intensity,
+        parameters.minimum_intensity,
+        1.0F,
+    };
+    float linear[4] = {0.0F, 0.0F, 0.0F, 1.0F};
+    color_srgb_to_linear(intensity, linear);
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 352)),
+        &linear[0],
+        sizeof(linear[0]));
+    render_shader_commit_constant_buffer(buffer, context, extent);
+
+    render_shader_bind_pixel_texture(
+        context, parameters.source, shader_field(shader, 368), kTextureFlags);
+    render_shader_bind_pixel_texture(
+        context, parameters.hmd_mask, shader_field(shader, 376), kTextureFlags);
+
+    const auto& hmd_mask = parameter_binding(shader, 0);
+    const auto global_field = static_cast<std::uint64_t>(
+        ((parameters.hmd_mask != nullptr ? 1U : 0U) - hmd_mask.first_value)
+        << hmd_mask.bit_offset) << 32;
+    std::uint64_t keys[kRenderShaderProgramKeyCount];
+    for (auto& key : keys) {
+        key = global_field;
+    }
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        global_field,
+        parameter_binding(shader, 1),
+        parameters.bt709_to_bt2020 ? 1U : 0U);
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        keys[kPixelKey],
+        parameter_binding(shader, 2),
+        parameters.perceptual_quantizer ? 1U : 0U);
+    render_primary_shader_bind(primary_shader(shader), context, keys);
 }
 
 }  // namespace rb4

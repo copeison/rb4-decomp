@@ -18,7 +18,8 @@ struct RenderTexture;
 void render_shader_bind_pixel_texture(
     RenderContext& context,
     RenderTexture* texture,
-    std::uint64_t slot);
+    std::uint64_t slot,
+    std::uint32_t flags = 0);
 
 // Selects the context's smallest per-draw constant buffer that holds the
 // given number of 16-byte elements.

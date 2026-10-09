@@ -20,7 +20,8 @@ constexpr std::size_t kConstantElementSize = 16;
 void render_shader_bind_pixel_texture(
     RenderContext& context,
     RenderTexture* texture,
-    std::uint64_t slot) {
+    std::uint64_t slot,
+    std::uint32_t flags) {
     if (texture == nullptr) {
         return;
     }
@@ -30,14 +31,14 @@ void render_shader_bind_pixel_texture(
     if (limit < slot + 1) {
         limit = slot + 1;
     }
-    // The original leaves the border-color argument unspecified; it is only
-    // consulted for border address modes, which these passes never use.
+    // The original leaves the border-color argument unspecified (a stale
+    // register); backends consult it only for border address modes.
     render_texture_bind(
         *texture,
         context,
         RenderShaderStage::kPixel,
         static_cast<std::uint32_t>(slot),
-        0,
+        flags,
         nullptr);
 }
 
