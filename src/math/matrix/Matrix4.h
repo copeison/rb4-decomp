@@ -22,6 +22,11 @@ static_assert(sizeof(Matrix4) == 64);
 
 }  // namespace Hmx
 
+// Cofactor expansion along the first row.
 float Det(const Hmx::Matrix4& matrix);  // 0x11798A0
-// Inverts with the determinant the caller passes.
-void Invert(const Hmx::Matrix4& matrix, Hmx::Matrix4& inverse, float det);  // 0x1179A80
+// Inverts through the adjugate. When |Det(matrix)| is not above epsilon the
+// adjugate is scaled by zero instead of 1 / det.
+void Invert(
+    const Hmx::Matrix4& matrix,
+    Hmx::Matrix4& inverse,
+    float epsilon);  // 0x1179A80

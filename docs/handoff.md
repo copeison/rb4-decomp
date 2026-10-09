@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 651 entries, most of the
+executable. The latest unresolved-symbol report contains 640 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `RndMeshUtl` builders, `RndLightGlobals::_InitMeshes` and the spot mesh, default primitive meshes |
+| (this) | Math foundation: trig table, half floats, cone, matrix determinant and inverse, transform multiply, constants |
+| `8904691` | `RndMeshUtl` builders, `RndLightGlobals::_InitMeshes` and the spot mesh, default primitive meshes |
 | `363a866` | `RndCameraContext`, `RndContext::SetCamera` and `_SyncCameraCBuffer`, the camera-dependent tiled dispatches; context field names corrected |
 | `920cf3f` | Sixteen lighting, shadow, tiled-light and tonemap shader classes; `RndLightGlobals::_InitShaders` |
 | `bf731c8` | `Hmx::Timer` (`utl/Timer.o`), `RndPixelData::LoadBuffers`, Bink frame preparation through `RndContext::SetCamera` |

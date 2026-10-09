@@ -21,3 +21,6 @@ static_assert(offsetof(Matrix3, z) == 24);
 static_assert(sizeof(Matrix3) == 36);
 
 }  // namespace Hmx
+
+// Cofactor expansion along the first row.
+float Det(const Hmx::Matrix3& matrix);  // 0x2152E0
