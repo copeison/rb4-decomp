@@ -278,6 +278,13 @@ void RndPixelData::Create(const Vector3i& size, int format, const void* pixels) 
     }
 }
 
+// Reconstructed from eboot.elf at 0x683000.
+void RndPixelData::Create(
+    int width, int height, int depth, int format, const void* pixels) {
+    const Vector3i size{width, height, depth};
+    Create(size, format, pixels);
+}
+
 // Reconstructed from eboot.elf at 0x684960, with conversion kernels from
 // 0x6897D0 through 0x68CB1B. Unsupported channel layouts stop the
 // conversion without reporting failure, as in the binary.

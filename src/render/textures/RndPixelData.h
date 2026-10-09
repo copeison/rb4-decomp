@@ -29,6 +29,9 @@ public:
     // Reconstructed from eboot.elf at 0x682E80. The map's format parameter
     // is an RndPixelFormat.
     void Create(const Vector3i& size, int format, const void* pixels);
+    // Reconstructed from eboot.elf at 0x683000. The map's format parameter
+    // is an RndPixelFormat.
+    void Create(int width, int height, int depth, int format, const void* pixels);
     // Reconstructed from eboot.elf at 0x684960.
     bool ConvertFrom(const RndPixelCanvas& canvas);
     // Reconstructed from eboot.elf at 0x683260.

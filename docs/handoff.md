@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 635 entries, most of the
+executable. The latest unresolved-symbol report contains 632 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `RndContext::SetRenderTargets` and its overloads, the GPU-stat timer base and budget categories |
+| (this) | Audio-analysis slots and the audio textures' rebuild and update |
+| `fb98988` | `RndContext::SetRenderTargets` and its overloads, the GPU-stat timer base and budget categories |
 | `777b1e0` | Particle basis and sorting, Bink frame conversion, `RndMaterialRuntimeData` destructor |
 | `7965973` | Camera projection and frusta, frustum and plane geometry, bounding hulls, particle vertex fill |
 | `acc2711` | `RndOverlay`, `RndOverlayMgr`, `TextStream`, the last three console commands and `TrigInit` |

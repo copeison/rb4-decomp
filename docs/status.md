@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the audio-analysis slots and `RndAudioTextures`'s rebuild,
+  update and width query.
 - [x] Reconstruct `RndContext::SetRenderTargets` and the GPU-stat timer base and
   budget categories (`docs/render-gpu-stats.md`).
 - [x] Reconstruct the particle basis and depth sort, the Bink frame conversion
