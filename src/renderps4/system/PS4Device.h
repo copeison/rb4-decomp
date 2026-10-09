@@ -10,6 +10,16 @@
 #include "utl/threading/Thread.h"
 
 class PS4Context;
+struct PS4SubmitDoneState;
+
+// Event seen by the submit-done thread. Name not in the reference map.
+struct PS4SubmitEvent {
+    enum Type {
+        kFlipComplete,
+        kEndOfPipe,
+    };
+    Type mType;
+};
 
 // Node of the deferred-delete list. Name not in the reference map.
 struct PS4DeferredDelete {
@@ -58,6 +68,31 @@ public:
     // Frees allocations retired at least two frames ago. Name not in the
     // reference map.
     void _ReleaseRetiredAllocations();                     // 0x8D8200
+
+    // Opens video output and the flip/end-of-pipe event queue. Inlined into
+    // _InitImpl at 0x8D7B20 in this binary.
+    void _InitVideoOutput();
+    // Unregisters the end-of-pipe event and closes the event queue and video
+    // output. Inlined into _TerminateImpl at 0x8D8040 in this binary.
+    void _TerminateVideoOutput();
+
+    // Submit-done thread. Names not in the reference map.
+    static int _SubmitDoneThreadEntry(void* device);       // 0x8D77E0
+    void _SubmitDoneThread();                              // 0x8D7340
+    // Blocks until the submit-done thread publishes its first token. Name not
+    // in the reference map; inlined into _InitImpl.
+    void _WaitForSubmitThread();
+    // Waits up to one second on the event queue and reports the flip and
+    // end-of-pipe events in order. Name not in the reference map; inlined
+    // into _SubmitDoneThread.
+    bool _WaitForSubmitEvents(
+        PS4SubmitEvent* events,
+        unsigned long capacity,
+        unsigned long& eventCount);
+    // Names not in the reference map; inlined into _SubmitDoneThread.
+    void _ProcessSubmitTimeout(PS4SubmitDoneState& state);
+    void _ProcessFlipComplete();
+    void _ProcessEndOfPipe(PS4SubmitDoneState& state);
 
     // The immediate context, which _InitImpl creates as a PS4Context.
     PS4Context& Context() {

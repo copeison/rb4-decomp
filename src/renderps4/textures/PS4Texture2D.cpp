@@ -1,7 +1,7 @@
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/system/PS4RenderUtl.h"
 #include "renderps4/system/PS4Device.h"
-#include "render/platform/orbis/video/orbis_back_buffer.h"
+#include "renderps4/video/OrbisGpuRenderTarget.h"
 #include "renderps4/video/PS4Window.h"
 
 // Reconstructed from eboot.elf at 0x8D62C0.

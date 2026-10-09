@@ -3,10 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 
-class PS4Device;
-
+// Gnm render-target types shared by the PS4 window, textures and context.
+// They stand in for the SDK's sce::Gnm types. Names not in the reference map.
 namespace rb4 {
 
+// Opaque sce::Gnm::RenderTarget register block.
 struct OrbisGpuRenderTarget {
     std::uint8_t registers[64];
 };
@@ -27,6 +28,5 @@ struct OrbisSizeAlign {
     std::size_t size;
     std::size_t alignment;
 };
-
 
 }  // namespace rb4

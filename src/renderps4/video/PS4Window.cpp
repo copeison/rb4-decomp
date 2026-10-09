@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-#include "render/platform/orbis/video/orbis_back_buffer_adapters.h"
 #include "renderps4/system/PS4Device.h"
 
 using namespace rb4;
@@ -20,24 +19,29 @@ constexpr const char* kBackBufferAllocationName = "BackBuffer";
 PS4Window::PS4Window()
     : RndBufferedWindow(kBufferFlags, true),
       mActiveBuffer(0) {
+    _InitBuffers();
+}
+
+// Reconstructed from eboot.elf at 0x8E24A0 (inlined into the constructor).
+void PS4Window::_InitBuffers() {
     auto& device = *gPS4Device;
-    const auto specification = orbis_back_buffer_specification(
+    const auto specification = _BackBufferSpecification(
         device, OrbisBackBufferDataFormat::kB8G8R8A8Srgb);
     OrbisGpuRenderTarget targets[kBackBufferCount] = {};
     for (auto& target : targets) {
-        orbis_gpu_render_target_initialize(target, specification);
-        const auto sizeAlign = orbis_gpu_render_target_size_align(target);
+        _InitRenderTarget(target, specification);
+        const auto sizeAlign = _RenderTargetSizeAlign(target);
         const auto alignment =
             std::max(sizeAlign.alignment, kMinimumBackBufferAlignment);
-        auto* storage = orbis_gpu_allocate_named(
+        auto* storage = _AllocateBackBuffer(
             sizeAlign.size, kBackBufferAllocationName, alignment);
-        orbis_gpu_render_target_set_storage(target, storage);
-        orbis_gpu_render_target_disable_auxiliary_surfaces(target);
+        _SetRenderTargetStorage(target, storage);
+        _DisableAuxiliarySurfaces(target);
     }
 
-    auto* texture = orbis_wrap_back_buffer_textures(targets, kBackBufferCount);
-    orbis_back_buffer_attach_texture(*this, *texture);
-    orbis_video_output_register_back_buffers(device, targets, kBackBufferCount);
+    auto* texture = _WrapBackBufferTextures(targets, kBackBufferCount);
+    _AttachBackBufferTexture(*texture);
+    _RegisterBackBuffers(device, targets, kBackBufferCount);
 }
 
 // Reconstructed from eboot.elf at 0x8E2860.
