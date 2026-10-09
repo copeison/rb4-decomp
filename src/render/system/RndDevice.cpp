@@ -222,7 +222,7 @@ void RndDevice::_InitBuiltinCBuffers() {
 void RndDevice::Terminate() {
     mTerminating = true;
     _ProcessPendingFrees();
-    render_release_default_resources(mDefaults);
+    mDefaults.Terminate();
     delete mFogDeferred;  // 0x451CC0
     mFogDeferred = nullptr;
     render_lighting_resources_shutdown(mLighting);
@@ -377,7 +377,7 @@ void RndDevice::_DoEndFrame(bool offscreen) {
     Unlock();
 
     if (!offscreen) {
-        render_poll_default_resources(mDefaults);
+        mDefaults.Poll();
     }
 }
 

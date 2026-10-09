@@ -1,7 +1,6 @@
 #include "game/systems/systems.h"
 
 #include "game/systems/systems_adapters.h"
-#include "render/resources/system/default_render_resources.h"
 #include "render/core/platform/render_platform.h"
 #include "render/system/RndDevice.h"
 
@@ -14,9 +13,7 @@ void game_systems_initialize(const RndInitParams& options) {
     (void)orbis_render_api();
     (void)render_api_for_platform(RenderPlatform::kPlayStation4);
     render_system.Init(options);
-    render_initialize_default_resources(
-        render_system.mDefaults,
-        options.mInitRendering);
+    render_system.mDefaults.Init(options.mInitRendering);
     game_render_backend_post_initialize(render_system, options);
     game_render_dependents_initialize(options);
     game_register_cleanup_callback(game_systems_shutdown);
