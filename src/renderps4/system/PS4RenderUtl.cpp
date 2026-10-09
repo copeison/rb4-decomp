@@ -9,65 +9,65 @@ namespace {
 
 using WrapMode = PS4RenderStateUtl::WrapMode;
 
-GnmDataFormat TwoComponentFormat(RndVertexDataType type) {
+sce::Gnm::DataFormat TwoComponentFormat(RndVertexDataType type) {
     switch (type) {
     case kVertexDataFloat32:
-        return GnmDataFormat::kR32G32Float;
+        return sce::Gnm::kDataFormatR32G32Float;
     case kVertexDataFloat16:
-        return GnmDataFormat::kR16G16Float;
+        return sce::Gnm::kDataFormatR16G16Float;
     case kVertexDataUNorm8:
-        return GnmDataFormat::kR8G8Unorm;
+        return sce::Gnm::kDataFormatR8G8Unorm;
     case kVertexDataUNorm16:
-        return GnmDataFormat::kR16G16Unorm;
+        return sce::Gnm::kDataFormatR16G16Unorm;
     case kVertexDataSNorm8:
-        return GnmDataFormat::kR8G8Snorm;
+        return sce::Gnm::kDataFormatR8G8Snorm;
     case kVertexDataSNorm16:
-        return GnmDataFormat::kR16G16Snorm;
+        return sce::Gnm::kDataFormatR16G16Snorm;
     case kVertexDataUInt8:
-        return GnmDataFormat::kR8G8Uint;
+        return sce::Gnm::kDataFormatR8G8Uint;
     case kVertexDataUInt16:
-        return GnmDataFormat::kR16G16Uint;
+        return sce::Gnm::kDataFormatR16G16Uint;
     default:
-        return GnmDataFormat::kInvalid;
+        return sce::Gnm::kDataFormatInvalid;
     }
 }
 
-GnmDataFormat FourComponentFormat(RndVertexDataType type) {
+sce::Gnm::DataFormat FourComponentFormat(RndVertexDataType type) {
     switch (type) {
     case kVertexDataFloat32:
-        return GnmDataFormat::kR32G32B32A32Float;
+        return sce::Gnm::kDataFormatR32G32B32A32Float;
     case kVertexDataFloat16:
-        return GnmDataFormat::kR16G16B16A16Float;
+        return sce::Gnm::kDataFormatR16G16B16A16Float;
     case kVertexDataUNorm8:
-        return GnmDataFormat::kR8G8B8A8Unorm;
+        return sce::Gnm::kDataFormatR8G8B8A8Unorm;
     case kVertexDataUNorm16:
-        return GnmDataFormat::kR16G16B16A16Unorm;
+        return sce::Gnm::kDataFormatR16G16B16A16Unorm;
     case kVertexDataSNorm8:
-        return GnmDataFormat::kR8G8B8A8Snorm;
+        return sce::Gnm::kDataFormatR8G8B8A8Snorm;
     case kVertexDataSNorm16:
-        return GnmDataFormat::kR16G16B16A16Snorm;
+        return sce::Gnm::kDataFormatR16G16B16A16Snorm;
     case kVertexDataUInt8:
-        return GnmDataFormat::kR8G8B8A8Uint;
+        return sce::Gnm::kDataFormatR8G8B8A8Uint;
     case kVertexDataUInt16:
-        return GnmDataFormat::kR16G16B16A16Uint;
+        return sce::Gnm::kDataFormatR16G16B16A16Uint;
     default:
-        return GnmDataFormat::kInvalid;
+        return sce::Gnm::kDataFormatInvalid;
     }
 }
 
-GnmDataFormat StreamDataFormat(const RndVertexInterpreter::StreamLayout& stream) {
+sce::Gnm::DataFormat StreamDataFormat(const RndVertexInterpreter::StreamLayout& stream) {
     switch (stream.mNumComponents) {
     case 2:
         return TwoComponentFormat(stream.mType);
     case 3:
         if (stream.mType == kVertexDataFloat32) {
-            return GnmDataFormat::kR32G32B32Float;
+            return sce::Gnm::kDataFormatR32G32B32Float;
         }
-        return GnmDataFormat::kInvalid;
+        return sce::Gnm::kDataFormatInvalid;
     case 4:
         return FourComponentFormat(stream.mType);
     default:
-        return GnmDataFormat::kInvalid;
+        return sce::Gnm::kDataFormatInvalid;
     }
 }
 
@@ -90,13 +90,13 @@ unsigned int DataTypeSize(RndVertexDataType type) {
 }
 
 void InitReadOnlyVertexBuffer(
-    GnmBuffer& buffer,
+    sce::Gnm::Buffer& buffer,
     const void* data,
-    GnmDataFormat format,
+    sce::Gnm::DataFormat format,
     unsigned int stride,
     unsigned int numElements) {
-    GnmInitAsVertexBuffer(buffer, data, format, stride, numElements);
-    GnmSetResourceMemoryType(buffer, GnmResourceMemoryType::kReadOnly);
+    buffer.initAsVertexBuffer(const_cast<void*>(data), format, stride, numElements);
+    buffer.setResourceMemoryType(sce::Gnm::kResourceMemoryTypeRO);
 }
 
 constexpr unsigned long kSamplerSlotCount = 16;
@@ -108,7 +108,7 @@ bool ShouldSelectSampler(unsigned long slot, unsigned int flags) {
 
 void SelectSampledTexture(
     RndContext& context,
-    GnmShaderStage stage,
+    sce::Gnm::ShaderStage stage,
     unsigned long slot,
     const void* texture,
     unsigned int wrap,
@@ -124,9 +124,25 @@ void SelectSampledTexture(
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x8E1770.
+sce::Gnm::PrimitiveType PS4RenderUtl::GetPrimitiveType(RndPrimitive primitive) {
+    constexpr sce::Gnm::PrimitiveType kPrimitiveTypes[] = {
+        sce::Gnm::kPrimitiveTypePointList,
+        sce::Gnm::kPrimitiveTypeLineList,
+        sce::Gnm::kPrimitiveTypeLineStrip,
+        sce::Gnm::kPrimitiveTypeTriList,
+        sce::Gnm::kPrimitiveTypeTriStrip,
+    };
+    const auto index = static_cast<unsigned int>(primitive);
+    if (index >= sizeof(kPrimitiveTypes) / sizeof(kPrimitiveTypes[0])) {
+        return sce::Gnm::kPrimitiveTypeTriStrip;
+    }
+    return kPrimitiveTypes[index];
+}
+
 // Reconstructed from eboot.elf at 0x8E1840.
 void PS4RenderUtl::InitializeVertexBuffers(
-    GnmBuffer* buffers,
+    sce::Gnm::Buffer* buffers,
     const void* data,
     unsigned int& mask,
     unsigned int numVerts,
@@ -154,22 +170,22 @@ void PS4RenderUtl::InitializeVertexBuffers(
 
 // Reconstructed from eboot.elf at 0x8E1BD0.
 void PS4RenderUtl::InitializeInstanceBuffer(
-    GnmBuffer* buffers,
+    sce::Gnm::Buffer* buffers,
     const RndInstanceData* data,
     unsigned int numInstances) {
     constexpr unsigned long offsets[kNumInstanceStreams] = {
         0, 16, 32, 48, 60, 72, 84, 88, 104,
     };
-    constexpr GnmDataFormat formats[kNumInstanceStreams] = {
-        GnmDataFormat::kR32G32B32A32Float,
-        GnmDataFormat::kR32G32B32A32Float,
-        GnmDataFormat::kR32G32B32A32Float,
-        GnmDataFormat::kR32G32B32Float,
-        GnmDataFormat::kR32G32B32Float,
-        GnmDataFormat::kR32G32B32Float,
-        GnmDataFormat::kR32Uint,
-        GnmDataFormat::kR32G32B32A32Float,
-        GnmDataFormat::kR32G32B32A32Float,
+    const sce::Gnm::DataFormat formats[kNumInstanceStreams] = {
+        sce::Gnm::kDataFormatR32G32B32A32Float,
+        sce::Gnm::kDataFormatR32G32B32A32Float,
+        sce::Gnm::kDataFormatR32G32B32A32Float,
+        sce::Gnm::kDataFormatR32G32B32Float,
+        sce::Gnm::kDataFormatR32G32B32Float,
+        sce::Gnm::kDataFormatR32G32B32Float,
+        sce::Gnm::kDataFormatR32Uint,
+        sce::Gnm::kDataFormatR32G32B32A32Float,
+        sce::Gnm::kDataFormatR32G32B32A32Float,
     };
     constexpr unsigned int sizes[kNumInstanceStreams] = {
         16, 16, 16, 12, 12, 12, 4, 16, 16,
@@ -194,7 +210,7 @@ void PS4RenderUtl::SelectTextureForVS(
     unsigned int wrap,
     unsigned int filter) {
     SelectSampledTexture(
-        context, GnmShaderStage::kVertex, slot, texture, wrap, filter, 0);
+        context, sce::Gnm::kShaderStageVs, slot, texture, wrap, filter, 0);
 }
 
 // Reconstructed from eboot.elf at 0x8E1F90.
@@ -206,7 +222,7 @@ void PS4RenderUtl::SelectTextureForHS(
     unsigned int filter,
     unsigned int flags) {
     SelectSampledTexture(
-        context, GnmShaderStage::kHull, slot, texture, wrap, filter, flags);
+        context, sce::Gnm::kShaderStageHs, slot, texture, wrap, filter, flags);
 }
 
 // Reconstructed from eboot.elf at 0x8E2040. Domain textures bind to the
@@ -219,7 +235,7 @@ void PS4RenderUtl::SelectTextureForDS(
     unsigned int filter,
     unsigned int flags) {
     SelectSampledTexture(
-        context, GnmShaderStage::kLocal, slot, texture, wrap, filter, flags);
+        context, sce::Gnm::kShaderStageLs, slot, texture, wrap, filter, flags);
 }
 
 // Reconstructed from eboot.elf at 0x8E20F0.
@@ -231,7 +247,7 @@ void PS4RenderUtl::SelectTextureForGS(
     unsigned int filter,
     unsigned int flags) {
     SelectSampledTexture(
-        context, GnmShaderStage::kGeometry, slot, texture, wrap, filter, flags);
+        context, sce::Gnm::kShaderStageGs, slot, texture, wrap, filter, flags);
 }
 
 // Reconstructed from eboot.elf at 0x8E21A0.
@@ -244,11 +260,11 @@ void PS4RenderUtl::SelectTextureForPS(
     unsigned int flags) {
     if ((flags & kSelectWritable) != 0) {
         static_cast<PS4Context&>(context)._BindGraphicsRwTexture(
-            GnmShaderStage::kPixel, static_cast<unsigned int>(slot), texture);
+            sce::Gnm::kShaderStagePs, static_cast<unsigned int>(slot), texture);
         return;
     }
     SelectSampledTexture(
-        context, GnmShaderStage::kPixel, slot, texture, wrap, filter, flags);
+        context, sce::Gnm::kShaderStagePs, slot, texture, wrap, filter, flags);
 }
 
 // Reconstructed from eboot.elf at 0x8E2290.
@@ -266,7 +282,7 @@ void PS4RenderUtl::SelectTextureForCS(
         if (computeQueue) {
             ps4._BindComputeRwTexture(index, texture);
         } else {
-            ps4._BindGraphicsRwTexture(GnmShaderStage::kCompute, index, texture);
+            ps4._BindGraphicsRwTexture(sce::Gnm::kShaderStageCs, index, texture);
         }
         return;
     }
@@ -280,5 +296,5 @@ void PS4RenderUtl::SelectTextureForCS(
     }
 
     SelectSampledTexture(
-        context, GnmShaderStage::kCompute, slot, texture, wrap, filter, flags);
+        context, sce::Gnm::kShaderStageCs, slot, texture, wrap, filter, flags);
 }
