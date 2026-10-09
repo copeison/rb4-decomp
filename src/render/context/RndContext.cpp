@@ -1,5 +1,8 @@
 #include "render/context/RndContext.h"
 
+#include "render/system/RndConfig.h"
+#include "render/system/RndDevice.h"
+
 #include <cstring>
 
 #include "render/buffers/RndShaderCBuffer.h"
@@ -77,7 +80,7 @@ void RndContext::_SignalFenceImpl(RndFence&) {}
 void RndContext::_WaitFenceImpl(const RndFence&) {}
 void RndContext::_FinishImpl() {}
 void RndContext::_BeginFrameImpl() {}
-void RndContext::_SetActivePipelineImpl(int) {}
+void RndContext::_SetActivePipelineImpl(int, unsigned long) {}
 void RndContext::_ResourceBarrierImpl(unsigned long, const RndResourceBarrier*) {}
 void RndContext::_PushMarkerImpl(const char*) {}
 void RndContext::_PopMarkerImpl() {}
@@ -149,5 +152,22 @@ void RndContext::SetShadingMode(RndShadingMode mode) {
     } else if (previous == kShadingModeWireframe) {
         _SetFillModeImpl(true);
         _SetDepthBiasEnabledImpl(false);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BD8A0.
+void RndContext::SetActivePipeline(RndPipeline pipeline, unsigned long computeSlot) {
+    const auto previousPipeline = mActivePipe;
+    unsigned long slot = 0;
+    if (TheRndDevice()->mSettings->mAsyncComputeEnabled) {
+        slot = computeSlot;
+    } else {
+        pipeline = kPipelineGraphics;
+    }
+    const auto previousSlot = mActiveComputeSlot;
+    if (pipeline != previousPipeline || slot != previousSlot) {
+        mActivePipe = pipeline;
+        mActiveComputeSlot = slot;
+        _SetActivePipelineImpl(previousPipeline, previousSlot);
     }
 }

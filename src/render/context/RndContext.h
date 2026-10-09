@@ -27,6 +27,13 @@ enum RndTargetMode : int {
     kTargetModeCube = 2,  // Cube textures.
 };
 
+// Where a context records: the graphics ring or a compute queue. The name
+// is the map's; the enumerators are not in the reference map.
+enum RndPipeline : int {
+    kPipelineGraphics = 0,
+    kPipelineCompute = 1,
+};
+
 enum RndCullMode : unsigned int {
     kCullNone = 0,
     kCullBack = 1,
@@ -161,8 +168,9 @@ public:
     virtual void _SetDepthBiasEnabledImpl(bool enabled) = 0;
     virtual void _SetThickLinesImpl(bool enabled) = 0;
     virtual void _DispatchComputeImpl(unsigned int x, unsigned int y, unsigned int z) = 0;
-    // The map types the parameter as RndPipeline.
-    virtual void _SetActivePipelineImpl(int pipeline);  // 0x6BDA90
+    // Told the pipeline and compute slot that were active. The map has
+    // _SetActivePipelineImpl(RndPipeline).
+    virtual void _SetActivePipelineImpl(int previousPipeline, unsigned long previousSlot);  // 0x6BDA90
     // Slot 21 at 0x6BDAA0. Name not in the reference map.
     virtual void _ResourceBarrierImpl(
         unsigned long count,
@@ -198,6 +206,10 @@ public:
     // Selects the context's global constant buffers, falling back to the
     // device's defaults for the camera and the lights when none are set.
     void _ReselectGlobalCBuffers();  // 0x6BD930
+    // Records on the graphics ring, or on the given compute context when
+    // async compute is enabled. The map has SetActivePipeline(RndPipeline,
+    // bool); this build passes the compute slot.
+    void SetActivePipeline(RndPipeline pipeline, unsigned long computeSlot);  // 0x6BD8A0
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340

@@ -163,34 +163,18 @@ private:
     bool _RecordingCompute() const;
     sce::Gnm::EndOfPipeEventType _GpuTimestampEvent() const;
 
-    // Resource barriers. Names not in the reference map; not yet
-    // reconstructed unless an address is given.
-    void _SyncBarrierPhase(
-        const RndResourceBarrier& barrier,
-        std::uint32_t barrierCacheActions,
-        volatile std::uint32_t*& sharedLabel,
-        std::uint32_t& cacheActions,
-        bool& needsCompletionWait);
-    void _ResolveTextureMetadata(
-        const RndResourceBarrier& barrier,
-        bool resolveDepth,
-        bool& needsCompletionWait);
-    void _ProcessTransition(
-        const RndResourceBarrier& barrier,
-        volatile std::uint32_t*& sharedLabel,
-        std::uint32_t& cacheActions,
-        bool& needsCompletionWait);
-    std::uint64_t _ActiveComputeQueue() const;
-    void _SelectGraphics();
-    void _SelectCompute(std::uint64_t queueIndex);
-    void _WaitForRenderTarget(const void* resource);
-    void _ResolveColorMetadata(const void* resource, std::uint64_t subresource);
-    void _ResolveDepthMetadata(const void* resource, std::uint64_t subresource);
-    void _EmitTransitionCompletionWait(std::uint32_t cacheActions);
-    void _FlushTransitionCaches(std::uint32_t cacheActions);
+    // Writes a label at the end of the pipe with the given cache actions
+    // and waits for it, idling the graphics ring. Inlined into
+    // _SetRenderTargetsImpl and _ResourceBarrierImpl; name not in the
+    // reference map.
+    void _WaitForEndOfPipe(std::uint32_t cacheActions);
+    // Leaving render-target or depth-write state: waits for the target's
+    // writes, then decompresses it. Inlined into _ResourceBarrierImpl; names
+    // not in the reference map.
+    void _DecompressColorTarget(const RndResourceBarrier& barrier, std::uint32_t cacheActions);
+    void _DecompressDepthTarget(const RndResourceBarrier& barrier, std::uint32_t cacheActions);
 
-    // Split-barrier resource signals. Names not in the reference map; not
-    // yet reconstructed unless an address is given.
+    // Split-barrier resource signals. Names not in the reference map.
     void _SignalResource(
         const void* resource,
         volatile std::uint32_t*& sharedLabel);  // 0x8EB3E0

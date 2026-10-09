@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <gnm/platform.h>
+#include <gnmx/surfacetool.h>
 
 #include "os/memory/MemMgr.h"
 #include "render/context/RndResourceBarrier.h"
@@ -23,6 +24,7 @@
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/textures/PS4TextureArray2D.h"
 #include "renderps4/textures/PS4TextureCube.h"
+#include "renderps4/video/PS4Window.h"
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Fence.h"
 #include "renderps4/system/PS4RenderUtl.h"
@@ -100,34 +102,10 @@ constexpr std::array<std::uint8_t, 10> kStencilMasks = {
 constexpr std::uint32_t kDebugMarkerColor = 0xFF0000FF;
 constexpr float kGpuClockSeconds = 1.25e-9F;
 
-constexpr std::uint32_t kInvalidateL1 = 0x10;
-constexpr std::uint32_t kWriteBackAndInvalidateL1L2 = 0x38;
 constexpr std::uint32_t kResourceReadyValue = 1;
 
 std::uint8_t StencilMask(std::uint32_t index) {
     return index < kStencilMasks.size() ? kStencilMasks[index] : 0;
-}
-
-bool IsState(RndResourceState state, RndResourceState expected) {
-    return state == expected;
-}
-
-bool IsWriteDestination(RndResourceState state) {
-    return IsState(state, RndResourceState::kRenderTarget) ||
-        IsState(state, RndResourceState::kUnorderedAccess) ||
-        IsState(state, RndResourceState::kDepthWrite) ||
-        IsState(state, RndResourceState::kStreamOutput) ||
-        IsState(state, RndResourceState::kCopyDestination) ||
-        IsState(state, RndResourceState::kResolveDestination);
-}
-
-std::uint32_t DestinationCacheActions(RndResourceState state) {
-    if (IsState(state, RndResourceState::kUnorderedAccess) ||
-        IsState(state, RndResourceState::kStreamOutput) ||
-        IsState(state, RndResourceState::kCopyDestination)) {
-        return kWriteBackAndInvalidateL1L2;
-    }
-    return 0;
 }
 
 }  // namespace
@@ -477,19 +455,7 @@ void PS4Context::_SetRenderTargetsImpl(
         cleared = _ClearDepthStencil(*depthTarget, params.mDepthClear, params.mStencilClear) || cleared;
     }
     if (cleared) {
-        auto& dcb = _ActiveGfxContext().m_dcb;
-        auto* label = static_cast<std::uint32_t*>(
-            dcb.allocateFromCommandBuffer(sizeof(std::uint32_t), sce::Gnm::kEmbeddedDataAlignment4));
-        *label = 0;
-        dcb.writeAtEndOfPipe(
-            sce::Gnm::kEopCsDone,
-            sce::Gnm::kEventWriteDestMemory,
-            label,
-            sce::Gnm::kEventWriteSource32BitsImmediate,
-            1,
-            sce::Gnm::kCacheActionWriteBackAndInvalidateL1andL2,
-            sce::Gnm::kCachePolicyLru);
-        dcb.waitOnAddress(label, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncEqual, 1);
+        _WaitForEndOfPipe(sce::Gnm::kCacheActionWriteBackAndInvalidateL1andL2);
     }
 }
 
@@ -765,142 +731,256 @@ void PS4Context::_DeactivateShaderProgramTypeImpl(RndShaderProgramType type) {
 
 // Resource barriers ----------------------------------------------------------
 
-void PS4Context::_SyncBarrierPhase(
-    const RndResourceBarrier& barrier,
-    std::uint32_t barrierCacheActions,
-    volatile std::uint32_t*& sharedLabel,
-    std::uint32_t& cacheActions,
-    bool& needsCompletionWait) {
-    switch (barrier.mPhase) {
-    case RndResourceBarrierPhase::kImmediate:
-        cacheActions |= barrierCacheActions;
-        needsCompletionWait = true;
-        break;
-    case RndResourceBarrierPhase::kBegin:
-        _SignalResource(barrier.mResource, sharedLabel);
-        cacheActions |= barrierCacheActions;
-        break;
-    case RndResourceBarrierPhase::kEnd:
-        _WaitForResource(barrier.mResource);
-        break;
-    }
+// Inlined into _SetRenderTargetsImpl and _ResourceBarrierImpl.
+void PS4Context::_WaitForEndOfPipe(std::uint32_t cacheActions) {
+    auto& dcb = _ActiveGfxContext().m_dcb;
+    auto* label = static_cast<std::uint32_t*>(
+        dcb.allocateFromCommandBuffer(sizeof(std::uint32_t), sce::Gnm::kEmbeddedDataAlignment4));
+    *label = 0;
+    dcb.writeAtEndOfPipe(
+        sce::Gnm::kEopCsDone,
+        sce::Gnm::kEventWriteDestMemory,
+        label,
+        sce::Gnm::kEventWriteSource32BitsImmediate,
+        1,
+        static_cast<sce::Gnm::CacheAction>(cacheActions),
+        sce::Gnm::kCachePolicyLru);
+    dcb.waitOnAddress(label, 0xFFFFFFFF, sce::Gnm::kWaitCompareFuncEqual, 1);
 }
 
-void PS4Context::_ResolveTextureMetadata(
+// Inlined into _ResourceBarrierImpl. A subresource selects one slice of an
+// array; -1 views every slice.
+void PS4Context::_DecompressColorTarget(
     const RndResourceBarrier& barrier,
-    bool resolveDepth,
-    bool& needsCompletionWait) {
-    if (resolveDepth) {
-        _ResolveDepthMetadata(barrier.mResource, barrier.mSubresource);
-    } else {
-        _ResolveColorMetadata(barrier.mResource, barrier.mSubresource);
-    }
-
-    volatile std::uint32_t* metadataLabel = nullptr;
-    if (_RecordingCompute()) {
-        const auto computeQueue = _ActiveComputeQueue();
-        _SelectGraphics();
-        _SignalResource(barrier.mResource, metadataLabel);
-        _SelectCompute(computeQueue);
-
-        if (barrier.mPhase != RndResourceBarrierPhase::kBegin) {
-            _WaitForResource(barrier.mResource);
-        }
-    } else if (barrier.mPhase == RndResourceBarrierPhase::kBegin) {
-        _SignalResource(barrier.mResource, metadataLabel);
-    } else {
-        needsCompletionWait = true;
-    }
-}
-
-void PS4Context::_ProcessTransition(
-    const RndResourceBarrier& barrier,
-    volatile std::uint32_t*& sharedLabel,
-    std::uint32_t& cacheActions,
-    bool& needsCompletionWait) {
-    if (barrier.mBefore == barrier.mAfter) {
-        return;
-    }
-
-    if (IsState(barrier.mAfter, RndResourceState::kRenderTarget)) {
-        _WaitForRenderTarget(barrier.mResource);
-    }
-
-    const auto barrierCacheActions = DestinationCacheActions(barrier.mAfter);
-
-    if (IsState(barrier.mBefore, RndResourceState::kRenderTarget)) {
-        if (barrier.mPhase == RndResourceBarrierPhase::kEnd) {
-            _WaitForResource(barrier.mResource);
+    std::uint32_t cacheActions) {
+    auto* texture = static_cast<RndTextureBase*>(barrier.mResource);
+    sce::Gnm::RenderTarget target;
+    const int type = texture->_GetTypeImpl();
+    if (type == RndTextureBase::kTextureArray2D) {
+        auto* array = static_cast<PS4TextureArray2D*>(texture);
+        target = *array->GetRenderTarget(static_cast<unsigned long>(-1));
+        if (barrier.mSubresource == static_cast<std::uint64_t>(-1)) {
+            target.setArrayView(0, static_cast<std::uint32_t>(array->mBaseDesc.mArraySize) - 1);
         } else {
-            _ResolveTextureMetadata(barrier, false, needsCompletionWait);
+            const auto slice = static_cast<std::uint32_t>(
+                barrier.mSubresource / (array->_GetNumMipsImpl() + 1));
+            target.setArrayView(slice, slice);
         }
-        return;
+    } else if (type == RndTextureBase::kTexture2D) {
+        target = *static_cast<PS4Texture2D*>(texture)->GetRenderTarget();
     }
 
-    if (IsState(barrier.mBefore, RndResourceState::kDepthWrite)) {
-        if (barrier.mPhase == RndResourceBarrierPhase::kEnd) {
-            _WaitForResource(barrier.mResource);
-        } else {
-            _ResolveTextureMetadata(barrier, true, needsCompletionWait);
-        }
-        return;
-    }
-
-    if (IsState(barrier.mBefore, RndResourceState::kResolveDestination)) {
-        return;
-    }
-
-    const bool sourceRequiresBarrier =
-        IsState(barrier.mBefore, RndResourceState::kUnorderedAccess) ||
-        IsState(barrier.mBefore, RndResourceState::kStreamOutput) ||
-        IsState(barrier.mBefore, RndResourceState::kCopyDestination);
-    if (sourceRequiresBarrier || IsWriteDestination(barrier.mAfter)) {
-        _SyncBarrierPhase(
-            barrier,
-            barrierCacheActions,
-            sharedLabel,
-            cacheActions,
-            needsCompletionWait);
+    auto& gfx = _ActiveGfxContext();
+    const auto slices = target.getLastArraySliceIndex() - target.getBaseArraySliceIndex() + 1;
+    gfx.waitForGraphicsWrites(
+        target.getBaseAddress256ByteBlocks(),
+        (slices * target.getSliceSizeInBytes()) >> 8,
+        sce::Gnm::kWaitTargetSlotCb0 | sce::Gnm::kWaitTargetSlotCb1 | sce::Gnm::kWaitTargetSlotCb2 |
+            sce::Gnm::kWaitTargetSlotCb3 | sce::Gnm::kWaitTargetSlotCb4 | sce::Gnm::kWaitTargetSlotCb5 |
+            sce::Gnm::kWaitTargetSlotCb6 | sce::Gnm::kWaitTargetSlotCb7,
+        static_cast<sce::Gnm::CacheAction>(cacheActions),
+        sce::Gnm::kExtendedCacheActionFlushAndInvalidateCbCache,
+        sce::Gnm::kStallCommandBufferParserDisable);
+    gfx.triggerEvent(sce::Gnm::kEventTypeFlushAndInvalidateCbPixelData);
+    if (target.getDccCompressionEnable()) {
+        sce::Gnmx::decompressDccSurface(&gfx, &target);
+    } else {
+        sce::Gnmx::eliminateFastClear(&gfx, &target);
+        sce::Gnmx::decompressFmaskSurface(&gfx, &target);
     }
 }
 
-// Reconstructed from eboot.elf at 0x8EAA10.
+// Inlined into _ResourceBarrierImpl.
+void PS4Context::_DecompressDepthTarget(
+    const RndResourceBarrier& barrier,
+    std::uint32_t cacheActions) {
+    auto* texture = static_cast<RndTextureBase*>(barrier.mResource);
+    sce::Gnm::DepthRenderTarget target;
+    const int type = texture->_GetTypeImpl();
+    if (type == RndTextureBase::kTextureArray2D) {
+        auto* array = static_cast<PS4TextureArray2D*>(texture);
+        target = *array->GetDepthStencilTarget(static_cast<unsigned long>(-1));
+        if (barrier.mSubresource == static_cast<std::uint64_t>(-1)) {
+            target.setArrayView(0, static_cast<std::uint32_t>(array->mBaseDesc.mArraySize) - 1);
+        } else {
+            const auto slice = static_cast<std::uint32_t>(
+                barrier.mSubresource / (array->_GetNumMipsImpl() + 1));
+            target.setArrayView(slice, slice);
+        }
+    } else if (type == RndTextureBase::kTexture2D) {
+        target = *static_cast<PS4Texture2D*>(texture)->GetDepthStencilTarget();
+    }
+
+    auto& gfx = _ActiveGfxContext();
+    const auto slices = target.getLastArraySliceIndex() - target.getBaseArraySliceIndex() + 1;
+    gfx.waitForGraphicsWrites(
+        target.getZWriteAddress256ByteBlocks(),
+        (slices * target.getZSliceSizeInBytes()) >> 8,
+        sce::Gnm::kWaitTargetSlotDb,
+        static_cast<sce::Gnm::CacheAction>(cacheActions),
+        sce::Gnm::kExtendedCacheActionFlushAndInvalidateDbCache,
+        sce::Gnm::kStallCommandBufferParserDisable);
+    if (target.getHtileTextureCompatible()) {
+        gfx.triggerEvent(sce::Gnm::kEventTypeFlushAndInvalidateDbMeta);
+    }
+    sce::Gnmx::decompressDepthSurface(&gfx, &target);
+}
+
+// Reconstructed from eboot.elf at 0x8EAA10. Immediate barriers accumulate
+// cache actions and wait once at the end; begin barriers signal a shared
+// label that the matching end barriers wait for. Leaving render-target or
+// depth-write state decompresses the target on the graphics ring, signalling
+// from there when recording compute.
 void PS4Context::_ResourceBarrierImpl(unsigned long count, const RndResourceBarrier* barriers) {
     volatile std::uint32_t* sharedLabel = nullptr;
+    if (count == 0) {
+        return;
+    }
     std::uint32_t cacheActions = 0;
-    bool needsCompletionWait = false;
-
-    for (std::size_t index = 0; index < count; ++index) {
+    bool waitForCompletion = false;
+    for (unsigned long index = 0; index < count; ++index) {
         const auto& barrier = barriers[index];
-        switch (barrier.mType) {
-        case RndResourceBarrierType::kTransition:
-            _ProcessTransition(
-                barrier, sharedLabel, cacheActions, needsCompletionWait);
+        if (barrier.mType == RndResourceBarrierType::kUnorderedAccess) {
+            switch (barrier.mPhase) {
+            case RndResourceBarrierPhase::kEnd:
+                _WaitForResource(barrier.mResource);
+                break;
+            case RndResourceBarrierPhase::kBegin:
+                _SignalResource(barrier.mResource, sharedLabel);
+                cacheActions |= sce::Gnm::kCacheActionInvalidateL1;
+                break;
+            case RndResourceBarrierPhase::kImmediate:
+                cacheActions |= sce::Gnm::kCacheActionInvalidateL1;
+                waitForCompletion = true;
+                break;
+            }
+            continue;
+        }
+        if (barrier.mType != RndResourceBarrierType::kTransition ||
+            barrier.mBefore == barrier.mAfter) {
+            continue;
+        }
+
+        // A back buffer about to be rendered to waits until it is no longer
+        // being presented.
+        std::uint32_t barrierCacheActions = sce::Gnm::kCacheActionWriteBackAndInvalidateL1andL2;
+        switch (barrier.mAfter) {
+        case RndResourceState::kRenderTarget: {
+            auto* texture = static_cast<RndTextureBase*>(barrier.mResource);
+            if (texture->_GetTypeImpl() == RndTextureBase::kTexture2D) {
+                auto* pending = static_cast<PS4Texture2D*>(texture)->mPendingPresentations;
+                if (pending != nullptr) {
+                    auto* window = static_cast<PS4Window*>(gPS4Device->mMainWindow);
+                    _ActiveGfxContext().waitOnAddress(
+                        pending + window->mActiveBuffer,
+                        0xFFFFFFFF,
+                        sce::Gnm::kWaitCompareFuncEqual,
+                        0);
+                }
+            }
+            barrierCacheActions = sce::Gnm::kCacheActionNone;
             break;
-        case RndResourceBarrierType::kAliasing:
+        }
+        case RndResourceState::kDepthWrite:
+        case RndResourceState::kResolveDestination:
+            barrierCacheActions = sce::Gnm::kCacheActionNone;
             break;
-        case RndResourceBarrierType::kUnorderedAccess:
-            _SyncBarrierPhase(
-                barrier,
-                kInvalidateL1,
-                sharedLabel,
-                cacheActions,
-                needsCompletionWait);
+        default:
+            break;
+        }
+
+        switch (barrier.mBefore) {
+        case RndResourceState::kRenderTarget:
+        case RndResourceState::kDepthWrite: {
+            if (barrier.mPhase == RndResourceBarrierPhase::kEnd) {
+                _WaitForResource(barrier.mResource);
+                continue;
+            }
+            if (barrier.mBefore == RndResourceState::kRenderTarget) {
+                _DecompressColorTarget(barrier, barrierCacheActions);
+            } else {
+                _DecompressDepthTarget(barrier, barrierCacheActions);
+            }
+            _ResetDrawState();
+            volatile std::uint32_t* label = nullptr;
+            const auto pipeline = mActivePipe;
+            if (pipeline == kPipelineGraphics) {
+                if (barrier.mPhase == RndResourceBarrierPhase::kBegin) {
+                    _SignalResource(barrier.mResource, label);
+                } else {
+                    waitForCompletion = true;
+                }
+            } else {
+                const auto slot = mActiveComputeSlot;
+                SetActivePipeline(kPipelineGraphics, 0);
+                _SignalResource(barrier.mResource, label);
+                const auto phase = barrier.mPhase;
+                SetActivePipeline(static_cast<RndPipeline>(pipeline), slot);
+                if (phase != RndResourceBarrierPhase::kBegin) {
+                    _WaitForResource(barrier.mResource);
+                }
+            }
+            continue;
+        }
+        case RndResourceState::kUnorderedAccess:
+        case RndResourceState::kCopyDestination:
+            break;
+        case RndResourceState::kResolveDestination:
+            continue;
+        default:
+            // From a read state only a write needs a barrier, and it needs no
+            // cache action.
+            switch (barrier.mAfter) {
+            case RndResourceState::kRenderTarget:
+            case RndResourceState::kUnorderedAccess:
+            case RndResourceState::kDepthWrite:
+            case RndResourceState::kStreamOutput:
+            case RndResourceState::kCopyDestination:
+            case RndResourceState::kResolveDestination:
+                barrierCacheActions = sce::Gnm::kCacheActionNone;
+                break;
+            default:
+                continue;
+            }
+            break;
+        }
+
+        switch (barrier.mPhase) {
+        case RndResourceBarrierPhase::kEnd:
+            _WaitForResource(barrier.mResource);
+            break;
+        case RndResourceBarrierPhase::kBegin:
+            _SignalResource(barrier.mResource, sharedLabel);
+            cacheActions |= barrierCacheActions;
+            break;
+        case RndResourceBarrierPhase::kImmediate:
+            cacheActions |= barrierCacheActions;
+            waitForCompletion = true;
             break;
         }
     }
 
-    if (needsCompletionWait) {
-        auto completionCacheActions = cacheActions;
-        if (_RecordingGraphics()) {
-            completionCacheActions |= kWriteBackAndInvalidateL1L2;
-            cacheActions = completionCacheActions;
+    if (waitForCompletion) {
+        if (mActivePipe == kPipelineCompute) {
+            _ActiveComputeContext().m_dcb.triggerEvent(sce::Gnm::kEventTypeCsPartialFlush);
+        } else if (mActivePipe == kPipelineGraphics) {
+            _WaitForEndOfPipe(cacheActions | sce::Gnm::kCacheActionWriteBackAndInvalidateL1andL2);
+            return;
         }
-        _EmitTransitionCompletionWait(completionCacheActions);
     }
-
     if (cacheActions != 0) {
-        _FlushTransitionCaches(cacheActions);
+        if (mActivePipe == kPipelineCompute) {
+            _ActiveComputeContext().m_dcb.flushShaderCachesAndWait(
+                static_cast<sce::Gnm::CacheAction>(cacheActions), 0);
+        } else if (mActivePipe == kPipelineGraphics) {
+            _ActiveGfxContext().waitForGraphicsWrites(
+                0,
+                1,
+                0,
+                static_cast<sce::Gnm::CacheAction>(cacheActions),
+                0,
+                sce::Gnm::kStallCommandBufferParserDisable);
+        }
     }
 }
 

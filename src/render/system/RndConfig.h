@@ -105,6 +105,7 @@ public:
 };
 
 static_assert(offsetof(RndConfig, mVSyncMode) == 20);
+static_assert(offsetof(RndConfig, mAsyncComputeEnabled) == 177);
 static_assert(offsetof(RndConfig, mLightTileSize) == 32);
 static_assert(offsetof(RndConfig, mLightTileDepthSlices) == 40);
 static_assert(offsetof(RndConfig, mVolumetricScatteringTileSize) == 48);

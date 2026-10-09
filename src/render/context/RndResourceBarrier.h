@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+class RndShaderResource;
+
 // Resource transition recorded before a context reuses a resource. Names are
 // not in the reference map, which predates resource barriers.
 enum class RndResourceBarrierType : std::uint32_t {
@@ -28,8 +30,8 @@ enum class RndResourceState : std::uint32_t {
 struct RndResourceBarrier {
     RndResourceBarrierType mType = RndResourceBarrierType::kTransition;
     RndResourceBarrierPhase mPhase = RndResourceBarrierPhase::kImmediate;
-    void* mResource = nullptr;
-    std::uint64_t mSubresource = 0;
+    RndShaderResource* mResource = nullptr;
+    std::uint64_t mSubresource = 0;  // Mip-major index, or -1 for all.
     RndResourceState mBefore = {};
     RndResourceState mAfter = {};
 };
