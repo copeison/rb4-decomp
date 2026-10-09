@@ -9,7 +9,7 @@
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -178,8 +178,8 @@ void render_downsample_shader_draw(
     const auto extent = static_cast<std::uint64_t>(shader_field(shader, 360));
     auto& buffer = render_shader_select_constant_buffer(context, extent);
     if (auto* source = parameters.source) {
-        const auto width = static_cast<std::int32_t>(source->width);
-        const auto height = static_cast<std::int32_t>(source->height);
+        const auto width = static_cast<std::int32_t>(source->mBaseDesc.mWidth);
+        const auto height = static_cast<std::int32_t>(source->mBaseDesc.mHeight);
         const auto size = _mm_cvtepi32_ps(
             _mm_setr_epi32(width, height, width, height));
         const auto estimate = _mm_rcp_ps(size);

@@ -4,7 +4,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/resources/audio/audio_analysis_texture_adapters.h"
 
 namespace rb4 {
@@ -14,11 +14,11 @@ namespace {
 constexpr std::size_t kAudioAnalysisTextureSetOffset = 3576;
 
 bool texture_width_changed(
-    const RenderTexture* texture,
+    const RndTextureBase* texture,
     std::int32_t requested_width) {
     return requested_width > 0 &&
         (texture == nullptr ||
-         texture->width != static_cast<std::uint32_t>(requested_width));
+         texture->mBaseDesc.mWidth != static_cast<std::uint32_t>(requested_width));
 }
 
 }  // namespace
@@ -51,7 +51,7 @@ void audio_analysis_texture_set_destruct(
          index < textures.texture_count;
          ++index) {
         if (textures.textures[index] != nullptr) {
-            render_texture_release_dynamic(*textures.textures[index]);
+            delete textures.textures[index];
             textures.textures[index] = nullptr;
         }
     }

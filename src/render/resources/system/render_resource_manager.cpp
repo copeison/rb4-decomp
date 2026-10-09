@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include "math/color/Color.h"
+#include "math/vector/Vector3i.h"
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
@@ -13,8 +15,9 @@
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture_array_1d.h"
-#include "render/core/textures/render_texture_mip_chain.h"
+#include "render/textures/RndTextureArray1D.h"
+#include "render/textures/RndPixelCanvas.h"
+#include "render/textures/RndPixelData.h"
 #include "utl/text/Str.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_resource.h"
@@ -634,16 +637,15 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
         -1,
     };
 
-    RenderTextureArray1DDescriptor descriptor;
-    render_texture_array_1d_descriptor_construct(descriptor);
-    descriptor.texture_state.name = "function_table";
-    descriptor.texture_state.address_mode = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(6));
-    descriptor.texture_state.filter_mode = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(6));
+    RndTextureArray1D::Description descriptor;
+    descriptor.mName = "function_table";
+    descriptor.mFormat.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(6));
+    descriptor.mFormat.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(6));
 
-    std::array<RenderTextureMipChainDescriptor, kFunctionCount> mip_chains;
-    descriptor.mip_chains = {
+    std::array<RndPixelData, kFunctionCount> mip_chains;
+    descriptor.mPixels = {
         mip_chains.data(),
         mip_chains.data() + mip_chains.size(),
         mip_chains.data() + mip_chains.size(),
@@ -651,8 +653,8 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
 
     const auto data_format =
         render_data_format_resolve(kFunctionTableFormat, 7);
-    const RenderTextureExtent3D extent{kSampleCount, 1, 1};
-    std::array<RenderFloatPixel, kSampleCount> pixels;
+    const Vector3i extent{static_cast<int>(kSampleCount), 1, 1};
+    std::array<Hmx::Color, kSampleCount> pixels;
     for (std::uint32_t function_index = 0;
          function_index < kFunctionCount;
          ++function_index) {
@@ -666,27 +668,21 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
         }
 
         auto& mip = mip_chains[function_index];
-        render_texture_mip_chain_descriptor_construct(mip);
-        render_texture_mip_chain_descriptor_allocate_source(
-            mip, extent, data_format, nullptr);
-        const RenderFloatImageView image{
+        mip.Create(extent, data_format, nullptr);
+        const RndPixelCanvas image{
             nullptr,
-            kSampleCount,
+            static_cast<int>(kSampleCount),
             1,
             1,
             0,
             pixels.data(),
             nullptr,
         };
-        render_texture_mip_chain_descriptor_copy_float_image(mip, image);
+        mip.ConvertFrom(image);
     }
 
     manager.runtime.function_table_texture =
-        render_create_texture_array_1d(descriptor, nullptr);
-
-    for (auto& mip : mip_chains) {
-        render_texture_mip_chain_descriptor_destruct(mip);
-    }
+        RndTextureArray1D::New(descriptor, nullptr);
 }
 
 // Reconstructed from eboot.elf at 0x641740.

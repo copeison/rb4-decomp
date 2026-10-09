@@ -7,7 +7,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_block.h"
 #include "render/core/targets/render_target_resource_factory.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
 #include "render/gbuffer/gbuffer_targets.h"
@@ -33,26 +33,26 @@ struct RenderTargetResourcesDispatch {
     void (*destroy)(RenderTargetResources& resources);
     bool (*accept_source_texture)(
         RenderTargetResources& resources,
-        RenderTexture& source_texture);
-    RenderTexture* (*create_texture_2d)(
+        RndTextureBase& source_texture);
+    RndTextureBase* (*create_texture_2d)(
         RenderTargetResources& resources,
         const char* name,
-        const RenderTextureCreationState& creation_state,
+        const RndPixelFormat& creation_state,
         std::int32_t data_format,
         RenderExtent extent,
         std::int32_t attachment_index,
         std::uint32_t target_flags,
-        RenderTexture* reusable_texture);
-    RenderTexture* (*create_texture_array_2d)(
+        RndTextureBase* reusable_texture);
+    RndTextureBase* (*create_texture_array_2d)(
         RenderTargetResources& resources,
         const char* name,
-        const RenderTextureCreationState& creation_state,
+        const RndPixelFormat& creation_state,
         std::int32_t data_format,
         RenderExtent extent,
         std::size_t layer_count,
         std::int32_t attachment_index,
         std::uint32_t target_flags,
-        RenderTexture* reusable_texture);
+        RndTextureBase* reusable_texture);
 };
 
 struct RenderResourceModePrefix {
@@ -70,8 +70,8 @@ void destroy_resources(RenderTargetResources& resources) {
 
 bool accept_2d_source_texture(
     RenderTargetResources&,
-    RenderTexture& source_texture) {
-    return render_texture_runtime_descriptor_type(source_texture) == 1;
+    RndTextureBase& source_texture) {
+    return source_texture._GetTypeImpl() == RndTextureBase::kTexture2D;
 }
 
 RenderTargetResourcesDispatch kBaseDispatch{
@@ -104,8 +104,9 @@ bool has_flag(
 
 void bind_source_texture(
     RenderTargetResources& resources,
-    RenderTexture& source_texture) {
-    resources.extent = {source_texture.width, source_texture.height};
+    RndTextureBase& source_texture) {
+    resources.extent = {
+        source_texture.mBaseDesc.mWidth, source_texture.mBaseDesc.mHeight};
     (void)dispatch(resources).accept_source_texture(
         resources, source_texture);
     resources.source_texture = &source_texture;
@@ -113,9 +114,9 @@ void bind_source_texture(
         resources.registered_resource_count++] = &source_texture;
 }
 
-void release_target(RenderTexture*& target) {
+void release_target(RndTextureBase*& target) {
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }
@@ -181,7 +182,7 @@ void render_target_resources_destruct(RenderTargetResources& resources) {
 // Reconstructed from eboot.elf at 0x6B0760.
 void render_target_resources_initialize(
     RenderTargetResources& resources,
-    RenderTexture& source_texture,
+    RndTextureBase& source_texture,
     const RenderTargetResources* reusable_resources) {
     render_target_resources_release(resources);
     bind_source_texture(resources, source_texture);
@@ -249,7 +250,7 @@ void render_target_resources_release(RenderTargetResources& resources) {
     if (!has_flag(
             flags, RenderTargetResourceFlag::kSourceTextureNotOwned) &&
         source_texture != nullptr) {
-        render_texture_release_dynamic(*source_texture);
+        delete source_texture;
     }
     source_texture = nullptr;
 

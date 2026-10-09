@@ -171,7 +171,7 @@ void render_stencil_scene_mask_shader_construct(void* shader) {
 void render_refine_scene_mask_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& unrefined_mask) {
+    RndTextureBase& unrefined_mask) {
     render_shader_draw_with_pixel_texture(shader, context, unrefined_mask, 288);
 }
 

@@ -3,17 +3,18 @@
 #include <cstddef>
 #include <cstdint>
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
 struct RenderSystem;
-struct RenderTexture;
 
 struct AudioAnalysisTextureSet {
-    RenderTexture** textures;
+    RndTextureBase** textures;
     std::size_t texture_count;
     std::size_t texture_capacity;
-    RenderTexture* inline_textures[2];
+    RndTextureBase* inline_textures[2];
     float* samples_begin;
     float* samples_end;
     float* samples_capacity;

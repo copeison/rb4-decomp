@@ -7,8 +7,8 @@
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
-#include "render/core/textures/render_texture_3d.h"
+#include "render/textures/RndTextureBase.h"
+#include "render/textures/RndTexture3D.h"
 
 namespace rb4 {
 
@@ -53,7 +53,7 @@ std::size_t depth_index(VolumetricScatteringDepth depth) {
     return 0;
 }
 
-RenderTexture3D*& texture_slot(
+RndTexture3D*& texture_slot(
     RenderTargetResourceBlock& block,
     VolumetricScatteringTextureKind kind,
     VolumetricScatteringDepth depth) {
@@ -69,7 +69,7 @@ RenderTexture3D*& texture_slot(
     return block.volumetric_inscattering[index];
 }
 
-RenderTexture3D* texture_slot(
+RndTexture3D* texture_slot(
     const RenderTargetResourceBlock& block,
     VolumetricScatteringTextureKind kind,
     VolumetricScatteringDepth depth) {
@@ -94,7 +94,7 @@ std::uint64_t accumulated_scattering_voxel(
         : kOddAccumulatedScatteringVoxel;
 }
 
-RenderTexture3D* matching_reusable_texture(
+RndTexture3D* matching_reusable_texture(
     const RenderTargetResourceBlock* block,
     VolumetricScatteringTextureKind kind,
     VolumetricScatteringDepth depth) {
@@ -103,7 +103,7 @@ RenderTexture3D* matching_reusable_texture(
         : texture_slot(*block, kind, depth);
 }
 
-RenderTexture3D* first_creation_reuse_texture(
+RndTexture3D* first_creation_reuse_texture(
     RenderTargetResourceBlock& block,
     VolumetricScatteringTextureKind kind,
     VolumetricScatteringDepth depth) {
@@ -126,39 +126,38 @@ const char* texture_name(VolumetricScatteringTextureKind kind) {
     return "VScat Inscattering";
 }
 
-RenderTexture3D* create_volumetric_texture(
+RndTexture3D* create_volumetric_texture(
     VolumetricScatteringTextureKind kind,
     RenderVolumeExtent extent,
-    RenderTexture3D* reusable_texture,
+    RndTexture3D* reusable_texture,
     std::uint64_t (*initializer)(
         std::uint32_t, std::uint32_t, std::uint32_t)) {
-    RenderTexture3DDescriptor descriptor{};
-    auto& texture_state = descriptor.texture_state;
-    render_texture_descriptor_construct(texture_state);
-    texture_state.descriptor_type = 2;
-    texture_state.creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(5));
-    texture_state.creation_state.values[9] = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(5));
-    texture_state.creation_state.values[10] = 2;
-    texture_state.name = texture_name(kind);
+    RndTexture3D::Description descriptor;
+    auto& texture_state = descriptor;
+    texture_state.mType = RndTextureBase::kTexture3D;
+    texture_state.mRequestedFormat.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(5));
+    texture_state.mRequestedFormat.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(5));
+    texture_state.mRequestedFormat.mFlags = 2;
+    texture_state.mName = texture_name(kind);
 
     const RenderDataFormatDescriptor format_descriptor{
         64, 4, 2, 1, -1,
     };
-    auto& mip = descriptor.mip_chain.fields;
-    mip.width = extent.width;
-    mip.height = extent.height;
-    mip.depth = extent.depth;
-    mip.data_format = render_data_format_resolve(format_descriptor, 7);
+    auto& mip = descriptor.mPixels;
+    mip.mSize = {
+        static_cast<int>(extent.width),
+        static_cast<int>(extent.height),
+        static_cast<int>(extent.depth),
+    };
+    mip.mFormat = render_data_format_resolve(format_descriptor, 7);
 
     if (initializer != nullptr) {
-        const auto voxel_count =
-            static_cast<std::size_t>(extent.width) * extent.height *
-            extent.depth;
-        mip.source_size = voxel_count * sizeof(std::uint64_t);
-        mip.source_data = HmxAllocator::gStlAllocator.allocate(mip.source_size);
-        auto* voxels = static_cast<std::uint64_t*>(mip.source_data);
+        // The binary allocates the voxels through RndPixelData::Create under
+        // MemPushTemp; the description's destructor releases them.
+        mip.Create(mip.mSize, mip.mFormat, nullptr);
+        auto* voxels = static_cast<std::uint64_t*>(mip.mBuffer);
         for (std::uint32_t z = 0; z < extent.depth; ++z) {
             for (std::uint32_t y = 0; y < extent.height; ++y) {
                 for (std::uint32_t x = 0; x < extent.width; ++x) {
@@ -168,10 +167,7 @@ RenderTexture3D* create_volumetric_texture(
         }
     }
 
-    auto* texture = render_create_texture_3d(descriptor, reusable_texture);
-    if (mip.source_data != nullptr) {
-        HmxAllocator::gStlAllocator.deallocate(mip.source_data, mip.source_size);
-    }
+    auto* texture = RndTexture3D::New(descriptor, reusable_texture);
     return texture;
 }
 
@@ -204,7 +200,7 @@ void release_texture(
     VolumetricScatteringDepth depth) {
     auto*& texture = texture_slot(block, kind, depth);
     if (texture != nullptr) {
-        render_texture_release_dynamic(*texture);
+        delete texture;
         texture = nullptr;
     }
 }

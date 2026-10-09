@@ -8,11 +8,11 @@ accumulating implementation files. Names and classes follow
 
 | Module | Contents | Domains so far |
 |---|---|---|
-| `src/math` | Math types | `color`, `hash`, `random` |
+| `src/math` | Math types | `color`, `hash`, `random`, `vector` |
 | `src/utl` | Engine utilities | `containers`, `options`, `streams`, `text`, `threading`, `time` |
 | `src/os` | Platform services | `files`, `memory` |
-| `src/render` | Platform-neutral renderer (`Rnd*`) | `buffers`, `queries`, `shaders`, `system`; see below |
-| `src/renderps4` | PS4 backend (`PS4*`) | `buffers`, `queries`, `shaders`, `system`; the rest is still under `src/render/platform/orbis` |
+| `src/render` | Platform-neutral renderer (`Rnd*`) | `buffers`, `queries`, `shaders`, `system`, `textures`; see below |
+| `src/renderps4` | PS4 backend (`PS4*`) | `buffers`, `queries`, `shaders`, `system`, `textures`; the rest is still under `src/render/platform/orbis` |
 | `src/audio` | Audio engine and FMOD integration | `core`, `fmod` |
 | `src/rockband`, `src/rb_*` | Game | planned; currently `src/game` |
 | `src/ui` | UI system | `layout` |

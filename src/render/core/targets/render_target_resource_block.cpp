@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/depth/depth_stencil_target.h"
 #include "render/depth/linear_depth_targets.h"
 #include "render/gbuffer/gbuffer_targets.h"
@@ -49,7 +49,7 @@ RenderExtent tiled_light_interpolation_extent(RenderExtent extent) {
     };
 }
 
-RenderTexture* tiled_light_reuse_target(
+RndTextureBase* tiled_light_reuse_target(
     RenderTargetResources& resources,
     const RenderTargetResourceBlock* reusable_block,
     RenderExtent extent) {
@@ -64,8 +64,8 @@ RenderTexture* tiled_light_reuse_target(
         return nullptr;
     }
     const auto interpolation_extent = tiled_light_interpolation_extent(extent);
-    return fallback->width >= interpolation_extent.width &&
-            fallback->height >= interpolation_extent.height
+    return fallback->mBaseDesc.mWidth >= interpolation_extent.width &&
+            fallback->mBaseDesc.mHeight >= interpolation_extent.height
         ? fallback
         : nullptr;
 }

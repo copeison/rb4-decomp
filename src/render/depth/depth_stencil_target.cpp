@@ -6,7 +6,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
@@ -30,7 +30,7 @@ void render_depth_stencil_target_create(
         ? kUnassignedAttachment
         : static_cast<std::int32_t>(resources.attachment_cursor);
     if (!partial_frame && reusable_target != nullptr) {
-        if (reusable_target->attachment_index == kUnassignedAttachment) {
+        if (reusable_target->mBaseDesc.mAttachmentIndex == kUnassignedAttachment) {
             attachment_index = kUnassignedAttachment;
         } else {
             reusable_target = nullptr;
@@ -47,12 +47,12 @@ void render_depth_stencil_target_create(
         1,
         -1,
     };
-    RenderTextureCreationState creation_state{};
-    creation_state.values[0] = 2;
-    creation_state.values[6] = 1;
-    creation_state.values[8] = 1;
-    creation_state.values[9] = 1;
-    creation_state.values[10] = 2;
+    RndPixelFormat creation_state{};
+    creation_state.mUsage = 2;
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = 1;
+    creation_state.mFilterMode = 1;
+    creation_state.mFlags = 2;
     auto* target = render_target_resources_create_texture_2d(
         resources,
         "Depth/Stencil Buffer",
@@ -63,9 +63,9 @@ void render_depth_stencil_target_create(
         16,
         reusable_target);
     block.depth_stencil = target;
-    if (target->attachment_index != kUnassignedAttachment) {
+    if (target->mBaseDesc.mAttachmentIndex != kUnassignedAttachment) {
         resources.attachment_cursor = static_cast<std::uint32_t>(
-            target->attachment_index + target->attachment_count);
+            target->mBaseDesc.mAttachmentIndex + target->mBaseDesc.mAttachmentCount);
     }
     if (!partial_frame) {
         resources.registered_resources_begin[
@@ -77,7 +77,7 @@ void render_depth_stencil_target_create(
 void render_depth_stencil_target_release(RenderTargetResourceBlock& block) {
     auto*& target = block.depth_stencil;
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

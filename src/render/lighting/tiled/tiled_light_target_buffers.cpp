@@ -7,7 +7,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
@@ -58,9 +58,9 @@ void release_compute_buffer(RndComputeBuffer*& buffer) {
     }
 }
 
-void release_render_target(RenderTexture*& target) {
+void release_render_target(RndTextureBase*& target) {
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }
@@ -74,7 +74,7 @@ void render_tiled_light_target_buffers_create(
     RenderExtent extent,
     bool create_interpolation_target,
     bool stereo,
-    RenderTexture* existing_interpolation_target) {
+    RndTextureBase* existing_interpolation_target) {
     const auto& settings =
         *render_system_settings(*render_system_instance());
     if (!settings.use_tiled_lighting) {
@@ -104,11 +104,11 @@ void render_tiled_light_target_buffers_create(
             static_cast<std::uint32_t>(
                 divide_round_up(extent.height, std::size_t{2})),
         };
-        RenderTextureCreationState creation_state{};
-        creation_state.values[6] = 1;
-        creation_state.values[8] = 1;
-        creation_state.values[9] = 2;
-        creation_state.values[10] = 10;
+        RndPixelFormat creation_state{};
+        creation_state.mSettings[5] = 1;
+        creation_state.mWrapMode = 1;
+        creation_state.mFilterMode = 2;
+        creation_state.mFlags = 10;
         const RenderDataFormatDescriptor format_descriptor{
             64, 4, 2, 1, -1,
         };

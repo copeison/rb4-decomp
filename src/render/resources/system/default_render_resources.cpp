@@ -4,7 +4,7 @@
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/core/system/render_system.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
@@ -25,7 +25,7 @@ void replace_scene_resource(
 template <typename Texture>
 void release_texture(Texture*& texture) {
     if (texture != nullptr) {
-        render_texture_release_dynamic(*texture);
+        delete texture;
         texture = nullptr;
     }
 }

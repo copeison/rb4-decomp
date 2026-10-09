@@ -6,14 +6,15 @@
 
 class RndShaderCBuffer;
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
-struct RenderTexture;
 
 struct RenderContextSubmissionResource {
     void* reserved_0;
-    RenderTexture* texture;
+    RndTextureBase* texture;
     std::int64_t resource_index;
     std::uint64_t flags;
 };

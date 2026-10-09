@@ -1,6 +1,6 @@
 #include "render/lighting/probes/light_probe_accumulation_target.h"
 
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
@@ -21,11 +21,11 @@ void render_light_probe_accumulation_target_create(
     auto* reusable_target = reusable_resources == nullptr
         ? nullptr
         : reusable_resources->light_probe_accumulation;
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = 1;
-    creation_state.values[9] = 1;
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = 1;
+    creation_state.mFilterMode = 1;
+    creation_state.mFlags = 10;
     const RenderDataFormatDescriptor format_descriptor{
         64, 4, 2, 1, -1,
     };
@@ -48,7 +48,7 @@ void render_light_probe_accumulation_target_release(
     RenderTargetResources& resources) {
     auto*& target = resources.light_probe_accumulation;
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

@@ -5,9 +5,9 @@
 
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
-namespace rb4 {
+class PS4Texture2D;
 
-struct OrbisTexture2D;
+namespace rb4 {
 
 void orbis_back_buffer_install_vtable(OrbisBackBuffer& back_buffer);
 OrbisBackBufferSpecification orbis_back_buffer_specification(
@@ -27,12 +27,12 @@ void orbis_gpu_render_target_set_storage(
     void* allocation);
 void orbis_gpu_render_target_disable_auxiliary_surfaces(
     OrbisGpuRenderTarget& target);
-OrbisTexture2D* orbis_wrap_back_buffer_textures(
+PS4Texture2D* orbis_wrap_back_buffer_textures(
     OrbisGpuRenderTarget* targets,
     std::size_t target_count);
 void orbis_back_buffer_attach_texture(
     OrbisBackBuffer& back_buffer,
-    OrbisTexture2D& texture);
+    PS4Texture2D& texture);
 void orbis_video_output_register_back_buffers(
     OrbisRenderSystem& system,
     const OrbisGpuRenderTarget* targets,

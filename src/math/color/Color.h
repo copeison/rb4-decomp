@@ -5,7 +5,7 @@ namespace Hmx {
 class Color {
 public:
     Color() = default;
-    Color(float r, float g, float b, float a = 1.0F)
+    constexpr Color(float r, float g, float b, float a = 1.0F)
         : red(r), green(g), blue(b), alpha(a) {}
 
     float red;

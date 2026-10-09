@@ -2,7 +2,7 @@
 
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
@@ -15,13 +15,13 @@ void render_ambient_occlusion_target_create(
     auto* reusable_target = reusable_block == nullptr
         ? nullptr
         : reusable_block->ambient_occlusion;
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(28));
-    creation_state.values[9] = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(28));
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(28));
+    creation_state.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(28));
+    creation_state.mFlags = 10;
     const RenderDataFormatDescriptor format_descriptor{
         32, 10, 2, 1, -1,
     };
@@ -46,7 +46,7 @@ void render_ambient_occlusion_target_release(
     RenderTargetResourceBlock& block) {
     auto*& target = block.ambient_occlusion;
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

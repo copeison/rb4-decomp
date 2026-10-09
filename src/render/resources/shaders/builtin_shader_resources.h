@@ -4,10 +4,11 @@
 
 class RndComputeBuffer;
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
-struct RenderTexture;
 
 void render_error_shader_construct(void* shader);
 void render_error_shader_bind(
@@ -52,19 +53,19 @@ void render_test_compute_shader_construct(void* shader);
 void render_linearize_depth_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& depth);
+    RndTextureBase& depth);
 void render_refine_scene_mask_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& unrefined_mask);
+    RndTextureBase& unrefined_mask);
 void render_display_sphere_map_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& texture);
+    RndTextureBase& texture);
 void render_dof_sprite_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& bokeh,
+    RndTextureBase& bokeh,
     RndComputeBuffer& sprites);
 
 }  // namespace rb4

@@ -1,13 +1,13 @@
 #include "render/lighting/accumulation/light_accumulation_targets.h"
 
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResources& resources,
     LightAccumulationTargetKind kind) {
     const auto index = static_cast<std::uint32_t>(kind);
@@ -16,7 +16,7 @@ RenderTexture*& target_slot(
         : resources.blurred_light_accumulation[index - 2];
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResources& resources,
     LightAccumulationTargetKind kind) {
     const auto index = static_cast<std::uint32_t>(kind);
@@ -25,7 +25,7 @@ RenderTexture* target_slot(
         : resources.blurred_light_accumulation[index - 2];
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResources* resources,
     LightAccumulationTargetKind kind) {
     return resources == nullptr
@@ -74,7 +74,7 @@ void release_target(
     LightAccumulationTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

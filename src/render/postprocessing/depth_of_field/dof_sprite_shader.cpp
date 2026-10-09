@@ -116,7 +116,7 @@ void render_dof_sprite_shader_construct(void* shader) {
 void render_dof_sprite_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& bokeh,
+    RndTextureBase& bokeh,
     RndComputeBuffer& sprites) {
     constexpr std::uint32_t kVertexStage = 0;
     constexpr std::uint32_t kPixelStage = 4;

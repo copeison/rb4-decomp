@@ -238,7 +238,7 @@ void render_display_texture_cube_shader_construct(void* shader) {
 void render_display_sphere_map_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& texture) {
+    RndTextureBase& texture) {
     render_shader_draw_with_pixel_texture(shader, context, texture, 288);
 }
 

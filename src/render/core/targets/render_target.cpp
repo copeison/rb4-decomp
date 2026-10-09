@@ -122,7 +122,7 @@ RenderTargetStateHandle render_target_active_state_handle(
     return {&target.active_state, 1};
 }
 
-RenderTexture* render_target_state_texture(RenderTargetState& state) {
+RndTextureBase* render_target_state_texture(RenderTargetState& state) {
     return target_resources(state).source_texture;
 }
 

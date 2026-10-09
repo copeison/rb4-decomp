@@ -1,6 +1,6 @@
 #include "render/lighting/accumulation/partial_light_accumulation_target.h"
 
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/lighting/accumulation/light_accumulation_target_factory.h"
 
 namespace rb4 {
@@ -27,7 +27,7 @@ void render_partial_light_accumulation_target_release(
     RenderTargetResourceBlock& block) {
     auto*& target = block.partial_light_accumulation;
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

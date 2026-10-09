@@ -6,13 +6,13 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResources& resources,
     SceneMaskTargetKind kind) {
     switch (kind) {
@@ -26,7 +26,7 @@ RenderTexture*& target_slot(
     return resources.scene_mask;
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResources& resources,
     SceneMaskTargetKind kind) {
     switch (kind) {
@@ -46,7 +46,7 @@ std::uint32_t divide_round_up(
     return value / divisor + (value % divisor != 0);
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResources* resources,
     SceneMaskTargetKind kind) {
     return resources == nullptr
@@ -59,13 +59,13 @@ void create_target(
     const RenderTargetResources* reusable_resources,
     SceneMaskTargetKind kind,
     RenderExtent extent) {
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(32));
-    creation_state.values[9] = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(32));
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(32));
+    creation_state.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(32));
+    creation_state.mFlags = 10;
     const RenderDataFormatDescriptor format_descriptor{
         8, 10, 0, 1, -1,
     };
@@ -74,7 +74,7 @@ void create_target(
         name = "Mask Scratch Buffer";
     } else if (kind == SceneMaskTargetKind::kTile) {
         name = "Mask Tile Buffer";
-        creation_state.values[9] = 1;
+        creation_state.mFilterMode = 1;
     }
     auto* target = render_target_resources_create_texture_2d(
         resources,
@@ -95,7 +95,7 @@ void release_target(
     SceneMaskTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

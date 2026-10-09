@@ -1,0 +1,43 @@
+#pragma once
+
+#include <cstddef>
+
+#include "render/textures/RndTextureArray2D.h"
+
+// The vtable is at 0x195FB88.
+class PS4TextureArray2D : public RndTextureArray2D {
+public:
+    explicit PS4TextureArray2D(const Description& desc);  // 0x8E5D40
+    ~PS4TextureArray2D() override;                         // 0x8E5D80, 0x8E5E50
+
+    void _SelectForVSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E64C0
+    void _SelectForHSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E64E0
+    void _SelectForDSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E6500
+    void _SelectForGSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E6520
+    void _SelectForPSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E6540
+    void _SelectForCSImpl(RndContext& context, unsigned long slot, unsigned int flags, unsigned long extra) override;  // 0x8E6560
+    // Not yet reconstructed.
+    void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) override;  // 0x8E6580
+    void _SyncStaticImpl(const RndTextureBase* reuse) override;  // 0x8E5E70
+    void _SyncDynamicImpl(RndContext& context) override;          // 0x8E6490
+    void _SyncFromGpuImpl(RndContext& context) override;          // 0x8E64A0
+    void _Slot20Impl() override;                                  // 0x8E64B0
+
+    // Field names are not in the reference map.
+    void* mGpuTexture;
+    void* mStorage;
+    void* mStencilStorage;
+    void* mHtileStorage;
+    void* mColorTarget;
+    void* mDepthTarget;
+
+private:
+    // Stand-ins for code inlined into _SyncStaticImpl and the destructor; not
+    // yet reconstructed. Names not in the reference map.
+    void _SyncDepthStencil();
+    void _SyncRegular();
+    static void* ColorTargetMetadata(void* target);
+};
+
+static_assert(offsetof(PS4TextureArray2D, mGpuTexture) == 344);
+static_assert(sizeof(PS4TextureArray2D) == 392);

@@ -1,13 +1,13 @@
 #include "renderps4/system/PS4Factory.h"
 
 #include "render/platform/orbis/meshes/orbis_mesh.h"
-#include "render/platform/orbis/textures/orbis_texture_1d.h"
-#include "render/platform/orbis/textures/orbis_texture_2d.h"
-#include "render/platform/orbis/textures/orbis_texture_3d.h"
-#include "render/platform/orbis/textures/orbis_texture_array_1d.h"
-#include "render/platform/orbis/textures/orbis_texture_array_2d.h"
-#include "render/platform/orbis/textures/orbis_texture_array_cube.h"
-#include "render/platform/orbis/textures/orbis_texture_cube.h"
+#include "renderps4/textures/PS4Texture1D.h"
+#include "renderps4/textures/PS4Texture2D.h"
+#include "renderps4/textures/PS4Texture3D.h"
+#include "renderps4/textures/PS4TextureArray1D.h"
+#include "renderps4/textures/PS4TextureArray2D.h"
+#include "renderps4/textures/PS4TextureArrayCube.h"
+#include "renderps4/textures/PS4TextureCube.h"
 #include "renderps4/buffers/PS4ComputeBuffer.h"
 #include "renderps4/buffers/PS4ParticleBuffer.h"
 #include "renderps4/buffers/PS4ShaderCBuffer.h"
@@ -29,39 +29,46 @@ rb4::RenderMesh* PS4Factory::CreateMesh(
     return rb4::orbis_create_mesh(type, name);
 }
 
-rb4::RenderTexture1D* PS4Factory::CreateTexture1D(
-    const rb4::RenderTexture1DDescriptor& desc) {
-    return rb4::orbis_create_texture_1d(desc);
+// Reconstructed from eboot.elf at 0x8D8980.
+RndTexture1D* PS4Factory::CreateTexture1D(
+    const RndTexture1D::Description& desc) {
+    return new PS4Texture1D(desc);
 }
 
-rb4::RenderTexture2D* PS4Factory::CreateTexture2D(
-    const rb4::RenderTexture2DDescriptor& desc) {
-    return rb4::orbis_create_texture_2d(desc);
+// Reconstructed from eboot.elf at 0x8D89B0.
+RndTexture2D* PS4Factory::CreateTexture2D(
+    const RndTexture2D::Description& desc) {
+    return new PS4Texture2D(desc);
 }
 
-rb4::RenderTexture3D* PS4Factory::CreateTexture3D(
-    const rb4::RenderTexture3DDescriptor& desc) {
-    return rb4::orbis_create_texture_3d(desc);
+// Reconstructed from eboot.elf at 0x8D89E0.
+RndTexture3D* PS4Factory::CreateTexture3D(
+    const RndTexture3D::Description& desc) {
+    return new PS4Texture3D(desc);
 }
 
-rb4::RenderTextureCube* PS4Factory::CreateTextureCube(
-    const rb4::RenderTextureCubeDescriptor& desc) {
-    return rb4::orbis_create_texture_cube(desc);
+// Reconstructed from eboot.elf at 0x8D8A10.
+RndTextureCube* PS4Factory::CreateTextureCube(
+    const RndTextureCube::Description& desc) {
+    return new PS4TextureCube(desc);
 }
 
-rb4::RenderTextureArray1D* PS4Factory::CreateTextureArray1D(
-    const rb4::RenderTextureArray1DDescriptor& desc) {
-    return rb4::orbis_create_texture_array_1d(desc);
+// Reconstructed from eboot.elf at 0x8D8A40.
+RndTextureArray1D* PS4Factory::CreateTextureArray1D(
+    const RndTextureArray1D::Description& desc) {
+    return new PS4TextureArray1D(desc);
 }
 
-rb4::RenderTextureArray2D* PS4Factory::CreateTextureArray2D(
-    const rb4::RenderTextureArray2DDescriptor& desc) {
-    return rb4::orbis_create_texture_array_2d(desc);
+// Reconstructed from eboot.elf at 0x8D8A70.
+RndTextureArray2D* PS4Factory::CreateTextureArray2D(
+    const RndTextureArray2D::Description& desc) {
+    return new PS4TextureArray2D(desc);
 }
 
-rb4::RenderTextureArrayCube* PS4Factory::CreateTextureArrayCube(
-    const rb4::RenderTextureArrayCubeDescriptor& desc) {
-    return rb4::orbis_create_texture_array_cube(desc);
+// Reconstructed from eboot.elf at 0x8D8AA0.
+RndTextureArrayCube* PS4Factory::CreateTextureArrayCube(
+    const RndTextureArrayCube::Description& desc) {
+    return new PS4TextureArrayCube(desc);
 }
 
 // Reconstructed from eboot.elf at 0x8D8AD0. The buffer's element data is

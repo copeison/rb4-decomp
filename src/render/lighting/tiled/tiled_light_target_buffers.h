@@ -7,16 +7,17 @@
 
 class RndComputeBuffer;
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderTargetResources;
-struct RenderTexture;
 
 struct TiledLightTargetResources {
     std::uint8_t reserved_0[88]{};
     RndComputeBuffer* light_ids[2]{};
     RndComputeBuffer* light_id_ranges = nullptr;
-    RenderTexture* interpolation_target = nullptr;
+    RndTextureBase* interpolation_target = nullptr;
     RndComputeBuffer* stereo_light_ids[2]{};
     RndComputeBuffer* stereo_light_id_ranges = nullptr;
 };
@@ -35,7 +36,7 @@ void render_tiled_light_target_buffers_create(
     RenderExtent extent,
     bool create_interpolation_target,
     bool stereo,
-    RenderTexture* existing_interpolation_target);
+    RndTextureBase* existing_interpolation_target);
 void render_tiled_light_target_buffers_release(
     TiledLightTargetResources& resources);
 

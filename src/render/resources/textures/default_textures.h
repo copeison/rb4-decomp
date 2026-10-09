@@ -3,14 +3,14 @@
 #include <array>
 #include <cstdint>
 
-#include "render/core/textures/render_texture.h"
-#include "render/core/textures/render_texture_1d.h"
-#include "render/core/textures/render_texture_2d.h"
-#include "render/core/textures/render_texture_3d.h"
-#include "render/core/textures/render_texture_array_1d.h"
-#include "render/core/textures/render_texture_array_2d.h"
-#include "render/core/textures/render_texture_array_cube.h"
-#include "render/core/textures/render_texture_cube.h"
+#include "render/textures/RndTextureBase.h"
+#include "render/textures/RndTexture1D.h"
+#include "render/textures/RndTexture2D.h"
+#include "render/textures/RndTexture3D.h"
+#include "render/textures/RndTextureArray1D.h"
+#include "render/textures/RndTextureArray2D.h"
+#include "render/textures/RndTextureArrayCube.h"
+#include "render/textures/RndTextureCube.h"
 
 namespace rb4 {
 
@@ -35,13 +35,13 @@ enum class DefaultTextureShape : std::uint32_t {
 };
 
 struct DefaultTextureFamily {
-    RenderTexture1D* texture_1d = nullptr;
-    RenderTexture2D* texture_2d = nullptr;
-    RenderTexture3D* texture_3d = nullptr;
-    RenderTextureCube* texture_cube = nullptr;
-    RenderTextureArray1D* texture_array_1d = nullptr;
-    RenderTextureArray2D* texture_array_2d = nullptr;
-    RenderTextureArrayCube* texture_array_cube = nullptr;
+    RndTexture1D* texture_1d = nullptr;
+    RndTexture2D* texture_2d = nullptr;
+    RndTexture3D* texture_3d = nullptr;
+    RndTextureCube* texture_cube = nullptr;
+    RndTextureArray1D* texture_array_1d = nullptr;
+    RndTextureArray2D* texture_array_2d = nullptr;
+    RndTextureArrayCube* texture_array_cube = nullptr;
 };
 
 struct DefaultTextureSet {
@@ -52,7 +52,7 @@ static_assert(sizeof(DefaultTextureFamily) == 56);
 static_assert(sizeof(DefaultTextureSet) == 392);
 
 void render_create_default_textures(DefaultTextureSet& textures);
-RenderTexture* render_get_default_texture(
+RndTextureBase* render_get_default_texture(
     const DefaultTextureSet& textures,
     DefaultTextureShape shape,
     DefaultTextureKind kind);

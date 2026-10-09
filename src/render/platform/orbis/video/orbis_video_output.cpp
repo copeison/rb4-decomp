@@ -20,7 +20,7 @@
 #include "render/platform/orbis/system/orbis_render_system.h"
 #include "renderps4/system/PS4Factory.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
-#include "render/platform/orbis/textures/orbis_texture_2d.h"
+#include "renderps4/textures/PS4Texture2D.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
 
 extern "C" {
@@ -65,7 +65,7 @@ void for_each_output_texture(
     for (std::size_t index = 0; index < states.count; ++index) {
         auto* texture = render_target_state_texture(*states.states[index]);
         if (texture != nullptr) {
-            callback(reinterpret_cast<OrbisTexture2D&>(*texture));
+            callback(reinterpret_cast<PS4Texture2D&>(*texture));
         }
     }
 }
@@ -199,9 +199,9 @@ void orbis_process_flip_complete(OrbisRenderSystem& system) {
 
     for_each_output_texture(
         system,
-        [completed_buffer](OrbisTexture2D& texture) {
-            orbis_texture_2d_complete_pending_presentation(
-                texture, static_cast<std::size_t>(completed_buffer));
+        [completed_buffer](PS4Texture2D& texture) {
+            texture.CompletePendingPresentation(
+                static_cast<unsigned long>(completed_buffer));
         });
 }
 
@@ -232,9 +232,8 @@ void orbis_process_end_of_pipe(
 
     for_each_output_texture(
         system,
-        [&state](OrbisTexture2D& texture) {
-            orbis_texture_2d_add_pending_presentation(
-                texture, state.next_buffer);
+        [&state](PS4Texture2D& texture) {
+            texture.AddPendingPresentation(state.next_buffer);
         });
 
     orbis_publish_submit_token(system);

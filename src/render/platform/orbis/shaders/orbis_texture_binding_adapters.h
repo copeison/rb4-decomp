@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
-#include "render/platform/orbis/shaders/orbis_texture_binding.h"
+#include "render/platform/orbis/shaders/orbis_shader_state.h"
 
 namespace rb4 {
+
+struct OrbisRenderContext;
 
 enum class OrbisGnmShaderStage : std::uint32_t {
     kCompute = 0,
@@ -40,13 +42,11 @@ void orbis_bind_graphics_texture_sampler(
     OrbisGnmShaderStage stage,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
-    std::uint32_t filter_mode,
-    const OrbisSamplerBorderColor& border_color);
+    std::uint32_t filter_mode);
 void orbis_bind_compute_texture_sampler(
     OrbisRenderContext& context,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
-    std::uint32_t filter_mode,
-    const OrbisSamplerBorderColor& border_color);
+    std::uint32_t filter_mode);
 
 }  // namespace rb4

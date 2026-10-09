@@ -3,16 +3,17 @@
 #include <cstddef>
 #include <cstdint>
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
-struct RenderTexture;
 
 // 48-byte parameter block assembled by the bloom pass.
 struct RenderBloomDrawParameters {
-    RenderTexture* source;
-    RenderTexture* half_size_bloom;
-    RenderTexture* quarter_size_bloom;
+    RndTextureBase* source;
+    RndTextureBase* half_size_bloom;
+    RndTextureBase* quarter_size_bloom;
     float bloom[3];
     bool hue_preservation;
     std::uint8_t reserved_37[3];

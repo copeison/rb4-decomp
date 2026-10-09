@@ -457,6 +457,12 @@
   `RndShaderResource` base, `RndComputeBuffer`, `RndShaderCBuffer`,
   `RndParticleBuffer`, `RndOcclusionQuery`, `RndShaderProgram`, `RndFactory`,
   and their PS4 subclasses, including `PS4Fence`.
+- [x] Convert textures to original classes: `RndPixelFormat`, `RndPixelData`
+  (with its vtable and pool allocation), `RndPixelDataCube`, `RndTextureBase`,
+  the seven texture kinds, their PS4 subclasses, and `PS4RenderUtl`'s
+  stage selects; introduce a shared `eastl::vector`. Fix `SyncStatic`'s
+  keep-pixel-data test and remove a border-color parameter the binary never
+  had.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

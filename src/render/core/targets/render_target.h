@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace rb4 {
+class RndTextureBase;
 
-struct RenderTexture;
+namespace rb4 {
 
 struct RenderTargetState {
     void* implementation;
@@ -45,7 +45,7 @@ void render_target_release_dynamic(RenderTarget& target);
 std::size_t render_target_active_buffer_index(const RenderTarget& target);
 RenderTargetStateHandle render_target_active_state_handle(
     RenderTarget& target);
-RenderTexture* render_target_state_texture(RenderTargetState& state);
+RndTextureBase* render_target_state_texture(RenderTargetState& state);
 void render_target_set_state(RenderTarget& target, RenderTargetState* state);
 
 }  // namespace rb4

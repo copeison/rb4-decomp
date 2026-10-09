@@ -5,9 +5,9 @@
 
 #include "render/core/targets/render_target_resources.h"
 
-namespace rb4 {
+class RndTextureBase;
 
-struct RenderTexture;
+namespace rb4 {
 
 enum class RenderTargetResourceFlag : std::uint32_t {
     kDepthStencil = 0x00000002,
@@ -38,7 +38,7 @@ void render_target_resources_set_concrete_dispatch(
 void render_target_resources_destruct(RenderTargetResources& resources);
 void render_target_resources_initialize(
     RenderTargetResources& resources,
-    RenderTexture& source_texture,
+    RndTextureBase& source_texture,
     const RenderTargetResources* reusable_resources);
 void render_target_resources_release(RenderTargetResources& resources);
 void render_target_resources_set_resource_mode(

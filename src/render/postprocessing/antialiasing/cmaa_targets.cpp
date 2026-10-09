@@ -1,6 +1,6 @@
 #include "render/postprocessing/antialiasing/cmaa_targets.h"
 
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
@@ -23,7 +23,7 @@ bool render_system_supports_cmaa() {
     return (config.feature_flags & 0x10U) != 0;
 }
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResources& resources,
     CmaaTargetKind kind) {
     switch (kind) {
@@ -39,7 +39,7 @@ RenderTexture*& target_slot(
     return resources.cmaa_color;
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResources& resources,
     CmaaTargetKind kind) {
     switch (kind) {
@@ -55,7 +55,7 @@ RenderTexture* target_slot(
     return nullptr;
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResources* resources,
     CmaaTargetKind kind) {
     return resources == nullptr
@@ -69,12 +69,12 @@ void create_target(
     CmaaTargetKind kind,
     RenderExtent extent,
     bool use_64_bit_color) {
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = 1;
-    creation_state.values[9] =
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = 1;
+    creation_state.mFilterMode =
         kind == CmaaTargetKind::kColor ? 2U : 1U;
-    creation_state.values[10] = 10;
+    creation_state.mFlags = 10;
 
     RenderDataFormatDescriptor format_descriptor{};
     const char* name = "CMAA Edge Buffer";
@@ -113,7 +113,7 @@ void release_target(
     CmaaTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

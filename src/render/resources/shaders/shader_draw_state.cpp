@@ -6,7 +6,7 @@
 #include "render/shaders/RndShaderProgram.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 #include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
@@ -64,21 +64,14 @@ void raise_limit(std::uint64_t& limit, std::uint64_t slot) {
 
 void render_shader_bind_texture(
     RenderContext& context,
-    RenderTexture& texture,
+    RndTextureBase& texture,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags) {
-    texture.frame_stamp = current_frame_epoch();
+    texture.mFrameStamp = current_frame_epoch();
     raise_limit(render_context_input_slot_limit(context, stage), slot);
-    // The original leaves the border-color argument unspecified (a stale
-    // register); backends consult it only for border address modes.
-    render_texture_bind(
-        texture,
-        context,
-        static_cast<RndShaderProgramType>(stage),
-        static_cast<std::uint32_t>(slot),
-        flags,
-        nullptr);
+    select_resource(
+        texture, context, static_cast<RndShaderProgramType>(stage), slot, flags);
 }
 
 void render_shader_bind_buffer(
@@ -95,7 +88,7 @@ void render_shader_bind_buffer(
 
 void render_shader_bind_pixel_texture(
     RenderContext& context,
-    RenderTexture* texture,
+    RndTextureBase* texture,
     std::uint64_t slot,
     std::uint32_t flags) {
     constexpr std::uint32_t kPixelStage = 4;
@@ -148,7 +141,7 @@ std::uint64_t render_shader_parameter_binding_apply(
 void render_shader_draw_with_pixel_texture(
     void* shader,
     RenderContext& context,
-    RenderTexture& texture,
+    RndTextureBase& texture,
     std::uint64_t slot) {
     render_shader_bind_pixel_texture(context, &texture, slot);
     std::uint64_t keys[kRenderShaderProgramKeyCount] = {};

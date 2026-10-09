@@ -3,15 +3,16 @@
 #include <cstddef>
 #include <cstdint>
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
-struct RenderTexture;
 
 // 24-byte parameter block for the final output-conversion draw.
 struct RenderOutputConversionDrawParameters {
-    RenderTexture* source;
-    RenderTexture* hmd_mask;
+    RndTextureBase* source;
+    RndTextureBase* hmd_mask;
     float minimum_intensity;
     bool bt709_to_bt2020;
     bool perceptual_quantizer;

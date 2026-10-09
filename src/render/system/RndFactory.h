@@ -10,28 +10,21 @@ class RndShaderCBuffer;
 class RndShaderProgram;
 
 #include "render/buffers/RndComputeBuffer.h"
+#include "render/textures/RndTexture1D.h"
+#include "render/textures/RndTexture2D.h"
+#include "render/textures/RndTexture3D.h"
+#include "render/textures/RndTextureArray1D.h"
+#include "render/textures/RndTextureArray2D.h"
+#include "render/textures/RndTextureArrayCube.h"
+#include "render/textures/RndTextureCube.h"
 
 namespace rb4 {
 struct RenderMesh;
-struct RenderTexture1D;
-struct RenderTexture1DDescriptor;
-struct RenderTexture2D;
-struct RenderTexture2DDescriptor;
-struct RenderTexture3D;
-struct RenderTexture3DDescriptor;
-struct RenderTextureArray1D;
-struct RenderTextureArray1DDescriptor;
-struct RenderTextureArray2D;
-struct RenderTextureArray2DDescriptor;
-struct RenderTextureArrayCube;
-struct RenderTextureArrayCubeDescriptor;
-struct RenderTextureCube;
-struct RenderTextureCubeDescriptor;
 enum class RenderMeshFormat : unsigned int;
 }  // namespace rb4
 
-// Platform object factory. The mesh and texture slots still use the types of
-// the unconverted texture and mesh code.
+// Platform object factory. The mesh slot still uses the unconverted mesh
+// type.
 class RndFactory {
 public:
     virtual ~RndFactory() {}  // slots 0-1
@@ -39,20 +32,13 @@ public:
     // Slot 2. Not in the reference map, which predates fences.
     virtual RndFence* CreateFence() = 0;
     virtual rb4::RenderMesh* CreateMesh(rb4::RenderMeshFormat type, const char* name) = 0;
-    virtual rb4::RenderTexture1D* CreateTexture1D(
-        const rb4::RenderTexture1DDescriptor& desc) = 0;
-    virtual rb4::RenderTexture2D* CreateTexture2D(
-        const rb4::RenderTexture2DDescriptor& desc) = 0;
-    virtual rb4::RenderTexture3D* CreateTexture3D(
-        const rb4::RenderTexture3DDescriptor& desc) = 0;
-    virtual rb4::RenderTextureCube* CreateTextureCube(
-        const rb4::RenderTextureCubeDescriptor& desc) = 0;
-    virtual rb4::RenderTextureArray1D* CreateTextureArray1D(
-        const rb4::RenderTextureArray1DDescriptor& desc) = 0;
-    virtual rb4::RenderTextureArray2D* CreateTextureArray2D(
-        const rb4::RenderTextureArray2DDescriptor& desc) = 0;
-    virtual rb4::RenderTextureArrayCube* CreateTextureArrayCube(
-        const rb4::RenderTextureArrayCubeDescriptor& desc) = 0;
+    virtual RndTexture1D* CreateTexture1D(const RndTexture1D::Description& desc) = 0;
+    virtual RndTexture2D* CreateTexture2D(const RndTexture2D::Description& desc) = 0;
+    virtual RndTexture3D* CreateTexture3D(const RndTexture3D::Description& desc) = 0;
+    virtual RndTextureCube* CreateTextureCube(const RndTextureCube::Description& desc) = 0;
+    virtual RndTextureArray1D* CreateTextureArray1D(const RndTextureArray1D::Description& desc) = 0;
+    virtual RndTextureArray2D* CreateTextureArray2D(const RndTextureArray2D::Description& desc) = 0;
+    virtual RndTextureArrayCube* CreateTextureArrayCube(const RndTextureArrayCube::Description& desc) = 0;
     virtual RndShaderCBuffer* CreateShaderCBuffer(
         const RndShaderCBufferConfig& config,
         unsigned int flags,

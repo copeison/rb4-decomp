@@ -6,11 +6,12 @@
 class RndComputeBuffer;
 class RndShaderCBuffer;
 
+class RndTextureBase;
+
 namespace rb4 {
 
 struct RenderContext;
 struct RenderShaderParameterBinding;
-struct RenderTexture;
 
 // Helpers for the patterns that built-in pass draw functions inline.
 
@@ -18,7 +19,7 @@ struct RenderTexture;
 // limit for the stage past the slot, and binds it.
 void render_shader_bind_texture(
     RenderContext& context,
-    RenderTexture& texture,
+    RndTextureBase& texture,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags);
@@ -34,7 +35,7 @@ void render_shader_bind_buffer(
 // textures are skipped.
 void render_shader_bind_pixel_texture(
     RenderContext& context,
-    RenderTexture* texture,
+    RndTextureBase* texture,
     std::uint64_t slot,
     std::uint32_t flags = 0);
 
@@ -67,7 +68,7 @@ std::uint64_t render_shader_parameter_binding_apply(
 void render_shader_draw_with_pixel_texture(
     void* shader,
     RenderContext& context,
-    RenderTexture& texture,
+    RndTextureBase& texture,
     std::uint64_t slot);
 
 }  // namespace rb4

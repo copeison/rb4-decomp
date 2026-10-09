@@ -4,13 +4,13 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResourceBlock& block,
     GBufferTargetKind kind) {
     switch (kind) {
@@ -24,7 +24,7 @@ RenderTexture*& target_slot(
     return block.gbuffer_color;
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResourceBlock& block,
     GBufferTargetKind kind) {
     switch (kind) {
@@ -38,7 +38,7 @@ RenderTexture* target_slot(
     return nullptr;
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResourceBlock* block,
     GBufferTargetKind kind) {
     return block == nullptr
@@ -65,13 +65,13 @@ void create_target(
     GBufferTargetKind kind,
     RenderExtent extent,
     bool register_with_owner) {
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(31));
-    creation_state.values[9] = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(31));
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(31));
+    creation_state.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(31));
+    creation_state.mFlags = 10;
     const auto is_color = kind == GBufferTargetKind::kColor;
     const RenderDataFormatDescriptor format_descriptor{
         32,
@@ -101,7 +101,7 @@ void release_target(
     GBufferTargetKind kind) {
     auto*& target = target_slot(block, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

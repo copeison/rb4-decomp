@@ -110,7 +110,7 @@ void render_linearize_depth_shader_construct(void* shader) {
 void render_linearize_depth_shader_draw(
     void* shader,
     RenderContext& context,
-    RenderTexture& depth) {
+    RndTextureBase& depth) {
     render_shader_draw_with_pixel_texture(shader, context, depth, 288);
 }
 

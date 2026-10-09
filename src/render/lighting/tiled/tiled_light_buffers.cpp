@@ -9,8 +9,8 @@
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture_array_2d.h"
-#include "render/core/textures/render_texture_mip_chain.h"
+#include "render/textures/RndTextureArray2D.h"
+#include "render/textures/RndPixelData.h"
 
 namespace rb4 {
 
@@ -75,9 +75,9 @@ bool& spot_shadow_depth_active(RenderLightingSystem& system) {
         lighting_system_bytes(system) + kSpotShadowDepthActiveOffset);
 }
 
-RenderTextureArray2D*& spot_shadow_depth_array(
+RndTextureArray2D*& spot_shadow_depth_array(
     RenderLightingSystem& system) {
-    return *reinterpret_cast<RenderTextureArray2D**>(
+    return *reinterpret_cast<RndTextureArray2D**>(
         lighting_system_bytes(system) + kSpotShadowDepthArrayOffset);
 }
 
@@ -169,7 +169,7 @@ void render_lighting_rebuild_spot_shadow_depth_array(
     spot_shadow_depth_active(system) = false;
     auto*& texture = spot_shadow_depth_array(system);
     if (texture != nullptr) {
-        render_texture_release_dynamic(*texture);
+        delete texture;
         texture = nullptr;
     }
 
@@ -191,34 +191,28 @@ void render_lighting_rebuild_spot_shadow_depth_array(
         ? kSpotShadowResolutionSizes[configuration.resolution_index]
         : std::numeric_limits<std::uint32_t>::max();
 
-    RenderTextureArray2DDescriptor descriptor;
-    render_texture_array_2d_descriptor_construct(descriptor);
-    descriptor.texture_state.creation_state.values[0] = 2;
-    descriptor.texture_state.creation_state.values[6] = 1;
-    descriptor.texture_state.creation_state.values[8] = 1;
-    descriptor.texture_state.creation_state.values[9] = 1;
-    descriptor.texture_state.creation_state.values[10] = 2;
-    descriptor.texture_state.name = "Spot Shadow Depth TexArray";
+    RndTextureArray2D::Description descriptor;
+    descriptor.mRequestedFormat.mUsage = 2;
+    descriptor.mRequestedFormat.mSettings[5] = 1;
+    descriptor.mRequestedFormat.mWrapMode = 1;
+    descriptor.mRequestedFormat.mFilterMode = 1;
+    descriptor.mRequestedFormat.mFlags = 2;
+    descriptor.mName = "Spot Shadow Depth TexArray";
 
     const auto layer_count = static_cast<std::size_t>(
         configuration.layer_count);
-    auto* mip_chains = new RenderTextureMipChainDescriptor[layer_count];
-    const RenderTextureExtent3D extent{resolution, resolution, 1};
+    auto* mip_chains = new RndPixelData[layer_count];
+    const auto size = static_cast<int>(resolution);
     for (std::size_t index = 0; index < layer_count; ++index) {
-        render_texture_mip_chain_descriptor_construct(mip_chains[index]);
-        render_texture_mip_chain_descriptor_initialize(
-            mip_chains[index], extent, data_format);
+        mip_chains[index].CreateEmpty(size, size, 1, data_format);
     }
-    descriptor.mip_chains = {
+    descriptor.mPixels = {
         mip_chains,
         mip_chains + layer_count,
         mip_chains + layer_count,
     };
 
-    texture = render_create_texture_array_2d(descriptor);
-    for (std::size_t index = 0; index < layer_count; ++index) {
-        render_texture_mip_chain_descriptor_destruct(mip_chains[index]);
-    }
+    texture = RndTextureArray2D::New(descriptor);
     delete[] mip_chains;
 }
 

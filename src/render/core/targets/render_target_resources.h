@@ -7,11 +7,12 @@
 
 class RndComputeBuffer;
 
+class RndTextureBase;
+class RndTexture3D;
+
 namespace rb4 {
 
 struct RenderMesh;
-struct RenderTexture;
-struct RenderTexture3D;
 
 struct RenderPartialFrameState {
     std::int32_t values_00[5];
@@ -29,24 +30,24 @@ struct RenderPartialFrameState {
 
 struct RenderTargetResourceBlock {
     RenderPartialFrameState* partial_frame_state;
-    RenderTexture* partial_light_accumulation;
-    RenderTexture* depth_stencil;
-    RenderTexture* unclassified_target_18;
-    RenderTexture* unclassified_target_20;
-    RenderTexture* gbuffer_color;
-    RenderTexture* gbuffer_pixel_normals;
-    RenderTexture* gbuffer_vertex_normals;
-    RenderTexture* linear_depth;
-    RenderTexture* tiled_depth_range;
-    RenderTexture* ambient_occlusion;
+    RndTextureBase* partial_light_accumulation;
+    RndTextureBase* depth_stencil;
+    RndTextureBase* unclassified_target_18;
+    RndTextureBase* unclassified_target_20;
+    RndTextureBase* gbuffer_color;
+    RndTextureBase* gbuffer_pixel_normals;
+    RndTextureBase* gbuffer_vertex_normals;
+    RndTextureBase* linear_depth;
+    RndTextureBase* tiled_depth_range;
+    RndTextureBase* ambient_occlusion;
     RndComputeBuffer* tiled_light_ids[2];
     RndComputeBuffer* tiled_light_id_ranges;
-    RenderTexture* tiled_light_interpolation;
+    RndTextureBase* tiled_light_interpolation;
     RndComputeBuffer* stereo_tiled_light_ids[2];
     RndComputeBuffer* stereo_tiled_light_id_ranges;
-    RenderTexture3D* volumetric_inscattering[3];
-    RenderTexture3D* stereo_volumetric_inscattering[3];
-    RenderTexture3D* accumulated_volumetric_scattering[3];
+    RndTexture3D* volumetric_inscattering[3];
+    RndTexture3D* stereo_volumetric_inscattering[3];
+    RndTexture3D* accumulated_volumetric_scattering[3];
 };
 
 struct RenderTargetResources {
@@ -62,25 +63,25 @@ struct RenderTargetResources {
     void* registered_resources_inline[38];
 
     std::uint64_t attachment_cursor;
-    RenderTexture* source_texture;
-    RenderTexture* light_accumulation[2];
-    RenderTexture* unclassified_target_188;
-    RenderTexture* blurred_light_accumulation[3];
-    RenderTexture* light_probe_accumulation;
-    RenderTexture* sky[4];
-    RenderTexture* scaled_targets[3][2];
-    RenderTexture* scene_mask;
-    RenderTexture* scene_mask_scratch;
-    RenderTexture* scene_mask_tiles;
+    RndTextureBase* source_texture;
+    RndTextureBase* light_accumulation[2];
+    RndTextureBase* unclassified_target_188;
+    RndTextureBase* blurred_light_accumulation[3];
+    RndTextureBase* light_probe_accumulation;
+    RndTextureBase* sky[4];
+    RndTextureBase* scaled_targets[3][2];
+    RndTextureBase* scene_mask;
+    RndTextureBase* scene_mask_scratch;
+    RndTextureBase* scene_mask_tiles;
     std::uint64_t cmaa_state;
-    RenderTexture* cmaa_color;
-    RenderTexture* cmaa_edges[2];
-    RenderTexture* cmaa_compressed_edges;
-    RenderTexture* shadow_contribution_texture_array;
-    RenderTexture* shadow_contribution_stencil;
-    RenderTexture* shadow_contribution_scratch[2];
-    RenderTexture* shadow_soften_tiles[2];
-    RenderTexture* tiled_scene_mask[2];
+    RndTextureBase* cmaa_color;
+    RndTextureBase* cmaa_edges[2];
+    RndTextureBase* cmaa_compressed_edges;
+    RndTextureBase* shadow_contribution_texture_array;
+    RndTextureBase* shadow_contribution_stencil;
+    RndTextureBase* shadow_contribution_scratch[2];
+    RndTextureBase* shadow_soften_tiles[2];
+    RndTextureBase* tiled_scene_mask[2];
     RenderMesh* tiled_scene_mask_mesh;
 
     RenderTargetResourceBlock* blocks_begin;

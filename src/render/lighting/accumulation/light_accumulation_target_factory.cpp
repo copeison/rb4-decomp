@@ -4,7 +4,7 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
@@ -23,12 +23,12 @@ std::uint32_t scaled_dimension(std::uint32_t value, std::uint32_t shift) {
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6B2E80.
-RenderTexture* render_light_accumulation_target_create(
+RndTextureBase* render_light_accumulation_target_create(
     RenderTargetResources& resources,
     const char* name,
     std::uint32_t scale_shift,
     bool allocate_attachment,
-    RenderTexture* reusable_target) {
+    RndTextureBase* reusable_target) {
     const auto& settings =
         *render_system_settings(*render_system_instance());
     const bool use_64_bit_format = settings.use_64_bit_light_accum ||
@@ -51,13 +51,13 @@ RenderTexture* render_light_accumulation_target_create(
         1,
         -1,
     };
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(18));
-    creation_state.values[9] = static_cast<std::uint32_t>(
-        render_texture_default_filter_mode(18));
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(18));
+    creation_state.mFilterMode = static_cast<std::uint32_t>(
+        TextureDefaultFilterMode(18));
+    creation_state.mFlags = 10;
 
     auto* target = render_target_resources_create_texture_2d(
         resources,
@@ -68,11 +68,11 @@ RenderTexture* render_light_accumulation_target_create(
         attachment_index,
         0,
         reusable_target);
-    const auto allocation_index = target->attachment_index;
+    const auto allocation_index = target->mBaseDesc.mAttachmentIndex;
     if (allocation_index != -1) {
         resources.attachment_cursor =
             static_cast<std::uint32_t>(
-                allocation_index + target->attachment_count);
+                allocation_index + target->mBaseDesc.mAttachmentCount);
     }
     return target;
 }

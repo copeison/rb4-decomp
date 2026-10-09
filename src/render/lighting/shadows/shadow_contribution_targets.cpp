@@ -4,13 +4,13 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResources& resources,
     ShadowContributionTargetKind kind) {
     switch (kind) {
@@ -30,7 +30,7 @@ RenderTexture*& target_slot(
     return resources.shadow_contribution_texture_array;
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResources& resources,
     ShadowContributionTargetKind kind) {
     switch (kind) {
@@ -56,7 +56,7 @@ std::uint32_t divide_round_up(
     return value / divisor + (value % divisor != 0);
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResources* resources,
     ShadowContributionTargetKind kind) {
     return resources == nullptr
@@ -70,15 +70,15 @@ void create_target(
     ShadowContributionTargetKind kind,
     RenderExtent extent,
     std::uint32_t texture_array_layers = 1) {
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = static_cast<std::uint32_t>(
-        render_texture_default_address_mode(27));
-    creation_state.values[9] =
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = static_cast<std::uint32_t>(
+        TextureDefaultWrapMode(27));
+    creation_state.mFilterMode =
         kind == ShadowContributionTargetKind::kTextureArray
-        ? static_cast<std::uint32_t>(render_texture_default_filter_mode(27))
+        ? static_cast<std::uint32_t>(TextureDefaultFilterMode(27))
         : 1U;
-    creation_state.values[10] = 10;
+    creation_state.mFlags = 10;
 
     RenderDataFormatDescriptor format_descriptor{8, 10, 0, 1, -1};
     const char* name = "Shadow Soften Tiles";
@@ -86,7 +86,7 @@ void create_target(
     if (kind == ShadowContributionTargetKind::kTextureArray) {
         name = "Shadow Contrib TexArray";
     } else if (kind == ShadowContributionTargetKind::kStencil) {
-        creation_state.values[0] = 2;
+        creation_state.mUsage = 2;
         format_descriptor = {24, 11, 0, 1, -1};
         name = "Shadow Contrib Stencil";
         target_flags = 16;
@@ -128,7 +128,7 @@ void release_target(
     ShadowContributionTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }

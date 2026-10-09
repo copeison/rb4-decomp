@@ -1,0 +1,56 @@
+#pragma once
+
+#include <cstddef>
+
+#include "render/textures/RndTextureCube.h"
+
+namespace rb4 {
+struct OrbisGpuDepthRenderTarget;
+struct OrbisGpuRenderTarget;
+}  // namespace rb4
+
+// The vtable is at 0x195FCF8.
+class PS4TextureCube : public RndTextureCube {
+public:
+    explicit PS4TextureCube(const Description& desc);  // 0x8E6BA0
+    ~PS4TextureCube() override;                         // 0x8E6BE0, 0x8E6CC0
+
+    void _SelectForVSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E71A0
+    void _SelectForHSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E71C0
+    void _SelectForDSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E71E0
+    void _SelectForGSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E7200
+    void _SelectForPSImpl(RndContext& context, unsigned long slot, unsigned int flags) override;  // 0x8E7220
+    void _SelectForCSImpl(RndContext& context, unsigned long slot, unsigned int flags, unsigned long extra) override;  // 0x8E7240
+    // Not yet reconstructed.
+    void _GpuCopyFromImpl(RndContext& context, RndShaderResource& source) override;  // 0x8E7260
+    void _SyncStaticImpl(const RndTextureBase* reuse) override;  // 0x8E6CE0
+    void _SyncDynamicImpl(RndContext& context) override;          // 0x8E7170
+    void _SyncFromGpuImpl(RndContext& context) override;          // 0x8E7180
+    void _Slot20Impl() override;                                  // 0x8E7190
+
+    // Reconstructed from eboot.elf at 0x8E7270 and 0x8E7280.
+    const rb4::OrbisGpuRenderTarget* GetRenderTarget() const {
+        return mRenderTarget;
+    }
+    const rb4::OrbisGpuDepthRenderTarget* GetDepthStencilTarget() const {
+        return mDepthTarget;
+    }
+
+    // Field names are not in the reference map.
+    void* mGpuTexture;
+    void* mStorage;
+    void* mStorage2;
+    rb4::OrbisGpuRenderTarget* mRenderTarget;
+    rb4::OrbisGpuDepthRenderTarget* mDepthTarget;
+
+private:
+    // Stand-ins for code inlined into _SyncStaticImpl and the destructor; not
+    // yet reconstructed. Names not in the reference map.
+    void _SyncDepthStencil();
+    void _SyncRegular();
+    static void* TargetMetadata(const rb4::OrbisGpuRenderTarget& target);
+    static void* TargetSurface(const rb4::OrbisGpuRenderTarget& target);
+};
+
+static_assert(offsetof(PS4TextureCube, mGpuTexture) == 792);
+static_assert(sizeof(PS4TextureCube) == 832);

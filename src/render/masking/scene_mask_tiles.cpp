@@ -7,19 +7,19 @@
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
 #include "render/core/textures/render_data_format.h"
-#include "render/core/textures/render_texture.h"
+#include "render/textures/RndTextureBase.h"
 
 namespace rb4 {
 
 namespace {
 
-RenderTexture*& target_slot(
+RndTextureBase*& target_slot(
     RenderTargetResources& resources,
     SceneMaskTileTargetKind kind) {
     return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
 }
 
-RenderTexture* target_slot(
+RndTextureBase* target_slot(
     const RenderTargetResources& resources,
     SceneMaskTileTargetKind kind) {
     return resources.tiled_scene_mask[static_cast<std::uint32_t>(kind)];
@@ -31,7 +31,7 @@ std::uint32_t divide_round_up(
     return value / divisor + (value % divisor != 0);
 }
 
-RenderTexture* reusable_target(
+RndTextureBase* reusable_target(
     const RenderTargetResources* resources,
     SceneMaskTileTargetKind kind) {
     return resources == nullptr
@@ -44,11 +44,11 @@ void create_target(
     const RenderTargetResources* reusable_resources,
     SceneMaskTileTargetKind kind,
     RenderExtent extent) {
-    RenderTextureCreationState creation_state{};
-    creation_state.values[6] = 1;
-    creation_state.values[8] = 1;
-    creation_state.values[9] = 1;
-    creation_state.values[10] = 10;
+    RndPixelFormat creation_state{};
+    creation_state.mSettings[5] = 1;
+    creation_state.mWrapMode = 1;
+    creation_state.mFilterMode = 1;
+    creation_state.mFlags = 10;
     const RenderDataFormatDescriptor format_descriptor{
         8, 10, 0, 1, -1,
     };
@@ -73,7 +73,7 @@ void release_target(
     SceneMaskTileTargetKind kind) {
     auto*& target = target_slot(resources, kind);
     if (target != nullptr) {
-        render_texture_release_dynamic(*target);
+        delete target;
         target = nullptr;
     }
 }
