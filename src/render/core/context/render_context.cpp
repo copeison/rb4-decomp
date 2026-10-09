@@ -113,6 +113,8 @@ namespace {
 constexpr std::size_t kSliceModeOffset = 0x10;
 constexpr std::size_t kActiveShaderStagesOffset = 0x4960;
 constexpr std::size_t kShadingModeOffset = 0x4A18;
+constexpr std::size_t kTextureSlotLimitOffset = 0x4988;
+constexpr std::size_t kConstantBufferPoolOffset = 0x4A80;
 
 template <typename Value>
 Value& context_field(const RenderContext& context, std::size_t offset) {
@@ -132,6 +134,18 @@ std::uint8_t& render_context_active_shader_stages(RenderContext& context) {
 
 std::int32_t render_context_shading_mode(const RenderContext& context) {
     return context_field<std::int32_t>(context, kShadingModeOffset);
+}
+
+std::uint64_t& render_context_texture_slot_limit(RenderContext& context) {
+    return context_field<std::uint64_t>(context, kTextureSlotLimitOffset);
+}
+
+RenderConstantBuffer* render_context_constant_buffer(
+    RenderContext& context,
+    std::size_t size_class) {
+    return context_field<RenderConstantBuffer*>(
+        context,
+        kConstantBufferPoolOffset + size_class * sizeof(RenderConstantBuffer*));
 }
 
 // Reconstructed from eboot.elf at 0x6BD420.

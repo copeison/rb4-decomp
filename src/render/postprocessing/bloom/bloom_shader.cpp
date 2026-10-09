@@ -1,14 +1,17 @@
-#include "render/resources/shaders/builtin_shader_resources.h"
+#include "render/postprocessing/bloom/bloom_shader.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/builtin_shader_resources.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
+#include "render/resources/shaders/shader_draw_state.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
 namespace rb4 {
@@ -161,6 +164,46 @@ void render_bloom_shader_construct(void* shader) {
     shader_field(shader, 352) = -1;
     shader_field(shader, 360) = -1;
     shader_field(shader, 368) = -1;
+}
+
+// Reconstructed from eboot.elf at 0x6346E0. Binds the source and both bloom
+// textures, uploads the bloom and overbright constants, and selects the
+// half-size and hue-preservation permutation on the pixel program.
+void render_bloom_shader_draw(
+    void* shader,
+    RenderContext& context,
+    const RenderBloomDrawParameters& parameters) {
+    constexpr std::size_t kPixelKey = 3;
+
+    render_shader_bind_pixel_texture(
+        context, parameters.source, shader_field(shader, 352));
+    render_shader_bind_pixel_texture(
+        context, parameters.half_size_bloom, shader_field(shader, 360));
+    render_shader_bind_pixel_texture(
+        context, parameters.quarter_size_bloom, shader_field(shader, 368));
+
+    const auto extent = static_cast<std::uint64_t>(shader_field(shader, 344));
+    auto& buffer = render_shader_select_constant_buffer(context, extent);
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 328)),
+        parameters.bloom,
+        sizeof(parameters.bloom));
+    std::memcpy(
+        render_shader_constant_member(buffer, shader_field(shader, 336)),
+        parameters.overbright,
+        sizeof(parameters.overbright));
+    render_shader_commit_constant_buffer(buffer, context, extent);
+
+    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        0,
+        parameter_binding(shader, 0),
+        parameters.half_size_bloom != nullptr ? 1U : 0U);
+    keys[kPixelKey] = render_shader_parameter_binding_apply(
+        keys[kPixelKey],
+        parameter_binding(shader, 1),
+        parameters.hue_preservation ? 1U : 0U);
+    render_primary_shader_bind(primary_shader(shader), context, keys);
 }
 
 }  // namespace rb4

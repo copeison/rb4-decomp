@@ -7,11 +7,18 @@
 namespace rb4 {
 
 struct RenderConstantBuffer;
+struct RenderContext;
 
 struct RenderConstantBufferDispatch {
     void (*destruct)(RenderConstantBuffer& buffer);
     void (*delete_buffer)(RenderConstantBuffer& buffer);
     void (*initialize_backend)(RenderConstantBuffer& buffer);
+    void (*update_range)(
+        RenderConstantBuffer& buffer,
+        RenderContext& context,
+        std::size_t first_element,
+        std::size_t end_element);
+    void (*bind)(RenderConstantBuffer& buffer, RenderContext& context);
 };
 
 enum RenderConstantBufferStageMask : std::uint32_t {
@@ -65,5 +72,15 @@ void render_constant_buffer_delete(RenderConstantBuffer& buffer);
 void render_delete_constant_buffer_storage(RenderConstantBuffer& buffer);
 void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer);
 void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer);
+
+
+void render_constant_buffer_update_range(
+    RenderConstantBuffer& buffer,
+    RenderContext& context,
+    std::size_t first_element,
+    std::size_t end_element);
+void render_constant_buffer_bind(
+    RenderConstantBuffer& buffer,
+    RenderContext& context);
 
 }  // namespace rb4

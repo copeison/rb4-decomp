@@ -4,7 +4,11 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/core/shaders/render_shader.h"
+
 namespace rb4 {
+
+struct RenderContext;
 
 enum class RenderTextureUsage : std::int32_t {
     kDefault = 0,
@@ -179,5 +183,14 @@ std::int32_t render_texture_default_address_mode(
     std::uint32_t resource_kind);
 std::int32_t render_texture_default_filter_mode(
     std::uint32_t resource_kind);
+
+
+void render_texture_bind(
+    const RenderTexture& texture,
+    RenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const void* border_color);
 
 }  // namespace rb4

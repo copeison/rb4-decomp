@@ -14,6 +14,8 @@ RenderConstantBufferDispatch kBaseConstantBufferDispatch{
     render_constant_buffer_destruct,
     render_constant_buffer_delete,
     nullptr,
+    nullptr,
+    nullptr,
 };
 
 void set_base_dispatch(RenderConstantBuffer& buffer) {
@@ -79,6 +81,21 @@ void render_constant_buffer_initialize_backend(RenderConstantBuffer& buffer) {
 void render_constant_buffer_release_dynamic(RenderConstantBuffer& buffer) {
     buffer.dispatch->destruct(buffer);
     render_release(&buffer);
+}
+
+
+void render_constant_buffer_update_range(
+    RenderConstantBuffer& buffer,
+    RenderContext& context,
+    std::size_t first_element,
+    std::size_t end_element) {
+    buffer.dispatch->update_range(buffer, context, first_element, end_element);
+}
+
+void render_constant_buffer_bind(
+    RenderConstantBuffer& buffer,
+    RenderContext& context) {
+    buffer.dispatch->bind(buffer, context);
 }
 
 }  // namespace rb4

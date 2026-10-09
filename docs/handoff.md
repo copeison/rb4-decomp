@@ -3,11 +3,11 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: reconstruct primary shader permutation bind` milestone, which
-completed compiled-shader loading and binding. The working tree was clean when the
+`decomp: reconstruct bloom draw` milestone, which added the first pass
+draw function on top of compiled-shader loading and binding. The working tree was clean when the
 snapshot was taken.
 
-The current PS4 object build compiles **183 C++ translation units**. It creates
+The current PS4 object build compiles **184 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
 executable. The latest unresolved-symbol report contains 589 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
@@ -196,7 +196,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Primary-shader permutation bind and error-shader fallback |
+| (this) | Bloom draw and shared pass-draw helpers |
+| `0139c87` | Primary-shader permutation bind and error-shader fallback |
 | `d7172aa` | Primary-shader backend initialization and cache loading |
 | `5a02e7f` | Shader permutation enumeration and layout hash |
 | `8075c64` | All eleven primary-shader dispatch slots |
@@ -419,13 +420,15 @@ The permutation bind (`0x638920`) is now source-owned too. The next rendering
 milestones are the per-pass draw functions that build program keys and call
 it. Each one belongs in its pass's domain folder:
 
-- bloom at `0x6346E0`;
 - blur at `0x634BB0`;
 - output conversion at `0x636840`;
 - downsample at `0x636080`.
 
-They also write constant-block members into a constant buffer chosen from the
-context's array at `+0x4A80` before binding.
+Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared
+helpers in `render/resources/shaders/shader_draw_state.h` cover texture
+stamping and binding, constant-buffer selection and commit, and key packing.
+The surrounding bloom pass (`0x6305A0`, now defined in IDA) is a 3.7 KB
+render-target and state function and a larger, separate milestone.
 
 The final executable link also depends on many engine functions and matching
 FMOD libraries. The 589-entry unresolved report is a work queue, not a list of

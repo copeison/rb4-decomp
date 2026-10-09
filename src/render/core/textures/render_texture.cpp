@@ -22,7 +22,15 @@ struct RenderTextureDispatch {
     void (*destruct)(RenderTexture& texture);
     void (*release_dynamic)(RenderTexture& texture);
     std::int32_t (*descriptor_type)(const RenderTexture& texture);
-    void (*reserved_methods[10])();
+    // Slots 3-8 bind the texture for the vertex, hull, domain, geometry,
+    // pixel, and compute stages.
+    void (*bind_stage[6])(
+        const RenderTexture& texture,
+        RenderContext& context,
+        std::uint32_t slot,
+        std::uint32_t flags,
+        const void* border_color);
+    void (*reserved_methods[4])();
     void (*update_gpu_data)(RenderTexture& texture);
     RenderTexture* (*identity)(
         RenderTexture& texture,
@@ -49,6 +57,7 @@ RenderTextureDispatch kBaseTextureDispatch{
     render_texture_destruct,
     render_texture_delete,
     base_descriptor_type,
+    {},
     {},
     nullptr,
     base_identity,
@@ -252,6 +261,20 @@ std::int32_t render_texture_default_filter_mode(
         return 2;
     }
     return (kFilterModeOneKinds & kind_bit) != 0 ? 1 : -1;
+}
+
+
+void render_texture_bind(
+    const RenderTexture& texture,
+    RenderContext& context,
+    RenderShaderStage stage,
+    std::uint32_t slot,
+    std::uint32_t flags,
+    const void* border_color) {
+    const auto& methods =
+        *static_cast<const RenderTextureDispatch*>(texture.implementation);
+    methods.bind_stage[static_cast<std::size_t>(stage)](
+        texture, context, slot, flags, border_color);
 }
 
 }  // namespace rb4
