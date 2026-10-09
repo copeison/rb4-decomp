@@ -432,6 +432,8 @@
   declaration hashing, source-file hashing, and global define matching.
 - [x] Extend every source-owned primary-shader dispatch to the binary's 11
   slots, with permutation validators and fallback/slice/geometry overrides.
+- [x] Reconstruct stage permutation enumeration and the primary-shader
+  layout hash used to validate compiled-shader caches.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

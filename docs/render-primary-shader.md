@@ -62,3 +62,18 @@ value, then the render-system version at `+0xC98` and the parameter hash from
 constant-block and backend-state source, a hash of the backend path
 (`0x6456C0`), and the platform records at render-system `+0xCA0` (`0x63EB70`).
 Only then does it call the loader.
+
+## Permutation layout hash
+
+`render_primary_shader_layout_hash` (`0x638D70`) streams the following into
+FNV-1a, with every byte sign-extended:
+
+1. The generated constant definitions.
+2. For each of the six parameter registries, its record count, then each
+   record's name and its first and last values.
+3. The key of every accepted permutation, for each graphics stage enabled by
+   the shader variant.
+
+Compute permutations are not hashed. Enumeration (`0x63D100`) walks the global
+registry first, then the stage registry; hull and domain share registry 2.
+Enabled (global) records pack into the high 32 bits of the key.
