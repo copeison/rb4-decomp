@@ -110,4 +110,20 @@ RenderShaderParameterBinding* render_shader_parameter_registry_add_ternary(
     return binding;
 }
 
+// Reconstructed from eboot.elf at 0x63C380. Enabled bindings live in the high
+// 32 bits of the permutation key.
+std::uint32_t render_shader_parameter_binding_value(
+    const RenderShaderParameterBinding& binding,
+    std::uint64_t key) {
+    std::uint64_t mask = binding.shifted_mask;
+    if (binding.enabled) {
+        mask <<= 32;
+    }
+    const auto field = (key & mask) >> binding.bit_offset;
+    const auto value = binding.enabled
+        ? static_cast<std::uint32_t>(field >> 32)
+        : static_cast<std::uint32_t>(field);
+    return binding.first_value + value;
+}
+
 }  // namespace rb4

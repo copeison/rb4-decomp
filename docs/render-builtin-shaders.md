@@ -34,23 +34,32 @@ then installs the concrete dispatch and initializes only its verified trailing
 fields. This keeps base ownership, manager-list registration, lazy preparation,
 and compiled-object teardown centralized in `primary_shader_resource.cpp`.
 
-## Dispatch slots beyond the seventh
+## Dispatch slots 7-10
 
-The original primary-shader dispatch tables contain 11 slots, recovered from
-their `R_X86_64_RELATIVE` relocations. Source dispatches currently model the
-first seven. The remaining defaults are:
+Primary-shader dispatch tables have 11 slots, and every source dispatch now
+models all of them. The later slots are consumed by permutation enumeration:
 
-| Slot | Default | Behavior |
+| Slot | Default | Meaning |
 | ---: | ---: | --- |
-| 7 | `0x6388F0` | Permutation validator; returns `true` |
-| 8 | `0x638900` | Forwards to `0x63E6C0` with the render-system object at `+0xB80` |
-| 9 | `0x450870` | Returns `0` |
-| 10 | `0x450880` | Returns `0` |
+| 7 | `0x6388F0` | Validate a permutation key for a stage; default accepts |
+| 8 | `0x638900` | Bind a fallback program; default binds the error shader |
+| 9 | `0x450870` | Supports six-slice render targets; default false |
+| 10 | `0x450880` | Has a geometry program for single-slice draws; default false |
 
-Known overrides: blur (`0x635F00`) and output conversion (`0x636BF0`)
-validate permutation keys in slot 7; basic overrides slots 7 and 9
-(`0x639E40`, `0x639EF0`); error overrides slots 8 and 9 (`0x63E820`,
-`0x63E810`); Bink conversion overrides slot 9 with `0x5F4E80`, which also
-returns zero. Callers of these slots are not yet reconstructed, so extend the
-source dispatch layout when the backend-initialization path at `0x638430` is
-recovered.
+Overrides:
+
+| Shader | Slot | Address | Behavior |
+| --- | ---: | ---: | --- |
+| Basic | 7 | `0x639E40` | Pixel stage: shading modes 0, 16, 17 only; 17 excludes alpha cut; red-as-alpha needs a texture |
+| Basic | 9 | `0x639EF0` | True |
+| Error | 8 | `0x63E820` | No fallback |
+| Error | 9 | `0x63E810` | True |
+| Downsample | 9 | `0x6364B0` | True |
+| Blur | 7 | `0x635F00` | Pixel stage: power-of-two sample count >= 2; classification only with depth-aware blur |
+| Output conversion | 7 | `0x636BF0` | Rejects every HMD-mask permutation |
+| Clear/copy buffer | 7 | `0x637B60`, `0x6F3D50` | Compute stage: uint or float4 numeric type; invalid, 1D, or 2D texture type |
+| DOF sprite | 10 | `0x6F3520` | True |
+| Bink conversion | 9 | `0x5F4E80` | False, matching the default |
+
+The error-shader permutation bind used by the default fallback (`0x63E6C0`)
+remains an adapter boundary.

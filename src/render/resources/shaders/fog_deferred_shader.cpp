@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -29,6 +30,13 @@ struct FogDeferredShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(FogDeferredShaderResource* shader);
     std::int32_t (*variant)(FogDeferredShaderResource* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
 struct FogDeferredShaderTail {
@@ -45,7 +53,7 @@ struct FogDeferredShaderLayout {
     FogDeferredShaderTail tail;
 };
 
-static_assert(sizeof(FogDeferredShaderDispatch) == 56);
+static_assert(sizeof(FogDeferredShaderDispatch) == 88);
 static_assert(sizeof(FogDeferredShaderTail) == 56);
 static_assert(offsetof(FogDeferredShaderTail, falloff_parameters) == 24);
 static_assert(sizeof(FogDeferredShaderLayout) == 344);
@@ -135,6 +143,10 @@ FogDeferredShaderDispatch kFogDeferredShaderDispatch{
     fog_deferred_shader_initialize_support_objects,
     fog_deferred_shader_mode,
     fog_deferred_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 // Reconstructed from eboot.elf at 0x452CA0.

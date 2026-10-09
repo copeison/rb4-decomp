@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -27,9 +28,16 @@ struct BufferShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(BufferShaderDispatch) == 56);
+static_assert(sizeof(BufferShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -190,6 +198,29 @@ std::int32_t buffer_shader_variant(void*) {
     return 16;
 }
 
+// Reconstructed from eboot.elf at 0x637B60 and its copy-buffer twin at
+// 0x6F3D50. Compute permutations require a uint or float4 numeric type and an
+// invalid, 1D, or 2D texture type.
+bool validate_buffer_permutation(
+    void* shader,
+    std::uint32_t stage,
+    std::uint64_t key) {
+    constexpr std::uint32_t kComputeStage = 5;
+    constexpr std::uint32_t kUintType = 5;
+    constexpr std::uint32_t kFloat4Type = 12;
+    if (stage != kComputeStage) {
+        return true;
+    }
+    const auto numeric_type =
+        render_shader_parameter_binding_value(numeric_type_binding(shader), key);
+    if (numeric_type != kFloat4Type && numeric_type != kUintType) {
+        return false;
+    }
+    const auto texture_type =
+        render_shader_parameter_binding_value(texture_type_binding(shader), key);
+    return texture_type + 1U < 3U;
+}
+
 BufferShaderDispatch kClearBufferShaderDispatch{
     buffer_shader_destruct,
     buffer_shader_delete,
@@ -198,6 +229,10 @@ BufferShaderDispatch kClearBufferShaderDispatch{
     initialize_clear_buffer_support_objects,
     buffer_shader_mode,
     buffer_shader_variant,
+    validate_buffer_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 BufferShaderDispatch kCopyBufferShaderDispatch{
@@ -208,6 +243,10 @@ BufferShaderDispatch kCopyBufferShaderDispatch{
     initialize_copy_buffer_support_objects,
     buffer_shader_mode,
     buffer_shader_variant,
+    validate_buffer_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 void construct_buffer_shader(

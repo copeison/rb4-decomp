@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -27,9 +28,16 @@ struct OutputConversionShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(OutputConversionShaderDispatch) == 56);
+static_assert(sizeof(OutputConversionShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -116,6 +124,16 @@ std::int32_t output_conversion_shader_variant(void*) {
     return 13;
 }
 
+// Reconstructed from eboot.elf at 0x636BF0. HMD-mask permutations are never
+// built, on any stage.
+bool validate_output_conversion_permutation(
+    void* shader,
+    std::uint32_t,
+    std::uint64_t key) {
+    return render_shader_parameter_binding_value(
+               parameter_binding(shader, 0), key) == 0;
+}
+
 OutputConversionShaderDispatch kOutputConversionShaderDispatch{
     output_conversion_shader_destruct,
     output_conversion_shader_delete,
@@ -124,6 +142,10 @@ OutputConversionShaderDispatch kOutputConversionShaderDispatch{
     initialize_output_conversion_shader_support_objects,
     output_conversion_shader_mode,
     output_conversion_shader_variant,
+    validate_output_conversion_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 }  // namespace

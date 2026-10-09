@@ -7,6 +7,7 @@
 #include "core/types/symbol.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -29,9 +30,16 @@ struct BlurShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(BlurShaderDispatch) == 56);
+static_assert(sizeof(BlurShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -171,6 +179,30 @@ std::int32_t blur_shader_variant(void*) {
     return 13;
 }
 
+// Reconstructed from eboot.elf at 0x635F00. Pixel permutations require a
+// power-of-two sample count of at least two, and the classification buffer is
+// only used by the depth-aware blur.
+bool validate_blur_permutation(
+    void* shader,
+    std::uint32_t stage,
+    std::uint64_t key) {
+    constexpr std::uint32_t kPixelStage = 4;
+    constexpr std::uint32_t kDepthAwareBlur = 1;
+    if (stage != kPixelStage) {
+        return true;
+    }
+    const auto samples =
+        render_shader_parameter_binding_value(parameter_binding(shader, 1), key);
+    if (samples < 2 || (samples & (samples - 1)) != 0) {
+        return false;
+    }
+    const auto blur_type =
+        render_shader_parameter_binding_value(parameter_binding(shader, 2), key);
+    const auto classification =
+        render_shader_parameter_binding_value(parameter_binding(shader, 5), key);
+    return blur_type == kDepthAwareBlur || classification == 0;
+}
+
 BlurShaderDispatch kBlurShaderDispatch{
     blur_shader_destruct,
     blur_shader_delete,
@@ -179,6 +211,10 @@ BlurShaderDispatch kBlurShaderDispatch{
     initialize_blur_shader_support_objects,
     blur_shader_mode,
     blur_shader_variant,
+    validate_blur_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 }  // namespace

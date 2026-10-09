@@ -5,6 +5,8 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -23,8 +25,15 @@ struct BasicShaderDispatch {
         RenderShaderBackendState*);
     std::int32_t (*mode)(void*);
     std::int32_t (*variant)(void*);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
-static_assert(sizeof(BasicShaderDispatch) == 56);
+static_assert(sizeof(BasicShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -97,10 +106,42 @@ void initialize_basic(void* shader, RenderShaderConstantRegistry* constants,
         *backend_state, "gTexture2DRTSliced", "gTex2DRTSlicedSampler", 1, 12);
 }
 
+// Reconstructed from eboot.elf at 0x639E40. On the pixel stage, only shading
+// modes 0, 16, and 17 are built; mode 17 excludes alpha cut, and red-as-alpha
+// requires a texture.
+bool validate_basic(void* shader, std::uint32_t stage, std::uint64_t key) {
+    constexpr std::uint32_t kPixelStage = 4;
+    if (stage != kPixelStage) {
+        return true;
+    }
+    const auto shading_mode =
+        render_shader_parameter_binding_value(binding(shader, 0), key);
+    if (shading_mode == 17) {
+        if (render_shader_parameter_binding_value(binding(shader, 2), key) !=
+            0) {
+            return false;
+        }
+    } else if (shading_mode != 0 && shading_mode != 16) {
+        return false;
+    }
+    if (render_shader_parameter_binding_value(binding(shader, 1), key) != 0) {
+        return true;
+    }
+    return render_shader_parameter_binding_value(binding(shader, 3), key) == 0;
+}
+
+// The error shader binds nothing as its own fallback (0x63E820) and, like the
+// basic shader, supports six-slice targets (0x63E810, 0x639EF0).
 BasicShaderDispatch kErrorDispatch{shader_destruct, shader_delete,
-    error_identifier, error_path, initialize_error, shader_mode, shader_variant};
+    error_identifier, error_path, initialize_error, shader_mode, shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_nothing, render_primary_shader_returns_true,
+    render_primary_shader_uses_geometry_program};
 BasicShaderDispatch kBasicDispatch{shader_destruct, shader_delete,
-    basic_identifier, basic_path, initialize_basic, shader_mode, shader_variant};
+    basic_identifier, basic_path, initialize_basic, shader_mode, shader_variant,
+    validate_basic, render_primary_shader_bind_fallback,
+    render_primary_shader_returns_true,
+    render_primary_shader_uses_geometry_program};
 
 void construct(void* shader, BasicShaderDispatch& dispatch,
     std::size_t binding_count) {

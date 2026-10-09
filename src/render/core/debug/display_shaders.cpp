@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -27,9 +28,16 @@ struct DisplayShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(DisplayShaderDispatch) == 56);
+static_assert(sizeof(DisplayShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -163,18 +171,30 @@ DisplayShaderDispatch kShadingModeDispatch{
     display_shader_destruct, display_shader_delete, shading_mode_identifier,
     shading_mode_path, initialize_shading_mode, display_shader_mode,
     display_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 DisplayShaderDispatch kSphereMapDispatch{
     display_shader_destruct, display_shader_delete, sphere_map_identifier,
     sphere_map_path, initialize_sphere_map, display_shader_mode,
     display_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 DisplayShaderDispatch kTextureCubeDispatch{
     display_shader_destruct, display_shader_delete, texture_cube_identifier,
     texture_cube_path, initialize_texture_cube, display_shader_mode,
     display_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 void construct_shader(void* shader, DisplayShaderDispatch& dispatch) {

@@ -5,9 +5,11 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
-#include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
+#include "render/resources/shaders/compiled_shader_objects.h"
+#include "render/resources/shaders/primary_shader_adapters.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
@@ -72,6 +74,13 @@ struct RenderPrimaryShaderResource {
             RenderShaderBackendState* backend_state);
         std::int32_t (*mode)(RenderPrimaryShaderResource* shader);
         std::int32_t (*variant)(RenderPrimaryShaderResource* shader);
+        bool (*validate_permutation)(
+            void* shader,
+            std::uint32_t stage,
+            std::uint64_t key);
+        void (*bind_fallback)(void* shader, void* context);
+        bool (*supports_render_target_slices)(void* shader);
+        bool (*uses_geometry_program)(void* shader);
     };
 
     Dispatch* dispatch;
@@ -91,6 +100,10 @@ struct RenderPrimaryShaderResource {
 
 static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, mode) == 40);
 static_assert(offsetof(RenderPrimaryShaderResource::Dispatch, variant) == 48);
+static_assert(
+    offsetof(RenderPrimaryShaderResource::Dispatch, validate_permutation) ==
+    56);
+static_assert(sizeof(RenderPrimaryShaderResource::Dispatch) == 88);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled) == 12);
 static_assert(offsetof(RenderPrimaryShaderResource, compiled_objects) == 16);
 static_assert(offsetof(RenderPrimaryShaderResource, backend_name) == 208);
@@ -119,6 +132,7 @@ std::int32_t primary_shader_variant(RenderPrimaryShaderResource*) {
     return 13;
 }
 
+// The base dispatch at 0x192EF60 leaves the shader-specific slots pure.
 RenderPrimaryShaderResource::Dispatch kBasePrimaryShaderDispatch{
     [](RenderPrimaryShaderResource* shader) {
         render_primary_shader_destruct(*shader);
@@ -129,6 +143,10 @@ RenderPrimaryShaderResource::Dispatch kBasePrimaryShaderDispatch{
     nullptr,
     primary_shader_mode,
     primary_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 void set_base_dispatch(RenderPrimaryShaderResource& shader) {
@@ -291,5 +309,41 @@ void render_primary_shader_clear_compiled_objects(
     }
     shader.compiled = false;
 }
+
+// Reconstructed from eboot.elf at 0x6388F0.
+bool render_primary_shader_validate_permutation(
+    void*,
+    std::uint32_t,
+    std::uint64_t) {
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x638900. Shaders without a fallback of
+// their own bind the error shader with geometry type zero.
+void render_primary_shader_bind_fallback(void*, void* context) {
+    auto& resources =
+        render_system_resource_manager(*render_system_instance())
+            .runtime.resources;
+    render_error_shader_bind(resources.error_shader, context, 0);
+}
+
+// Reconstructed from eboot.elf at 0x450870.
+bool render_primary_shader_supports_render_target_slices(void*) {
+    return false;
+}
+
+// Reconstructed from eboot.elf at 0x450880.
+bool render_primary_shader_uses_geometry_program(void*) {
+    return false;
+}
+
+// Matches the one-instruction true overrides at 0x639EF0, 0x6364B0,
+// 0x63E810, and 0x6F3520.
+bool render_primary_shader_returns_true(void*) {
+    return true;
+}
+
+// Reconstructed from eboot.elf at 0x63E820.
+void render_primary_shader_bind_nothing(void*, void*) {}
 
 }  // namespace rb4

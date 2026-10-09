@@ -5,6 +5,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/types/symbol.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -27,9 +28,16 @@ struct DownsampleShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(DownsampleShaderDispatch) == 56);
+static_assert(sizeof(DownsampleShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -127,6 +135,10 @@ DownsampleShaderDispatch kDownsampleShaderDispatch{
     initialize_downsample_shader_support_objects,
     downsample_shader_mode,
     downsample_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_returns_true,
+    render_primary_shader_uses_geometry_program,
 };
 
 }  // namespace

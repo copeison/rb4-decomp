@@ -6,6 +6,7 @@
 #include "core/memory/engine_memory.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
 #include "render/resources/shaders/shader_constant_block.h"
@@ -28,9 +29,16 @@ struct DofDiscBlurShaderDispatch {
         RenderShaderBackendState* backend_state);
     std::int32_t (*mode)(void* shader);
     std::int32_t (*variant)(void* shader);
+    bool (*validate_permutation)(
+        void* shader,
+        std::uint32_t stage,
+        std::uint64_t key);
+    void (*bind_fallback)(void* shader, void* context);
+    bool (*supports_render_target_slices)(void* shader);
+    bool (*uses_geometry_program)(void* shader);
 };
 
-static_assert(sizeof(DofDiscBlurShaderDispatch) == 56);
+static_assert(sizeof(DofDiscBlurShaderDispatch) == 88);
 
 RenderPrimaryShaderResource& primary_shader(void* shader) {
     return *static_cast<RenderPrimaryShaderResource*>(shader);
@@ -133,6 +141,10 @@ DofDiscBlurShaderDispatch kDofDiscBlurShaderDispatch{
     initialize_dof_disc_blur_support_objects,
     dof_disc_blur_shader_mode,
     dof_disc_blur_shader_variant,
+    render_primary_shader_validate_permutation,
+    render_primary_shader_bind_fallback,
+    render_primary_shader_supports_render_target_slices,
+    render_primary_shader_uses_geometry_program,
 };
 
 }  // namespace

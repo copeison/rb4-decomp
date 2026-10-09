@@ -59,6 +59,9 @@ void render_shader_parameter_registry_add(
     const void* parameter_name,
     std::uint32_t first_value,
     std::uint32_t last_value_exclusive);
+std::uint32_t render_shader_parameter_binding_value(
+    const RenderShaderParameterBinding& binding,
+    std::uint64_t key);
 RenderShaderParameterBinding* render_shader_parameter_registry_add_ternary(
     RenderShaderParameterBinding* binding,
     RenderShaderParameterRegistry* registry,

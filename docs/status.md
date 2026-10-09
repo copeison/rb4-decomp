@@ -430,8 +430,8 @@
   dispatch and endian/cipher I/O, and the 592-byte `FileStream`.
 - [x] Reconstruct the compiled-shader cache validators: backend-state
   declaration hashing, source-file hashing, and global define matching.
-- [ ] Extend source-owned primary-shader dispatches from 7 to the binary's 11
-  slots, including permutation validators and per-shader slot 8/9 overrides.
+- [x] Extend every source-owned primary-shader dispatch to the binary's 11
+  slots, with permutation validators and fallback/slice/geometry overrides.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
