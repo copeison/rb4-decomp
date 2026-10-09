@@ -1,12 +1,14 @@
 #pragma once
 
-#include <cstdint>
-
 #include "utl/text/Symbol.h"
 
-namespace rb4 {
+// Stage presence events (rb_game/RBStagePresenceEnum.o). StagePresence is a
+// namespace in the map: its rule classes nest in it and its operator== is a
+// two-argument free function.
+namespace StagePresence {
 
-enum class StagePresenceId : std::int32_t {
+// The enumerator names are the strings _ToSymbol interns.
+enum Id {
     kBandOverdrive,
     kGreatGuitarSolo,
     kMaxStreakTrack,
@@ -31,6 +33,8 @@ enum class StagePresenceId : std::int32_t {
     kImprovGuitarGeneral,
 };
 
-Symbol stage_presence_id_to_symbol(StagePresenceId id);
+static_assert(sizeof(Id) == 4);
 
-}  // namespace rb4
+Symbol _ToSymbol(Id id);  // 0x997590
+
+}  // namespace StagePresence
