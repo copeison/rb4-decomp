@@ -211,6 +211,140 @@ The latest focused commits, newest first, are:
 
 The IDA database was saved after each associated rename pass.
 
+## Last active milestone in depth
+
+The last implementation milestone was the reconstruction of the basic and
+error fallback shaders in commit `ab29d144623b692131bf4bdb78ea8b164bd692b8`
+(`decomp: reconstruct basic shaders`). That work is complete; there was no
+partially edited source file or uncommitted IDA rename at the stopping point.
+The next shader milestone should start with one of the six adapters listed in
+the next section rather than revisiting these two classes without new binary
+evidence.
+
+### Shared object and dispatch layout
+
+Both classes inherit the reconstructed 288-byte
+`RenderPrimaryShaderResource` prefix. Their class-specific parameter bindings
+start at object offset 288 and occupy 20 bytes each. The recovered 56-byte
+dispatch table has seven entries in this order:
+
+1. destructor
+2. deleting destructor
+3. source identifier
+4. backend shader path
+5. support-object initializer
+6. shader mode
+7. shader variant
+
+Both dispatches use the primary shader destructor, release the allocation in
+their deleting destructor, return mode `0`, and return primary graphics variant
+`13`. The source reconstruction represents this common shape with
+`BasicShaderDispatch` in
+`src/render/resources/shaders/basic_shaders.cpp`. The shared binary leaf
+functions for mode and variant are at `0x450850` and `0x6388E0`, respectively.
+
+### Error shader reconstruction
+
+`render_error_shader_construct` was recovered from `0x63E650` through
+`0x63E837`. Its original dispatch table is at `0x192F2A0`. The verified binary
+methods were named and saved in IDA as follows:
+
+| Address | IDA name | Recovered behavior |
+| ---: | --- | --- |
+| `0x63E690` | `error_shader_destruct` | Calls the primary shader destructor |
+| `0x63E6A0` | `error_shader_delete` | Destructs and releases the object |
+| `0x63E730` | `error_shader_backend_path` | Returns `../../system/data/shaders/Error.hlsl` |
+| `0x63E740` | `error_shader_initialize_support_objects` | Registers the two compile parameters |
+| `0x63E830` | `error_shader_source_identifier` | Returns `RndShaderError` |
+
+The constructor clears exactly two parameter bindings. The support initializer
+then registers:
+
+| Symbol | Parameter registry | Range |
+| --- | ---: | ---: |
+| `HX_GEO_TYPE` | `registries[1]` | `[0, 2)` |
+| `HX_SHADING_MODE` | `registries[4]` | `[0, 19)` |
+
+The initializer at `0x63E740` initially had no usable function boundary, so
+Hex-Rays could not decompile it. The byte range `0x63E740`-`0x63E829` was
+undefined without touching adjacent code, recreated as instructions, and then
+made into an explicit function. The recovered accesses at parameter-set
+offsets 40 and 160 proved registry indices 1 and 4. This repair is already
+stored in the IDA database and should be preserved.
+
+### Basic shader reconstruction
+
+`render_basic_shader_construct` was recovered from `0x6398D0` through
+`0x639F07`. Its original dispatch table is at `0x192F018`. The verified binary
+methods were named and saved in IDA as follows:
+
+| Address | IDA name | Recovered behavior |
+| ---: | --- | --- |
+| `0x639950` | `basic_shader_destruct` | Calls the primary shader destructor |
+| `0x639960` | `basic_shader_delete` | Destructs and releases the object |
+| `0x639BD0` | `basic_shader_backend_path` | Returns `../../system/data/shaders/Basic.hlsl` |
+| `0x639BE0` | `basic_shader_initialize_support_objects` | Registers parameters, constants, and resources |
+| `0x639F00` | `basic_shader_source_identifier` | Returns `RndShaderBasic` |
+
+The constructor clears four parameter bindings and initializes its four
+class-specific 64-bit fields exactly as the binary does:
+
+| Object offset | Initial value | Value assigned by support initialization |
+| ---: | ---: | --- |
+| `368` | `-1` | Handle for vector4 constant `gColor` |
+| `376` | `0` | Constant block `next_offset` after adding `gColor` |
+| `384` | `-1` | Handle for `gTexture2D` / `gTex2DSampler` |
+| `392` | `-1` | Handle for `gTexture2DRTSliced` / `gTex2DRTSlicedSampler` |
+
+All four compile parameters use pixel-stage registry `registries[4]`:
+
+| Symbol | Registration |
+| --- | --- |
+| `HX_SHADING_MODE` | Integer range `[0, 19)` |
+| `HX_TEXTURE_MODE` | Integer range `[0, 3)` |
+| `HX_ALPHA_CUT` | Ternary parameter |
+| `HX_USE_TEX_RED_AS_ALPHA` | Ternary parameter |
+
+The support initializer also registers the constant definitions
+`HX_TEXTURE_MODE_NONE = 0`, `HX_TEXTURE_MODE_2D = 1`, and
+`HX_TEXTURE_MODE_2D_RTSLICED = 2`. It adds `gColor` as a vector4 constant,
+then preserves the resulting constant-block extent in the field at offset 376.
+
+The ordinary texture binding uses dimension `1`, stage `4`, and mask `12`.
+The render-target-sliced texture also uses dimension `1` and mask `12`, but it
+must go through `render_shader_backend_add_graphics_texture_binding`. That
+graphics-specific helper was reconstructed earlier at `0x6438D0`; it supplies
+the fixed pixel stage and additional graphics binding metadata. Do not replace
+it with the general texture helper merely because their call shapes are
+similar.
+
+### Source ownership and cleanup performed
+
+The milestone added the source-owned dispatches and constructors in
+`src/render/resources/shaders/basic_shaders.cpp`. It removed
+`render_error_shader_install_dispatch` and
+`render_basic_shader_install_dispatch` from
+`src/render/resources/shaders/builtin_shader_adapters.h`, then removed the two
+adapter-backed constructor bodies from `builtin_shader_resources.cpp`.
+
+The generic helpers `construct_shader`, `construct_parameterized_shader`, and
+`shader_field` remain in `builtin_shader_resources.cpp` only because the six
+unreconstructed built-in shaders still use them. Reassess and remove those
+helpers after migrating the final adapters; do not move the completed basic or
+error classes back into that shared file.
+
+### Validation and exact handoff state
+
+The SDK 5.500 Debug object build compiled all 169 translation units and created
+both the archive and relocatable-link outputs. Neither removed adapter appeared
+in `undefined-symbols.txt`. `git diff --check` passed, the IDA database was
+saved after the rename and function-boundary work, and the repository was clean
+after commit `ab29d14`.
+
+The documentation-only handoff commit `138662f` followed that implementation
+commit. Therefore, a later dirty working tree should be treated as new work,
+not as residue from the basic/error shader milestone.
+
 ## Immediate remaining shader work
 
 Six built-in dispatch adapters remain in
