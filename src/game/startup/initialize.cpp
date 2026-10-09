@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <limits>
 
-#include "game/systems/systems.h"
 #include "utl/options/Option.h"
 #include "os/files/File.h"
 #include "ui/layout/ui_layout_id.h"
 #include "render/system/RndDevice.h"
+#include "render/system/RndInit.h"
 
 namespace rb4 {
 
@@ -64,7 +64,7 @@ bool game_initialize() {
     options.mUnknown0 = true;
     options.mInitRendering = true;
     options.mUnknown2 = true;
-    game_systems_initialize(options);
+    Rnd::Init(options);
 
     ui_register_types();
     dingo_initialize(g_dingo_service);

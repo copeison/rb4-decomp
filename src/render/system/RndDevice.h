@@ -207,8 +207,3 @@ extern RndDevice* gRndDevice;
 inline RndDevice* TheRndDevice() {
     return gRndDevice;
 }
-
-namespace Rnd {
-// Creates the platform device. Defined by each platform's Init object.
-RndDevice* PlatformCreateDevice();
-}  // namespace Rnd
