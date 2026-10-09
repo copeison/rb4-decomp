@@ -1,9 +1,11 @@
 #include "render/buffers/RndParticleBuffer.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "math/color/Color.h"
 #include "math/matrix/Matrix3.h"
+#include "math/scalar/Trig.h"
 #include "math/transform/Transform.h"
 #include "render/context/RndCameraContext.h"
 #include "render/context/RndContext.h"
@@ -12,6 +14,8 @@
 #include "render/system/RndFactory.h"
 
 namespace {
+
+constexpr float kHalfPi = 1.5707964F;
 
 // The blend modes up to kScreen draw the particles in sorted order.
 constexpr int kLastSortedBlendMode = 3;
@@ -68,6 +72,16 @@ Hmx::Matrix3 MakeUprightFacing(const Hmx::Matrix3& cameraRotation) {
     return rotation;
 }
 
+// Turns a vector by a rotation, as a row vector times the matrix. Inlined
+// into _ComputeParticleBasis. Name not in the reference map.
+Vector3 Rotate(const Vector3& v, const Hmx::Matrix3& m) {
+    return {
+        v.y * m.y.x + v.x * m.x.x + v.z * m.z.x,
+        v.y * m.y.y + v.x * m.x.y + v.z * m.z.y,
+        v.y * m.y.z + v.x * m.x.z + v.z * m.z.z,
+    };
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x6EAFD0.
@@ -90,6 +104,106 @@ RndParticleBuffer::RndParticleBuffer(unsigned long numParticles, const char* nam
       mWorldSpace(true),
       mHasRotation(false),
       mName(name) {}
+
+// Reconstructed from eboot.elf at 0x6EB6B0. The alignment picks the quad's
+// local right and up axes. A velocity-aligned quad turns its up axis toward
+// the particle's velocity within that plane; otherwise the quad spins by
+// the particle's rotation about the axis it faces. Both results are then
+// turned by the system's rotation.
+void RndParticleBuffer::_ComputeParticleBasis(
+    unsigned long particle,
+    Vector3& right,
+    Vector3& up,
+    const Hmx::Matrix3& rotation,
+    RndParticleCom::ParticleAlignment alignment,
+    bool velocityAligned,
+    const RndParticleCollection& particles) {
+    Vector3 rightAxis = {0.0F, 0.0F, 0.0F};
+    Vector3 upAxis = {0.0F, 0.0F, 0.0F};
+    switch (alignment) {
+    case RndParticleCom::kCameraAligned:
+    case RndParticleCom::kCameraXYAligned:
+    case RndParticleCom::kYAxisAligned:
+        rightAxis = {1.0F, 0.0F, 0.0F};
+        upAxis = {0.0F, 0.0F, 1.0F};
+        break;
+    case RndParticleCom::kXAxisAligned:
+        rightAxis = {0.0F, 1.0F, 0.0F};
+        upAxis = {0.0F, 0.0F, 1.0F};
+        break;
+    case RndParticleCom::kZAxisAligned:
+        rightAxis = {1.0F, 0.0F, 0.0F};
+        upAxis = {0.0F, 1.0F, 0.0F};
+        break;
+    }
+
+    if (velocityAligned) {
+        const Vector3 velocity = {
+            ParticleFloat(particles, RndParticleCollection::kVelocityX, particle),
+            ParticleFloat(particles, RndParticleCollection::kVelocityY, particle),
+            ParticleFloat(particles, RndParticleCollection::kVelocityZ, particle),
+        };
+        const float length = std::sqrt(
+            velocity.y * velocity.y + velocity.x * velocity.x + velocity.z * velocity.z);
+        float scale = 0.0F;
+        if (length != 0.0F) {
+            scale = 1.0F / length;
+        }
+        const Vector3 direction = {
+            scale * velocity.x, scale * velocity.y, scale * velocity.z};
+        const Vector3 worldRight = Rotate(rightAxis, rotation);
+        const Vector3 worldUp = Rotate(upAxis, rotation);
+        const float along = worldRight.y * direction.y + worldRight.x * direction.x +
+            worldRight.z * direction.z;
+        const float across = worldUp.y * direction.y + worldUp.x * direction.x +
+            worldUp.z * direction.z;
+        up = {
+            across * worldUp.x + along * worldRight.x,
+            across * worldUp.y + along * worldRight.y,
+            across * worldUp.z + along * worldRight.z,
+        };
+        right = {
+            across * worldRight.x - along * worldUp.x,
+            across * worldRight.y - along * worldUp.y,
+            across * worldRight.z - along * worldUp.z,
+        };
+        return;
+    }
+
+    const float angle = ParticleFloat(particles, RndParticleCollection::kRotation, particle);
+    Hmx::Matrix3 spin = Hmx::Matrix3::sID;
+    switch (alignment) {
+    case RndParticleCom::kCameraAligned:
+    case RndParticleCom::kCameraXYAligned:
+    case RndParticleCom::kYAxisAligned: {
+        // About Y, against the rotation.
+        const float cosine = Sine(-angle + kHalfPi);
+        const float sine = Sine(-angle);
+        spin.x = {cosine, 0.0F, -sine};
+        spin.y = {0.0F, 1.0F, 0.0F};
+        spin.z = {sine, 0.0F, cosine};
+        break;
+    }
+    case RndParticleCom::kXAxisAligned: {
+        const float cosine = Sine(angle + kHalfPi);
+        const float sine = Sine(angle);
+        spin.x = {1.0F, 0.0F, 0.0F};
+        spin.y = {0.0F, cosine, sine};
+        spin.z = {0.0F, -sine, cosine};
+        break;
+    }
+    case RndParticleCom::kZAxisAligned: {
+        const float cosine = Sine(angle + kHalfPi);
+        const float sine = Sine(angle);
+        spin.x = {cosine, sine, 0.0F};
+        spin.y = {-sine, cosine, 0.0F};
+        spin.z = {0.0F, 0.0F, 1.0F};
+        break;
+    }
+    }
+    right = Rotate(Rotate(rightAxis, spin), rotation);
+    up = Rotate(Rotate(upAxis, spin), rotation);
+}
 
 // Reconstructed from eboot.elf at 0x6EBD70. Each particle's position moves
 // through the system's transform; its quad spans its size along the right and
@@ -199,6 +313,44 @@ void RndParticleBuffer::_FillVertexBuffer(
             ++vertex;
         }
     }
+}
+
+// Reconstructed from eboot.elf at 0x6EC700. The keys sort ascending: the
+// negated view depth draws back to front, the negated age oldest first and
+// the age newest first. Positions are taken in the system's space. The
+// binary sorts with an EASTL sort instantiation (0x6ECBA0: introsort with a
+// 28-element insertion-sort threshold).
+void RndParticleBuffer::_SortParticles(
+    eastl::vector<ParticleIndexDepth>& sorts,
+    int sortMode,
+    const RndParticleCollection& particles,
+    const RndCameraContext& camera) {
+    sorts.clear();
+    switch (sortMode) {
+    case 0: {
+        const Vector3& view = camera.mPrimaryView.mWorldXfm.m.y;
+        for (unsigned long i = 0; i < mNumActive; ++i) {
+            const float depth =
+                view.x * ParticleFloat(particles, RndParticleCollection::kPositionX, i) +
+                view.y * ParticleFloat(particles, RndParticleCollection::kPositionY, i) +
+                view.z * ParticleFloat(particles, RndParticleCollection::kPositionZ, i);
+            sorts.push_back({-depth, i});
+        }
+        break;
+    }
+    case 1:
+        for (unsigned long i = 0; i < mNumActive; ++i) {
+            sorts.push_back(
+                {-ParticleFloat(particles, RndParticleCollection::kAge, i), i});
+        }
+        break;
+    case 2:
+        for (unsigned long i = 0; i < mNumActive; ++i) {
+            sorts.push_back({ParticleFloat(particles, RndParticleCollection::kAge, i), i});
+        }
+        break;
+    }
+    std::sort(sorts.begin(), sorts.end(), ParticleDepthSort);
 }
 
 // Reconstructed from eboot.elf at 0x6ECB60.

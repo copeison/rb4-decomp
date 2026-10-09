@@ -28,6 +28,14 @@ public:
         unsigned long mIndex;
     };
 
+    // Orders the sort list by ascending key. Inlined into the list's sort at
+    // 0x6ECBA0.
+    static bool ParticleDepthSort(
+        const ParticleIndexDepth& left,
+        const ParticleIndexDepth& right) {
+        return left.mDepth < right.mDepth;
+    }
+
     // Reconstructed from eboot.elf at 0x6EAFD0.
     static RndParticleBuffer* New(unsigned long numParticles, const char* name);
 
@@ -47,7 +55,7 @@ public:
         RndContext& context,
         const RndCameraContext& camera,
         void* vertices);  // 0x6EBD70
-    // The particle's right and up axes, unscaled. Not reconstructed.
+    // The particle's right and up axes, unscaled.
     void _ComputeParticleBasis(
         unsigned long particle,
         Vector3& right,
@@ -57,8 +65,7 @@ public:
         bool velocityAligned,
         const RndParticleCollection& particles);  // 0x6EB6B0
     // Fills the sort list in the given order: 0 back to front, 1 oldest
-    // first, 2 newest first. Not reconstructed. Name not in the reference
-    // map.
+    // first, 2 newest first. Name not in the reference map.
     void _SortParticles(
         eastl::vector<ParticleIndexDepth>& sorts,
         int sortMode,

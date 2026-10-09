@@ -13,6 +13,7 @@
 #include "render/audio/RndAudioTextures.h"
 #include "render/meshes/RndPrimitiveMeshes.h"
 #include "render/lighting/fog/RndShaderFogDeferred.h"
+#include "render/materials/RndMaterialRuntimeData.h"
 #include "render/video/BinkRenderMgr.h"
 #include "utl/time/Timer.h"
 

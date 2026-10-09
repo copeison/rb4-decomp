@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 641 entries, most of the
+executable. The latest unresolved-symbol report contains 637 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
 audio conversion declared but has not reconstructed. It covers
 engine code that has not been reconstructed, external runtime APIs,
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Camera projection and frusta, frustum and plane geometry, bounding hulls, particle vertex fill |
+| (this) | Particle basis and sorting, Bink frame conversion, `RndMaterialRuntimeData` destructor |
+| `7965973` | Camera projection and frusta, frustum and plane geometry, bounding hulls, particle vertex fill |
 | `acc2711` | `RndOverlay`, `RndOverlayMgr`, `TextStream`, the last three console commands and `TrigInit` |
 | `89d5dc1` | Math foundation: trig table, half floats, cone, matrix determinant and inverse, transform multiply, constants |
 | `8904691` | `RndMeshUtl` builders, `RndLightGlobals::_InitMeshes` and the spot mesh, default primitive meshes |

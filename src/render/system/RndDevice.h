@@ -16,6 +16,7 @@ class RndContext;
 class RndFactory;
 class RndBufferCollection;
 class RndConfig;
+class RndMaterialRuntimeData;
 class RndShaderCBuffer;
 class RndShaderFogDeferred;
 
@@ -33,13 +34,6 @@ struct RndInitParams {
 };
 
 static_assert(sizeof(RndInitParams) == 16);
-
-// Per-material GPU data released at a frame boundary. Only the destructor is
-// referenced here; the class has not been reconstructed.
-class RndMaterialRuntimeData {
-public:
-    ~RndMaterialRuntimeData();  // 0x4F7580
-};
 
 // Value returned by vtable slot 15. Name not in the reference map.
 struct RndDeviceSlot15Result {

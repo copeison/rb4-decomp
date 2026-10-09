@@ -13,8 +13,16 @@ slots. A video object with its
 byte at offset `0x88` set enters `bink_video_convert_frame`; the manager clears
 that byte after conversion so each pending frame is submitted once.
 
-The conversion routine opens the `Bink Convert` GPU timing scope, prepares a
-single source-texture submission record, performs the conversion draw, and
-restores the context resource state. The detailed shader and draw-state
-construction remains behind the conversion adapter while its embedded types
-are recovered.
+`BinkRenderMgr::ConvertFrame(RndContext&, BinkRenderVideo&)` (`0x5F2BF0`) does the
+conversion. Its first argument register is unused, which fits a manager member
+whose `this` is never read. It:
+1. opens the "Bink Convert" GPU stat scope;
+2. moves the output texture from pixel-shader resource to render target;
+3. binds it with `RndContext::SetRenderTargets`;
+4. selects `RndShaderBinkConvert` with the video's Y, Cr, Cb and A planes and
+   its four colour-space constants;
+5. draws a full-target quad, keeping the shader;
+6. moves the texture back.
+
+`BinkRenderMgr::sInstance` (`0x1AA76F8`) is the manager the device's frame start
+reads.

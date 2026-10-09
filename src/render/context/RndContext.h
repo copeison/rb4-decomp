@@ -192,6 +192,9 @@ public:
     // Sets the camera of the main view and copies it to the second; the
     // stereo target modes then refresh its target info.
     void SetCamera(const GameObject* camera);  // 0x6BD220
+    // Binds the color and depth targets, clearing those that ask, and sets
+    // the viewport and the cameras' target info. Not reconstructed.
+    void SetRenderTargets(const RenderTargetParams& params);  // 0x6BC730
     // Draws with an identity view-projection, for screen-space geometry,
     // or with the camera's.
     void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
