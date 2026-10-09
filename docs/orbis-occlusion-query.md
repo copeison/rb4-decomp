@@ -5,19 +5,23 @@ render system. It allocates a 72-byte object and calls the platform constructor
 at `0x8E28C0`. The common constructor at `0x5F7D50` stores the owner, resets
 three query-state flags, initializes five signed state values to `-1`, clears
 the result field, and creates a self-linked intrusive-list node. These fields
-form the exact 64-byte `RenderOcclusionQuery` base; the meaning of the five
+form the exact 64-byte `RndOcclusionQuery` base; the meaning of the five
 signed values is not yet established by the recovered callers.
 
 The Orbis constructor installs the platform vtable and clears the eight-byte
 backend query address. The begin method at `0x8E2920` reserves a 256-byte block
 aligned to 16 bytes from the active graphics command arena, stores its address
-at object offset `+64`, begins the hardware query, and enables query
-collection. The method at `0x8E29E0` ends the query at the same address and
-disables collection.
+at object offset `+64` as a `sce::Gnm::OcclusionQueryResults*`, issues
+`writeOcclusionQuery(kOcclusionQueryOpClearAndBegin)`, and enables perfect
+Z-pass counts with `setDbCountControl`. The method at `0x8E29E0` writes
+`kOcclusionQueryOpEnd` to the same results and disables the counts. All four
+calls go through the active `GfxContext` (`PS4OcclusionQuery.cpp`).
 
 The final two virtual methods control conditional rendering. The method at
-`0x8E2A30` configures the active graphics command buffer to predicate draws on
-the stored query result. The method at `0x8E2A60` clears that predicate. The
+`0x8E2A30` calls `setZPassPredicationEnable` with `kPredicationZPassHintWait` and
+`kPredicationZPassActionDrawIfVisible`, so predicated draws wait for the
+result and draw when any fragment passed. The method at `0x8E2A60` calls
+`setZPassPredicationDisable`. The
 surrounding renderer code labels this subsystem `Occlusion Queries` and
 `Occlusion Query Coverage`.
 

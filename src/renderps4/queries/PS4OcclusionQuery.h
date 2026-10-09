@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/gpustructs.h>
 
 #include "render/queries/RndOcclusionQuery.h"
 
@@ -15,17 +16,9 @@ public:
     void _BeginPredicationImpl(RndContext& context) override;  // 0x8E2A30
     void _EndPredicationImpl(RndContext& context) override;    // 0x8E2A60
 
-    void* mResults;  // Name not in the reference map.
-
-private:
-    // Stand-ins for context command code inlined into the slots; not yet
-    // reconstructed. Names not in the reference map.
-    static void* AllocateResults(RndContext& context, unsigned long size, unsigned long alignment);
-    static void BeginQueryCommand(RndContext& context, void* results);
-    static void EndQueryCommand(RndContext& context, const void* results);
-    static void SetQueryEnabled(RndContext& context, bool enabled);
-    static void BeginPredicationCommand(RndContext& context, const void* results);
-    static void EndPredicationCommand(RndContext& context);
+    // Results of the current query, in the active graphics command buffer.
+    // Name not in the reference map.
+    sce::Gnm::OcclusionQueryResults* mResults;
 };
 
 static_assert(offsetof(PS4OcclusionQuery, mResults) == 64);
