@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Bind textures and samplers in the `PS4RenderUtl` stage selects through
+  the Gnm SDK, removing the `PS4Context` texture-bind stand-ins.
 - [x] Reconstruct `RndCShaderCopyBuffer::Dispatch`, the texture GPU copies and
   their `_ValidateGpuCopyFrom` chain; read-write selects raise the output-slot
   limit.

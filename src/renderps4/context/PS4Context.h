@@ -152,23 +152,6 @@ public:
         unsigned char stencil);  // 0x8E99E0
     void _FlushClear();          // 0x8EBDA0
 
-    // Texture bindings for PS4RenderUtl's stage selects. Names not in the
-    // reference map; not yet reconstructed.
-    bool _UsesComputeQueue() const;
-    void _BindGraphicsTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, sce::Gnm::Texture* texture);
-    void _BindGraphicsRwTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, sce::Gnm::Texture* texture);
-    void _BindComputeTexture(std::uint32_t slot, sce::Gnm::Texture* texture);
-    void _BindComputeRwTexture(std::uint32_t slot, sce::Gnm::Texture* texture);
-    void _BindGraphicsTextureSampler(
-        sce::Gnm::ShaderStage stage,
-        std::uint32_t slot,
-        PS4RenderStateUtl::WrapMode wrap,
-        std::uint32_t filter);
-    void _BindComputeTextureSampler(
-        std::uint32_t slot,
-        PS4RenderStateUtl::WrapMode wrap,
-        std::uint32_t filter);
-
 private:
     // Construction and teardown. Names not in the reference map; they are
     // not yet reconstructed unless an address is given. The graphics

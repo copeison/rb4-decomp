@@ -15,6 +15,14 @@ to read/write textures. Compute bindings select either the graphics CUE or the
 standalone compute context from the render context's active command mode. Both
 sampled and writable compute textures follow that selection.
 
-The adapter boundary retains command-buffer layout and Gnm packet details,
-while the reconstruction exposes the stage routing, sampler conditions, and
-graphics-versus-compute decisions directly.
+The reconstruction (`PS4RenderUtl::SelectTextureFor*` in
+`src/renderps4/system/PS4RenderUtl.cpp`) calls the SDK directly:
+- **Graphics stages** use one-slot `GfxContext::setSamplers`, `setTextures`
+  and `setRwTextures`, which inline to the CUE's single-slot `setSampler`,
+  `setTexture` and `setRwTexture`.
+- **The compute pipe** uses `ComputeContext::setTextures`, `setSamplers` and
+  `setRwTextures` on `PS4Context::_ActiveComputeContext()`.
+
+The sampler comes from `PS4RenderStateUtl::InitSampler`. The vertex through
+pixel stages bind the sampler before the texture; the compute stage binds the
+texture first on both pipes.

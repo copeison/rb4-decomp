@@ -107,6 +107,8 @@ bool ShouldSelectSampler(unsigned long slot, unsigned int flags) {
         (flags & PS4RenderUtl::kSelectNoSampler) == 0;
 }
 
+// Binds a sampler (below slot 16, unless suppressed) and then the texture to
+// a graphics stage. Inlined into the selects. Name not in the reference map.
 void SelectSampledTexture(
     RndContext& context,
     sce::Gnm::ShaderStage stage,
@@ -115,12 +117,14 @@ void SelectSampledTexture(
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
-    auto& ps4 = static_cast<PS4Context&>(context);
+    auto& gfx = static_cast<PS4Context&>(context)._ActiveGfxContext();
     const auto index = static_cast<unsigned int>(slot);
     if (ShouldSelectSampler(slot, flags)) {
-        ps4._BindGraphicsTextureSampler(stage, index, static_cast<WrapMode>(wrap), filter);
+        sce::Gnm::Sampler sampler;
+        PS4RenderStateUtl::InitSampler(sampler, static_cast<WrapMode>(wrap), filter);
+        gfx.setSamplers(stage, index, 1, &sampler);
     }
-    ps4._BindGraphicsTexture(stage, index, texture);
+    gfx.setTextures(stage, index, 1, texture);
 }
 
 }  // namespace
@@ -370,7 +374,8 @@ void PS4RenderUtl::SelectTextureForGS(
         context, sce::Gnm::kShaderStageGs, slot, texture, wrap, filter, flags);
 }
 
-// Reconstructed from eboot.elf at 0x8E21A0.
+// Reconstructed from eboot.elf at 0x8E21A0. Writable textures bind without a
+// sampler.
 void PS4RenderUtl::SelectTextureForPS(
     RndContext& context,
     unsigned long slot,
@@ -379,15 +384,17 @@ void PS4RenderUtl::SelectTextureForPS(
     unsigned int filter,
     unsigned int flags) {
     if ((flags & kSelectWritable) != 0) {
-        static_cast<PS4Context&>(context)._BindGraphicsRwTexture(
-            sce::Gnm::kShaderStagePs, static_cast<unsigned int>(slot), texture);
+        static_cast<PS4Context&>(context)._ActiveGfxContext().setRwTextures(
+            sce::Gnm::kShaderStagePs, static_cast<unsigned int>(slot), 1, texture);
         return;
     }
     SelectSampledTexture(
         context, sce::Gnm::kShaderStagePs, slot, texture, wrap, filter, flags);
 }
 
-// Reconstructed from eboot.elf at 0x8E2290.
+// Reconstructed from eboot.elf at 0x8E2290. On the compute pipe the texture
+// goes to the active compute context; either way the texture is bound before
+// its sampler.
 void PS4RenderUtl::SelectTextureForCS(
     RndContext& context,
     unsigned long slot,
@@ -397,24 +404,31 @@ void PS4RenderUtl::SelectTextureForCS(
     unsigned int flags) {
     auto& ps4 = static_cast<PS4Context&>(context);
     const auto index = static_cast<unsigned int>(slot);
-    const bool computeQueue = ps4._UsesComputeQueue();
     if ((flags & kSelectWritable) != 0) {
-        if (computeQueue) {
-            ps4._BindComputeRwTexture(index, texture);
-        } else {
-            ps4._BindGraphicsRwTexture(sce::Gnm::kShaderStageCs, index, texture);
+        if (context.mActivePipe == 1) {
+            ps4._ActiveComputeContext().setRwTextures(index, 1, texture);
+        } else if (context.mActivePipe == 0) {
+            ps4._ActiveGfxContext().setRwTextures(sce::Gnm::kShaderStageCs, index, 1, texture);
         }
         return;
     }
 
-    if (computeQueue) {
-        ps4._BindComputeTexture(index, texture);
-        if (ShouldSelectSampler(slot, flags)) {
-            ps4._BindComputeTextureSampler(index, static_cast<WrapMode>(wrap), filter);
-        }
-        return;
+    const bool withSampler = ShouldSelectSampler(slot, flags);
+    sce::Gnm::Sampler sampler;
+    if (withSampler) {
+        PS4RenderStateUtl::InitSampler(sampler, static_cast<WrapMode>(wrap), filter);
     }
-
-    SelectSampledTexture(
-        context, sce::Gnm::kShaderStageCs, slot, texture, wrap, filter, flags);
+    if (context.mActivePipe == 1) {
+        auto& compute = ps4._ActiveComputeContext();
+        compute.setTextures(index, 1, texture);
+        if (withSampler) {
+            compute.setSamplers(index, 1, &sampler);
+        }
+    } else if (context.mActivePipe == 0) {
+        auto& gfx = ps4._ActiveGfxContext();
+        gfx.setTextures(sce::Gnm::kShaderStageCs, index, 1, texture);
+        if (withSampler) {
+            gfx.setSamplers(sce::Gnm::kShaderStageCs, index, 1, &sampler);
+        }
+    }
 }
