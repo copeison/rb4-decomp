@@ -1,6 +1,6 @@
 # Renderer settings
 
-`render_settings_initialize` at `0x6BB470` constructs the 232-byte renderer
+`RndConfig::RndConfig` at `0x6BB470` constructs the 232-byte renderer
 configuration block, reads the `rnd` data section, applies platform capability
 rules, and processes the command-line `resolution` override.
 
@@ -75,7 +75,7 @@ startup code checks that default against the advertised list before applying
 the parsed override; it does not check the parsed extent itself. The
 reconstruction preserves this observed behavior.
 
-`render_parse_resolution` accepts `WIDTHxHEIGHT` using a lowercase `x`. A
+`ParseResolution` accepts `WIDTHxHEIGHT` using a lowercase `x`. A
 single positive number is treated as the height and expanded to a 16:9 width;
 for example, `1080` becomes 1,920 × 1,080. The separate runtime
 `set_resolution` command only enables the override when the resulting extent

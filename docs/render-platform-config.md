@@ -1,8 +1,8 @@
 # Render platform configuration
 
 The render-system constructor owns 13 fixed platform-configuration slots.
-`render_platform_config_construct` at `0x6B9940` resets each 128-byte slot to
-its empty defaults. `render_platform_config_initialize` at `0x6B99B0` then
+`RndCapabilities::RndCapabilities` at `0x6B9940` resets each 128-byte slot to
+its empty defaults. `RndCapabilities::InitForPlatform` at `0x6B99B0` then
 applies the built-in capability profile for a selected platform ID.
 
 The slot is now typed directly. It contains a 32-byte resolution vector,
@@ -12,7 +12,7 @@ Construction owns all defaults, and render-system destruction invokes the
 resolution vector destructor for each of the 13 slots in reverse order.
 
 Resolution strings are read from that platform's `resolutions` list and parsed
-with `render_parse_resolution`. Invalid entries are discarded. An empty result
+with `ParseResolution`. Invalid entries are discarded. An empty result
 receives the 1,920 × 1,080 fallback, and the final list is sorted by width and
 then height.
 

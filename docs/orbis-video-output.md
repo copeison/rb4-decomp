@@ -38,7 +38,7 @@ worker's current buffer. They call `sceGnmSubmitDone` immediately when all ten
 are clear or after pending time accumulates to 1,000 ms, advance the current
 buffer's presentation counts, publish the submit token, and wake its waiter.
 
-The runtime vsync enable byte is at `RenderSettings + 0x98`; when enabled, the
+The runtime vsync enable byte is at `RndConfig + 0x98`; when enabled, the
 configured mode comes from `+0x14`, otherwise mode zero is used. The worker
 caches that mode at `OrbisRenderSystem + 0x10F8`. Mode two selects video flip
 rate one; all other modes select rate zero. Mode zero submits with

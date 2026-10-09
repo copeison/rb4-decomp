@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the render settings to `RndConfig` and the platform
+  configurations to `RndCapabilities`.
 - [x] Convert the lighting resources to `RndLightGlobals`, the debug commands
   to `RndCommands`, the render startup to `Rnd::Init` and `Rnd::Terminate`,
   and the Orbis transient vertex buffer to `PS4TransientBuffer`, with

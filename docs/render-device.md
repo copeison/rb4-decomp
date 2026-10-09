@@ -100,7 +100,7 @@ in the base class's tail padding. Each field is checked by `static_assert`.
   occlusion-query blocks.
 - **Main window.** `BeginMainWindowFrame` does not null-check the main window.
   The callers in the frame loop check the global device.
-- **Owning members.** `RenderPlatformConfig` and `RndDefaults` own
+- **Owning members.** `RndCapabilities` and `RndDefaults` own
   vectors, so they now have real constructors and destructors. The three plain
   structures (resource manager, lighting, GPU statistics) keep their explicit
   construct and destruct helpers.

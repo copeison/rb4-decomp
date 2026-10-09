@@ -3,7 +3,7 @@
 `RndBufferCollection::_AllocDepthStencilBuffer` at `0x6B2A80` creates the
 `Depth/Stencil Buffer` in slot `0x10` of each 216-byte per-scene resource
 block. Its descriptor switches between the standard and 40-bit format layouts
-through `RenderSettings::use_40_bit_depth_stencil`.
+through `RndConfig::use_40_bit_depth_stencil`.
 
 Partial-frame blocks request an unassigned attachment index and can reuse the
 corresponding target from an earlier block. The primary block starts at the
