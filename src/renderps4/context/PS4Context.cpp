@@ -73,6 +73,12 @@ constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
 constexpr std::size_t kSubmissionCounterCount = 10;
 
+// RndContext::mActiveShaderStages bits SetupDraw reads. Names not in the
+// reference map.
+constexpr unsigned int kTessellationStageBits =
+    (1U << kShaderProgramHull) | (1U << kShaderProgramDomain);
+constexpr unsigned int kGeometryStageBit = 1U << kShaderProgramGeometry;
+
 constexpr std::size_t kColorRenderTargetCount = 8;
 constexpr std::int32_t kUnboundTargetKind = -1;
 constexpr std::int32_t kPerTargetBlendMode = 11;
@@ -197,9 +203,8 @@ PS4Context::~PS4Context() {
     _DestructCommandState();
 }
 
-rb4::OrbisRenderCommandContext& PS4Context::_ActiveGfxContext() {
-    return *reinterpret_cast<OrbisRenderCommandContext*>(
-        mGfxContexts[mActiveFrame]);
+sce::Gnmx::GfxContext& PS4Context::_ActiveGfxContext() {
+    return mGfxContexts[mActiveFrame];
 }
 
 bool PS4Context::_SubmissionsComplete() const {
@@ -415,31 +420,55 @@ void PS4Context::_DrawPrimitivesImpl(
     RndVertexType type,
     const void* vertices,
     unsigned long count) {
-    const auto primitiveType = static_cast<GnmPrimitiveType>(primitive);
     auto& transient = mTransientBuffers[mActiveFrame][type];
-    auto& commands = _ActiveGfxContext();
+    auto& gfx = _ActiveGfxContext();
     const auto firstVertex = transient.Write(vertices, count);
-    transient.Bind(commands);
-    GfxSetVertexBuffers(
-        commands,
+    transient.Bind(gfx);
+    gfx.setVertexBuffers(
+        sce::Gnm::kShaderStageVs,
         RndVertexInterpreter::kNumStreams,
         PS4RenderUtl::kNumInstanceStreams,
         gPS4Device->mIdentityInstanceDescs);
-    auto* indices = static_cast<std::uint16_t*>(
-        GfxAllocateFromCommandBuffer(
-            commands,
-            count * sizeof(std::uint16_t),
-            alignof(std::uint32_t)));
+    auto* indices = static_cast<std::uint16_t*>(gfx.allocateFromCommandBuffer(
+        static_cast<std::uint32_t>(count * sizeof(std::uint16_t)),
+        sce::Gnm::kEmbeddedDataAlignment4));
     for (std::size_t index = 0; index < count; ++index) {
         indices[index] = static_cast<std::uint16_t>(firstVertex + index);
     }
 
-    GfxSetIndexSize(commands, GnmIndexSize::k16Bit, GnmCachePolicy::kBypass);
-    GfxSetPrimitiveType(commands, primitiveType);
-    GfxPrepareDraw(commands);
-    GfxDrawIndex(
-        commands, static_cast<std::uint32_t>(count), indices);
-    GfxFinishDraw(commands);
+    gfx.setIndexSize(sce::Gnm::kIndexSize16);
+    SetupDraw(primitive);
+    gfx.drawIndex(static_cast<std::uint32_t>(count), indices);
+}
+
+// Reconstructed from eboot.elf at 0x8EA560.
+void PS4Context::SetupDraw(RndPrimitive primitive) {
+    const auto programStages = mActiveShaderStages;
+    sce::Gnm::ActiveShaderStages stages;
+    if ((programStages & kTessellationStageBits) != 0) {
+        stages = (programStages & kGeometryStageBit) != 0
+            ? sce::Gnm::kActiveShaderStagesLsHsEsGsVsPs
+            : sce::Gnm::kActiveShaderStagesLsHsVsPs;
+    } else {
+        stages = (programStages & kGeometryStageBit) != 0
+            ? sce::Gnm::kActiveShaderStagesEsGsVsPs
+            : sce::Gnm::kActiveShaderStagesVsPs;
+    }
+    if (mCachedShaderStages != stages) {
+        _ActiveGfxContext().setActiveShaderStages(stages);
+        mCachedShaderStages = stages;
+    }
+
+    if ((mActiveShaderStages & kGeometryStageBit) == 0 && mGsModeEnabled) {
+        _ActiveGfxContext().setGsModeOff();
+        mGsModeEnabled = false;
+    }
+
+    const auto primitiveType = PS4RenderUtl::GetPrimitiveType(primitive);
+    if (mCachedPrimitiveType != primitiveType) {
+        _ActiveGfxContext().setPrimitiveType(primitiveType);
+        mCachedPrimitiveType = primitiveType;
+    }
 }
 
 // Shader resources -----------------------------------------------------------
@@ -495,7 +524,7 @@ void PS4Context::_SetSamplerImpl(
     unsigned int slot,
     unsigned int wrap,
     unsigned int filter) {
-    GnmSampler sampler;
+    sce::Gnm::Sampler sampler;
     PS4RenderStateUtl::InitSampler(
         sampler, static_cast<PS4RenderStateUtl::WrapMode>(wrap), filter);
     switch (type) {

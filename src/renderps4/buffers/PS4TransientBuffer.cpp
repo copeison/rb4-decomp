@@ -52,12 +52,12 @@ unsigned long PS4TransientBuffer::Write(const void* verts, unsigned long numVert
 
 // Reconstructed from eboot.elf at 0x8EC910. Streams the format does not use
 // bind the device's default descriptors.
-void PS4TransientBuffer::Bind(rb4::OrbisRenderCommandContext& context) const {
+void PS4TransientBuffer::Bind(sce::Gnmx::GfxContext& context) {
     const auto* defaults = gPS4Device->mDefaultVertexDescs;
     for (unsigned int stream = 0; stream < RndVertexInterpreter::kNumStreams; ++stream) {
         const auto* desc = (mBufferMask & (1U << stream)) != 0
             ? &mVertexBuffers[stream]
             : &defaults[stream];
-        GfxSetVertexBuffers(context, stream, 1, desc);
+        context.setVertexBuffers(sce::Gnm::kShaderStageVs, stream, 1, desc);
     }
 }

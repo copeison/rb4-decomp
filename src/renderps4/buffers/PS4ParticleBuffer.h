@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/buffer.h>
 
 #include "render/buffers/RndParticleBuffer.h"
 #include "render/meshes/RndVertexInterpreter.h"
-#include "renderps4/system/gnm_adapters.h"
 
 // PS4 particle buffer with double-buffered vertex streams. The vtable is at
 // 0x195F780.
@@ -19,7 +19,7 @@ public:
     void _UpdateBuffer(RndContext& context);
 
     // Field names are not in the reference map.
-    GnmBuffer mVertexBuffers[2][RndVertexInterpreter::kNumStreams];
+    sce::Gnm::Buffer mVertexBuffers[2][RndVertexInterpreter::kNumStreams];
     void* mVertexStorage[2];
     unsigned long mActiveBank;
     unsigned int mBufferMask;

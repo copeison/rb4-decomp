@@ -1,13 +1,18 @@
 #pragma once
 
-#include "renderps4/system/gnm_adapters.h"
+#include <gnm/buffer.h>
 
 class RndContext;
 class RndVertexInterpreter;
 struct RndInstanceData;
+enum class RndPrimitive : unsigned int;
 
 // Gnm helpers shared by the PS4 resources.
 namespace PS4RenderUtl {
+
+// Unknown primitives draw as triangle strips. The map has
+// GetPrimitiveType(RndContext::Primitive); this build's enum is RndPrimitive.
+sce::Gnm::PrimitiveType GetPrimitiveType(RndPrimitive primitive);  // 0x8E1770
 
 // Instance data occupies the nine vertex streams after the mesh streams.
 // Name not in the reference map.
@@ -19,7 +24,7 @@ constexpr unsigned int kNumInstanceStreams = 9;
 // unsigned int&, unsigned long, RndVertexInterpreter const&); the binary
 // takes the count as unsigned int.
 void InitializeVertexBuffers(
-    GnmBuffer* buffers,
+    sce::Gnm::Buffer* buffers,
     const void* data,
     unsigned int& mask,
     unsigned int numVerts,
@@ -28,7 +33,7 @@ void InitializeVertexBuffers(
 // InitializeInstanceBuffer(sce::Gnm::Buffer*, void*, unsigned long); the
 // binary takes the count as unsigned int.
 void InitializeInstanceBuffer(
-    GnmBuffer* buffers,
+    sce::Gnm::Buffer* buffers,
     const RndInstanceData* data,
     unsigned int numInstances);               // 0x8E1BD0
 

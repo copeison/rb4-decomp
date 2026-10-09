@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/buffer.h>
+#include <gnmx/gfxcontext.h>
 
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndVertexInterpreter.h"
-#include "renderps4/system/gnm_adapters.h"
 
 // Per-format vertex buffer for immediate-mode draws. PS4Context embeds two
 // banks of eight, one bank per frame; Reset discards a bank's vertices when
@@ -18,12 +19,10 @@ public:
     void Reset();                                          // 0x8EC8B0
     // Returns the index of the first written vertex.
     unsigned long Write(const void* verts, unsigned long numVerts);  // 0x8EC8C0
-    // The map has Bind(sce::Gnmx::GfxContext&); the project models the
-    // GfxContext as rb4::OrbisRenderCommandContext.
-    void Bind(rb4::OrbisRenderCommandContext& context) const;  // 0x8EC910
+    void Bind(sce::Gnmx::GfxContext& context);  // 0x8EC910
 
     // Field names are not in the reference map.
-    GnmBuffer mVertexBuffers[RndVertexInterpreter::kNumStreams];
+    sce::Gnm::Buffer mVertexBuffers[RndVertexInterpreter::kNumStreams];
     unsigned int mBufferMask;
     unsigned int mUnknown132;
     unsigned char* mData;

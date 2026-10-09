@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/buffer.h>
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/shaders/RndShaderEnums.h"
-#include "renderps4/system/gnm_adapters.h"
 
 // Double-buffered PS4 compute buffer. The vtable is at 0x195F7A8.
 class PS4ComputeBuffer : public RndComputeBuffer {
@@ -29,14 +29,14 @@ public:
     void _FreeImpl() override;
 
     // Names not in the reference map.
-    const GnmBuffer& ActiveBuffer() const {
+    const sce::Gnm::Buffer& ActiveBuffer() const {
         return mBuffers[mActiveBank];
     }
     void* ActiveStorage() const {
         return mStorage[mActiveBank];
     }
 
-    GnmBuffer mBuffers[2];
+    sce::Gnm::Buffer mBuffers[2];
     void* mStorage[2];
     unsigned long mActiveBank;
 

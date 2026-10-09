@@ -2,18 +2,19 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <gnm/buffer.h>
+#include <gnm/sampler.h>
+#include <gnmx/gfxcontext.h>
 
 #include "render/context/RndContext.h"
 #include "renderps4/buffers/PS4TransientBuffer.h"
 #include "renderps4/context/PS4RenderStateUtl.h"
-#include "renderps4/system/gnm_adapters.h"
 
 class PS4Device;
 
 namespace rb4 {
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
-struct OrbisRenderCommandContext;
 }  // namespace rb4
 
 // PS4 context: two graphics contexts, compute queues, transient vertex
@@ -122,6 +123,14 @@ public:
     // in the reference map.
     static PS4Context* _CreateImmediate(PS4Device& device);
 
+    // Activates the shader stages the bound programs need, turns the GS mode
+    // off when no geometry shader is bound, and sets the primitive type,
+    // skipping state the context already holds. The map has
+    // SetupDraw(RndContext::Primitive); this build's enum is RndPrimitive.
+    void SetupDraw(RndPrimitive primitive);  // 0x8EA560
+    // The active frame's graphics context. Name not in the reference map.
+    sce::Gnmx::GfxContext& _ActiveGfxContext();
+
     void SubmitFrame();  // 0x8E82D0
     // Resets the active frame's command state before recording. Name not in
     // the reference map; it may be the map's _ResetImpl().
@@ -141,12 +150,12 @@ public:
     // Texture bindings for PS4RenderUtl's stage selects. Names not in the
     // reference map; not yet reconstructed.
     bool _UsesComputeQueue() const;
-    void _BindGraphicsTexture(GnmShaderStage stage, std::uint32_t slot, const void* texture);
-    void _BindGraphicsRwTexture(GnmShaderStage stage, std::uint32_t slot, const void* texture);
+    void _BindGraphicsTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, const void* texture);
+    void _BindGraphicsRwTexture(sce::Gnm::ShaderStage stage, std::uint32_t slot, const void* texture);
     void _BindComputeTexture(std::uint32_t slot, const void* texture);
     void _BindComputeRwTexture(std::uint32_t slot, const void* texture);
     void _BindGraphicsTextureSampler(
-        GnmShaderStage stage,
+        sce::Gnm::ShaderStage stage,
         std::uint32_t slot,
         PS4RenderStateUtl::WrapMode wrap,
         std::uint32_t filter);
@@ -157,7 +166,10 @@ public:
 
 private:
     // Construction and teardown. Names not in the reference map; they are
-    // not yet reconstructed unless an address is given.
+    // not yet reconstructed unless an address is given. The graphics
+    // contexts are members, so the compiler constructs and destroys them as
+    // the binary does; _InitCommandState and _DestructCommandState stand for
+    // the rest of the command state.
     void _InitCommandState();
     void _ConstructComputeSlot(std::size_t slot);
     void _InitStateDefaults();
@@ -190,7 +202,6 @@ private:
 
     // Frame submission and reset. Names not in the reference map; not yet
     // reconstructed.
-    rb4::OrbisRenderCommandContext& _ActiveGfxContext();
     void _EmitEndOfFrameEvent(std::size_t frame);
     void _EmitComputeCompletion(std::size_t frame, std::size_t slot);
     void _SubmitCompute(std::size_t frame, std::size_t slot, std::size_t queue);
@@ -317,7 +328,7 @@ private:
 
     // Shader stages, samplers and resource tables. Names not in the
     // reference map; not yet reconstructed.
-    void _BindComputeRwBuffer(std::uint32_t slot, const GnmBuffer* buffer);
+    void _BindComputeRwBuffer(std::uint32_t slot, const sce::Gnm::Buffer* buffer);
     void _CopyGdsToMemory(
         std::uint32_t gdsOffset,
         void* destination,
@@ -326,8 +337,8 @@ private:
     void _BindGraphicsSampler(
         RndShaderProgramType stage,
         std::uint32_t slot,
-        const GnmSampler& sampler);
-    void _BindComputeSampler(std::uint32_t slot, const GnmSampler& sampler);
+        const sce::Gnm::Sampler& sampler);
+    void _BindComputeSampler(std::uint32_t slot, const sce::Gnm::Sampler& sampler);
     void _ClearVertexShader();
     void _ClearGeometryShader();
     void _ClearPixelShader();
@@ -343,7 +354,7 @@ public:
     // padding at 0x5721.
     unsigned char mUnknown22305[7];
     // One Gnmx graphics context per frame slot.
-    unsigned char mGfxContexts[kFrameSlotCount][0xE888];
+    sce::Gnmx::GfxContext mGfxContexts[kFrameSlotCount];
     unsigned char mUnknown141368[0x48];
     // Nonzero while a frame's graphics (0) or compute (1-9) submission is
     // in flight.
@@ -353,9 +364,17 @@ public:
     unsigned char mUnknown265624[0x20];
     // One bank per frame, indexed by vertex type.
     PS4TransientBuffer mTransientBuffers[kFrameSlotCount][kTransientFormatCount];
-    unsigned char mUnknown268344[0x44890 - 0x41838];
+    unsigned char mUnknown268344[0x44880 - 0x41838];
+    // SetupDraw's record of the state it last set on the graphics context:
+    // the active shader stages, the primitive type, and whether the GS mode
+    // may be on. Names not in the reference map.
+    sce::Gnm::ActiveShaderStages mCachedShaderStages;
+    sce::Gnm::PrimitiveType mCachedPrimitiveType;
+    bool mGsModeEnabled;
+    unsigned char mUnknown280713[7];
 };
 
+static_assert(sizeof(sce::Gnmx::GfxContext) == 0xE888);
 static_assert(sizeof(PS4Context::GpuStatBlock) == 24);
 static_assert(sizeof(PS4Context::ResourceSignal) == 24);
 static_assert(offsetof(PS4Context, mUnknown22305) == 0x5721);
@@ -367,4 +386,8 @@ static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);
 static_assert(offsetof(PS4Context, mUnknown265624) == 0x40D98);
 static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
 static_assert(offsetof(PS4Context, mUnknown268344) == 0x41838);
+static_assert(offsetof(PS4Context, mCachedShaderStages) == 0x44880);
+static_assert(offsetof(PS4Context, mCachedPrimitiveType) == 0x44884);
+static_assert(offsetof(PS4Context, mGsModeEnabled) == 0x44888);
+static_assert(offsetof(PS4Context, mUnknown280713) == 0x44889);
 static_assert(sizeof(PS4Context) == 0x44890);

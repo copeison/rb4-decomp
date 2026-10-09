@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderps4/system/gnm_adapters.h"
+#include <gnm/sampler.h>
 
 // Builders that turn engine render-state enums into Gnm hardware state.
 //
@@ -23,6 +23,6 @@ enum class WrapMode : unsigned int {
 
 // The map has InitSampler(sce::Gnm::Sampler&, RndTexWrapMode,
 // RndTexFilterMode); the project models the filter mode as an unsigned int.
-void InitSampler(GnmSampler& sampler, WrapMode wrap, unsigned int filter);
+void InitSampler(sce::Gnm::Sampler& sampler, WrapMode wrap, unsigned int filter);
 
 }  // namespace PS4RenderStateUtl
