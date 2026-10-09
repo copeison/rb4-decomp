@@ -4,10 +4,11 @@
 
 class RndFactory;
 
+class RndContext;
+
 namespace rb4 {
 
 struct RenderFrameOwner;
-struct RenderContext;
 struct RenderSettings;
 struct RenderSystem;
 
@@ -15,9 +16,9 @@ extern RenderSystem* g_render_system;
 
 RenderSystem* render_system_instance();
 RenderFrameOwner* render_system_frame_owner(RenderSystem& system);
-RenderContext& render_system_primary_render_context(RenderSystem& system);
+RndContext& render_system_primary_render_context(RenderSystem& system);
 std::size_t render_system_render_context_count(const RenderSystem& system);
-RenderContext& render_system_render_context_at(
+RndContext& render_system_render_context_at(
     RenderSystem& system,
     std::size_t index);
 bool render_system_has_pending_frame(const RenderSystem& system);

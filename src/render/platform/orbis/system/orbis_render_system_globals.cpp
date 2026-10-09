@@ -10,6 +10,7 @@
 #include "render/core/system/render_system_state.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/platform/orbis/video/orbis_back_buffer.h"
+#include "renderps4/context/PS4Context.h"
 
 namespace rb4 {
 
@@ -148,9 +149,9 @@ RenderSystem& orbis_render_system_base(OrbisRenderSystem& system) {
     return reinterpret_cast<RenderSystem&>(system);
 }
 
-OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system) {
+PS4Context& orbis_render_system_context(OrbisRenderSystem& system) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
-    return *reinterpret_cast<OrbisRenderContext*>(
+    return *reinterpret_cast<PS4Context*>(
         runtime->core.render_context);
 }
 
@@ -334,10 +335,10 @@ void orbis_release_all_retired_allocations_locked(
 
 void render_system_set_render_context(
     OrbisRenderSystem& system,
-    OrbisRenderContext& context) {
+    PS4Context& context) {
     auto* runtime = reinterpret_cast<OrbisRenderSystemRuntimePrefix*>(&system);
     runtime->core.render_context =
-        reinterpret_cast<RenderContext*>(&context);
+        reinterpret_cast<RndContext*>(&context);
 }
 
 void render_system_set_back_buffer(

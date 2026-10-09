@@ -3,17 +3,18 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert meshes to original classes` milestone, the fourth step
+`decomp: convert the render context to original classes` milestone, the
+fifth step
 of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
-engine foundation, the render resource objects, textures, and meshes are
-converted; the
+engine foundation, the render resource objects, textures, meshes, and the
+render context are converted; the
 rest of the renderer, audio, and game code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **181 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 586 unique entries,
+executable. The latest unresolved-symbol report contains 585 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
 and middleware dependencies.
 
@@ -200,7 +201,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Meshes converted to original classes |
+| (this) | Render context converted to original classes |
+| `e149abf` | Meshes converted to original classes |
 | `32dba93` | Textures converted to original classes |
 | `c589005` | Render resource objects converted to original classes |
 | `3338af8` | Engine foundation converted to original classes |
@@ -448,7 +450,7 @@ The surrounding bloom pass (`0x6305A0`, now defined in IDA) is a 3.7 KB
 render-target and state function and a larger, separate milestone.
 
 The final executable link also depends on many engine functions and matching
-FMOD libraries. The 586-entry unresolved report is a work queue, not a list of
+FMOD libraries. The 585-entry unresolved report is a work queue, not a list of
 compile failures. Prioritize dependencies that sit on reconstructed runtime
 paths and collapse groups of related adapters rather than adding arbitrary
 stubs.

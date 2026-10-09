@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-namespace rb4 {
+class PS4Context;
 
-struct OrbisRenderContext;
+namespace rb4 {
 
 struct OrbisResourceSignal {
     const void* resource = nullptr;
@@ -15,11 +15,11 @@ struct OrbisResourceSignal {
 static_assert(sizeof(OrbisResourceSignal) == 24);
 
 void orbis_render_context_signal_resource(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const void* resource,
     volatile std::uint32_t*& shared_label);
 void orbis_render_context_wait_for_resource(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const void* resource);
 
 }  // namespace rb4

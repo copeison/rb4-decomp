@@ -6,9 +6,9 @@
 class BinStream;
 class RndShaderProgram;
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 struct RenderManagedObjectArray {
     RndShaderProgram** begin;
@@ -36,7 +36,7 @@ bool render_compiled_shader_objects_load(
 
 bool render_compiled_shader_objects_bind(
     RenderManagedObjectArray (&objects)[kRenderShaderStageCount],
-    RenderContext& context,
+    RndContext& context,
     std::int32_t variant,
     const std::uint64_t (&keys)[kRenderShaderProgramKeyCount]);
 

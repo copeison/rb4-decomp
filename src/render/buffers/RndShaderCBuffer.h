@@ -30,6 +30,10 @@ public:
         void* data);                   // 0x639FF0
     virtual ~RndShaderCBuffer() {}     // slots 0-1: 0x63A030, 0x63A040
 
+    // Reconstructed from eboot.elf at 0x639FC0. Runs the complete destructor,
+    // releases the buffer through MemFree, and clears the pointer.
+    static void SafeDelete(RndShaderCBuffer*& buffer);
+
     // Slot 2. Uploads the whole buffer. Name not in the reference map.
     virtual void _CreateImpl() = 0;
     // Slot 3. The map has _SyncImpl(RndContext&, unsigned long, unsigned long).

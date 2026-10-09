@@ -2,7 +2,7 @@
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/shaders/RndShaderProgram.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -20,7 +20,7 @@ namespace {
 // binary; zero is passed here.
 void select_resource(
     RndShaderResource& resource,
-    RenderContext& context,
+    RndContext& context,
     RndShaderProgramType type,
     std::uint64_t slot,
     std::uint32_t flags) {
@@ -63,31 +63,31 @@ void raise_limit(std::uint64_t& limit, std::uint64_t slot) {
 }  // namespace
 
 void render_shader_bind_texture(
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& texture,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags) {
     texture.mFrameStamp = current_frame_epoch();
-    raise_limit(render_context_input_slot_limit(context, stage), slot);
+    raise_limit((context).mInputSlotLimits[stage], slot);
     select_resource(
         texture, context, static_cast<RndShaderProgramType>(stage), slot, flags);
 }
 
 void render_shader_bind_buffer(
-    RenderContext& context,
+    RndContext& context,
     RndComputeBuffer& buffer,
     std::uint32_t stage,
     std::uint64_t slot,
     std::uint32_t flags) {
     buffer.mFrameStamp = current_frame_epoch();
-    raise_limit(render_context_input_slot_limit(context, stage), slot);
+    raise_limit((context).mInputSlotLimits[stage], slot);
     select_resource(
         buffer, context, static_cast<RndShaderProgramType>(stage), slot, flags);
 }
 
 void render_shader_bind_pixel_texture(
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase* texture,
     std::uint64_t slot,
     std::uint32_t flags) {
@@ -98,7 +98,7 @@ void render_shader_bind_pixel_texture(
 }
 
 RndShaderCBuffer& render_shader_select_constant_buffer(
-    RenderContext& context,
+    RndContext& context,
     std::uint64_t element_count) {
     std::size_t size_class = 0;
     if (element_count > kSmallestConstantBufferElements) {
@@ -108,7 +108,7 @@ RndShaderCBuffer& render_shader_select_constant_buffer(
             ++size_class;
         } while (capacity < element_count);
     }
-    return *render_context_constant_buffer(context, size_class);
+    return *(context).mCBuffers[6 + (size_class)];
 }
 
 void* render_shader_constant_member(
@@ -120,7 +120,7 @@ void* render_shader_constant_member(
 
 void render_shader_commit_constant_buffer(
     RndShaderCBuffer& buffer,
-    RenderContext& context,
+    RndContext& context,
     std::uint64_t element_count) {
     buffer.mSyncPending = true;
     buffer._SyncImpl(context, 0, element_count);
@@ -140,7 +140,7 @@ std::uint64_t render_shader_parameter_binding_apply(
 
 void render_shader_draw_with_pixel_texture(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& texture,
     std::uint64_t slot) {
     render_shader_bind_pixel_texture(context, &texture, slot);

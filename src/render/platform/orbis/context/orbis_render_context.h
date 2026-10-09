@@ -3,100 +3,53 @@
 #include <cstddef>
 #include <cstdint>
 
+class PS4Context;
+
 namespace rb4 {
 
 struct OrbisRenderSystem;
-struct OrbisRenderContext;
-struct OrbisBlendConfiguration;
-struct OrbisRenderTargetBinding;
 struct OrbisRenderCommandContext;
 struct OrbisTransientVertexBuffer;
 
 enum class RndMaterialBlendMode : std::int32_t;
-
-enum class OrbisCullMode : std::uint32_t {
-    kNone = 0,
-    kBack = 1,
-    kFront = 2,
-};
-
-enum class OrbisColorWriteMode : std::uint32_t {
-    kRgba = 0,
-    kRgb = 1,
-    kDisabled = 2,
-};
 
 constexpr std::size_t kOrbisFrameSlotCount = 2;
 constexpr std::size_t kOrbisComputeContextCount = 18;
 constexpr std::size_t kOrbisComputeContextsPerFrame = 9;
 constexpr std::size_t kOrbisTransientFormatCount = 8;
 
-OrbisRenderContext* orbis_render_context_create(
+PS4Context* orbis_render_context_create(
     OrbisRenderSystem& system);
-void orbis_render_context_construct(OrbisRenderContext& context);
-void orbis_render_context_destruct(OrbisRenderContext& context);
-void orbis_render_context_delete(OrbisRenderContext& context);
 void orbis_render_context_create_gfx_contexts(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_create_gpu_timestamp_pool(
-    OrbisRenderContext& context);
+    PS4Context& context);
 bool orbis_render_context_compute_queues_enabled(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 std::size_t orbis_render_context_active_frame(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame,
     std::size_t format);
 OrbisRenderCommandContext& orbis_active_render_command_context(
-    OrbisRenderContext& context);
+    PS4Context& context);
 bool orbis_render_context_submissions_complete(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 bool orbis_render_context_frame_submissions_complete(
-    const OrbisRenderContext& context,
+    const PS4Context& context,
     std::size_t frame);
 void orbis_render_context_mark_compute_completion_pending(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame,
     std::size_t slot);
 void orbis_render_context_mark_gfx_completion_pending(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame);
 void orbis_render_context_set_active_frame(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame);
-void orbis_render_context_submit_frame(OrbisRenderContext& context);
-void orbis_render_context_reset_active_frame(OrbisRenderContext& context);
-void orbis_render_context_reset_pipeline_state(OrbisRenderContext& context);
-void orbis_render_context_bind_render_targets(
-    OrbisRenderContext& context,
-    std::int32_t target_kind,
-    const OrbisRenderTargetBinding& binding);
-void orbis_render_context_set_blend_mode(
-    OrbisRenderContext& context,
-    RndMaterialBlendMode mode,
-    const OrbisBlendConfiguration& configuration);
-void orbis_render_context_set_depth_mode(
-    OrbisRenderContext& context,
-    std::uint32_t depth_mode);
-void orbis_render_context_set_stencil_state(
-    OrbisRenderContext& context,
-    std::uint32_t stencil_mode,
-    std::uint8_t reference,
-    std::uint32_t read_mask,
-    std::uint32_t write_mask);
-void orbis_render_context_set_front_face(
-    OrbisRenderContext& context,
-    bool counter_clockwise);
-void orbis_render_context_set_cull_mode(
-    OrbisRenderContext& context,
-    OrbisCullMode cull_mode);
-void orbis_render_context_set_polygon_fill(
-    OrbisRenderContext& context,
-    bool enabled);
-void orbis_render_context_set_color_write_mask(
-    OrbisRenderContext& context,
-    std::uint8_t target_mask,
-    OrbisColorWriteMode write_mode);
+void orbis_render_context_submit_frame(PS4Context& context);
+void orbis_render_context_reset_active_frame(PS4Context& context);
 
 }  // namespace rb4

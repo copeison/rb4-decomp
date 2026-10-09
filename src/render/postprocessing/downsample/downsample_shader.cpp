@@ -169,7 +169,7 @@ void render_downsample_shader_construct(void* shader) {
 // output (mode 1) selects the BT.709-to-BT.2020 permutation.
 void render_downsample_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderDownsampleDrawParameters& parameters) {
     constexpr std::size_t kPixelKey = 3;
     constexpr std::uint32_t kTextureFlags = 2;

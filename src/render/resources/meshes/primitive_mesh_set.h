@@ -6,7 +6,6 @@ class RndMesh;
 
 namespace rb4 {
 
-
 struct RenderPrimitiveMeshSet {
     RndMesh** meshes;
     std::size_t mesh_count;

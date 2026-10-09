@@ -5,37 +5,37 @@
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
 #include "render/shaders/RndShaderEnums.h"
 
-namespace rb4 {
+class PS4Context;
 
-struct OrbisRenderContext;
+namespace rb4 {
 
 struct OrbisSamplerDescriptor {
     std::uint32_t registers[4];
 };
 
 void orbis_render_context_bind_graphics_sampler(
-    OrbisRenderContext& context,
+    PS4Context& context,
     RndShaderProgramType stage,
     std::uint32_t slot,
     const OrbisSamplerDescriptor& sampler);
 void orbis_render_context_bind_compute_sampler(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t slot,
     const OrbisSamplerDescriptor& sampler);
-void orbis_render_context_clear_vertex_shader(OrbisRenderContext& context);
-void orbis_render_context_clear_geometry_shader(OrbisRenderContext& context);
-void orbis_render_context_clear_pixel_shader(OrbisRenderContext& context);
-void orbis_render_context_clear_compute_shader(OrbisRenderContext& context);
+void orbis_render_context_clear_vertex_shader(PS4Context& context);
+void orbis_render_context_clear_geometry_shader(PS4Context& context);
+void orbis_render_context_clear_pixel_shader(PS4Context& context);
+void orbis_render_context_clear_compute_shader(PS4Context& context);
 bool orbis_render_context_graphics_resources_active(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 void orbis_render_context_clear_gnm_rw_textures(
-    OrbisRenderContext& context,
+    PS4Context& context,
     RndShaderProgramType stage);
 void orbis_render_context_clear_gnm_textures(
-    OrbisRenderContext& context,
+    PS4Context& context,
     RndShaderProgramType stage);
 void orbis_render_context_clear_gnm_buffers(
-    OrbisRenderContext& context,
+    PS4Context& context,
     RndShaderProgramType stage);
 
 }  // namespace rb4

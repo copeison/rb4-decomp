@@ -7,7 +7,7 @@ namespace rb4 {
 // Reconstructed from eboot.elf at 0x5F2B40.
 void bink_render_manager_prepare_frame(
     BinkRenderManager& manager,
-    RenderContext& context) {
+    RndContext& context) {
     bink_render_context_prepare(context);
     for (auto* video : manager.conversion_slots) {
         if (video != nullptr && video->conversion_pending) {

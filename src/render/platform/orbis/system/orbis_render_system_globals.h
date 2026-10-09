@@ -8,10 +8,11 @@
 class NamedThread;
 class Thread;
 
+class PS4Context;
+
 namespace rb4 {
 
 struct OrbisRenderSystem;
-struct OrbisRenderContext;
 struct OrbisBackBuffer;
 struct OrbisBufferDescriptor;
 struct RenderSystem;
@@ -20,7 +21,7 @@ extern OrbisRenderSystem* g_orbis_render_system;
 
 OrbisRenderSystem* orbis_render_system_instance();
 RenderSystem& orbis_render_system_base(OrbisRenderSystem& system);
-OrbisRenderContext& orbis_render_system_context(OrbisRenderSystem& system);
+PS4Context& orbis_render_system_context(OrbisRenderSystem& system);
 std::int32_t orbis_video_output_handle(const OrbisRenderSystem& system);
 SceKernelEqueue orbis_event_queue(const OrbisRenderSystem& system);
 void orbis_set_video_output_handle(
@@ -55,7 +56,7 @@ void orbis_release_all_retired_allocations_locked(
     OrbisRenderSystem& system);
 void render_system_set_render_context(
     OrbisRenderSystem& system,
-    OrbisRenderContext& context);
+    PS4Context& context);
 void render_system_set_back_buffer(
     OrbisRenderSystem& system,
     OrbisBackBuffer& back_buffer);

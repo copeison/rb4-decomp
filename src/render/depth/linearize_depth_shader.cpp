@@ -109,7 +109,7 @@ void render_linearize_depth_shader_construct(void* shader) {
 // Reconstructed from eboot.elf at 0x63EFD0.
 void render_linearize_depth_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& depth) {
     render_shader_draw_with_pixel_texture(shader, context, depth, 288);
 }

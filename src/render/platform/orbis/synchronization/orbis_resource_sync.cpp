@@ -2,6 +2,7 @@
 
 #include "render/core/system/render_epoch.h"
 #include "render/platform/orbis/synchronization/orbis_resource_sync_adapters.h"
+#include "renderps4/context/PS4Context.h"
 
 namespace rb4 {
 
@@ -13,7 +14,7 @@ constexpr std::uint32_t kResourceReadyValue = 1;
 
 // Reconstructed from eboot.elf at 0x8EB3E0.
 void orbis_render_context_signal_resource(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const void* resource,
     volatile std::uint32_t*& shared_label) {
     if (shared_label == nullptr) {
@@ -40,7 +41,7 @@ void orbis_render_context_signal_resource(
 
 // Reconstructed from eboot.elf at 0x8EB590.
 void orbis_render_context_wait_for_resource(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const void* resource) {
     auto* signal =
         orbis_render_context_find_resource_signal(context, resource);

@@ -5,7 +5,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "utl/text/Symbol.h"
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/resources/shaders/primary_shader_dispatch.h"
 #include "render/resources/shaders/primary_shader_resource.h"
 #include "render/resources/shaders/shader_backend_state.h"
@@ -176,7 +176,7 @@ void render_error_shader_bind(
     std::int32_t geometry_type) {
     constexpr std::size_t kVertexKey = 0;
     constexpr std::size_t kPixelKey = 3;
-    auto& render_context = *static_cast<RenderContext*>(context);
+    auto& render_context = *static_cast<RndContext*>(context);
     const auto& geometry = binding(shader, 0);
     const auto& shading = binding(shader, 1);
     std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
@@ -187,7 +187,7 @@ void render_error_shader_bind(
     keys[kPixelKey] = static_cast<std::uint64_t>(static_cast<std::int64_t>(
         static_cast<std::int32_t>(
             static_cast<std::uint32_t>(
-                render_context_shading_mode(render_context) -
+                (render_context).mShadingMode -
                 shading.first_value)
             << shading.bit_offset)));
     render_primary_shader_bind(primary_shader(shader), render_context, keys);

@@ -2,27 +2,28 @@
 
 #include <cstdint>
 
+class PS4Context;
+
 namespace rb4 {
 
-struct OrbisRenderContext;
 bool orbis_render_context_recording_graphics(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 bool orbis_render_context_recording_compute(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 void orbis_render_context_emit_graphics_fence_signal(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t* address,
     std::uint32_t value);
 void orbis_render_context_emit_compute_fence_signal(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t* address,
     std::uint32_t value);
 void orbis_render_context_emit_graphics_fence_wait(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const std::uint32_t* address,
     std::uint32_t value);
 void orbis_render_context_emit_compute_fence_wait(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const std::uint32_t* address,
     std::uint32_t value);
 

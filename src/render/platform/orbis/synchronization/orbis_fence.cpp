@@ -1,14 +1,15 @@
 #include "render/platform/orbis/synchronization/orbis_fence.h"
+#include "renderps4/context/PS4Context.h"
 
 #include "render/platform/orbis/synchronization/orbis_fence_commands.h"
 #include "renderps4/system/PS4Fence.h"
 
-namespace rb4 {
+using namespace rb4;
 
 // Reconstructed from eboot.elf at 0x8EB730.
-void orbis_render_context_signal_fence(
-    OrbisRenderContext& context,
-    PS4Fence& fence) {
+void PS4Context::_SignalFenceImpl(RndFence& baseFence) {
+    auto& context = *this;
+    auto& fence = static_cast<PS4Fence&>(baseFence);
     auto* address = fence.mLabel;
     const auto value = fence.NextValue();
     if (orbis_render_context_recording_graphics(context)) {
@@ -21,9 +22,9 @@ void orbis_render_context_signal_fence(
 }
 
 // Reconstructed from eboot.elf at 0x8EB7F0.
-void orbis_render_context_wait_fence(
-    OrbisRenderContext& context,
-    const PS4Fence& fence) {
+void PS4Context::_WaitFenceImpl(const RndFence& baseFence) {
+    auto& context = *this;
+    const auto& fence = static_cast<const PS4Fence&>(baseFence);
     const auto* address = fence.mLabel;
     const auto value = fence.mSequence;
     if (orbis_render_context_recording_graphics(context)) {
@@ -34,5 +35,3 @@ void orbis_render_context_wait_fence(
             context, address, value);
     }
 }
-
-}  // namespace rb4

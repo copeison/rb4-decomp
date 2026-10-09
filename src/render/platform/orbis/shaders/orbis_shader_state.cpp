@@ -1,9 +1,12 @@
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
+#include "renderps4/context/PS4Context.h"
 #include "render/shaders/RndShaderEnums.h"
 
 #include <cstdint>
 
 #include "render/platform/orbis/shaders/orbis_shader_state_adapters.h"
+
+using namespace rb4;
 
 namespace rb4 {
 
@@ -62,13 +65,12 @@ OrbisSamplerDescriptor build_sampler_descriptor(
 
 }  // namespace
 
+}  // namespace rb4
+
 // Reconstructed from eboot.elf at 0x8EA830.
-void orbis_render_context_set_sampler(
-    OrbisRenderContext& context,
-    RndShaderProgramType stage,
-    std::uint32_t slot,
-    OrbisSamplerAddressMode address_mode,
-    std::uint32_t filter_mode) {
+void PS4Context::_SetSamplerImpl(RndShaderProgramType stage, unsigned int slot, unsigned int wrap, unsigned int filter_mode) {
+    auto& context = *this;
+    const auto address_mode = static_cast<rb4::OrbisSamplerAddressMode>(wrap);
     const auto sampler = build_sampler_descriptor(address_mode, filter_mode);
     switch (stage) {
     case kShaderProgramVertex:
@@ -87,9 +89,8 @@ void orbis_render_context_set_sampler(
 }
 
 // Reconstructed from eboot.elf at 0x8EA920.
-void orbis_render_context_clear_shader(
-    OrbisRenderContext& context,
-    RndShaderProgramType stage) {
+void PS4Context::_DeactivateShaderProgramTypeImpl(RndShaderProgramType stage) {
+    auto& context = *this;
     switch (stage) {
     case kShaderProgramVertex:
         orbis_render_context_clear_vertex_shader(context);
@@ -110,9 +111,8 @@ void orbis_render_context_clear_shader(
 }
 
 // Reconstructed from eboot.elf at 0x8E9810.
-void orbis_render_context_clear_rw_resources(
-    OrbisRenderContext& context,
-    std::uint32_t stage_mask) {
+void PS4Context::_DeselectAllReadWriteTexturesImpl(unsigned int stage_mask) {
+    auto& context = *this;
     if (!orbis_render_context_graphics_resources_active(context)) {
         return;
     }
@@ -127,9 +127,8 @@ void orbis_render_context_clear_rw_resources(
 }
 
 // Reconstructed from eboot.elf at 0x8E9940.
-void orbis_render_context_clear_read_resources(
-    OrbisRenderContext& context,
-    std::uint32_t stage_mask) {
+void PS4Context::_DeselectAllSourceTexturesImpl(unsigned int stage_mask) {
+    auto& context = *this;
     if (!orbis_render_context_graphics_resources_active(context)) {
         return;
     }
@@ -143,5 +142,3 @@ void orbis_render_context_clear_read_resources(
         orbis_render_context_clear_gnm_buffers(context, stage);
     }
 }
-
-}  // namespace rb4

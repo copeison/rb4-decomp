@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 struct BinkVideoRenderObject {
     std::uint8_t reserved_0[136];
@@ -31,6 +31,6 @@ static_assert(sizeof(BinkRenderManager) == 72);
 
 void bink_render_manager_prepare_frame(
     BinkRenderManager& manager,
-    RenderContext& context);
+    RndContext& context);
 
 }  // namespace rb4

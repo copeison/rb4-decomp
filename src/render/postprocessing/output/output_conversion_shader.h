@@ -5,9 +5,9 @@
 
 class RndTextureBase;
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 // 24-byte parameter block for the final output-conversion draw.
 struct RenderOutputConversionDrawParameters {
@@ -27,7 +27,7 @@ static_assert(sizeof(RenderOutputConversionDrawParameters) == 0x18);
 
 void render_output_conversion_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderOutputConversionDrawParameters& parameters);
 
 }  // namespace rb4

@@ -466,6 +466,10 @@
 - [x] Convert meshes to original classes: `RndDrawable`, `RndDynamicGpuData`,
   `RndMesh`, and the `RndMeshTyped`/`PS4MeshTyped` templates, which replace
   seven copied per-layout files. Forward the update context instead of null.
+- [x] Convert the render context to original classes: `RndContext` (constructor,
+  `Init`, `Terminate`, and the 34-slot vtable) and `PS4Context`, whose slot
+  bodies move from free functions into methods. Merge the submission-resource
+  record into `RndResourceBarrier`.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

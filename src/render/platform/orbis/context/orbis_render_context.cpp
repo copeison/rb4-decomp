@@ -1,4 +1,5 @@
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "renderps4/context/PS4Context.h"
 
 #include <cstddef>
 
@@ -7,11 +8,12 @@
 #include "render/platform/orbis/context/orbis_render_context_adapters.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
+using namespace rb4;
+
 namespace rb4 {
 
 namespace {
 
-constexpr std::size_t kOrbisRenderContextSize = 0x44890;
 constexpr std::size_t kTransientVertexCapacity = 0x40000;
 constexpr std::size_t kCueSlotCount = 64;
 constexpr std::size_t kCueHeapBytesPerSlot = 39872;
@@ -51,19 +53,18 @@ static_assert(
 
 }  // namespace
 
-OrbisRenderContext* orbis_render_context_create(
+PS4Context* orbis_render_context_create(
     OrbisRenderSystem& system) {
-    auto* storage = operator new(kOrbisRenderContextSize);
-    auto* context = static_cast<OrbisRenderContext*>(storage);
-    orbis_render_context_construct(*context);
+    auto* context = new PS4Context;
     render_system_set_render_context(system, *context);
     return context;
 }
 
+}  // namespace rb4
+
 // Reconstructed from eboot.elf at 0x8E72B0.
-void orbis_render_context_construct(OrbisRenderContext& context) {
-    orbis_render_context_construct_base(context);
-    orbis_render_context_install_vtable(context);
+PS4Context::PS4Context() : RndContext(false) {
+    auto& context = *this;
     orbis_render_context_initialize_command_state(context);
 
     for (std::size_t slot = 0; slot < kOrbisComputeContextCount; ++slot) {
@@ -112,9 +113,11 @@ void orbis_render_context_construct(OrbisRenderContext& context) {
         context, kInitialLabelCapacity);
 }
 
+namespace rb4 {
+
 // Reconstructed from eboot.elf at 0x8E7AF0.
 void orbis_render_context_create_gfx_contexts(
-    OrbisRenderContext& context) {
+    PS4Context& context) {
     const auto cue_heap_size = kCueSlotCount * kCueHeapBytesPerSlot;
     for (std::size_t slot = 0; slot < kOrbisFrameSlotCount; ++slot) {
         orbis_render_context_initialize_gfx_slot(
@@ -130,27 +133,27 @@ void orbis_render_context_create_gfx_contexts(
 
 // Reconstructed from eboot.elf at 0x8E7DF0.
 void orbis_render_context_create_gpu_timestamp_pool(
-    OrbisRenderContext& context) {
+    PS4Context& context) {
     orbis_render_context_initialize_timestamp_records(
         context, kTimestampBufferSize);
 }
 
 bool orbis_render_context_compute_queues_enabled(
-    const OrbisRenderContext& context) {
+    const PS4Context& context) {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
     return !runtime->compute_queues_disabled;
 }
 
 std::size_t orbis_render_context_active_frame(
-    const OrbisRenderContext& context) {
+    const PS4Context& context) {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
     return runtime->active_frame;
 }
 
 OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame,
     std::size_t format) {
     auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
@@ -161,7 +164,7 @@ OrbisTransientVertexBuffer& orbis_render_context_transient_vertex_buffer(
 }
 
 OrbisRenderCommandContext& orbis_active_render_command_context(
-    OrbisRenderContext& context) {
+    PS4Context& context) {
     auto* bytes = reinterpret_cast<std::uint8_t*>(&context);
     return *reinterpret_cast<OrbisRenderCommandContext*>(
         bytes + kGraphicsCommandContextOffset +
@@ -170,13 +173,13 @@ OrbisRenderCommandContext& orbis_active_render_command_context(
 }
 
 bool orbis_render_context_submissions_complete(
-    const OrbisRenderContext& context) {
+    const PS4Context& context) {
     return orbis_render_context_frame_submissions_complete(
         context, orbis_render_context_active_frame(context));
 }
 
 bool orbis_render_context_frame_submissions_complete(
-    const OrbisRenderContext& context,
+    const PS4Context& context,
     std::size_t frame) {
     const auto* runtime =
         reinterpret_cast<const OrbisRenderContextRuntimePrefix*>(&context);
@@ -189,7 +192,7 @@ bool orbis_render_context_frame_submissions_complete(
 }
 
 void orbis_render_context_mark_compute_completion_pending(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame,
     std::size_t slot) {
     auto* runtime =
@@ -198,7 +201,7 @@ void orbis_render_context_mark_compute_completion_pending(
 }
 
 void orbis_render_context_mark_gfx_completion_pending(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame) {
     auto* runtime =
         reinterpret_cast<OrbisRenderContextRuntimePrefix*>(&context);
@@ -206,15 +209,18 @@ void orbis_render_context_mark_gfx_completion_pending(
 }
 
 void orbis_render_context_set_active_frame(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t frame) {
     auto* runtime =
         reinterpret_cast<OrbisRenderContextRuntimePrefix*>(&context);
     runtime->active_frame = frame;
 }
 
+}  // namespace rb4
+
 // Reconstructed from eboot.elf at 0x8E8070.
-void orbis_render_context_destruct(OrbisRenderContext& context) {
+PS4Context::~PS4Context() {
+    auto& context = *this;
     orbis_render_context_release_label_pool(context);
     orbis_render_context_release_timestamp_pool(context);
     for (std::size_t bank = kOrbisFrameSlotCount; bank-- > 0;) {
@@ -231,14 +237,10 @@ void orbis_render_context_destruct(OrbisRenderContext& context) {
     orbis_render_context_destruct_base(context);
 }
 
-// Reconstructed from eboot.elf at 0x8E82B0.
-void orbis_render_context_delete(OrbisRenderContext& context) {
-    orbis_render_context_destruct(context);
-    operator delete(&context);
-}
+namespace rb4 {
 
 // Reconstructed from eboot.elf at 0x8E82D0.
-void orbis_render_context_submit_frame(OrbisRenderContext& context) {
+void orbis_render_context_submit_frame(PS4Context& context) {
     const auto frame = orbis_render_context_active_frame(context);
     orbis_render_context_emit_end_of_frame_event(context, frame);
 
@@ -262,7 +264,7 @@ void orbis_render_context_submit_frame(OrbisRenderContext& context) {
 }
 
 // Reconstructed from eboot.elf at 0x8E8450.
-void orbis_render_context_reset_active_frame(OrbisRenderContext& context) {
+void orbis_render_context_reset_active_frame(PS4Context& context) {
     const auto frame = orbis_render_context_active_frame(context);
     orbis_render_context_reset_gfx_slot(context, frame);
     orbis_render_context_initialize_gfx_hardware_state(context, frame);
@@ -288,3 +290,10 @@ void orbis_render_context_reset_active_frame(OrbisRenderContext& context) {
 }
 
 }  // namespace rb4
+
+// Reconstructed from eboot.elf at 0x8EA2A0, 0x8EA2B0, 0x8EA2C0, and 0x8EA730:
+// the PS4 context ignores these states.
+void PS4Context::_SetDepthClipEnabledImpl(bool) {}
+void PS4Context::_SetDepthBiasEnabledImpl(bool) {}
+void PS4Context::_SetThickLinesImpl(bool) {}
+void PS4Context::_DrawIndirectImpl(RndPrimitive, const RndComputeBuffer&) {}

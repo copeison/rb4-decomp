@@ -1,7 +1,6 @@
 #include "render/core/system/render_system_globals.h"
 
-#include "render/core/context/render_context.h"
-#include "render/core/context/render_context_adapters.h"
+#include "render/context/RndContext.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/system/render_system_state.h"
 
@@ -17,7 +16,7 @@ RenderFrameOwner* render_system_frame_owner(RenderSystem& system) {
     return render_system_core_state(system).frame_owner;
 }
 
-RenderContext& render_system_primary_render_context(RenderSystem& system) {
+RndContext& render_system_primary_render_context(RenderSystem& system) {
     return *render_system_core_state(system).render_context;
 }
 
@@ -27,7 +26,7 @@ std::size_t render_system_render_context_count(const RenderSystem& system) {
         runtime.render_contexts.end - runtime.render_contexts.begin);
 }
 
-RenderContext& render_system_render_context_at(
+RndContext& render_system_render_context_at(
     RenderSystem& system,
     std::size_t index) {
     return *render_system_core_state(system).render_contexts.begin[index];
@@ -40,8 +39,7 @@ bool render_system_has_pending_frame(const RenderSystem& system) {
 // Reconstructed from eboot.elf at 0x3DEF20.
 void render_system_activate_pending_frame(RenderSystem& system) {
     auto& runtime = render_system_core_state(system);
-    render_context_begin_frame(
-        *runtime.render_context, runtime.frame_activation_flags);
+    runtime.render_context->BeginFrame(runtime.frame_activation_flags);
     runtime.frame_activation_pending = false;
     runtime.frame_activation_flags = 0;
 }
@@ -80,7 +78,7 @@ void render_system_release_back_buffer(RenderSystem& system) {
 void render_system_release_render_contexts(RenderSystem& system) {
     auto& runtime = render_system_core_state(system);
     if (runtime.render_context != nullptr) {
-        render_context_delete(*runtime.render_context);
+        delete &(runtime.render_context);
         runtime.render_context = nullptr;
     }
 
@@ -88,7 +86,7 @@ void render_system_release_render_contexts(RenderSystem& system) {
         --runtime.render_contexts.end;
         auto* context = *runtime.render_contexts.end;
         if (context != nullptr) {
-            render_context_delete(*context);
+            delete &(context);
         }
     }
 }

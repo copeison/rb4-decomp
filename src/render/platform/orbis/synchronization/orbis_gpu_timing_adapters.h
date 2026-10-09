@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-namespace rb4 {
+class PS4Context;
 
-struct OrbisRenderContext;
+namespace rb4 {
 
 struct OrbisGpuTimestampRecord {
     bool active = false;
@@ -21,21 +21,21 @@ enum class OrbisGpuTimestampEvent : std::uint32_t {
 };
 
 bool orbis_render_context_recording_graphics(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 OrbisGpuTimestampRecord& orbis_render_context_acquire_gpu_timestamp(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_store_gpu_timestamp(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint64_t key,
     OrbisGpuTimestampRecord& timestamp);
 OrbisGpuTimestampRecord& orbis_render_context_find_gpu_timestamp(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint64_t key);
 void orbis_render_context_remove_gpu_timestamp(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint64_t key);
 void orbis_render_context_emit_gpu_timestamp(
-    OrbisRenderContext& context,
+    PS4Context& context,
     volatile std::uint64_t* destination,
     OrbisGpuTimestampEvent event);
 

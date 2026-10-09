@@ -9,9 +9,9 @@
 #include "render/resources/shaders/shader_parameter_registry.h"
 #include "render/resources/system/render_resource_manager.h"
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 struct RenderPrimaryShaderResource {
     struct Dispatch {
@@ -81,7 +81,7 @@ void render_primary_shader_initialize_backend(
     RenderPrimaryShaderResource& shader);
 bool render_primary_shader_bind(
     RenderPrimaryShaderResource& shader,
-    RenderContext& context,
+    RndContext& context,
     std::uint64_t (&keys)[kRenderShaderProgramKeyCount]);
 void render_primary_shader_register(RenderPrimaryShaderResource& shader);
 void render_primary_shader_clear_compiled_objects(

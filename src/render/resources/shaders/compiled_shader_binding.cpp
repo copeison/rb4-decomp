@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/shaders/RndShaderProgram.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
@@ -51,16 +51,16 @@ RndShaderProgram* find_object(
 // only looks up stage and shading-mode names for a stripped diagnostic there.
 bool render_compiled_shader_objects_bind(
     RenderManagedObjectArray (&objects)[kRenderShaderStageCount],
-    RenderContext& context,
+    RndContext& context,
     std::int32_t variant,
     const std::uint64_t (&keys)[kRenderShaderProgramKeyCount]) {
-    auto& active = render_context_active_shader_stages(context);
+    auto& active = (context).mActiveShaderStages;
     for (std::uint32_t stage = 0; stage < kRenderShaderStageCount; ++stage) {
         const auto stage_bit = static_cast<std::uint8_t>(1U << stage);
         if (has_program(variant, kStageProgramBits[stage])) {
             active = static_cast<std::uint8_t>(active | stage_bit);
         } else if ((active & stage_bit) != 0) {
-            render_context_unbind_shader_stage(context, stage);
+            context.DeactivateShaderProgramType(static_cast<RndShaderProgramType>(stage));
         }
     }
 

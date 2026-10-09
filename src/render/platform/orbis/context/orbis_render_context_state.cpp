@@ -1,4 +1,5 @@
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "renderps4/context/PS4Context.h"
 
 #include <algorithm>
 #include <array>
@@ -7,6 +8,8 @@
 
 #include "render/platform/orbis/context/orbis_render_context_state_adapters.h"
 #include "render/core/system/render_runtime_adapters.h"
+
+using namespace rb4;
 
 namespace rb4 {
 
@@ -26,17 +29,16 @@ std::uint8_t stencil_mask(std::uint32_t index) {
 
 }  // namespace
 
+}  // namespace rb4
+
 // Reconstructed from eboot.elf at 0x8E8850.
-void orbis_render_context_reset_pipeline_state(OrbisRenderContext& context) {
+void PS4Context::_BeginFrameImpl() {
+    auto& context = *this;
     orbis_render_context_reset_cached_pipeline_state(context);
-    orbis_render_context_bind_render_targets(
-        context,
-        kUnboundTargetKind,
-        orbis_default_render_target_binding());
-    orbis_render_context_set_blend_mode(
-        context,
-        RndMaterialBlendMode::kSource,
-        orbis_default_blend_configuration());
+    context.PS4Context::_SetRenderTargetsImpl(
+        kUnboundTargetKind, orbis_default_render_target_binding());
+    context.PS4Context::_SetBlendModeImpl(
+        RndMaterialBlendMode::kSource, orbis_default_blend_configuration());
     orbis_render_context_set_default_raster_state(context);
     orbis_render_context_set_default_depth_stencil_state(context);
     orbis_render_context_disable_stream_output(context);
@@ -44,10 +46,8 @@ void orbis_render_context_reset_pipeline_state(OrbisRenderContext& context) {
 }
 
 // Reconstructed from eboot.elf at 0x8E8D20.
-void orbis_render_context_bind_render_targets(
-    OrbisRenderContext& context,
-    std::int32_t target_kind,
-    const OrbisRenderTargetBinding& binding) {
+void PS4Context::_SetRenderTargetsImpl(int target_kind, const RenderTargetParams& binding) {
+    auto& context = *this;
     std::array<const OrbisGpuRenderTarget*, kColorRenderTargetCount>
         color_targets{};
     const auto color_count = std::min(
@@ -91,10 +91,8 @@ void orbis_render_context_bind_render_targets(
 }
 
 // Reconstructed from eboot.elf at 0x8E92D0.
-void orbis_render_context_set_blend_mode(
-    OrbisRenderContext& context,
-    RndMaterialBlendMode mode,
-    const OrbisBlendConfiguration& configuration) {
+void PS4Context::_SetBlendModeImpl(rb4::RndMaterialBlendMode mode, const BlendParams& configuration) {
+    auto& context = *this;
     if (static_cast<std::int32_t>(mode) == kPerTargetBlendMode) {
         for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
             const auto control =
@@ -112,20 +110,15 @@ void orbis_render_context_set_blend_mode(
 }
 
 // Reconstructed from eboot.elf at 0x8E9F60.
-void orbis_render_context_set_depth_mode(
-    OrbisRenderContext& context,
-    std::uint32_t depth_mode) {
+void PS4Context::_SetDepthModeImpl(unsigned int depth_mode) {
+    auto& context = *this;
     orbis_render_context_cache_depth_mode(context, depth_mode);
     orbis_render_context_apply_depth_stencil_state(context);
 }
 
 // Reconstructed from eboot.elf at 0x8EA030.
-void orbis_render_context_set_stencil_state(
-    OrbisRenderContext& context,
-    std::uint32_t stencil_mode,
-    std::uint8_t reference,
-    std::uint32_t read_mask,
-    std::uint32_t write_mask) {
+void PS4Context::_SetStencilModeImpl(unsigned int stencil_mode, unsigned char reference, unsigned int read_mask, unsigned int write_mask) {
+    auto& context = *this;
     orbis_render_context_cache_stencil_state(
         context,
         stencil_mode,
@@ -136,38 +129,33 @@ void orbis_render_context_set_stencil_state(
 }
 
 // Reconstructed from eboot.elf at 0x8EA150.
-void orbis_render_context_set_front_face(
-    OrbisRenderContext& context,
-    bool counter_clockwise) {
+void PS4Context::_SetFrontFaceImpl(bool counter_clockwise) {
+    auto& context = *this;
     orbis_render_context_cache_front_face(context, counter_clockwise);
     orbis_render_context_apply_primitive_setup(context);
 }
 
 // Reconstructed from eboot.elf at 0x8EA1C0.
-void orbis_render_context_set_cull_mode(
-    OrbisRenderContext& context,
-    OrbisCullMode cull_mode) {
+void PS4Context::_SetCullModeImpl(RndCullMode cull_mode) {
+    auto& context = *this;
     orbis_render_context_cache_cull_mode(context, cull_mode);
     orbis_render_context_apply_primitive_setup(context);
 }
 
 // Reconstructed from eboot.elf at 0x8EA230.
-void orbis_render_context_set_polygon_fill(
-    OrbisRenderContext& context,
-    bool enabled) {
+void PS4Context::_SetFillModeImpl(bool enabled) {
+    auto& context = *this;
     orbis_render_context_cache_polygon_fill(context, enabled);
     orbis_render_context_apply_primitive_setup(context);
 }
 
 // Reconstructed from eboot.elf at 0x8E96F0.
-void orbis_render_context_set_color_write_mask(
-    OrbisRenderContext& context,
-    std::uint8_t target_mask,
-    OrbisColorWriteMode write_mode) {
+void PS4Context::_SetColorWriteMaskImpl(unsigned char target_mask, RndWriteMaskChannelSet write_mode) {
+    auto& context = *this;
     std::uint32_t channel_mask = 0;
-    if (write_mode == OrbisColorWriteMode::kRgba) {
+    if (write_mode == kWriteRGBA) {
         channel_mask = 0xF;
-    } else if (write_mode == OrbisColorWriteMode::kRgb) {
+    } else if (write_mode == kWriteRGB) {
         channel_mask = 0x7;
     }
 
@@ -181,5 +169,3 @@ void orbis_render_context_set_color_write_mask(
     orbis_render_context_cache_color_write_mask(
         context, target_mask, write_mode);
 }
-
-}  // namespace rb4

@@ -10,7 +10,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/core/debug/render_gpu_stat_block_adapters.h"
 #include "render/core/system/render_system_globals.h"
 #include "utl/text/Str.h"
@@ -443,13 +443,13 @@ void reset_frame_statistics(RenderGpuStatisticFrame& frame) {
 
 void accumulate_query_result(
     RenderGpuStatisticFrame& frame,
-    const RenderGpuStatistics& result) {
+    const RndGpuStatSample& result) {
     ++frame.query_count;
-    frame.elapsed_seconds += result.elapsed_seconds;
+    frame.elapsed_seconds += result.mSeconds;
     for (std::size_t index = 0;
          index < frame.hardware_counters.size();
          ++index) {
-        frame.hardware_counters[index] += result.hardware_counters[index];
+        frame.hardware_counters[index] += result.mCounters[index];
     }
 }
 
@@ -473,7 +473,7 @@ RenderGpuStatistic* find_gpu_statistic(
 
 void resolve_statistic_queries(
     RenderGpuStatBlock& block,
-    RenderContext& context) {
+    RndContext& context) {
     const auto frame_index = static_cast<std::size_t>(
         block.active_statistics_slot);
     const auto history_index = static_cast<std::size_t>(
@@ -489,7 +489,7 @@ void resolve_statistic_queries(
         for (auto* query = history.begin; query != history.end; ++query) {
             accumulate_query_result(
                 frame,
-                render_context_resolve_gpu_stat(context, *query));
+                (context)._EvalAndRetireGpuStatsImpl(*query));
         }
     }
 }
@@ -725,16 +725,16 @@ void render_gpu_stat_block_destruct(RenderGpuStatBlock& block) {
 // Reconstructed from eboot.elf at 0x62AF80.
 std::int64_t render_gpu_stat_block_begin(
     RenderGpuStatBlock& block,
-    RenderContext& context,
+    RndContext& context,
     const char* name) {
     if (block.backend == nullptr) {
         return -1;
     }
 
-    auto* parent_scope = render_context_last_gpu_stat_scope(context);
+    auto* parent_scope = (context).LastGpuStatScope();
     auto* parent = parent_scope == nullptr
         ? nullptr
-        : parent_scope->statistic;
+        : parent_scope->mStat;
     const char* full_name = name;
     char nested_name[4096]{};
     if (parent != nullptr) {
@@ -760,24 +760,22 @@ std::int64_t render_gpu_stat_block_begin(
     --block.lock_depth;
     scePthreadMutexUnlock(&block.mutex);
 
-    render_context_begin_gpu_stat(context, query_id);
-    render_context_push_gpu_stat_scope(
-        context, {statistic, query_id});
+    (context)._BeginGpuStatsImpl(query_id);
+    (context).PushGpuStatScope({statistic, query_id});
     return static_cast<std::int64_t>(query_id);
 }
 
 // Reconstructed from eboot.elf at 0x62B5B0.
 void render_gpu_stat_block_end(
     RenderGpuStatBlock& block,
-    RenderContext& context,
+    RndContext& context,
     std::int64_t query_id) {
     if (query_id < 0 || block.backend == nullptr) {
         return;
     }
 
-    render_context_pop_gpu_stat_scope(context);
-    render_context_end_gpu_stat(
-        context, static_cast<std::uint64_t>(query_id));
+    (context).PopGpuStatScope();
+    (context)._EndGpuStatsImpl(static_cast<std::uint64_t>(query_id));
 }
 
 // Reconstructed from eboot.elf at 0x62B960.

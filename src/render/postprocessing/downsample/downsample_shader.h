@@ -5,9 +5,9 @@
 
 class RndTextureBase;
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 // 16-byte parameter block for a downsample draw. The type selects one of the
 // HX_DOWNSAMPLE_COLOR_2X/4X and HX_DOWNSAMPLE_BLOOM_2X/4X programs.
@@ -23,7 +23,7 @@ static_assert(sizeof(RenderDownsampleDrawParameters) == 16);
 
 void render_downsample_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderDownsampleDrawParameters& parameters);
 
 }  // namespace rb4

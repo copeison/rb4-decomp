@@ -5,9 +5,9 @@
 
 class RndTextureBase;
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 // 48-byte parameter block assembled by the bloom pass.
 struct RenderBloomDrawParameters {
@@ -27,7 +27,7 @@ static_assert(sizeof(RenderBloomDrawParameters) == 0x30);
 
 void render_bloom_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderBloomDrawParameters& parameters);
 
 }  // namespace rb4

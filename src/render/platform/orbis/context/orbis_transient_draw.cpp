@@ -1,4 +1,5 @@
 #include "render/platform/orbis/context/orbis_transient_draw.h"
+#include "renderps4/context/PS4Context.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -8,15 +9,12 @@
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
-namespace rb4 {
+using namespace rb4;
 
 // Reconstructed from eboot.elf at 0x8EA2D0.
-void orbis_render_context_draw_transient(
-    OrbisRenderContext& context,
-    MeshPrimitiveType primitive_type,
-    RndVertexType format,
-    const void* vertices,
-    std::size_t vertex_count) {
+void PS4Context::_DrawPrimitivesImpl(RndPrimitive primitive, RndVertexType format, const void* vertices, unsigned long vertex_count) {
+    auto& context = *this;
+    const auto primitive_type = static_cast<rb4::MeshPrimitiveType>(primitive);
     const auto frame = orbis_render_context_active_frame(context);
     auto& transient = orbis_render_context_transient_vertex_buffer(
         context, frame, static_cast<std::size_t>(format));
@@ -46,5 +44,3 @@ void orbis_render_context_draw_transient(
         commands, static_cast<std::uint32_t>(vertex_count), indices);
     gnmx_finish_draw(commands);
 }
-
-}  // namespace rb4

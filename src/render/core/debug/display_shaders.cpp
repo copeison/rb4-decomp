@@ -237,7 +237,7 @@ void render_display_texture_cube_shader_construct(void* shader) {
 // Reconstructed from eboot.elf at 0x6F42D0.
 void render_display_sphere_map_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& texture) {
     render_shader_draw_with_pixel_texture(shader, context, texture, 288);
 }

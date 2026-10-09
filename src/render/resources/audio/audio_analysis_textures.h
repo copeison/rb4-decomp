@@ -5,9 +5,10 @@
 
 class RndTextureBase;
 
+class RndContext;
+
 namespace rb4 {
 
-struct RenderContext;
 struct RenderSystem;
 
 struct AudioAnalysisTextureSet {
@@ -35,6 +36,6 @@ void audio_analysis_texture_set_destruct(
     AudioAnalysisTextureSet& textures);
 void audio_analysis_textures_prepare_frame(
     AudioAnalysisTextureSet& textures,
-    RenderContext& context);
+    RndContext& context);
 
 }  // namespace rb4

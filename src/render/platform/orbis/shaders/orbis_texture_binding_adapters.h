@@ -4,9 +4,9 @@
 
 #include "render/platform/orbis/shaders/orbis_shader_state.h"
 
-namespace rb4 {
+class PS4Context;
 
-struct OrbisRenderContext;
+namespace rb4 {
 
 enum class OrbisGnmShaderStage : std::uint32_t {
     kCompute = 0,
@@ -18,33 +18,33 @@ enum class OrbisGnmShaderStage : std::uint32_t {
 };
 
 bool orbis_render_context_uses_compute_queue(
-    const OrbisRenderContext& context);
+    const PS4Context& context);
 void orbis_bind_graphics_texture(
-    OrbisRenderContext& context,
+    PS4Context& context,
     OrbisGnmShaderStage stage,
     std::uint32_t slot,
     const void* texture);
 void orbis_bind_graphics_rw_texture(
-    OrbisRenderContext& context,
+    PS4Context& context,
     OrbisGnmShaderStage stage,
     std::uint32_t slot,
     const void* texture);
 void orbis_bind_compute_texture_descriptor(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t slot,
     const void* texture);
 void orbis_bind_compute_rw_texture(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t slot,
     const void* texture);
 void orbis_bind_graphics_texture_sampler(
-    OrbisRenderContext& context,
+    PS4Context& context,
     OrbisGnmShaderStage stage,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
     std::uint32_t filter_mode);
 void orbis_bind_compute_texture_sampler(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t slot,
     OrbisSamplerAddressMode address_mode,
     std::uint32_t filter_mode);

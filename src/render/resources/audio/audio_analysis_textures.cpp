@@ -70,7 +70,7 @@ void audio_analysis_texture_set_destruct(
 // Reconstructed from eboot.elf at 0x457780.
 void audio_analysis_textures_prepare_frame(
     AudioAnalysisTextureSet& textures,
-    RenderContext& context) {
+    RndContext& context) {
     const auto widths = audio_analysis_texture_widths();
     if (texture_width_changed(textures.textures[0], widths.channels[0]) ||
         texture_width_changed(textures.textures[1], widths.channels[1])) {

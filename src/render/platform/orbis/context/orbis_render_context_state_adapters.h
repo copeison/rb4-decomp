@@ -4,6 +4,9 @@
 #include <cstdint>
 
 #include "render/platform/orbis/context/orbis_render_context.h"
+#include "renderps4/context/PS4Context.h"
+
+class PS4Context;
 
 namespace rb4 {
 
@@ -17,92 +20,92 @@ struct OrbisViewportRect {
     float height;
 };
 
-const OrbisRenderTargetBinding& orbis_default_render_target_binding();
-const OrbisBlendConfiguration& orbis_default_blend_configuration();
+const RndContext::RenderTargetParams& orbis_default_render_target_binding();
+const RndContext::BlendParams& orbis_default_blend_configuration();
 std::size_t orbis_render_target_color_count(
-    const OrbisRenderTargetBinding& binding);
+    const RndContext::RenderTargetParams& binding);
 const OrbisGpuRenderTarget* orbis_resolve_color_render_target(
-    const OrbisRenderTargetBinding& binding,
+    const RndContext::RenderTargetParams& binding,
     std::int32_t target_kind,
     std::size_t slot);
 const OrbisGpuDepthRenderTarget* orbis_resolve_depth_render_target(
-    const OrbisRenderTargetBinding& binding,
+    const RndContext::RenderTargetParams& binding,
     std::int32_t target_kind);
 OrbisViewportRect orbis_render_target_viewport(
-    const OrbisRenderTargetBinding& binding);
+    const RndContext::RenderTargetParams& binding);
 bool orbis_color_render_target_requires_sync(
-    const OrbisRenderTargetBinding& binding,
+    const RndContext::RenderTargetParams& binding,
     std::size_t slot);
 bool orbis_depth_render_target_requires_prepare(
-    const OrbisRenderTargetBinding& binding);
+    const RndContext::RenderTargetParams& binding);
 void orbis_render_context_bind_color_target(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t slot,
     const OrbisGpuRenderTarget* target);
 void orbis_render_context_bind_depth_target(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const OrbisGpuDepthRenderTarget* target);
 void orbis_render_context_set_viewport_and_scissor(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const OrbisViewportRect& viewport);
 void orbis_render_context_begin_render_target_sync(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_prepare_color_target(
-    OrbisRenderContext& context,
-    const OrbisRenderTargetBinding& binding,
+    PS4Context& context,
+    const RndContext::RenderTargetParams& binding,
     std::size_t slot);
 bool orbis_render_context_prepare_depth_target(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const OrbisGpuDepthRenderTarget& target,
-    const OrbisRenderTargetBinding& binding);
+    const RndContext::RenderTargetParams& binding);
 void orbis_render_context_finish_render_target_sync(
-    OrbisRenderContext& context);
+    PS4Context& context);
 std::uint32_t orbis_build_blend_control(
     RndMaterialBlendMode mode,
-    const OrbisBlendConfiguration& configuration,
+    const RndContext::BlendParams& configuration,
     std::size_t target_slot);
 void orbis_render_context_set_gnm_blend_control(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::size_t target_slot,
     std::uint32_t blend_control);
 void orbis_render_context_reset_cached_pipeline_state(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_set_default_raster_state(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_set_default_depth_stencil_state(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_disable_stream_output(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_clear_shader_resources(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_cache_depth_mode(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t depth_mode);
 void orbis_render_context_cache_stencil_state(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t stencil_mode,
     std::uint8_t reference,
     std::uint8_t read_mask,
     std::uint8_t write_mask);
 void orbis_render_context_apply_depth_stencil_state(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_cache_front_face(
-    OrbisRenderContext& context,
+    PS4Context& context,
     bool counter_clockwise);
 void orbis_render_context_cache_cull_mode(
-    OrbisRenderContext& context,
-    OrbisCullMode cull_mode);
+    PS4Context& context,
+    RndCullMode cull_mode);
 void orbis_render_context_cache_polygon_fill(
-    OrbisRenderContext& context,
+    PS4Context& context,
     bool enabled);
 void orbis_render_context_apply_primitive_setup(
-    OrbisRenderContext& context);
+    PS4Context& context);
 void orbis_render_context_set_gnm_render_target_mask(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint32_t write_mask);
 void orbis_render_context_cache_color_write_mask(
-    OrbisRenderContext& context,
+    PS4Context& context,
     std::uint8_t target_mask,
-    OrbisColorWriteMode write_mode);
+    RndWriteMaskChannelSet write_mode);
 
 }  // namespace rb4

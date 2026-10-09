@@ -1,8 +1,11 @@
 #include "render/platform/orbis/context/orbis_render_commands.h"
+#include "renderps4/context/PS4Context.h"
 
 #include <cstdint>
 
 #include "render/platform/orbis/context/orbis_render_commands_adapters.h"
+
+using namespace rb4;
 
 namespace rb4 {
 
@@ -12,12 +15,11 @@ constexpr std::uint32_t kDebugMarkerColor = 0xFF0000FF;
 
 }  // namespace
 
+}  // namespace rb4
+
 // Reconstructed from eboot.elf at 0x8EB870.
-void orbis_render_context_dispatch(
-    OrbisRenderContext& context,
-    std::uint32_t group_count_x,
-    std::uint32_t group_count_y,
-    std::uint32_t group_count_z) {
+void PS4Context::_DispatchComputeImpl(unsigned int group_count_x, unsigned int group_count_y, unsigned int group_count_z) {
+    auto& context = *this;
     if (orbis_render_context_recording_graphics(context)) {
         orbis_render_context_prepare_graphics_dispatch(context);
         orbis_render_context_dispatch_graphics(
@@ -31,9 +33,8 @@ void orbis_render_context_dispatch(
 }
 
 // Reconstructed from eboot.elf at 0x8EB970.
-void orbis_render_context_push_debug_marker(
-    OrbisRenderContext& context,
-    const char* name) {
+void PS4Context::_PushMarkerImpl(const char* name) {
+    auto& context = *this;
     if (orbis_render_context_recording_graphics(context)) {
         orbis_render_context_push_graphics_debug_marker(
             context, name, kDebugMarkerColor);
@@ -44,12 +45,11 @@ void orbis_render_context_push_debug_marker(
 }
 
 // Reconstructed from eboot.elf at 0x8EB9D0.
-void orbis_render_context_pop_debug_marker(OrbisRenderContext& context) {
+void PS4Context::_PopMarkerImpl() {
+    auto& context = *this;
     if (orbis_render_context_recording_graphics(context)) {
         orbis_render_context_pop_graphics_debug_marker(context);
     } else if (orbis_render_context_recording_compute(context)) {
         orbis_render_context_pop_compute_debug_marker(context);
     }
 }
-
-}  // namespace rb4

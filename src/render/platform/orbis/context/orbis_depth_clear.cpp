@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "render/platform/orbis/context/orbis_depth_clear_adapters.h"
+#include "renderps4/context/PS4Context.h"
 
 namespace rb4 {
 
@@ -17,7 +18,7 @@ std::uint32_t replicate_byte(std::uint8_t value) {
 
 // Reconstructed from eboot.elf at 0x8E99E0.
 bool orbis_render_context_clear_depth_stencil_target(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const OrbisGpuDepthRenderTarget& target,
     float depth,
     std::uint8_t stencil) {
@@ -47,7 +48,7 @@ bool orbis_render_context_clear_depth_stencil_target(
 
 // Reconstructed from eboot.elf at 0x8EBDA0.
 void orbis_render_context_draw_depth_clear(
-    OrbisRenderContext& context) {
+    PS4Context& context) {
     orbis_render_context_bind_depth_clear_shader(context);
     orbis_render_context_set_depth_clear_draw_state(context, false);
     orbis_render_context_unbind_pixel_shader(context);

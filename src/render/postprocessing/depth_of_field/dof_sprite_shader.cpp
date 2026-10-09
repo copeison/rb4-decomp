@@ -115,7 +115,7 @@ void render_dof_sprite_shader_construct(void* shader) {
 // sprite through the geometry program.
 void render_dof_sprite_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& bokeh,
     RndComputeBuffer& sprites) {
     constexpr std::uint32_t kVertexStage = 0;

@@ -35,3 +35,11 @@ RndShaderCBuffer::RndShaderCBuffer(
       mNumElements(numElements),
       mData(data),
       mSyncPending(true) {}
+
+void RndShaderCBuffer::SafeDelete(RndShaderCBuffer*& buffer) {
+    if (buffer != nullptr) {
+        buffer->~RndShaderCBuffer();
+        MemFree(buffer);
+        buffer = nullptr;
+    }
+}

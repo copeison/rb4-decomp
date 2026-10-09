@@ -174,7 +174,7 @@ void render_output_conversion_shader_construct(void* shader) {
 // key; the color-space and transfer-function permutations are pixel-only.
 void render_output_conversion_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderOutputConversionDrawParameters& parameters) {
     constexpr std::size_t kPixelKey = 3;
     constexpr std::uint32_t kTextureFlags = 2;

@@ -171,7 +171,7 @@ void render_bloom_shader_construct(void* shader) {
 // half-size and hue-preservation permutation on the pixel program.
 void render_bloom_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderBloomDrawParameters& parameters) {
     constexpr std::size_t kPixelKey = 3;
 

@@ -2,17 +2,18 @@
 
 #include <cstdint>
 
+class PS4Context;
+
 namespace rb4 {
 
 struct OrbisGpuDepthRenderTarget;
-struct OrbisRenderContext;
 
 bool orbis_render_context_clear_depth_stencil_target(
-    OrbisRenderContext& context,
+    PS4Context& context,
     const OrbisGpuDepthRenderTarget& target,
     float depth,
     std::uint8_t stencil);
 void orbis_render_context_draw_depth_clear(
-    OrbisRenderContext& context);
+    PS4Context& context);
 
 }  // namespace rb4

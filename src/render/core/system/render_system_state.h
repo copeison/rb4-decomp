@@ -9,18 +9,19 @@
 
 class RndFactory;
 
+class RndContext;
+
 namespace rb4 {
 
-struct RenderContext;
 struct RenderFrameOwner;
 struct RenderSettings;
 struct RenderSystem;
 struct RenderTargetState;
 
 struct RenderContextArray {
-    RenderContext** begin;
-    RenderContext** end;
-    RenderContext** capacity;
+    RndContext** begin;
+    RndContext** end;
+    RndContext** capacity;
     void* allocator;
     std::uint32_t hdr_output_mode;
     std::uint32_t reserved_36;
@@ -42,7 +43,7 @@ struct RenderSystemCoreState {
     bool initialized;
     std::uint8_t reserved_33[7];
     GameSystemInitOptions init_options;
-    RenderContext* render_context;
+    RndContext* render_context;
     bool frame_activation_pending;
     std::uint8_t reserved_65[3];
     std::uint32_t frame_activation_flags;

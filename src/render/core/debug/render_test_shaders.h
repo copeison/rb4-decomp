@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace rb4 {
+class RndContext;
 
-struct RenderContext;
+namespace rb4 {
 
 struct RenderTestPatternDrawParameters {
     float color0[4];
@@ -28,11 +28,11 @@ static_assert(sizeof(RenderTestSimpleDrawParameters) == 0x14);
 
 void render_test_pattern_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderTestPatternDrawParameters& parameters);
 void render_test_simple_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderTestSimpleDrawParameters& parameters);
 
 }  // namespace rb4

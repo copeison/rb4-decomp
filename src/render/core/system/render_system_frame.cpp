@@ -7,8 +7,8 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "utl/time/Timer.h"
-#include "render/core/context/render_context.h"
-#include "render/core/context/render_context_adapters.h"
+#include "render/context/RndContext.h"
+#include "render/context/RndResourceBarrier.h"
 #include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/frame/render_frame_owner.h"
 #include "render/core/settings/render_settings.h"
@@ -121,18 +121,16 @@ bool render_system_attach_frame_owner(
         targets.count,
         runtime.active_target_states.begin);
 
-    render_context_begin_frame(*runtime.render_context, 0);
+    runtime.render_context->BeginFrame(0);
     return true;
 }
 
 // Reconstructed from the primary-frame branch of eboot.elf at 0x3DE4A0.
 void prepare_primary_context_submission(
     RenderSystem& system,
-    RenderContext& context) {
+    RndContext& context) {
     constexpr std::size_t kMaxSubmissionResources = 12;
-    std::array<
-        RenderContextSubmissionResource,
-        kMaxSubmissionResources> resources{};
+    std::array<RndResourceBarrier, kMaxSubmissionResources> resources{};
     std::size_t resource_count = 0;
 
     const auto& owners =
@@ -152,17 +150,14 @@ void prepare_primary_context_submission(
             const auto& target_resources =
                 reinterpret_cast<const RenderTargetResources&>(
                     *targets.states[target_index]);
-            resources[resource_count++] = {
-                nullptr,
-                target_resources.source_texture,
-                -1,
-                4,
-            };
+            auto& barrier = resources[resource_count++];
+            barrier.mResource = target_resources.source_texture;
+            barrier.mSubresource = ~0UL;
+            barrier.mBefore = RndResourceState::kRenderTarget;
         }
     }
 
-    render_context_prepare_submission_resources(
-        context, resources.data(), resource_count);
+    context._ResourceBarrierImpl(resource_count, resources.data());
 }
 
 void update_frame_phase_state(RenderSystem& system) {
@@ -212,7 +207,7 @@ void render_system_prepare_frame(
             60.0F;
     }
 
-    runtime.render_context->frame_active = true;
+    runtime.render_context->mFrameActive = true;
     if (runtime.frame_activation_pending) {
         render_system_activate_pending_frame(system);
     }
@@ -262,7 +257,7 @@ void render_system_finish_frame(
     }
 
     runtime.frame_in_progress = false;
-    runtime.render_context->frame_active = false;
+    runtime.render_context->mFrameActive = false;
     render_system_release_frame_lock(system);
 
     if (!auxiliary_frame) {
@@ -285,7 +280,7 @@ void render_system_begin_auxiliary_frame(
     if (target_state != nullptr) {
         runtime.active_target_states.begin[0] = target_state;
     }
-    render_context_begin_frame(*runtime.render_context, 0);
+    runtime.render_context->BeginFrame(0);
 }
 
 // Reconstructed from eboot.elf at 0x3DE9E0.

@@ -6,7 +6,7 @@
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "utl/text/Symbol.h"
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/system/render_system_state.h"
 #include "render/resources/shaders/builtin_shader_resources.h"
@@ -297,7 +297,7 @@ void render_primary_shader_bind_nothing(void*, void*) {}
 // falls back through dispatch slot 8.
 bool render_primary_shader_bind(
     RenderPrimaryShaderResource& shader,
-    RenderContext& context,
+    RndContext& context,
     std::uint64_t (&keys)[kRenderShaderProgramKeyCount]) {
     // Table at 0x12A99A0, indexed by slice mode.
     constexpr std::uint32_t kSliceCounts[] = {1, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -307,7 +307,7 @@ bool render_primary_shader_bind(
         render_primary_shader_initialize_backend(shader);
     }
 
-    const auto mode = render_context_slice_mode(context);
+    const auto mode = (context).mSliceMode;
     std::uint32_t slices = 0;
     if (mode == -1) {
         slices = 1;

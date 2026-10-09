@@ -14,7 +14,6 @@ class RndMesh;
 
 namespace rb4 {
 
-
 struct RenderPartialFrameState {
     std::int32_t values_00[5];
     std::uint32_t reserved_14;

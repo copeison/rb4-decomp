@@ -1,6 +1,7 @@
 #include "renderps4/system/PS4RenderUtl.h"
 
 #include "render/platform/orbis/shaders/orbis_texture_binding_adapters.h"
+#include "renderps4/context/PS4Context.h"
 
 namespace {
 
@@ -22,7 +23,7 @@ void SelectSampledTexture(
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
-    auto& ps4 = AsPS4Context(context);
+    auto& ps4 = static_cast<PS4Context&>(context);
     const auto index = static_cast<unsigned int>(slot);
     if (ShouldSelectSampler(slot, flags)) {
         rb4::orbis_bind_graphics_texture_sampler(
@@ -91,7 +92,7 @@ void PS4RenderUtl::SelectTextureForPS(
     unsigned int flags) {
     if ((flags & kSelectWritable) != 0) {
         rb4::orbis_bind_graphics_rw_texture(
-            AsPS4Context(context),
+            static_cast<PS4Context&>(context),
             OrbisGnmShaderStage::kPixel,
             static_cast<unsigned int>(slot),
             texture);
@@ -109,7 +110,7 @@ void PS4RenderUtl::SelectTextureForCS(
     unsigned int wrap,
     unsigned int filter,
     unsigned int flags) {
-    auto& ps4 = AsPS4Context(context);
+    auto& ps4 = static_cast<PS4Context&>(context);
     const auto index = static_cast<unsigned int>(slot);
     const bool computeQueue = rb4::orbis_render_context_uses_compute_queue(ps4);
     if ((flags & kSelectWritable) != 0) {

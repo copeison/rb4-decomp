@@ -4,9 +4,9 @@
 
 #include "render/shaders/RndShaderProgram.h"
 
-namespace rb4 {
+class PS4Context;
 
-struct OrbisRenderContext;
+namespace rb4 {
 
 enum class OrbisSamplerAddressMode : std::uint32_t {
     kClamp = 1,
@@ -16,20 +16,5 @@ enum class OrbisSamplerAddressMode : std::uint32_t {
     kMirror = 5,
 };
 
-void orbis_render_context_set_sampler(
-    OrbisRenderContext& context,
-    RndShaderProgramType stage,
-    std::uint32_t slot,
-    OrbisSamplerAddressMode address_mode,
-    std::uint32_t filter_mode);
-void orbis_render_context_clear_shader(
-    OrbisRenderContext& context,
-    RndShaderProgramType stage);
-void orbis_render_context_clear_rw_resources(
-    OrbisRenderContext& context,
-    std::uint32_t stage_mask);
-void orbis_render_context_clear_read_resources(
-    OrbisRenderContext& context,
-    std::uint32_t stage_mask);
 
 }  // namespace rb4

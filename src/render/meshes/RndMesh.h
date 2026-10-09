@@ -10,6 +10,8 @@
 #include "utl/containers/Vector.h"
 #include "utl/containers/VectorAdapter.h"
 
+class RndContext;
+
 namespace rb4 {
 struct OrbisMeshInstanceData;
 }  // namespace rb4

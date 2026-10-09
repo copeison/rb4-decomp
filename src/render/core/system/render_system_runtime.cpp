@@ -7,7 +7,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/core/context/render_context.h"
+#include "render/context/RndContext.h"
 #include "render/core/debug/render_gpu_stat_block.h"
 #include "render/core/synchronization/render_deferred_release.h"
 #include "render/core/system/render_epoch.h"
@@ -165,11 +165,10 @@ void render_system_initialize(
     initialize_runtime_resources(system);
     render_system_initialize_builtin_buffers(system);
 
-    render_context_initialize(render_system_primary_render_context(system));
+    render_system_primary_render_context(system).Init();
     const auto context_count = render_system_render_context_count(system);
     for (std::size_t index = 0; index < context_count; ++index) {
-        render_context_initialize(
-            render_system_render_context_at(system, index));
+        render_system_render_context_at(system, index).Init();
     }
 
     render_system_platform_finish_initialization(system);
@@ -230,11 +229,10 @@ void render_system_shutdown(RenderSystem& system) {
     shutdown_runtime_resources(system);
     render_system_release_builtin_buffers(system);
 
-    render_context_shutdown(render_system_primary_render_context(system));
+    render_system_primary_render_context(system).Terminate();
     const auto context_count = render_system_render_context_count(system);
     for (std::size_t index = 0; index < context_count; ++index) {
-        render_context_shutdown(
-            render_system_render_context_at(system, index));
+        render_system_render_context_at(system, index).Terminate();
     }
 
     render_system_platform_shutdown(system);

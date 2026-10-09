@@ -170,7 +170,7 @@ void render_stencil_scene_mask_shader_construct(void* shader) {
 // Reconstructed from eboot.elf at 0x6423C0.
 void render_refine_scene_mask_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     RndTextureBase& unrefined_mask) {
     render_shader_draw_with_pixel_texture(shader, context, unrefined_mask, 288);
 }

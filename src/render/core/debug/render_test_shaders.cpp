@@ -199,7 +199,7 @@ void render_test_shader_construct(void* shader) {
 // Reconstructed from eboot.elf at 0x645420.
 void render_test_pattern_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderTestPatternDrawParameters& parameters) {
     const auto extent = static_cast<std::uint64_t>(shader_field(shader, 312));
     auto& buffer = render_shader_select_constant_buffer(context, extent);
@@ -225,7 +225,7 @@ void render_test_pattern_shader_draw(
 // permutation and is written into every program key.
 void render_test_simple_shader_draw(
     void* shader,
-    RenderContext& context,
+    RndContext& context,
     const RenderTestSimpleDrawParameters& parameters) {
     constexpr std::size_t kPixelKey = 3;
     if (parameters.constant_buffer_color) {

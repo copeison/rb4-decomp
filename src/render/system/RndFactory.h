@@ -19,7 +19,6 @@ class RndShaderProgram;
 #include "render/textures/RndTextureArrayCube.h"
 #include "render/textures/RndTextureCube.h"
 
-
 // Platform object factory.
 class RndFactory {
 public:

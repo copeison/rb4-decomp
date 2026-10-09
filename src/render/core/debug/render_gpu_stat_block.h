@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <_pthread.h>
 
+class RndContext;
+
 namespace rb4 {
 
-struct RenderContext;
 struct RenderSystem;
 
 struct RenderGpuStatBlock {
@@ -45,11 +46,11 @@ void render_gpu_stat_block_initialize(RenderGpuStatBlock& block);
 void render_gpu_stat_block_destruct(RenderGpuStatBlock& block);
 std::int64_t render_gpu_stat_block_begin(
     RenderGpuStatBlock& block,
-    RenderContext& context,
+    RndContext& context,
     const char* name);
 void render_gpu_stat_block_end(
     RenderGpuStatBlock& block,
-    RenderContext& context,
+    RndContext& context,
     std::int64_t query_id);
 void render_gpu_stat_block_finish_frame(RenderGpuStatBlock& block);
 

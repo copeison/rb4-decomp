@@ -4,6 +4,8 @@
 
 #include "render/textures/RndTexture2D.h"
 
+class RndContext;
+
 namespace rb4 {
 struct OrbisGpuDepthRenderTarget;
 struct OrbisGpuRenderTarget;
