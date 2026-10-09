@@ -7,22 +7,14 @@
 #include <string>
 #include <vector>
 
+#include "core/io/engine_file.h"
 #include "core/threading/engine_thread.h"
 #include "core/threading/thread_affinity.h"
 #include "core/threading/thread_affinity_adapters.h"
 
 namespace rb4 {
 
-struct EngineFile;
-
-EngineFile* engine_file_open(const char* path, std::uint32_t mode);
 void engine_file_prepare_for_reading(EngineFile* file);
-void engine_file_close(EngineFile* file);
-std::uint32_t engine_file_read(
-    EngineFile* file, void* buffer, std::uint32_t size);
-void engine_file_seek(
-    EngineFile* file, std::uint32_t position, std::int32_t origin);
-std::uint32_t engine_file_get_size(EngineFile* file);
 
 namespace {
 
@@ -104,7 +96,8 @@ FMOD_RESULT fmod_file_open(
         file_handle->file = engine_file_open(name, kEngineFileReadMode);
         if (file_handle->file != nullptr) {
             engine_file_prepare_for_reading(file_handle->file);
-            *file_size = engine_file_get_size(file_handle->file);
+            *file_size = static_cast<unsigned int>(
+                engine_file_get_size(file_handle->file));
         }
     }
 
@@ -148,7 +141,8 @@ FMOD_RESULT fmod_file_read(
     }
 
     const std::lock_guard<std::recursive_mutex> lock(file_handle->mutex);
-    *bytes_read = engine_file_read(file_handle->file, buffer, size);
+    *bytes_read = static_cast<unsigned int>(
+        engine_file_read(file_handle->file, buffer, size));
     return *bytes_read < size ? FMOD_ERR_FILE_EOF : FMOD_OK;
 }
 

@@ -8,7 +8,7 @@ namespace rb4 {
 struct BinStream;
 struct RandomGenerator;
 
-enum class BinStreamSeek : std::uint32_t {
+enum class BinStreamSeek : std::int32_t {
     kBegin = 0,
     kCurrent = 1,
     kEnd = 2,
@@ -19,10 +19,17 @@ struct BinStreamDispatch {
     void (*delete_stream)(BinStream* stream);
     void (*flush)(BinStream* stream);
     std::int32_t (*tell)(BinStream* stream);
-    void* reserved_32;
-    void* reserved_40;
+    void (*reserved_32)(BinStream* stream);
+    std::int32_t (*eof)(BinStream* stream);
     bool (*fail)(BinStream* stream);
-    void* reserved_56[5];
+    const char* (*name)(BinStream* stream);
+    std::int64_t (*size)(BinStream* stream);
+    std::int64_t (*read_checked)(
+        BinStream* stream,
+        void* data,
+        std::int64_t size);
+    std::int64_t (*reserved_80)(BinStream* stream);
+    void (*patch_size)(BinStream* stream, std::int64_t position);
     void (*read_impl)(BinStream* stream, void* data, std::int64_t size);
     void (*write_impl)(
         BinStream* stream,
@@ -36,13 +43,14 @@ struct BinStreamDispatch {
 
 static_assert(offsetof(BinStreamDispatch, tell) == 24);
 static_assert(offsetof(BinStreamDispatch, fail) == 48);
+static_assert(offsetof(BinStreamDispatch, read_checked) == 72);
 static_assert(offsetof(BinStreamDispatch, read_impl) == 96);
 static_assert(offsetof(BinStreamDispatch, seek_impl) == 112);
+static_assert(sizeof(BinStreamDispatch) == 120);
 
-// Common 40-byte binary stream base. Construction at 0x21A680 sets both
-// leading words to -1 and records the byte-swap flag and platform.
+// Common 40-byte binary stream base.
 struct BinStream {
-    BinStreamDispatch* dispatch;
+    const BinStreamDispatch* dispatch;
     std::int32_t reserved_8;
     std::int32_t reserved_12;
     bool reserved_16;
@@ -58,7 +66,26 @@ static_assert(offsetof(BinStream, cipher) == 24);
 static_assert(offsetof(BinStream, platform) == 32);
 static_assert(sizeof(BinStream) == 40);
 
+void bin_stream_construct(
+    BinStream& stream,
+    std::uint32_t swap_endian,
+    std::uint32_t platform);
+void bin_stream_destruct(BinStream& stream);
+void bin_stream_read(BinStream& stream, void* data, std::int64_t size);
 void bin_stream_read_endian(BinStream& stream, void* data, std::int32_t size);
+void bin_stream_write_endian(
+    BinStream& stream,
+    const void* data,
+    std::int32_t size);
+std::int64_t bin_stream_read_checked(
+    BinStream* stream,
+    void* data,
+    std::int64_t size);
+void bin_stream_patch_size(BinStream* stream, std::int64_t position);
+const char* bin_stream_default_name(BinStream* stream);
+std::int64_t bin_stream_default_size(BinStream* stream);
+std::int64_t bin_stream_default_zero(BinStream* stream);
+void bin_stream_default_nop(BinStream* stream);
 void bin_stream_seek(
     BinStream& stream,
     std::int64_t offset,
