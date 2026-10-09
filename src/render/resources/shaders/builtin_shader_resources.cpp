@@ -54,16 +54,6 @@ void render_bink_convert_shader_construct(void* shader) {
     shader_field(shader, 384) = 0;
 }
 
-// Reconstructed from eboot.elf at 0x6367A0.
-void render_output_conversion_shader_construct(void* shader) {
-    construct_parameterized_shader(
-        shader, render_output_conversion_shader_install_dispatch, 3);
-    shader_field(shader, 352) = -1;
-    shader_field(shader, 360) = 0;
-    shader_field(shader, 368) = -1;
-    shader_field(shader, 376) = -1;
-}
-
 // Reconstructed from eboot.elf at 0x6452E0.
 void render_test_pattern_shader_construct(void* shader) {
     auto* fields = construct_shader(

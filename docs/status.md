@@ -418,6 +418,8 @@
   permutations, three sampled bloom inputs, and bloom/overbright constants.
 - [x] Reconstruct the blur graphics shader, sample-count/type/direction and
   mask/classification permutations, weighted-offset array, and four textures.
+- [x] Reconstruct the output-conversion graphics shader, HMD-mask, BT.2020,
+  and perceptual-quantizer permutations, minimum intensity, and both textures.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing
