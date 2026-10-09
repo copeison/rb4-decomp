@@ -4,7 +4,6 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
 #include "render/meshes/RndDynamicGpuData.h"
 #include "render/meshes/RndVertex.h"
 #include "utl/containers/Vector.h"

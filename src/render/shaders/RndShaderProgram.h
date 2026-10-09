@@ -3,8 +3,9 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
 #include "render/shaders/RndShaderEnums.h"
+
+class RndContext;
 
 class BinStream;
 

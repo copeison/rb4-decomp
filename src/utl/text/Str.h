@@ -28,6 +28,8 @@ class String : public FixedString {
 public:
     String();
     explicit String(const char* str);  // 0x2550C0
+    // Copies the text. Its address in this build has not been located.
+    String(const String& other);
     ~String() override;                // slots 0-1: 0x255550, 0x255580
 
     // Slot 2 is a thunk at 0x5F3C0 to the FixedString implementation.

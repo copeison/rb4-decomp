@@ -56,7 +56,7 @@ corrected helper.
 
 ## Backend initialization
 
-`render_primary_shader_initialize_backend` (`0x638430`) runs under the
+`RndShader::_InitShaderCollection` (`0x638430`) runs under the
 recursive "hx crit sec" critical section. It is created by the static
 initializer at `0x639810` and torn down at `0x12E70`, which releases any
 outstanding holds. On the first call for a shader, the initializer:
@@ -87,7 +87,7 @@ the resource manager's sorted define list at `+688`.
 
 ## Permutation layout hash
 
-`render_primary_shader_layout_hash` (`0x638D70`) streams the following into
+`RndShader::_ChecksumDefines` (`0x638D70`) streams the following into
 FNV-1a, with every byte sign-extended:
 
 1. The generated constant definitions.
@@ -102,7 +102,7 @@ Enabled (global) records pack into the high 32 bits of the key.
 
 ## Permutation binding
 
-`render_primary_shader_bind` (`0x638920`) takes five 64-bit program keys,
+`RndShader::_SelectShaderCollection` (`0x638920`) takes five 64-bit program keys,
 indexed by variant program bit (vertex, tessellation, geometry, pixel,
 compute). It first initializes the backend if needed. The context's slice mode
 at `+0x10` maps through `{1, 2, 6, 1, ...}` to an `HX_NUM_RT_SLICES` value; -1

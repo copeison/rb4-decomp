@@ -9,10 +9,9 @@ class RndShaderCBuffer;
 class RndTextureBase;
 
 class RndContext;
+class RndShader;
 
 namespace rb4 {
-
-struct RenderShaderParameterBinding;
 
 // Helpers for the patterns that built-in pass draw functions inline.
 
@@ -57,17 +56,10 @@ void render_shader_commit_constant_buffer(
     RndContext& context,
     std::uint64_t element_count);
 
-// Packs a stage-local parameter value into a permutation key. The shifted
-// field is sign-extended, as every recovered draw function does.
-std::uint64_t render_shader_parameter_binding_apply(
-    std::uint64_t key,
-    const RenderShaderParameterBinding& binding,
-    std::uint32_t value);
-
 // Draw used by single-texture graphics shaders: binds the texture to the pixel
-// stage at the slot and binds the shader with default permutation keys.
+// stage at the slot and selects the shader with default keys.
 void render_shader_draw_with_pixel_texture(
-    void* shader,
+    RndShader& shader,
     RndContext& context,
     RndTextureBase& texture,
     std::uint64_t slot);

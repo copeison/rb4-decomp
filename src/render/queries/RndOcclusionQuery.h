@@ -3,7 +3,8 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
+
+class RndContext;
 
 // GPU occlusion query, linked into an intrusive list while alive. The base
 // vtable is at 0x192AFD8.

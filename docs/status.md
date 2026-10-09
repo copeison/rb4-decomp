@@ -575,6 +575,11 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Convert the shader system to `RndShader` and `RndShaderCompute`, with
+  `RndShaderFixedDefines`, `RndShaderDefines`, `RndShaderDefinesGroup`,
+  `RndShaderCBufferConfig`, `RndShaderResourceConfig`, and
+  `RndShaderCollection`, and all 35 built-in shaders as subclasses (see
+  [render-shader-classes.md](render-shader-classes.md)).
 - [x] Convert the render targets to `RndBufferCollection` and
   `RndBufferCollection2D`, merging the 17 per-buffer files into the map's
   object and restoring the missing buffer registrations (see

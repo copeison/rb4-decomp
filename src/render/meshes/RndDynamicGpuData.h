@@ -4,7 +4,8 @@
 #include <_pthread.h>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
+
+class RndContext;
 
 class RndDynamicGpuData;
 

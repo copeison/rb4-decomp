@@ -1,6 +1,5 @@
 #pragma once
 
-#include "render/core/transition_aliases.h"
 #include "render/shaders/RndShaderEnums.h"
 
 class RndFence;
@@ -18,6 +17,8 @@ class RndShaderProgram;
 #include "render/textures/RndTextureArray2D.h"
 #include "render/textures/RndTextureArrayCube.h"
 #include "render/textures/RndTextureCube.h"
+
+class RndShaderCBufferConfig;
 
 // Platform object factory.
 class RndFactory {

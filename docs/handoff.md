@@ -3,16 +3,16 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert the render buffer collections to original classes`
-milestone, the ninth step of the conversion to the reference map's original names, classes, and module
+`decomp: convert the shader system to original classes` milestone, the
+tenth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
-render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), and the audio and
+render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader` and its 35 built-in subclasses), and the audio and
 microphone subsystems are converted; the rest of the renderer and the game
 code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **148 C++ translation units**. It creates
+The current PS4 object build compiles **157 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
 executable. The latest unresolved-symbol report contains 663 entries, most of the
 growth since the previous snapshot coming from FMOD loaders and decoders the
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Render buffer collections (`RndBufferCollection`, `RndBufferCollection2D`) converted; missing registrations restored |
+| (this) | Shader system (`RndShader`, configuration classes, 35 built-in shader subclasses) converted |
+| `f161a7b` | Render buffer collections (`RndBufferCollection`, `RndBufferCollection2D`) converted; missing registrations restored |
 | `7fb80f3` | Render windows (`RndWindow`, `RndBufferedWindow`, `PS4Window`) converted to original classes |
 | `920b374` | Render device (`RndDevice`, `PS4Device`, `CritSec`, `Condition`) converted to original classes |
 | `6f3b574` | Docs for the audio merge |
@@ -267,7 +268,7 @@ evidence.
 ### Shared object and dispatch layout
 
 Both classes inherit the reconstructed 288-byte
-`RenderPrimaryShaderResource` prefix. Their class-specific parameter bindings
+`RndShader` prefix. Their class-specific parameter bindings
 start at object offset 288 and occupy 20 bytes each. The recovered 56-byte
 dispatch table has seven entries in this order:
 
@@ -283,7 +284,7 @@ Both dispatches use the primary shader destructor, release the allocation in
 their deleting destructor, return mode `0`, and return primary graphics variant
 `13`. The source reconstruction represents this common shape with
 `BasicShaderDispatch` in
-`src/render/resources/shaders/basic_shaders.cpp`. The shared binary leaf
+`src/render/shaders/RndShaderBasic.cpp`. The shared binary leaf
 functions for mode and variant are at `0x450850` and `0x6388E0`, respectively.
 
 ### Error shader reconstruction
@@ -364,10 +365,10 @@ similar.
 ### Source ownership and cleanup performed
 
 The milestone added the source-owned dispatches and constructors in
-`src/render/resources/shaders/basic_shaders.cpp`. It removed
+`src/render/shaders/RndShaderBasic.cpp`. It removed
 `render_error_shader_install_dispatch` and
 `render_basic_shader_install_dispatch` from
-`src/render/resources/shaders/builtin_shader_adapters.h`, then removed the two
+`src/render/shaders/RndShader.h`, then removed the two
 adapter-backed constructor bodies from `builtin_shader_resources.cpp`.
 
 The generic helpers `construct_shader`, `construct_parameterized_shader`, and
@@ -397,11 +398,11 @@ the resource manager. The final six live at:
 
 | Shader | Source |
 | --- | --- |
-| Bloom | `src/render/postprocessing/bloom/bloom_shader.cpp` |
-| Blur | `src/render/postprocessing/blur/blur_shader.cpp` |
-| Output conversion | `src/render/postprocessing/output/output_conversion_shader.cpp` |
-| Bink conversion | `src/render/resources/video/bink_convert_shader.cpp` |
-| Test pattern, render-test-simple | `src/render/core/debug/render_test_shaders.cpp` |
+| Bloom | `src/render/postprocessing/bloom/RndShaderBloom.cpp` |
+| Blur | `src/render/postprocessing/blur/RndShaderBlur.cpp` |
+| Output conversion | `src/render/postprocessing/output/RndShaderOutputConversion.cpp` |
+| Bink conversion | `src/render/resources/video/RndShaderBinkConvert.cpp` |
+| Test pattern, render-test-simple | `src/render/core/debug/RndShaderTestPattern.cpp`, `src/render/core/debug/RndShaderRenderTestSimple.cpp` |
 
 ### Dispatch tables have 11 slots
 
@@ -424,7 +425,7 @@ blur table.
 
 ## Shader backend loading is complete
 
-`render_primary_shader_initialize_backend` (`0x638430`) and everything below it
+`RndShader::_InitShaderCollection` (`0x638430`) and everything below it
 are source-owned. That covers the cache validator, the compiled-object loader,
 the validation hashes, permutation enumeration, and the core binary and file
 streams. See [render-primary-shader.md](render-primary-shader.md) and
@@ -448,7 +449,7 @@ it. Each one belongs in its pass's domain folder:
 
 - blur at `0x634BB0`, a 3.8 KB function with an auto-vectorized Gaussian
   weight loop that needs raw-assembly reading;
-- 36 further callers of `render_primary_shader_bind`. List them by
+- 36 further callers of `RndShader::_SelectShaderCollection`. List them by
   cross-referencing `0x638920` in IDA; several still lack IDA function
   definitions (`0x5F8DF0`, a single-texture draw for a shader outside the built-in set,
   and `0x6F3E80`, the render-test compute dispatch, are now defined but not
@@ -473,7 +474,7 @@ stubs.
 - The primary shader prefix is 288 bytes. Many derived shader fields begin at
   offset 288, but parameter bindings are 20 bytes and can introduce four-byte
   alignment gaps before later 64-bit fields.
-- `RenderShaderBackendState` is 864 bytes with 24 binding arrays and 12 stage
+- `RndShaderResourceConfig` is 864 bytes with 24 binding arrays and 12 stage
   counters. Texture, unordered output, numeric buffer, and structured buffer
   helpers have distinct array and register semantics.
 - Graphics-specific texture binding at `0x6438D0` differs from the general

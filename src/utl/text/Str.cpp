@@ -44,6 +44,8 @@ String::String(const char* str) {
     mStr[length] = '\0';
 }
 
+String::String(const String& other) : String(other.c_str()) {}
+
 // Reconstructed from eboot.elf at 0x255550.
 String::~String() {
     FreeText();

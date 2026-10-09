@@ -2,7 +2,6 @@
 
 #include <limits>
 
-#include "render/core/transition_aliases.h"
 #include "renderps4/system/PS4Device.h"
 
 namespace {

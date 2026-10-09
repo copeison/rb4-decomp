@@ -16,12 +16,12 @@ class RndContext;
 class RndFactory;
 class RndBufferCollection;
 class RndShaderCBuffer;
+class RndShaderFogDeferred;
 
 class RndWindow;
 
 namespace rb4 {
 struct AudioAnalysisTextureSet;
-struct FogDeferredShaderResource;
 struct RenderPrimitiveMeshSet;
 struct RenderSettings;
 }  // namespace rb4
@@ -152,7 +152,7 @@ public:
     rb4::DefaultRenderResources mDefaults;
     rb4::RenderResourceManager mResourceMgr;
     rb4::RenderLightingResources mLighting;
-    rb4::FogDeferredShaderResource* mFogDeferred;
+    RndShaderFogDeferred* mFogDeferred;
     rb4::RenderPrimitiveMeshSet* mPrimitiveMeshes;
     rb4::AudioAnalysisTextureSet* mAudioTextures;
     rb4::RenderGpuStatBlock mGpuStats;

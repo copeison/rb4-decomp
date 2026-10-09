@@ -13,7 +13,7 @@
 #include "render/resources/audio/audio_analysis_textures.h"
 #include "render/resources/lighting/render_lighting_resources_adapters.h"
 #include "render/resources/meshes/primitive_mesh_set.h"
-#include "render/resources/shaders/fog_deferred_shader.h"
+#include "render/lighting/fog/RndShaderFogDeferred.h"
 #include "render/resources/video/bink_render_manager.h"
 #include "render/resources/video/bink_render_manager_adapters.h"
 #include "utl/time/Timer.h"
@@ -161,7 +161,7 @@ void RndDevice::Init(const RndInitParams& params) {
     render_resource_manager_finalize(mResourceMgr);
 
     render_lighting_resources_initialize(mLighting);
-    fog_deferred_shader_create(mFogDeferred);
+    mFogDeferred = new RndShaderFogDeferred;  // 0x451C90
     mPrimitiveMeshes = static_cast<RenderPrimitiveMeshSet*>(
         operator new(sizeof(RenderPrimitiveMeshSet)));
     render_primitive_mesh_set_construct(*mPrimitiveMeshes);
@@ -225,7 +225,8 @@ void RndDevice::Terminate() {
     mTerminating = true;
     _ProcessPendingFrees();
     render_release_default_resources(mDefaults);
-    fog_deferred_shader_release(mFogDeferred);
+    delete mFogDeferred;  // 0x451CC0
+    mFogDeferred = nullptr;
     render_lighting_resources_shutdown(mLighting);
     render_resource_manager_shutdown(mResourceMgr);
 

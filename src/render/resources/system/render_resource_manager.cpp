@@ -19,8 +19,41 @@
 #include "render/textures/RndPixelCanvas.h"
 #include "render/textures/RndPixelData.h"
 #include "utl/text/Str.h"
-#include "render/resources/shaders/builtin_shader_resources.h"
-#include "render/resources/shaders/primary_shader_resource.h"
+#include "render/shaders/RndShader.h"
+#include "render/core/buffers/RndCShaderClearBuffer.h"
+#include "render/core/buffers/RndCShaderCopyBuffer.h"
+#include "render/core/debug/RndCShaderRenderTestCompute.h"
+#include "render/core/debug/RndShaderDisplayShadingMode.h"
+#include "render/core/debug/RndShaderDisplaySphereMap.h"
+#include "render/core/debug/RndShaderDisplayTextureCube.h"
+#include "render/core/debug/RndShaderRenderTestSimple.h"
+#include "render/core/debug/RndShaderTestPattern.h"
+#include "render/depth/RndCShaderCalcDepthRange.h"
+#include "render/depth/RndCShaderLinearizeDepth.h"
+#include "render/depth/RndShaderLinearizeDepth.h"
+#include "render/distance_fields/RndCShaderSignedDistance.h"
+#include "render/distance_fields/RndCShaderSignedDistanceClassify.h"
+#include "render/lighting/ambient_occlusion/RndCShaderSSAOGen.h"
+#include "render/lighting/volumetric/RndCShaderVScatAccumScattering.h"
+#include "render/lighting/volumetric/RndCShaderVScatCalcDensityInscattering.h"
+#include "render/lighting/volumetric/RndCShaderVScatDeferred.h"
+#include "render/masking/RndShaderRefineSceneMask.h"
+#include "render/masking/RndShaderStencilSceneMask.h"
+#include "render/postprocessing/antialiasing/RndCShaderCMAAEdgeDetect.h"
+#include "render/postprocessing/antialiasing/RndCShaderCMAAEdgePrune.h"
+#include "render/postprocessing/antialiasing/RndCShaderCMAAFinalProcess.h"
+#include "render/postprocessing/antialiasing/RndCShaderCMAAShapeFit.h"
+#include "render/postprocessing/antialiasing/RndShaderFXAA.h"
+#include "render/postprocessing/bloom/RndShaderBloom.h"
+#include "render/postprocessing/blur/RndCShaderBlurClassify.h"
+#include "render/postprocessing/blur/RndShaderBlur.h"
+#include "render/postprocessing/depth_of_field/RndCShaderDOFDiscBlur.h"
+#include "render/postprocessing/depth_of_field/RndShaderDOFSprite.h"
+#include "render/postprocessing/downsample/RndShaderDownsample.h"
+#include "render/postprocessing/output/RndShaderOutputConversion.h"
+#include "render/resources/video/RndShaderBinkConvert.h"
+#include "render/shaders/RndShaderBasic.h"
+#include "render/shaders/RndShaderError.h"
 
 namespace rb4 {
 
@@ -39,22 +72,21 @@ struct RenderManagedObject {
     RenderManagedObjectDispatch* dispatch;
 };
 
-RenderResourceListNode* create_list_sentinel() {
-    auto* node = static_cast<RenderResourceListNode*>(
-        operator new(sizeof(RenderResourceListNode)));
-    node->next = node;
-    node->previous = node;
+RndShaderLink* create_list_sentinel() {
+    auto* node = new RndShaderLink;
+    node->mNext = node;
+    node->mPrev = node;
     return node;
 }
 
-void release_list_sentinel(RenderResourceListNode*& node) {
+void release_list_sentinel(RndShaderLink*& node) {
     if (node == nullptr) {
         return;
     }
 
-    node->next->previous = node->previous;
-    node->previous->next = node->next;
-    MemFree(node);
+    node->mNext->mPrev = node->mPrev;
+    node->mPrev->mNext = node->mNext;
+    delete node;
     node = nullptr;
 }
 
@@ -63,20 +95,6 @@ void release_dynamic_resource(void*& storage) {
     if (resource != nullptr) {
         resource->dispatch->release_dynamic(resource);
         storage = nullptr;
-    }
-}
-
-void destruct_parameter_registry(RenderShaderParameterRegistry& parameters) {
-    for (auto* parameter = parameters.begin;
-         parameter != parameters.end;
-         ++parameter) {
-        (parameter->name).~String();
-    }
-    if (parameters.begin != nullptr) {
-        const auto byte_count = static_cast<std::size_t>(
-            reinterpret_cast<std::uint8_t*>(parameters.capacity) -
-            reinterpret_cast<std::uint8_t*>(parameters.begin));
-        HmxAllocator::gStlAllocator.deallocate(parameters.begin, byte_count);
     }
 }
 
@@ -122,24 +140,28 @@ struct ShaderConstantDefinition {
 
 template <std::size_t Count>
 void add_shader_constant_group(
-    RenderShaderConstantRegistry& registry,
+    RndShaderFixedDefines& registry,
     const char* comment,
     const ShaderConstantDefinition (&definitions)[Count]) {
-    render_shader_constant_registry_add_comment(registry, comment);
+    registry.AddComment(comment);
     for (const auto& definition : definitions) {
-        render_shader_constant_registry_add_definition(
-            registry, definition.name, definition.value);
+        registry.Add(Symbol(definition.name), definition.value);
     }
 }
 
-void* create_builtin_shader(
-    std::size_t size,
-    void (*construct)(void*)) {
-    auto* storage = operator new(size);
-    construct(storage);
-    render_primary_shader_register(
-        *static_cast<RenderPrimaryShaderResource*>(storage));
-    return storage;
+template <typename T>
+T* NewShader() {
+    auto* shader = new T;
+    shader->_Register();
+    return shader;
+}
+
+template <typename T>
+void Release(T*& object) {
+    if (object != nullptr) {
+        delete object;
+        object = nullptr;
+    }
 }
 
 bool supports_async_compute() {
@@ -174,9 +196,7 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
 // Reconstructed from eboot.elf at 0x640BF0.
 void render_resource_manager_initialize_shader_parameters(
     RenderResourceManager& manager) {
-    auto* parameters = static_cast<RenderShaderParameterRegistrySet*>(
-        operator new(sizeof(RenderShaderParameterRegistrySet)));
-    render_shader_parameter_registry_set_construct(*parameters);
+    auto* parameters = new RndShaderDefinesGroup;
     manager.runtime.shader_parameters = parameters;
 
     struct BindingDefinition {
@@ -195,21 +215,18 @@ void render_resource_manager_initialize_shader_parameters(
     for (std::size_t index = 0; index < 4; ++index) {
         const auto& definition = kBindings[index];
         const Symbol name(definition.name);
-        render_shader_parameter_registry_add(
-            &manager.shader_parameter_bindings[index],
-            &parameters->registries[definition.registry_index],
-            name.Str(),
-            definition.first_value,
-            definition.last_value);
+        manager.shader_parameter_bindings[index] =
+            parameters->mDefines[definition.registry_index].Add(
+                name,
+                static_cast<int>(definition.first_value),
+                static_cast<int>(definition.last_value));
     }
 }
 
 // Reconstructed from eboot.elf at 0x63F920.
 void render_resource_manager_initialize_shader_constant_registry(
     RenderResourceManager& manager) {
-    auto* registry = static_cast<RenderShaderConstantRegistry*>(
-        operator new(sizeof(RenderShaderConstantRegistry)));
-    render_shader_constant_registry_construct(*registry);
+    auto* registry = new RndShaderFixedDefines;
     manager.shader_constants.constant_registry = registry;
 
     constexpr ShaderConstantDefinition kMiscConstants[] = {
@@ -377,117 +394,64 @@ void render_resource_manager_initialize_shader_constant_registry(
 void render_resource_manager_initialize_shader_constants(
     RenderResourceManager& manager) {
     auto& constants = manager.shader_constants;
-    using Type = RenderShaderConstantType;
 
-    constants.scene_block = render_shader_constant_block_create(
-        "Scene", 0, 9, 5);
+    constants.scene_block = new RndShaderCBufferConfig("Scene", 0, 9, 5);
     auto& scene = *constants.scene_block;
-    constants.time = render_shader_constant_block_add(
-        scene, Type::vector4, "gTime");
-    constants.smoothness_decay = render_shader_constant_block_add(
-        scene, Type::scalar, "gSmoothnessDecay");
-    constants.sgraph_trans_infos = render_shader_constant_block_add_array(
-        scene, Type::matrix3x4, 4, "gSGraphTransInfos");
-    constants.scene_global_floats = render_shader_constant_block_add_array(
-        scene, Type::vector4, 1, "gSceneGlobalFloats");
-    constants.scene_global_colors = render_shader_constant_block_add_array(
-        scene, Type::vector4, 4, "gSceneGlobalColors");
-    constants.tiled_lighting_params = render_shader_constant_block_add(
-        scene, Type::vector3, "gTiledLightingParams");
-    constants.fog_params = render_shader_constant_block_add(
-        scene, Type::vector3, "gFogParams");
-    constants.volumetric_params_0 = render_shader_constant_block_add(
-        scene, Type::vector3, "gVolumetricParams0");
-    constants.volumetric_params_1 = render_shader_constant_block_add(
-        scene, Type::vector2, "gVolumetricParams1");
+    constants.time = scene.AddConstant(kShaderNumericFloat4, "gTime");
+    constants.smoothness_decay = scene.AddConstant(kShaderNumericFloat, "gSmoothnessDecay");
+    constants.sgraph_trans_infos = scene.AddConstantArray(kShaderNumericFloat3x4, 4, "gSGraphTransInfos");
+    constants.scene_global_floats = scene.AddConstantArray(kShaderNumericFloat4, 1, "gSceneGlobalFloats");
+    constants.scene_global_colors = scene.AddConstantArray(kShaderNumericFloat4, 4, "gSceneGlobalColors");
+    constants.tiled_lighting_params = scene.AddConstant(kShaderNumericFloat3, "gTiledLightingParams");
+    constants.fog_params = scene.AddConstant(kShaderNumericFloat3, "gFogParams");
+    constants.volumetric_params_0 = scene.AddConstant(kShaderNumericFloat3, "gVolumetricParams0");
+    constants.volumetric_params_1 = scene.AddConstant(kShaderNumericFloat2, "gVolumetricParams1");
 
-    constants.render_target_block = render_shader_constant_block_create(
-        "RenderTarget", 1, 28, 80);
-    constants.target_dimensions = render_shader_constant_block_add(
-        *constants.render_target_block,
-        Type::vector2,
-        "gTargetDimensions");
+    constants.render_target_block = new RndShaderCBufferConfig("RenderTarget", 1, 28, 80);
+    constants.target_dimensions = constants.render_target_block->AddConstant(kShaderNumericFloat2, "gTargetDimensions");
 
-    constants.camera_block = render_shader_constant_block_create(
-        "Camera", 2, 29, 40);
+    constants.camera_block = new RndShaderCBufferConfig("Camera", 2, 29, 40);
     auto& camera = *constants.camera_block;
-    constants.camera_near_far_params = render_shader_constant_block_add(
-        camera, Type::vector4, "gCameraNearFarParams");
-    constants.camera_misc_params = render_shader_constant_block_add(
-        camera, Type::vector4, "gCameraMiscParams");
-    constants.camera_view_extents = render_shader_constant_block_add_array(
-        camera, Type::vector4, 4, "gCameraViewExtents");
+    constants.camera_near_far_params = camera.AddConstant(kShaderNumericFloat4, "gCameraNearFarParams");
+    constants.camera_misc_params = camera.AddConstant(kShaderNumericFloat4, "gCameraMiscParams");
+    constants.camera_view_extents = camera.AddConstantArray(kShaderNumericFloat4, 4, "gCameraViewExtents");
     constants.camera_rt_sliced_data =
-        render_shader_constant_block_add_sliced_array(
-            camera, Type::vector4, 10, "gCameraRTSlicedData");
+        camera.AddRTSlicedConstantArray(kShaderNumericFloat4, 10, "gCameraRTSlicedData");
 
-    constants.clip_planes_block = render_shader_constant_block_create(
-        "ClipPlanes", 3, 1, 10);
-    constants.clip_planes = render_shader_constant_block_add_array(
-        *constants.clip_planes_block,
-        Type::vector4,
-        4,
-        "gClipPlanes");
+    constants.clip_planes_block = new RndShaderCBufferConfig("ClipPlanes", 3, 1, 10);
+    constants.clip_planes = constants.clip_planes_block->AddConstantArray(kShaderNumericFloat4, 4, "gClipPlanes");
 
-    constants.skeleton_block = render_shader_constant_block_create(
-        "Skeleton", 4, 1, 1);
+    constants.skeleton_block = new RndShaderCBufferConfig("Skeleton", 4, 1, 1);
     constants.skeleton_bone_transforms =
-        render_shader_constant_block_add_array(
-            *constants.skeleton_block,
-            Type::matrix3x4,
-            256,
-            "gSkeletonBoneXfms");
+        constants.skeleton_block->AddConstantArray(kShaderNumericFloat3x4, 256, "gSkeletonBoneXfms");
 
-    constants.misc_draw_state_block = render_shader_constant_block_create(
-        "MiscDrawState", 5, 8, 10);
-    constants.environment_index = render_shader_constant_block_add(
-        *constants.misc_draw_state_block,
-        Type::scalar,
-        "gEnvironIndex");
-    constants.solid_color = render_shader_constant_block_add(
-        *constants.misc_draw_state_block,
-        Type::vector4,
-        "gSolidColor");
+    constants.misc_draw_state_block = new RndShaderCBufferConfig("MiscDrawState", 5, 8, 10);
+    constants.environment_index = constants.misc_draw_state_block->AddConstant(kShaderNumericFloat, "gEnvironIndex");
+    constants.solid_color = constants.misc_draw_state_block->AddConstant(kShaderNumericFloat4, "gSolidColor");
 
-    constants.occlusion_query_block = render_shader_constant_block_create(
-        "OcclusionQuery", 6, 9, 10);
-    constants.occlusion_query_coverage = render_shader_constant_block_add(
-        *constants.occlusion_query_block,
-        Type::vector2,
-        "gOcclusionQueryCoverageParams");
+    constants.occlusion_query_block = new RndShaderCBufferConfig("OcclusionQuery", 6, 9, 10);
+    constants.occlusion_query_coverage = constants.occlusion_query_block->AddConstant(kShaderNumericFloat2, "gOcclusionQueryCoverageParams");
 
-    constants.debug_block = render_shader_constant_block_create(
-        "Debug", 7, 24, 10);
+    constants.debug_block = new RndShaderCBufferConfig("Debug", 7, 24, 10);
     auto& debug = *constants.debug_block;
-    constants.debug_modes = render_shader_constant_block_add(
-        debug, Type::vector2, "gDebugModes");
-    constants.debug_color = render_shader_constant_block_add(
-        debug, Type::vector4, "gDebugColor");
-    constants.batch_info = render_shader_constant_block_add(
-        debug, Type::vector2, "gBatchInfo");
-    constants.preview_node_index = render_shader_constant_block_add(
-        debug, Type::scalar, "gPreviewNodeIndex");
+    constants.debug_modes = debug.AddConstant(kShaderNumericFloat2, "gDebugModes");
+    constants.debug_color = debug.AddConstant(kShaderNumericFloat4, "gDebugColor");
+    constants.batch_info = debug.AddConstant(kShaderNumericFloat2, "gBatchInfo");
+    constants.preview_node_index = debug.AddConstant(kShaderNumericFloat, "gPreviewNodeIndex");
 
     constexpr std::uint64_t kTransientCounts[] = {16, 32, 64};
     for (std::size_t index = 0; index < 3; ++index) {
         auto*& transient = constants.transient_blocks[index];
-        transient = render_shader_constant_block_create(
-            "Transient", 8, 29, 10);
-        render_shader_constant_block_add_array(
-            *transient,
-            Type::vector4,
-            kTransientCounts[index],
-            "gTransientData");
+        transient = new RndShaderCBufferConfig("Transient", 8, 29, 10);
+        transient->AddConstantArray(kShaderNumericFloat4, kTransientCounts[index], "gTransientData");
     }
 
     constexpr std::uint32_t kFnv1aOffsetBasis = 0x811C9DC5U;
     std::uint32_t source_hash = kFnv1aOffsetBasis;
-    render_shader_constant_block_accumulate_source_hash(
-        *constants.scene_block, source_hash);
-    render_shader_constant_registry_accumulate_source_hash(
-        *constants.constant_registry, source_hash);
+    constants.scene_block->PrintCode(source_hash);
+    constants.constant_registry->PrintCode(source_hash);
 
-    RenderShaderConstantBlock* remaining_blocks[] = {
+    RndShaderCBufferConfig* remaining_blocks[] = {
         constants.render_target_block,
         constants.camera_block,
         constants.clip_planes_block,
@@ -496,8 +460,7 @@ void render_resource_manager_initialize_shader_constants(
         constants.debug_block,
     };
     for (const auto* block : remaining_blocks) {
-        render_shader_constant_block_accumulate_source_hash(
-            *block, source_hash);
+        block->PrintCode(source_hash);
     }
     manager.runtime.constant_source_hash =
         (manager.runtime.constant_source_hash & 0xFFFFFFFF00000000ULL) |
@@ -512,81 +475,45 @@ void render_resource_manager_initialize(RenderResourceManager& manager) {
     render_resource_manager_initialize_shader_constants(manager);
 
     auto& resources = manager.runtime.resources;
-    resources.error_shader = create_builtin_shader(
-        328, render_error_shader_construct);
-    resources.basic_shader = create_builtin_shader(
-        400, render_basic_shader_construct);
-    resources.bink_convert_shader = create_builtin_shader(
-        392, render_bink_convert_shader_construct);
-    resources.bloom_shader = create_builtin_shader(
-        376, render_bloom_shader_construct);
-    resources.blur_shader = create_builtin_shader(
-        480, render_blur_shader_construct);
-    resources.fxaa_shader = create_builtin_shader(
-        312, render_fxaa_shader_construct);
-    resources.display_shading_mode_shader = create_builtin_shader(
-        312, render_display_shading_mode_shader_construct);
-    resources.display_sphere_map_shader = create_builtin_shader(
-        296, render_display_sphere_map_shader_construct);
-    resources.display_texture_cube_shader = create_builtin_shader(
-        416, render_display_texture_cube_shader_construct);
-    resources.downsample_shader = create_builtin_shader(
-        376, render_downsample_shader_construct);
-    resources.linearize_depth_shader = create_builtin_shader(
-        296, render_linearize_depth_shader_construct);
-    resources.output_conversion_shader = create_builtin_shader(
-        384, render_output_conversion_shader_construct);
-    resources.refine_scene_mask_shader = create_builtin_shader(
-        296, render_refine_scene_mask_shader_construct);
-    resources.stencil_scene_mask_shader = create_builtin_shader(
-        312, render_stencil_scene_mask_shader_construct);
-    resources.test_pattern_shader = create_builtin_shader(
-        320, render_test_pattern_shader_construct);
+    resources.error_shader = NewShader<RndShaderError>();
+    resources.basic_shader = NewShader<RndShaderBasic>();
+    resources.bink_convert_shader = NewShader<RndShaderBinkConvert>();
+    resources.bloom_shader = NewShader<RndShaderBloom>();
+    resources.blur_shader = NewShader<RndShaderBlur>();
+    resources.fxaa_shader = NewShader<RndShaderFXAA>();
+    resources.display_shading_mode_shader = NewShader<RndShaderDisplayShadingMode>();
+    resources.display_sphere_map_shader = NewShader<RndShaderDisplaySphereMap>();
+    resources.display_texture_cube_shader = NewShader<RndShaderDisplayTextureCube>();
+    resources.downsample_shader = NewShader<RndShaderDownsample>();
+    resources.linearize_depth_shader = NewShader<RndShaderLinearizeDepth>();
+    resources.output_conversion_shader = NewShader<RndShaderOutputConversion>();
+    resources.refine_scene_mask_shader = NewShader<RndShaderRefineSceneMask>();
+    resources.stencil_scene_mask_shader = NewShader<RndShaderStencilSceneMask>();
+    resources.test_pattern_shader = NewShader<RndShaderTestPattern>();
 
     if (supports_async_compute()) {
-        resources.blur_classify_compute_shader = create_builtin_shader(
-            336, render_blur_classify_compute_shader_construct);
-        resources.calc_depth_range_compute_shader = create_builtin_shader(
-            320, render_calc_depth_range_compute_shader_construct);
-        resources.clear_buffer_compute_shader = create_builtin_shader(
-            392, render_clear_buffer_compute_shader_construct);
-        resources.copy_buffer_compute_shader = create_builtin_shader(
-            424, render_copy_buffer_compute_shader_construct);
-        resources.dof_disc_blur_compute_shader = create_builtin_shader(
-            376, render_dof_disc_blur_compute_shader_construct);
-        resources.dof_sprite_shader = create_builtin_shader(
-            304, render_dof_sprite_shader_construct);
-        resources.vscat_density_compute_shader = create_builtin_shader(
-            504, render_vscat_density_compute_shader_construct);
-        resources.vscat_accumulation_compute_shader = create_builtin_shader(
-            432, render_vscat_accumulation_compute_shader_construct);
-        resources.vscat_deferred_compute_shader = create_builtin_shader(
-            408, render_vscat_deferred_compute_shader_construct);
-        resources.ssao_compute_shader = create_builtin_shader(
-            352, render_ssao_compute_shader_construct);
-        resources.cmaa_edge_detect_compute_shader = create_builtin_shader(
-            328, render_cmaa_edge_detect_compute_shader_construct);
-        resources.cmaa_edge_prune_compute_shader = create_builtin_shader(
-            320, render_cmaa_edge_prune_compute_shader_construct);
-        resources.cmaa_shape_fit_compute_shader = create_builtin_shader(
-            328, render_cmaa_shape_fit_compute_shader_construct);
-        resources.cmaa_final_process_compute_shader = create_builtin_shader(
-            328, render_cmaa_final_process_compute_shader_construct);
-        resources.linearize_depth_compute_shader = create_builtin_shader(
-            344, render_linearize_depth_compute_shader_construct);
-        resources.signed_distance_compute_shader = create_builtin_shader(
-            344, render_signed_distance_compute_shader_construct);
-        resources.signed_distance_classify_compute_shader =
-            create_builtin_shader(
-                336,
-                render_signed_distance_classify_compute_shader_construct);
+        resources.blur_classify_compute_shader = NewShader<RndCShaderBlurClassify>();
+        resources.calc_depth_range_compute_shader = NewShader<RndCShaderCalcDepthRange>();
+        resources.clear_buffer_compute_shader = NewShader<RndCShaderClearBuffer>();
+        resources.copy_buffer_compute_shader = NewShader<RndCShaderCopyBuffer>();
+        resources.dof_disc_blur_compute_shader = NewShader<RndCShaderDOFDiscBlur>();
+        resources.dof_sprite_shader = NewShader<RndShaderDOFSprite>();
+        resources.vscat_density_compute_shader = NewShader<RndCShaderVScatCalcDensityInscattering>();
+        resources.vscat_accumulation_compute_shader = NewShader<RndCShaderVScatAccumScattering>();
+        resources.vscat_deferred_compute_shader = NewShader<RndCShaderVScatDeferred>();
+        resources.ssao_compute_shader = NewShader<RndCShaderSSAOGen>();
+        resources.cmaa_edge_detect_compute_shader = NewShader<RndCShaderCMAAEdgeDetect>();
+        resources.cmaa_edge_prune_compute_shader = NewShader<RndCShaderCMAAEdgePrune>();
+        resources.cmaa_shape_fit_compute_shader = NewShader<RndCShaderCMAAShapeFit>();
+        resources.cmaa_final_process_compute_shader = NewShader<RndCShaderCMAAFinalProcess>();
+        resources.linearize_depth_compute_shader = NewShader<RndCShaderLinearizeDepth>();
+        resources.signed_distance_compute_shader = NewShader<RndCShaderSignedDistance>();
+        resources.signed_distance_classify_compute_shader = NewShader<RndCShaderSignedDistanceClassify>();
     }
 
-    resources.render_test_shader = create_builtin_shader(
-        344, render_test_shader_construct);
+    resources.render_test_shader = NewShader<RndShaderRenderTestSimple>();
     if (supports_async_compute()) {
-        resources.render_test_compute_shader = create_builtin_shader(
-            352, render_test_compute_shader_construct);
+        resources.render_test_compute_shader = NewShader<RndCShaderRenderTestCompute>();
     }
 }
 
@@ -611,11 +538,10 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
 // Reconstructed from eboot.elf at 0x641370.
 void render_resource_manager_finalize(RenderResourceManager& manager) {
     manager.shader_constants.initialization_phases[1] = 1;
-    for (auto* node = manager.primary_list->next;
+    for (auto* node = manager.primary_list->mNext;
          node != manager.primary_list;
-         node = node->next) {
-        render_primary_shader_finalize(
-            render_primary_shader_from_link(*node));
+         node = node->mNext) {
+        RndShader::FromLink(node)->Init();
     }
 
     constexpr std::uint32_t kFunctionCount = 4;
@@ -679,7 +605,7 @@ void render_resource_manager_finalize(RenderResourceManager& manager) {
 
 // Reconstructed from eboot.elf at 0x641740.
 void render_resource_manager_shutdown(RenderResourceManager& manager) {
-    RenderShaderConstantBlock** constant_blocks[] = {
+    RndShaderCBufferConfig** constant_blocks[] = {
         &manager.shader_constants.scene_block,
         &manager.shader_constants.render_target_block,
         &manager.shader_constants.camera_block,
@@ -690,40 +616,60 @@ void render_resource_manager_shutdown(RenderResourceManager& manager) {
         &manager.shader_constants.debug_block,
     };
     for (auto** block : constant_blocks) {
-        render_shader_constant_block_release(*block);
+        Release(*block);
     }
-    for (auto*& storage : manager.shader_constants.transient_blocks) {
-        render_shader_constant_block_release(storage);
+    for (auto*& block : manager.shader_constants.transient_blocks) {
+        Release(block);
     }
-
-    render_shader_constant_registry_release(
-        manager.shader_constants.constant_registry);
-
-    if (manager.runtime.shader_parameters != nullptr) {
-        auto* parameters = manager.runtime.shader_parameters;
-        for (std::size_t index = 6; index != 0; --index) {
-            destruct_parameter_registry(
-                parameters->registries[index - 1]);
-        }
-        MemFree(parameters);
-        manager.runtime.shader_parameters = nullptr;
-    }
+    Release(manager.shader_constants.constant_registry);
+    Release(manager.runtime.shader_parameters);
 
     release_dynamic_resource(manager.runtime.function_table_texture);
-    auto** resources = &manager.runtime.resources.error_shader;
-    for (std::size_t index = 0; index < 35; ++index) {
-        release_dynamic_resource(resources[index]);
-    }
+    auto& r = manager.runtime.resources;
+    Release(r.error_shader);
+    Release(r.basic_shader);
+    Release(r.bink_convert_shader);
+    Release(r.bloom_shader);
+    Release(r.blur_shader);
+    Release(r.fxaa_shader);
+    Release(r.dof_sprite_shader);
+    Release(r.display_shading_mode_shader);
+    Release(r.display_sphere_map_shader);
+    Release(r.display_texture_cube_shader);
+    Release(r.downsample_shader);
+    Release(r.linearize_depth_shader);
+    Release(r.output_conversion_shader);
+    Release(r.refine_scene_mask_shader);
+    Release(r.stencil_scene_mask_shader);
+    Release(r.test_pattern_shader);
+    release_dynamic_resource(r.reserved_16);
+    Release(r.blur_classify_compute_shader);
+    Release(r.calc_depth_range_compute_shader);
+    Release(r.clear_buffer_compute_shader);
+    Release(r.copy_buffer_compute_shader);
+    Release(r.dof_disc_blur_compute_shader);
+    Release(r.vscat_density_compute_shader);
+    Release(r.vscat_accumulation_compute_shader);
+    Release(r.vscat_deferred_compute_shader);
+    Release(r.ssao_compute_shader);
+    Release(r.cmaa_edge_detect_compute_shader);
+    Release(r.cmaa_edge_prune_compute_shader);
+    Release(r.cmaa_shape_fit_compute_shader);
+    Release(r.cmaa_final_process_compute_shader);
+    Release(r.linearize_depth_compute_shader);
+    Release(r.signed_distance_compute_shader);
+    Release(r.signed_distance_classify_compute_shader);
+    Release(r.render_test_shader);
+    Release(r.render_test_compute_shader);
 }
 
 // Reconstructed from eboot.elf at 0x641F30, with the primary-resource clear
 // helper at 0x6388C0 and compiled-array clear at 0x63B210.
 void render_resource_manager_reload_shaders(RenderResourceManager& manager) {
-    for (auto* node = manager.primary_list->next;
+    for (auto* node = manager.primary_list->mNext;
          node != manager.primary_list;
-         node = node->next) {
-        render_primary_shader_clear_compiled_objects(
-            render_primary_shader_from_link(*node));
+         node = node->mNext) {
+        RndShader::FromLink(node)->Reload();
     }
 
     const auto& settings = *TheRndDevice()->mSettings;
@@ -731,9 +677,9 @@ void render_resource_manager_reload_shaders(RenderResourceManager& manager) {
         return;
     }
 
-    for (auto* node = manager.secondary_list->next;
+    for (auto* node = manager.secondary_list->mNext;
          node != manager.secondary_list;
-         node = node->next) {
+         node = node->mNext) {
         auto* bytes = reinterpret_cast<std::uint8_t*>(node);
         bytes[kSecondaryShaderDirtyOffset] = true;
     }

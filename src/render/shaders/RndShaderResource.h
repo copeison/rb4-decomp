@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/core/transition_aliases.h"
+class RndContext;
 
 // Common base of resources that shaders read: compute buffers and textures.
 // Slots 0-9 are shared by every resource vtable.

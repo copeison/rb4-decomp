@@ -3,7 +3,8 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
+
+class RndContext;
 
 // Particle vertex buffer. The base vtable is at 0x1939A20.
 class RndParticleBuffer {

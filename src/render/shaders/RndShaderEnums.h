@@ -13,3 +13,9 @@ enum RndShaderProgramType : unsigned int {
 
 // Name not in the reference map.
 constexpr unsigned int kNumShaderProgramTypes = 6;
+
+// Geometry kind selected by the HX_GEO_TYPE define. Enumerator names are not
+// in the reference map.
+enum RndShaderGeoType : int {
+    kShaderGeoTypeDefault = 0,
+};

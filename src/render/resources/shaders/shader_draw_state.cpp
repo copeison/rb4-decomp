@@ -6,9 +6,7 @@
 #include "render/shaders/RndShaderProgram.h"
 #include "render/system/RndDevice.h"
 #include "render/textures/RndTextureBase.h"
-#include "render/resources/shaders/compiled_shader_objects.h"
-#include "render/resources/shaders/primary_shader_resource.h"
-#include "render/resources/shaders/shader_parameter_registry.h"
+#include "render/shaders/RndShader.h"
 
 namespace rb4 {
 
@@ -127,25 +125,14 @@ void render_shader_commit_constant_buffer(
     buffer._SelectImpl(context);
 }
 
-std::uint64_t render_shader_parameter_binding_apply(
-    std::uint64_t key,
-    const RenderShaderParameterBinding& binding,
-    std::uint32_t value) {
-    const auto field = static_cast<std::int32_t>(
-        (value - binding.first_value) << binding.bit_offset);
-    return (key & ~static_cast<std::uint64_t>(binding.shifted_mask)) |
-        static_cast<std::uint64_t>(static_cast<std::int64_t>(field));
-}
-
 void render_shader_draw_with_pixel_texture(
-    void* shader,
+    RndShader& shader,
     RndContext& context,
     RndTextureBase& texture,
     std::uint64_t slot) {
     render_shader_bind_pixel_texture(context, &texture, slot);
-    std::uint64_t keys[kRenderShaderProgramKeyCount] = {};
-    render_primary_shader_bind(
-        *static_cast<RenderPrimaryShaderResource*>(shader), context, keys);
+    RndShaderKeyGroup keys{};
+    shader._SelectShaderCollection(context, keys);
 }
 
 }  // namespace rb4

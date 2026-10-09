@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/core/transition_aliases.h"
+class RndContext;
 
 // Texture selection for each shader stage. The map has
 // SelectTextureFor*(RndContext&, unsigned long, sce::Gnm::Texture*,

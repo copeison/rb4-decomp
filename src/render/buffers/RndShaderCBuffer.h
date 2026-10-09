@@ -3,7 +3,9 @@
 #include <cstddef>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/transition_aliases.h"
+
+class RndContext;
+class RndShaderCBufferConfig;
 
 // Shader constant buffer created from a constant-buffer configuration. The
 // base vtable is at 0x192F070; the platform buffer stores its element data

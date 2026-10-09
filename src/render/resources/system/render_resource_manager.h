@@ -4,8 +4,44 @@
 #include <cstdint>
 
 #include "render/resources/shaders/shader_cache_validation.h"
-#include "render/resources/shaders/shader_constant_block.h"
-#include "render/resources/shaders/shader_parameter_registry.h"
+#include "render/shaders/RndShaderCBufferConfig.h"
+#include "render/shaders/RndShaderDefines.h"
+
+class RndShaderError;
+class RndShaderBasic;
+class RndShaderBinkConvert;
+class RndShaderBloom;
+class RndShaderBlur;
+class RndShaderFXAA;
+class RndShaderDOFSprite;
+class RndShaderDisplayShadingMode;
+class RndShaderDisplaySphereMap;
+class RndShaderDisplayTextureCube;
+class RndShaderDownsample;
+class RndShaderLinearizeDepth;
+class RndShaderOutputConversion;
+class RndShaderRefineSceneMask;
+class RndShaderStencilSceneMask;
+class RndShaderTestPattern;
+class RndCShaderBlurClassify;
+class RndCShaderCalcDepthRange;
+class RndCShaderClearBuffer;
+class RndCShaderCopyBuffer;
+class RndCShaderDOFDiscBlur;
+class RndCShaderVScatCalcDensityInscattering;
+class RndCShaderVScatAccumScattering;
+class RndCShaderVScatDeferred;
+class RndCShaderSSAOGen;
+class RndCShaderCMAAEdgeDetect;
+class RndCShaderCMAAEdgePrune;
+class RndCShaderCMAAShapeFit;
+class RndCShaderCMAAFinalProcess;
+class RndCShaderLinearizeDepth;
+class RndCShaderSignedDistance;
+class RndCShaderSignedDistanceClassify;
+class RndShaderRenderTestSimple;
+class RndCShaderRenderTestCompute;
+struct RndShaderLink;
 
 namespace rb4 {
 
@@ -16,14 +52,9 @@ struct RenderResourcePointerArray {
     void* allocator;
 };
 
-struct RenderResourceListNode {
-    RenderResourceListNode* next;
-    RenderResourceListNode* previous;
-};
-
 struct RenderShaderConstantState {
     std::uint8_t initialization_phases[8];
-    RenderShaderConstantBlock* scene_block;
+    RndShaderCBufferConfig* scene_block;
     std::uint64_t time;
     std::uint64_t smoothness_decay;
     std::uint64_t sgraph_trans_infos;
@@ -33,73 +64,73 @@ struct RenderShaderConstantState {
     std::uint64_t fog_params;
     std::uint64_t volumetric_params_0;
     std::uint64_t volumetric_params_1;
-    RenderShaderConstantBlock* render_target_block;
+    RndShaderCBufferConfig* render_target_block;
     std::uint64_t target_dimensions;
-    RenderShaderConstantBlock* camera_block;
+    RndShaderCBufferConfig* camera_block;
     std::uint64_t camera_near_far_params;
     std::uint64_t camera_misc_params;
     std::uint64_t camera_view_extents;
     std::uint64_t reserved_216;
     std::uint64_t reserved_224;
     std::uint64_t camera_rt_sliced_data;
-    RenderShaderConstantBlock* clip_planes_block;
+    RndShaderCBufferConfig* clip_planes_block;
     std::uint64_t clip_planes;
-    RenderShaderConstantBlock* skeleton_block;
+    RndShaderCBufferConfig* skeleton_block;
     std::uint64_t skeleton_bone_transforms;
-    RenderShaderConstantBlock* misc_draw_state_block;
+    RndShaderCBufferConfig* misc_draw_state_block;
     std::uint64_t environment_index;
     std::uint64_t solid_color;
-    RenderShaderConstantBlock* occlusion_query_block;
+    RndShaderCBufferConfig* occlusion_query_block;
     std::uint64_t occlusion_query_coverage;
-    RenderShaderConstantBlock* debug_block;
+    RndShaderCBufferConfig* debug_block;
     std::uint64_t debug_modes;
     std::uint64_t debug_color;
     std::uint64_t batch_info;
     std::uint64_t preview_node_index;
-    RenderShaderConstantBlock* transient_blocks[3];
-    RenderShaderConstantRegistry* constant_registry;
+    RndShaderCBufferConfig* transient_blocks[3];
+    RndShaderFixedDefines* constant_registry;
 };
 
 struct RenderResourceManagerResources {
-    void* error_shader;
-    void* basic_shader;
-    void* bink_convert_shader;
-    void* bloom_shader;
-    void* blur_shader;
-    void* fxaa_shader;
-    void* dof_sprite_shader;
-    void* display_shading_mode_shader;
-    void* display_sphere_map_shader;
-    void* display_texture_cube_shader;
-    void* downsample_shader;
-    void* linearize_depth_shader;
-    void* output_conversion_shader;
-    void* refine_scene_mask_shader;
-    void* stencil_scene_mask_shader;
-    void* test_pattern_shader;
+    RndShaderError* error_shader;
+    RndShaderBasic* basic_shader;
+    RndShaderBinkConvert* bink_convert_shader;
+    RndShaderBloom* bloom_shader;
+    RndShaderBlur* blur_shader;
+    RndShaderFXAA* fxaa_shader;
+    RndShaderDOFSprite* dof_sprite_shader;
+    RndShaderDisplayShadingMode* display_shading_mode_shader;
+    RndShaderDisplaySphereMap* display_sphere_map_shader;
+    RndShaderDisplayTextureCube* display_texture_cube_shader;
+    RndShaderDownsample* downsample_shader;
+    RndShaderLinearizeDepth* linearize_depth_shader;
+    RndShaderOutputConversion* output_conversion_shader;
+    RndShaderRefineSceneMask* refine_scene_mask_shader;
+    RndShaderStencilSceneMask* stencil_scene_mask_shader;
+    RndShaderTestPattern* test_pattern_shader;
     void* reserved_16;
-    void* blur_classify_compute_shader;
-    void* calc_depth_range_compute_shader;
-    void* clear_buffer_compute_shader;
-    void* copy_buffer_compute_shader;
-    void* dof_disc_blur_compute_shader;
-    void* vscat_density_compute_shader;
-    void* vscat_accumulation_compute_shader;
-    void* vscat_deferred_compute_shader;
-    void* ssao_compute_shader;
-    void* cmaa_edge_detect_compute_shader;
-    void* cmaa_edge_prune_compute_shader;
-    void* cmaa_shape_fit_compute_shader;
-    void* cmaa_final_process_compute_shader;
-    void* linearize_depth_compute_shader;
-    void* signed_distance_compute_shader;
-    void* signed_distance_classify_compute_shader;
-    void* render_test_shader;
-    void* render_test_compute_shader;
+    RndCShaderBlurClassify* blur_classify_compute_shader;
+    RndCShaderCalcDepthRange* calc_depth_range_compute_shader;
+    RndCShaderClearBuffer* clear_buffer_compute_shader;
+    RndCShaderCopyBuffer* copy_buffer_compute_shader;
+    RndCShaderDOFDiscBlur* dof_disc_blur_compute_shader;
+    RndCShaderVScatCalcDensityInscattering* vscat_density_compute_shader;
+    RndCShaderVScatAccumScattering* vscat_accumulation_compute_shader;
+    RndCShaderVScatDeferred* vscat_deferred_compute_shader;
+    RndCShaderSSAOGen* ssao_compute_shader;
+    RndCShaderCMAAEdgeDetect* cmaa_edge_detect_compute_shader;
+    RndCShaderCMAAEdgePrune* cmaa_edge_prune_compute_shader;
+    RndCShaderCMAAShapeFit* cmaa_shape_fit_compute_shader;
+    RndCShaderCMAAFinalProcess* cmaa_final_process_compute_shader;
+    RndCShaderLinearizeDepth* linearize_depth_compute_shader;
+    RndCShaderSignedDistance* signed_distance_compute_shader;
+    RndCShaderSignedDistanceClassify* signed_distance_classify_compute_shader;
+    RndShaderRenderTestSimple* render_test_shader;
+    RndCShaderRenderTestCompute* render_test_compute_shader;
 };
 
 struct RenderResourceManagerRuntime {
-    RenderShaderParameterRegistrySet* shader_parameters;
+    RndShaderDefinesGroup* shader_parameters;
     void* function_table_texture;
     RenderResourceManagerResources resources;
     // Low 32 bits: FNV-1a hash of the global shader-constant source.
@@ -107,16 +138,15 @@ struct RenderResourceManagerRuntime {
 };
 
 struct RenderResourceManager {
-    RenderShaderParameterBinding shader_parameter_bindings[4];
+    RndShaderDefInfo shader_parameter_bindings[4];
     RenderShaderConstantState shader_constants;
     RenderResourceManagerRuntime runtime;
     RenderShaderCacheDefineArray* shader_cache_defines;
-    RenderResourceListNode* primary_list;
-    RenderResourceListNode* secondary_list;
+    RndShaderLink* primary_list;
+    RndShaderLink* secondary_list;
 };
 
 static_assert(sizeof(RenderResourcePointerArray) == 32);
-static_assert(sizeof(RenderResourceListNode) == 16);
 static_assert(sizeof(RenderShaderConstantState) == 304);
 static_assert(
     offsetof(RenderResourceManager, shader_parameter_bindings) == 0);

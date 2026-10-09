@@ -34,7 +34,6 @@ New work should enter the narrowest fitting domain in its original module.
 Create a clearly named domain folder when none fits, and use
 source-root-qualified includes when code crosses folders.
 
-While conversion is in progress, `src/render/core/transition_aliases.h` maps
-original names onto types that are not converted yet. Examples are
-`RndContext`, `RndShaderCBufferConfig` and `PS4Context`. Each alias is removed
-when its type becomes a real class.
+The temporary alias header used during the conversion
+(`render/core/transition_aliases.h`) is gone; every type it aliased is now a
+real class.
