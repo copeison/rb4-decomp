@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <gnm/depthrendertarget.h>
+#include <gnm/rendertarget.h>
 #include <gnm/texture.h>
 
 #include "render/textures/RndTextureArray2D.h"
@@ -29,15 +31,14 @@ public:
     void* mStorage;
     void* mStencilStorage;
     void* mHtileStorage;
-    void* mColorTarget;
-    void* mDepthTarget;
+    sce::Gnm::RenderTarget* mColorTarget;
+    sce::Gnm::DepthRenderTarget* mDepthTarget;
 
 private:
-    // Stand-ins for code inlined into _SyncStaticImpl and the destructor; not
-    // yet reconstructed. Names not in the reference map.
+    // Inlined into _SyncStaticImpl. The map has _SyncDepthStencil and
+    // _SyncRegular with description, pixel-data and format parameters.
     void _SyncDepthStencil();
     void _SyncRegular();
-    static void* ColorTargetMetadata(void* target);
 };
 
 static_assert(offsetof(PS4TextureArray2D, mGpuTexture) == 344);

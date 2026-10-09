@@ -575,6 +575,7 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the `PS4TextureArray2D` color and HTILE depth syncs.
 - [x] Reconstruct the `PS4TextureCube` color and depth syncs and destructor.
 - [x] Type the PS4 textures as `sce::Gnm::Texture` and reconstruct the 1D,
   3D, 1D-array and cube-array static syncs with `PS4RenderUtl::GetDataFormat`

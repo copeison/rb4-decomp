@@ -22,6 +22,12 @@ Backend initialization at `0x8E5E70` branches on the common usage field. A
 depth array creates a 52-byte Gnm depth-target descriptor, allocates aligned
 depth, optional stencil, and HTILE surfaces, assigns their 256-byte addresses,
 and creates a 32-byte shader texture view with resource memory type `109`.
+In SDK terms the spec enables `m_flags.enableHtileAcceleration`. The target
+then receives `setZReadAddress`, `setZWriteAddress`, the stencil pair,
+`setHtileAddress`, `setHtileAccelerationEnable(true)` and
+`setZCompareBase(kZCompareBaseZMin)`; the last two share one `DB_Z_INFO`
+store in the binary. The view comes from
+`Texture::initFromDepthRenderTarget(target, false)`.
 
 The color path creates a 32-byte Gnm texture descriptor with texture type 13.
 Its layer count comes from the number of 80-byte element records. After
