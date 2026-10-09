@@ -54,14 +54,36 @@ streamed into an FNV-1a hashing text stream that sign-extends each byte.
 Earlier constant-block hashing zero-extended bytes; it now shares the
 corrected helper.
 
-The backend initializer at `0x638430` and its cache validator at `0x638A40`
-remain unreconstructed. The validator opens the cache as a 592-byte
-`FileStream` (`0x2443A0`). It compares the record count and the shader's slot-6
-value, then the render-system version at `+0xC98` and the parameter hash from
-`0x638D70`. Next it checks an FNV-1a hash (basis `0x811C9DC5`) of the generated
-constant-block and backend-state source, a hash of the backend path
-(`0x6456C0`), and the platform records at render-system `+0xCA0` (`0x63EB70`).
-Only then does it call the loader.
+## Backend initialization
+
+`render_primary_shader_initialize_backend` (`0x638430`) runs under the
+recursive "hx crit sec" critical section. It is created by the static
+initializer at `0x639810` and torn down at `0x12E70`, which releases any
+outstanding holds. On the first call for a shader, the initializer:
+
+1. Records the backend path (slot 3) at `+0xD0`.
+2. Resolves the path into a symbol (`0x1AF950`).
+3. Asks the generated-file system (`0x1AD8B0`) for the compiled cache path and
+   whether it is stale.
+4. Loads the cache with `render_primary_shader_load_cache` (`0x638A40`).
+5. Marks the shader compiled whatever the outcome.
+
+Archive mode (byte `0x19E4558`) trusts caches and skips validation. Otherwise
+a stale, missing, or mismatched cache is retried without validation, because
+retail builds cannot compile shaders.
+
+A cache file starts with a non-zero marker and the shader variant. Four
+32-bit hashes follow:
+
+- the global shader-constant source hash (resource manager `+680`);
+- the permutation layout hash;
+- the constant-block and backend-state declaration hash;
+- the HLSL source-file hash.
+
+Next come the global defines the cache was built with, read as symbols under a
+thread-local heap scope (`0x37AA30`/`0x37AAF0`). The compiled objects come
+last. Validation compares every hash and requires each cached define to match
+the resource manager's sorted define list at `+688`.
 
 ## Permutation layout hash
 

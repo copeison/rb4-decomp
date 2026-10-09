@@ -6,6 +6,7 @@
 namespace rb4 {
 
 struct BinStream;
+class Symbol;
 struct RandomGenerator;
 
 enum class BinStreamSeek : std::int32_t {
@@ -73,6 +74,7 @@ void bin_stream_construct(
 void bin_stream_destruct(BinStream& stream);
 void bin_stream_read(BinStream& stream, void* data, std::int64_t size);
 void bin_stream_read_endian(BinStream& stream, void* data, std::int32_t size);
+void bin_stream_read_symbol(BinStream& stream, Symbol& symbol);
 void bin_stream_write_endian(
     BinStream& stream,
     const void* data,

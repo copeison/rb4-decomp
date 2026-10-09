@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "render/resources/shaders/shader_cache_validation.h"
 #include "render/resources/shaders/shader_constant_block.h"
 #include "render/resources/shaders/shader_parameter_registry.h"
 
@@ -103,14 +104,15 @@ struct RenderResourceManagerRuntime {
     RenderShaderParameterRegistrySet* shader_parameters;
     void* function_table_texture;
     RenderResourceManagerResources resources;
-    std::uint64_t reserved_680;
+    // Low 32 bits: FNV-1a hash of the global shader-constant source.
+    std::uint64_t constant_source_hash;
 };
 
 struct RenderResourceManager {
     RenderShaderParameterBinding shader_parameter_bindings[4];
     RenderShaderConstantState shader_constants;
     RenderResourceManagerRuntime runtime;
-    RenderResourcePointerArray* pointer_array;
+    RenderShaderCacheDefineArray* shader_cache_defines;
     RenderResourceListNode* primary_list;
     RenderResourceListNode* secondary_list;
 };
@@ -170,7 +172,7 @@ static_assert(
     offsetof(RenderResourceManager, runtime) +
         offsetof(RenderResourceManagerRuntime, resources) ==
     400);
-static_assert(offsetof(RenderResourceManager, pointer_array) == 688);
+static_assert(offsetof(RenderResourceManager, shader_cache_defines) == 688);
 static_assert(offsetof(RenderResourceManager, primary_list) == 696);
 static_assert(offsetof(RenderResourceManager, secondary_list) == 704);
 static_assert(sizeof(RenderResourceManager) == 712);

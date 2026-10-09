@@ -434,6 +434,8 @@
   slots, with permutation validators and fallback/slice/geometry overrides.
 - [x] Reconstruct stage permutation enumeration and the primary-shader
   layout hash used to validate compiled-shader caches.
+- [x] Reconstruct primary-shader backend initialization, compiled-cache
+  validation and loading, and its recursive critical section.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

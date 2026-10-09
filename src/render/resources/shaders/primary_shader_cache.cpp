@@ -2,12 +2,24 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <_pthread.h>
 
+#include "core/io/bin_stream.h"
+#include "core/io/file_stream.h"
+#include "core/io/generated_file_adapters.h"
+#include "core/memory/engine_memory.h"
+#include "core/memory/heap_scope_adapters.h"
+#include "core/types/symbol.h"
 #include "render/core/platform/render_platform_config.h"
 #include "render/core/system/render_system_globals.h"
+#include "render/resources/names/render_resource_name.h"
+#include "render/resources/shaders/compiled_shader_objects.h"
 #include "render/resources/shaders/primary_shader_resource.h"
+#include "render/resources/shaders/shader_cache_validation.h"
 #include "render/resources/shaders/shader_permutations.h"
 #include "render/resources/shaders/shader_source_hash.h"
+#include "render/resources/system/render_resource_manager.h"
 
 namespace rb4 {
 
@@ -74,6 +86,160 @@ void hash_permutation(
     append_key(*state.hash, key);
 }
 
+// Recursive critical section "hx crit sec" serializing backend
+// initialization. The static initializer at 0x639810 clears the depth and
+// creates the mutex with the recursive type.
+struct ShaderCriticalSection {
+    std::int32_t depth;
+    ScePthreadMutex mutex;
+
+    ShaderCriticalSection() : depth(0) {
+        ScePthreadMutexattr attributes;
+        scePthreadMutexattrInit(&attributes);
+        scePthreadMutexattrSettype(
+            &attributes, SCE_PTHREAD_MUTEX_RECURSIVE);
+        scePthreadMutexInit(&mutex, &attributes, "hx crit sec");
+        scePthreadMutexattrDestroy(&attributes);
+    }
+
+    // Reconstructed from eboot.elf at 0x12E70, registered with __cxa_atexit.
+    // Releases every outstanding recursive hold before destroying the mutex.
+    ~ShaderCriticalSection() {
+        scePthreadMutexLock(&mutex);
+        const auto held = depth;
+        scePthreadMutexUnlock(&mutex);
+        for (auto remaining = held; remaining > 0; --remaining) {
+            --depth;
+            scePthreadMutexUnlock(&mutex);
+        }
+        scePthreadMutexDestroy(&mutex);
+    }
+};
+
+ShaderCriticalSection g_shader_critical_section;
+
+std::uint32_t read_word(BinStream& stream) {
+    std::uint32_t value = 0;
+    bin_stream_read_endian(stream, &value, sizeof(value));
+    return value;
+}
+
+// Reconstructed from eboot.elf at 0x50CA90 and the inline shrink path of
+// 0x638A40. New entries have the empty name and value zero.
+void resize_defines(RenderShaderCacheDefineArray& defines, std::size_t count) {
+    const auto size = static_cast<std::size_t>(defines.end - defines.begin);
+    if (count <= size) {
+        defines.end = defines.begin + count;
+        return;
+    }
+    const auto capacity =
+        static_cast<std::size_t>(defines.capacity - defines.begin);
+    if (count > capacity) {
+        auto new_capacity = size == 0 ? std::size_t{1} : size * 2;
+        if (new_capacity < count) {
+            new_capacity = count;
+        }
+        auto* storage = static_cast<RenderShaderCacheDefine*>(
+            engine_allocate_sized(new_capacity * sizeof(RenderShaderCacheDefine)));
+        if (size != 0) {
+            std::memcpy(storage, defines.begin, size * sizeof(*storage));
+        }
+        if (defines.begin != nullptr) {
+            engine_deallocate_sized(
+                defines.begin, capacity * sizeof(RenderShaderCacheDefine));
+        }
+        defines.begin = storage;
+        defines.end = storage + size;
+        defines.capacity = storage + new_capacity;
+    }
+    const Symbol empty_name("");
+    for (auto* define = defines.end; define != defines.begin + count; ++define) {
+        define->name = static_cast<const char*>(empty_name.value());
+        define->value = 0;
+    }
+    defines.end = defines.begin + count;
+}
+
+void release_defines(RenderShaderCacheDefineArray& defines) {
+    if (defines.begin != nullptr) {
+        engine_deallocate_sized(
+            defines.begin,
+            static_cast<std::size_t>(defines.capacity - defines.begin) *
+                sizeof(RenderShaderCacheDefine));
+    }
+    defines = {};
+}
+
+RenderResourceManager& resource_manager() {
+    return render_system_resource_manager(*render_system_instance());
+}
+
+// Reconstructed from eboot.elf at 0x638A40. A compiled-shader cache begins
+// with a non-zero marker, the shader variant, and four validation hashes,
+// followed by the global defines it was built with and the compiled objects.
+// Unvalidated loads skip the hash and define checks.
+bool load_cache(
+    RenderPrimaryShaderResource& shader,
+    const char* path,
+    bool validate) {
+    FileStream stream;
+    file_stream_construct(stream, path, 0, 0);
+    bool loaded = false;
+    if (!file_stream_fail(&stream)) {
+        const auto marker = read_word(stream);
+        if (marker != 0 &&
+            static_cast<std::int32_t>(read_word(stream)) ==
+                shader.dispatch->variant(&shader)) {
+            const auto constant_hash = read_word(stream);
+            const auto layout_hash = read_word(stream);
+            const auto declaration_hash = read_word(stream);
+            const auto source_hash = read_word(stream);
+
+            RenderShaderCacheDefineArray defines{};
+            std::uint32_t heap_mode = 0;
+            engine_heap_scope_begin(heap_mode, true, true);
+            resize_defines(defines, read_word(stream));
+            for (auto* define = defines.begin; define != defines.end; ++define) {
+                Symbol name(define->name);
+                bin_stream_read_symbol(stream, name);
+                define->name = static_cast<const char*>(name.value());
+                bin_stream_read_endian(
+                    stream, &define->value, sizeof(define->value));
+            }
+            engine_heap_scope_end(heap_mode);
+
+            bool valid = true;
+            if (validate) {
+                auto& manager = resource_manager();
+                valid = constant_hash ==
+                        static_cast<std::uint32_t>(
+                            manager.runtime.constant_source_hash) &&
+                    layout_hash == render_primary_shader_layout_hash(shader);
+                if (valid) {
+                    auto hash = kShaderSourceHashBasis;
+                    render_shader_constant_block_accumulate_source_hash(
+                        *shader.constant_block, hash);
+                    render_shader_backend_state_accumulate_source_hash(
+                        *shader.backend_state, hash);
+                    valid = declaration_hash == hash &&
+                        source_hash ==
+                            render_shader_hash_source_file(static_cast<const char*>(
+                                shader.dispatch->backend_name(&shader))) &&
+                        render_shader_cache_defines_match(
+                            *manager.shader_cache_defines, defines);
+                }
+            }
+            if (valid) {
+                loaded = render_compiled_shader_objects_load(
+                    shader.compiled_objects, shader.backend_name, stream);
+            }
+            release_defines(defines);
+        }
+    }
+    file_stream_destruct(stream);
+    return loaded;
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x638D70. Hashes everything that shapes the
@@ -107,6 +273,46 @@ std::uint32_t render_primary_shader_layout_hash(
             *shader.parameters, stage, hash_permutation, &context);
     }
     return hash;
+}
+
+// Reconstructed from eboot.elf at 0x638430. Retail builds cannot compile
+// shaders, so a missing, stale, or mismatched cache falls back to loading the
+// generated cache without validation. When archive mode is set, caches are
+// trusted and validation is skipped. The original's stripped compile path
+// still snapshots the global defines and queries the source identifier and
+// platform 7 name; those side-effect-free calls are omitted here.
+void render_primary_shader_initialize_backend(
+    RenderPrimaryShaderResource& shader) {
+    auto& section = g_shader_critical_section;
+    scePthreadMutexLock(&section.mutex);
+    ++section.depth;
+    if (!shader.compiled) {
+        auto* path = shader.dispatch->backend_name(&shader);
+        shader.backend_name = path;
+
+        bool rebuild_needed = false;
+        RenderResourceName generated_path;
+        render_resource_name_construct(generated_path, "");
+        EngineFileTimestamp timestamp{};
+        Symbol source("");
+        engine_file_resolve_path(source, static_cast<const char*>(path));
+        if (engine_file_find_generated(
+                source, "", generated_path, rebuild_needed, timestamp)) {
+            const bool archive_mode = g_engine_file_archive_mode != 0;
+            bool failed = true;
+            if (!rebuild_needed || archive_mode) {
+                failed = !load_cache(
+                    shader, generated_path.text, !archive_mode);
+            }
+            if (failed && !archive_mode) {
+                load_cache(shader, generated_path.text, false);
+            }
+        }
+        shader.compiled = true;
+        render_resource_name_destruct(generated_path);
+    }
+    --section.depth;
+    scePthreadMutexUnlock(&section.mutex);
 }
 
 }  // namespace rb4

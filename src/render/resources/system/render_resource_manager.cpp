@@ -168,9 +168,9 @@ void render_resource_manager_construct(RenderResourceManager& manager) {
     std::fill_n(constant_words + 34, 4, std::int64_t{0});
     manager.runtime = {};
 
-    manager.pointer_array = static_cast<RenderResourcePointerArray*>(
-        render_allocate(sizeof(RenderResourcePointerArray)));
-    *manager.pointer_array = {};
+    manager.shader_cache_defines = static_cast<RenderShaderCacheDefineArray*>(
+        render_allocate(sizeof(RenderShaderCacheDefineArray)));
+    *manager.shader_cache_defines = {};
     manager.primary_list = create_list_sentinel();
     manager.secondary_list = create_list_sentinel();
 }
@@ -503,8 +503,8 @@ void render_resource_manager_initialize_shader_constants(
         render_shader_constant_block_accumulate_source_hash(
             *block, source_hash);
     }
-    manager.runtime.reserved_680 =
-        (manager.runtime.reserved_680 & 0xFFFFFFFF00000000ULL) |
+    manager.runtime.constant_source_hash =
+        (manager.runtime.constant_source_hash & 0xFFFFFFFF00000000ULL) |
         source_hash;
 }
 
@@ -599,16 +599,16 @@ void render_resource_manager_destruct(RenderResourceManager& manager) {
     release_list_sentinel(manager.primary_list);
     release_list_sentinel(manager.secondary_list);
 
-    if (manager.pointer_array != nullptr) {
-        auto& array = *manager.pointer_array;
+    if (manager.shader_cache_defines != nullptr) {
+        auto& array = *manager.shader_cache_defines;
         if (array.begin != nullptr) {
             const auto byte_count = static_cast<std::size_t>(
                 reinterpret_cast<std::uint8_t*>(array.capacity) -
                 reinterpret_cast<std::uint8_t*>(array.begin));
             engine_deallocate_sized(array.begin, byte_count);
         }
-        render_release(manager.pointer_array);
-        manager.pointer_array = nullptr;
+        render_release(manager.shader_cache_defines);
+        manager.shader_cache_defines = nullptr;
     }
 }
 

@@ -4,6 +4,7 @@
 
 #include "core/memory/engine_memory.h"
 #include "core/random/random_generator.h"
+#include "core/types/symbol.h"
 
 namespace rb4 {
 
@@ -135,6 +136,28 @@ void bin_stream_read_endian(BinStream& stream, void* data, std::int32_t size) {
     if (stream.swap_endian != 0) {
         swap_value(data, size);
     }
+}
+
+// Reconstructed from eboot.elf at 0x21A300. Symbols are stored as a 32-bit
+// length followed by unterminated text. Text of up to 1023 bytes is staged on
+// the stack; longer text uses a temporary named allocation.
+void bin_stream_read_symbol(BinStream& stream, Symbol& symbol) {
+    constexpr std::uint32_t kStackTextLimit = 0x3FF;
+    std::uint32_t length = 0;
+    bin_stream_read_endian(stream, &length, sizeof(length));
+    if (length > kStackTextLimit) {
+        auto* text = static_cast<char*>(render_allocate_named(
+            length + 1, "BinStream::operator>>(Symbol)", 0));
+        bin_stream_read(stream, text, length);
+        text[length] = '\0';
+        symbol = Symbol(text);
+        render_release(text);
+        return;
+    }
+    char text[kStackTextLimit + 1];
+    bin_stream_read(stream, text, length);
+    text[length] = '\0';
+    symbol = Symbol(text);
 }
 
 // Reconstructed from eboot.elf at 0x21ACB0. Byte-swapped values are staged in
