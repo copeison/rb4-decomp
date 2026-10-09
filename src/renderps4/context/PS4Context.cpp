@@ -63,6 +63,7 @@ constexpr std::size_t kComputeQueueRingSize = 4096;
 constexpr std::size_t kComputeQueueRingAlignment = 256;
 constexpr unsigned int kNumShaderStages = 6;
 constexpr std::size_t kTimestampBufferSize = 0x2000;
+constexpr int kTimestampAlignment = 8;
 constexpr std::size_t kInitialLabelCapacity = 32;
 constexpr std::size_t kHighPriorityComputeContextCount = 3;
 constexpr std::size_t kSubmissionCounterCount = 10;
@@ -133,11 +134,17 @@ PS4Context* PS4Context::_CreateImmediate(PS4Device& device) {
 // transient buffers (0x8EC7C0) after the state defaults; here the compiler
 // constructs them as members before the body, since the earlier members are
 // not yet modeled.
-PS4Context::PS4Context() : RndContext(false) {
+PS4Context::PS4Context()
+    : RndContext(false),
+      mGpuTimestamps(nullptr),
+      mNextGpuStatBlock(0),
+      mCachedShaderStages(static_cast<sce::Gnm::ActiveShaderStages>(-1)),
+      mCachedPrimitiveType(static_cast<sce::Gnm::PrimitiveType>(-1)),
+      mGsModeEnabled(false),
+      mCbEnabled(true) {
     _InitCommandState();
 
     _InitStateDefaults();
-    _InitAllocationMap();
     _CreateGfxContext();
     _CreateGpuTimestampPool();
 
@@ -176,9 +183,20 @@ void PS4Context::_CreateGfxContext() {
     }
 }
 
-// Reconstructed from eboot.elf at 0x8E7DF0.
+// Reconstructed from eboot.elf at 0x8E7DF0. Each block owns a begin and an
+// end timestamp in one "gpu"-heap allocation.
 void PS4Context::_CreateGpuTimestampPool() {
-    _InitTimestampRecords(kTimestampBufferSize);
+    static long sGpuHeap = MemFindHeap("gpu");
+    MemPushHeap(sGpuHeap);
+    mGpuTimestamps = static_cast<std::uint64_t*>(
+        MemAlloc(kTimestampBufferSize, "GpuStatBlock timestamps", kTimestampAlignment));
+    MemPopHeap();
+    for (std::size_t index = 0; index < kNumGpuStatBlocks; ++index) {
+        auto& block = mGpuStatBlocks[index];
+        block.mActive = false;
+        block.mBegin = mGpuTimestamps + 2 * index;
+        block.mEnd = mGpuTimestamps + 2 * index + 1;
+    }
 }
 
 // Reconstructed from eboot.elf at 0x8E8070. The binary destroys the
@@ -186,8 +204,8 @@ void PS4Context::_CreateGpuTimestampPool() {
 // compiler destroys them as members after the body, since the members around
 // them are not yet modeled.
 PS4Context::~PS4Context() {
+    MemFree(mGpuTimestamps);
     _ReleaseLabelPool();
-    _ReleaseTimestampPool();
     _DestructCommandState();
 }
 
@@ -824,35 +842,55 @@ void PS4Context::_PopMarkerImpl() {
 
 // GPU statistics -------------------------------------------------------------
 
-PS4Context::GpuTimestampEvent PS4Context::_GpuTimestampEventType() const {
-    return _RecordingGraphics() ? GpuTimestampEvent::kGraphicsComplete
-                                : GpuTimestampEvent::kComputeComplete;
+// The end-of-pipe event of a timestamp: CB/DB flushes on the graphics pipe,
+// compute completion otherwise. The timestamps are always written by the
+// graphics context. Name not in the reference map.
+sce::Gnm::EndOfPipeEventType PS4Context::_GpuTimestampEvent() const {
+    return mActivePipe == 0 ? sce::Gnm::kEopFlushCbDbCaches : sce::Gnm::kEopCsDone;
 }
 
 // Reconstructed from eboot.elf at 0x8EBA20.
 void PS4Context::_BeginGpuStatsImpl(unsigned long key) {
-    auto& block = _AcquireGpuStatBlock();
+    auto& block = mGpuStatBlocks[mNextGpuStatBlock];
+    const auto next = mNextGpuStatBlock + 1;
+    mNextGpuStatBlock = next > kNumGpuStatBlocks - 1 ? 0 : next;
     block.mActive = true;
-    _EmitGpuTimestamp(block.mBegin, _GpuTimestampEventType());
-    _StoreGpuStatBlock(key, block);
+    _ActiveGfxContext().writeAtEndOfPipe(
+        _GpuTimestampEvent(),
+        sce::Gnm::kEventWriteDestMemory,
+        const_cast<std::uint64_t*>(block.mBegin),
+        sce::Gnm::kEventWriteSourceGpuCoreClockCounter,
+        0,
+        sce::Gnm::kCacheActionNone,
+        sce::Gnm::kCachePolicyLru);
+    mGpuStats[key] = &block;
 }
 
 // Reconstructed from eboot.elf at 0x8EBBB0.
 void PS4Context::_EndGpuStatsImpl(unsigned long key) {
-    auto& block = _FindGpuStatBlock(key);
-    _EmitGpuTimestamp(block.mEnd, _GpuTimestampEventType());
+    auto* block = mGpuStats.find(key)->second;
+    _ActiveGfxContext().writeAtEndOfPipe(
+        _GpuTimestampEvent(),
+        sce::Gnm::kEventWriteDestMemory,
+        const_cast<std::uint64_t*>(block->mEnd),
+        sce::Gnm::kEventWriteSourceGpuCoreClockCounter,
+        0,
+        sce::Gnm::kCacheActionNone,
+        sce::Gnm::kCachePolicyLru);
 }
 
-// Reconstructed from eboot.elf at 0x8EBC70.
+// Reconstructed from eboot.elf at 0x8EBC70. The GPU core clock runs at
+// 800 MHz.
 RndGpuStatSample PS4Context::_EvalAndRetireGpuStatsImpl(unsigned long key) {
-    auto& block = _FindGpuStatBlock(key);
-    const auto elapsedTicks = *block.mEnd - *block.mBegin;
+    const auto it = mGpuStats.find(key);
+    auto* block = it->second;
+    const auto elapsedTicks = *block->mEnd - *block->mBegin;
 
     RndGpuStatSample statistics = {};
     statistics.mSeconds = static_cast<float>(elapsedTicks) * kGpuClockSeconds;
 
-    block.mActive = false;
-    _RemoveGpuStatBlock(key);
+    block->mActive = false;
+    mGpuStats.erase(it);
     return statistics;
 }
 

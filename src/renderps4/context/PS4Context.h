@@ -13,6 +13,7 @@
 #include "render/context/RndContext.h"
 #include "renderps4/buffers/PS4TransientBuffer.h"
 #include "renderps4/context/PS4RenderStateUtl.h"
+#include "utl/containers/Map.h"
 
 class PS4Device;
 
@@ -31,18 +32,12 @@ public:
     // eastl::map<unsigned long, GpuStatBlock*> by it. Field names are not in
     // the reference map.
     struct GpuStatBlock {
-        bool mActive = false;
-        std::uint8_t mPadding[7] = {};
-        volatile std::uint64_t* mBegin = nullptr;
-        volatile std::uint64_t* mEnd = nullptr;
+        bool mActive;
+        volatile std::uint64_t* mBegin;
+        volatile std::uint64_t* mEnd;
     };
-
-    // End-of-pipe event used for a timestamp write. Name not in the
-    // reference map.
-    enum class GpuTimestampEvent : std::uint32_t {
-        kGraphicsComplete = 0x04,
-        kComputeComplete = 0x28,
-    };
+    // GPU-stat blocks in the ring. Name not in the reference map.
+    static constexpr std::size_t kNumGpuStatBlocks = 512;
 
     // A resource signalled by a split barrier, with the frame it was
     // signalled in. Name not in the reference map.
@@ -160,7 +155,6 @@ private:
     // _DestructCommandState stand for the rest of the command state.
     void _InitCommandState();
     void _InitStateDefaults();
-    void _InitAllocationMap();
     void _CreateGfxContext();  // 0x8E7AF0
     void _InitGfxSlot(
         std::size_t slot,
@@ -170,7 +164,6 @@ private:
         std::size_t constantUpdateSize,
         std::size_t scratchBufferSize);
     void _CreateGpuTimestampPool();  // 0x8E7DF0
-    void _InitTimestampRecords(std::size_t timestampBufferSize);
     void _InitComputeQueue(
         std::size_t queue,
         std::uint32_t pipe,
@@ -183,7 +176,6 @@ private:
         std::size_t commandBufferSize);
     void _InitLabelPool(std::size_t initialCapacity);
     void _ReleaseLabelPool();
-    void _ReleaseTimestampPool();
     void _DestructCommandState();
 
     // Frame submission and reset. Names not in the reference map; not yet
@@ -236,6 +228,7 @@ private:
     // in the reference map.
     bool _RecordingGraphics() const;
     bool _RecordingCompute() const;
+    sce::Gnm::EndOfPipeEventType _GpuTimestampEvent() const;
 
     // Depth clears. Names not in the reference map; not yet reconstructed.
     void _FlushDepthMetadata();
@@ -246,15 +239,6 @@ private:
     void _SetDepthClearDrawState(bool enabled);
     void _UnbindPixelShader();
     void _SubmitDepthClearDraw();
-
-    // GPU statistics. Names not in the reference map; not yet reconstructed.
-    // _EmitGpuTimestamp may be the map's _WriteGpuTimestamp(void*).
-    GpuTimestampEvent _GpuTimestampEventType() const;
-    GpuStatBlock& _AcquireGpuStatBlock();
-    void _StoreGpuStatBlock(std::uint64_t key, GpuStatBlock& block);
-    GpuStatBlock& _FindGpuStatBlock(std::uint64_t key);
-    void _RemoveGpuStatBlock(std::uint64_t key);
-    void _EmitGpuTimestamp(volatile std::uint64_t* destination, GpuTimestampEvent event);
 
     // Resource barriers. Names not in the reference map; not yet
     // reconstructed unless an address is given.
@@ -337,7 +321,13 @@ public:
     unsigned char mUnknown265624[0x20];
     // One bank per frame, indexed by vertex type.
     PS4TransientBuffer mTransientBuffers[kFrameSlotCount][kTransientFormatCount];
-    unsigned char mUnknown268344[0x44880 - 0x41838];
+    // GPU-stat timestamp pairs, used as a ring, with their GPU memory and
+    // the next block to hand out, and the blocks of the open statistics by
+    // key. Names not in the reference map.
+    GpuStatBlock mGpuStatBlocks[kNumGpuStatBlocks];
+    std::uint64_t* mGpuTimestamps;
+    unsigned long mNextGpuStatBlock;
+    eastl::map<unsigned long, GpuStatBlock*> mGpuStats;
     // SetupDraw's record of the state it last set on the graphics context:
     // the active shader stages, the primitive type, and whether the GS mode
     // may be on. Names not in the reference map.
@@ -362,7 +352,11 @@ static_assert(offsetof(PS4Context, mComputeContexts) == 0x229D0);
 static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);
 static_assert(offsetof(PS4Context, mUnknown265624) == 0x40D98);
 static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
-static_assert(offsetof(PS4Context, mUnknown268344) == 0x41838);
+static_assert(offsetof(PS4Context, mGpuStatBlocks) == 0x41838);
+static_assert(offsetof(PS4Context, mGpuTimestamps) == 0x44838);
+static_assert(offsetof(PS4Context, mNextGpuStatBlock) == 0x44840);
+static_assert(offsetof(PS4Context, mGpuStats) == 0x44848);
+static_assert(sizeof(eastl::map<unsigned long, PS4Context::GpuStatBlock*>) == 56);
 static_assert(offsetof(PS4Context, mCachedShaderStages) == 0x44880);
 static_assert(offsetof(PS4Context, mCachedPrimitiveType) == 0x44884);
 static_assert(offsetof(PS4Context, mGsModeEnabled) == 0x44888);
