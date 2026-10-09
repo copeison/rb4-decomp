@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/resources/shaders/shader_cache_validation.h"
+#include "render/shaders/shader_cache_validation.h"
 #include "render/shaders/RndShaderDefines.h"
 
 class RndShaderError;

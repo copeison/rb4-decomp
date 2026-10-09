@@ -1,9 +1,9 @@
-#include "render/core/platform/render_platform.h"
+#include "render/system/render_platform.h"
 
 #include <array>
 #include <cstring>
 
-#include "render/core/platform/render_platform_adapters.h"
+#include "render/system/render_platform_adapters.h"
 
 namespace rb4 {
 

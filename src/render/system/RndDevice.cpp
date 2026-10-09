@@ -8,13 +8,13 @@
 #include "render/context/RndResourceBarrier.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndWindow.h"
-#include "render/core/system/render_system_frame_adapters.h"
+#include "render/system/render_system_frame_adapters.h"
 #include "render/targets/RndBufferCollection.h"
-#include "render/resources/audio/audio_analysis_textures.h"
-#include "render/resources/meshes/primitive_mesh_set.h"
+#include "render/audio/audio_analysis_textures.h"
+#include "render/meshes/primitive_mesh_set.h"
 #include "render/lighting/fog/RndShaderFogDeferred.h"
-#include "render/resources/video/bink_render_manager.h"
-#include "render/resources/video/bink_render_manager_adapters.h"
+#include "render/video/bink_render_manager.h"
+#include "render/video/bink_render_manager_adapters.h"
 #include "utl/time/Timer.h"
 
 using namespace rb4;

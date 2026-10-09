@@ -16,6 +16,6 @@ Orbis shader destructors and by reinitialization. The base destructor itself
 is empty; the deleting destructor releases the object storage.
 
 The generic factory at `0x642250` dispatches through the active render system.
-`RenderShaderStage` and the base layout therefore live under `render/core`,
+`RenderShaderStage` and the base layout therefore live under `render/shaders`,
 while compiled binary parsing and command-context binding remain under the
 Orbis shader backend.

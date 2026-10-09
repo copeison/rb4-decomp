@@ -1,6 +1,6 @@
 #include "render/masking/RndShaderRefineSceneMask.h"
 
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
 

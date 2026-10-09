@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "render/core/capture/screenshot_capture.h"
+#include "render/debug/screenshot_capture.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/shaders/RndShaderMgr.h"

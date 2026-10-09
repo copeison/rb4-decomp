@@ -40,7 +40,7 @@ exposes typed offsets for every registered constant, including the six-target
 `gCameraRTSlicedData` array and the 256-element `gSkeletonBoneXfms` array.
 
 The shared 72-byte constant-block implementation is kept under
-`src/render/resources/shaders`. Its member records preserve the HLSL type,
+`src/render/shaders`. Its member records preserve the HLSL type,
 array count, render-target slicing flag, generated register offset, and name.
 Scalar, array, and sliced-array insertion at `0x63A1B0`, `0x63A370`, and
 `0x63A700` are source-owned, including the original doubling growth policy and
@@ -56,7 +56,7 @@ registries, enables the first, and registers four manager bindings:
 `HX_SHADING_MODE` over `[0, 19)`, and `HX_GEO_TYPE` over `[0, 2)`. Geometry
 type uses the second registry; the other fields share the first registry's bit
 cursor. The binding and registry layouts are shared with primary-shader lazy
-preparation under `src/render/resources/shaders`.
+preparation under `src/render/shaders`.
 
 Finalization at `0x641370` marks the second manager phase, finalizes every
 primary shader resource, and builds the `function_table` texture directly. The
@@ -83,7 +83,7 @@ The shader constant registry at `0x63F920` is source-owned. It preserves all
 including program and shading modes, debug modes, cube and frustum indices,
 lighting paths, and shared structure sizes. Comment records own the engine's
 16-byte resource-name type; that common layout now lives under
-`src/render/resources/names` and is reused by shader and GPU-stat resources.
+`src/render/shaders` and is reused by shader and GPU-stat resources.
 Registry growth doubles capacity from one record, matching the original
 32-byte record array. The shared 16-byte resource-name implementation is now
 source-owned. It preserves the capacity word immediately before each string,
@@ -91,7 +91,7 @@ the process-wide empty-string representation, exact-size growth, and sized
 release used by registry records.
 
 The primary-shader layout and ownership implementation are kept in the
-dedicated `src/render/resources/shaders` domain. Registration at `0x638A20`
+dedicated `src/render/shaders` domain. Registration at `0x638A20`
 now inserts each shader into the manager's primary intrusive list directly and
 immediately finalizes late registrations after manager phase two. The manager
 converts links back to typed shader resources when finalizing or clearing

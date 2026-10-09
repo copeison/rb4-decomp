@@ -1,6 +1,6 @@
-#include "render/core/debug/RndShaderDisplaySphereMap.h"
+#include "render/debug/RndShaderDisplaySphereMap.h"
 
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTexture2D.h"

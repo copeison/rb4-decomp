@@ -3,8 +3,8 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-folding of `src/render/platform/orbis` into the PS4 classes, the
-sixteenth step of the conversion to the reference map's original names, classes, and module
+move of the remaining `src/render/core` and `src/render/resources` files
+into the `src/render` domains, the seventeenth step of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
 engine foundation, the render resource objects, textures, meshes, and the
 render context, the render device (`RndDevice`/`PS4Device`), the windows (`RndWindow`/`PS4Window`), the buffer collections (`RndBufferCollection`), the shader system (`RndShader`, its 35 built-in subclasses, and `RndShaderMgr`), and the audio and
@@ -206,7 +206,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | `src/render/platform/orbis` folded into `PS4Context`, `PS4Device`, `PS4Window`, `PS4MeshTyped`, `PS4RenderUtl` |
+| (this) | Remaining `src/render/core` and `src/render/resources` files moved into the `src/render` domains |
+| `8432703` | `src/render/platform/orbis` folded into `PS4Context`, `PS4Device`, `PS4Window`, `PS4MeshTyped`, `PS4RenderUtl` |
 | `592987d` | Render settings and capabilities converted to `RndConfig` and `RndCapabilities` |
 | `1081c74` | `RndLightGlobals`, `RndCommands`, `Rnd::Init`/`Terminate`, `PS4TransientBuffer`, `PS4RenderStateUtl` |
 | `d857895` | Default resources converted to `RndDefaults` |
@@ -407,8 +408,8 @@ the resource manager. The final six live at:
 | Bloom | `src/render/postprocessing/bloom/RndShaderBloom.cpp` |
 | Blur | `src/render/postprocessing/blur/RndShaderBlur.cpp` |
 | Output conversion | `src/render/postprocessing/output/RndShaderOutputConversion.cpp` |
-| Bink conversion | `src/render/resources/video/RndShaderBinkConvert.cpp` |
-| Test pattern, render-test-simple | `src/render/core/debug/RndShaderTestPattern.cpp`, `src/render/core/debug/RndShaderRenderTestSimple.cpp` |
+| Bink conversion | `src/render/video/RndShaderBinkConvert.cpp` |
+| Test pattern, render-test-simple | `src/render/debug/RndShaderTestPattern.cpp`, `src/render/debug/RndShaderRenderTestSimple.cpp` |
 
 ### Dispatch tables have 11 slots
 
@@ -462,7 +463,7 @@ it. Each one belongs in its pass's domain folder:
   reconstructed).
 
 Bloom's draw function (`0x6346E0`) is done. Use it as the pattern: the shared
-helpers in `render/resources/shaders/shader_draw_state.h` cover texture
+helpers in `render/shaders/shader_draw_state.h` cover texture
 stamping and binding, constant-buffer selection and commit, and key packing.
 The surrounding bloom pass (`0x6305A0`, now defined in IDA) is a 3.7 KB
 render-target and state function and a larger, separate milestone.

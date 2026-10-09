@@ -3,7 +3,7 @@
 #include <immintrin.h>
 
 #include "render/buffers/RndShaderCBuffer.h"
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/system/RndDevice.h"

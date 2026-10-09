@@ -1,7 +1,7 @@
 # Primary shader resources
 
 Common primary-shader ownership now lives under
-`src/render/resources/shaders`. The 288-byte base resource places six 32-byte
+`src/render/shaders`. The 288-byte base resource places six 32-byte
 compiled-object arrays at offset `0x10`, an unowned backend-name pointer at
 `0xD0`, four support-object pointers at `0xD8` through `0xF0`, the
 `HX_NUM_RT_SLICES` binding at `0xF8`, and its resource-manager list link at

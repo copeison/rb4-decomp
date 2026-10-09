@@ -1,7 +1,7 @@
 # Built-in shader resources
 
 Built-in graphics and compute shader ownership lives under
-`src/render/resources/shaders`. The resource manager stores 35 named slots and
+`src/render/shaders`. The resource manager stores 35 named slots and
 allocates each concrete object at the exact size observed in `eboot.elf`.
 Every class-specific dispatch is source-owned beside its constructor, in the
 domain that uses the shader, and the shared adapter boundary has been retired.

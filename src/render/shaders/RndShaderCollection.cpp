@@ -1,7 +1,7 @@
 #include "render/shaders/RndShaderCollection.h"
 
 #include "render/context/RndContext.h"
-#include "render/core/platform/render_platform.h"
+#include "render/system/render_platform.h"
 #include "render/shaders/RndShaderProgram.h"
 #include "render/system/RndDevice.h"
 #include "utl/streams/BinStream.h"

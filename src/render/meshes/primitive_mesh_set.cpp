@@ -1,7 +1,7 @@
-#include "render/resources/meshes/primitive_mesh_set.h"
+#include "render/meshes/primitive_mesh_set.h"
 
 #include "render/meshes/RndMesh.h"
-#include "render/resources/meshes/primitive_mesh_set_adapters.h"
+#include "render/meshes/primitive_mesh_set_adapters.h"
 
 namespace rb4 {
 

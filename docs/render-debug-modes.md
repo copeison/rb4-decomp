@@ -14,6 +14,6 @@ stencil views, lighting accumulation, tiled-light diagnostics, sky buffers,
 shadow stages, downsampled buffers, masks, ambient occlusion, and the function
 table. Its parser at `0x6B5510` is case-insensitive.
 
-The complete ordered names are preserved in `src/render/core/debug/render_debug_mode.cpp`.
+The complete ordered names are preserved in `src/render/debug/render_debug_mode.cpp`.
 This ordering matters because the renderer stores and passes the numeric table
 index, including when the screenshot path mirrors the active view.

@@ -1,4 +1,4 @@
-#include "render/core/buffers/RndCShaderClearBuffer.h"
+#include "render/buffers/RndCShaderClearBuffer.h"
 
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"

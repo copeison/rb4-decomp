@@ -1,6 +1,6 @@
 #include "render/postprocessing/depth_of_field/RndShaderDOFSprite.h"
 
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTexture2D.h"
 

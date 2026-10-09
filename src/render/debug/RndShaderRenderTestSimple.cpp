@@ -1,8 +1,8 @@
-#include "render/core/debug/RndShaderRenderTestSimple.h"
+#include "render/debug/RndShaderRenderTestSimple.h"
 
 #include <cstring>
 
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 

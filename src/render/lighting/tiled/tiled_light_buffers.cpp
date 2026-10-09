@@ -8,7 +8,7 @@
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
-#include "render/core/textures/render_data_format.h"
+#include "render/textures/render_data_format.h"
 #include "render/textures/RndTextureArray2D.h"
 #include "render/textures/RndPixelData.h"
 

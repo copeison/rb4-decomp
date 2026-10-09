@@ -1,11 +1,11 @@
-#include "render/resources/audio/audio_analysis_textures.h"
+#include "render/audio/audio_analysis_textures.h"
 
 #include <cstdint>
 
 #include "os/memory/MemMgr.h"
 #include "utl/containers/Std.h"
 #include "render/textures/RndTextureBase.h"
-#include "render/resources/audio/audio_analysis_texture_adapters.h"
+#include "render/audio/audio_analysis_texture_adapters.h"
 #include "render/system/RndDevice.h"
 
 namespace rb4 {

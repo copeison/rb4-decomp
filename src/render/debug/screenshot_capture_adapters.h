@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "render/core/capture/screenshot_capture.h"
+#include "render/debug/screenshot_capture.h"
 
 namespace rb4 {
 

@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/core/frame/render_extent.h"
-#include "render/core/capture/screenshot_capture.h"
+#include "render/frame/render_extent.h"
+#include "render/debug/screenshot_capture.h"
 
 // Render quality level read from the rnd config. Name not in the reference
 // map.

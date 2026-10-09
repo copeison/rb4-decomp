@@ -1,9 +1,9 @@
-#include "render/resources/shaders/shader_cache_validation.h"
+#include "render/shaders/shader_cache_validation.h"
 
 #include <cstring>
 
 #include "utl/streams/FileStream.h"
-#include "render/resources/shaders/shader_source_hash.h"
+#include "render/shaders/shader_source_hash.h"
 
 namespace rb4 {
 

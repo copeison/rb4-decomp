@@ -52,7 +52,7 @@ includes the recursive mutex and lock bookkeeping at `0x08`-`0x1F`, the copied
 16-byte startup options at `0x28`, active frame owner and target-state array at
 `0x78`/`0x80`, primary and auxiliary frame epochs at `0xA0`/`0xA8`, frame
 timing state at `0x100`-`0x127`, settings at `0x128`, and the render factory at
-`0x130`. Shared lock helpers live in `src/render/core/synchronization` and
+`0x130`. Shared lock helpers are `CritSec` in `src/os/threading` and
 operate directly on this prefix. The submit-done worker uses the full frame
 lock pair, including owner-thread tracking; polling uses the lighter recursive
 mutex and depth-counter sequence found in its own function.
@@ -159,7 +159,7 @@ window, aggregates every root, advances the four-slot history ring, and resets
 every statistic's new slot query list under the block's recursive mutex.
 
 The adjacent 304-byte lighting block is typed separately under
-`src/render/resources/lighting`. Its constructor defaults, two pointer arrays,
+`src/render/lighting`. Its constructor defaults, two pointer arrays,
 fixed resource owners, runtime shutdown order, capacity teardown, and three
 special state handles are direct. Only the subordinate initialization routine
 and special-state release operation remain adapters.

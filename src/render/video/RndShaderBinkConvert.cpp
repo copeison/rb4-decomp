@@ -1,4 +1,4 @@
-#include "render/resources/video/RndShaderBinkConvert.h"
+#include "render/video/RndShaderBinkConvert.h"
 
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"

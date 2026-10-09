@@ -6,7 +6,7 @@
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/system/RndCapabilities.h"
 #include "render/system/RndConfig.h"
-#include "render/core/textures/render_data_format.h"
+#include "render/textures/render_data_format.h"
 #include "render/meshes/RndMesh.h"
 #include "render/system/RndDevice.h"
 #include "render/textures/RndTexture3D.h"

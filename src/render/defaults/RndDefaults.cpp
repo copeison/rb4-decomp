@@ -8,7 +8,7 @@
 #include "math/vector/Vector3i.h"
 #include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
-#include "render/core/textures/render_data_format.h"
+#include "render/textures/render_data_format.h"
 #include "render/textures/RndPixelCanvas.h"
 #include "render/textures/RndPixelDataCube.h"
 #include "render/textures/RndTexture1D.h"

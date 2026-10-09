@@ -7,7 +7,7 @@
 
 #include "os/memory/MemMgr.h"
 #include "render/context/RndResourceBarrier.h"
-#include "render/core/system/render_runtime_adapters.h"
+#include "render/system/render_runtime_adapters.h"
 #include "render/meshes/RndMesh.h"
 #include "render/meshes/RndVertexInterpreter.h"
 #include "render/shaders/RndShaderEnums.h"

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "render/core/system/render_runtime_adapters.h"
+#include "render/system/render_runtime_adapters.h"
 #include "render/textures/RndTextureBase.h"
 
 namespace Hmx {

@@ -1,6 +1,6 @@
 #include "render/system/RndInit.h"
 
-#include "render/core/platform/render_platform.h"
+#include "render/system/render_platform.h"
 #include "render/system/RndDevice.h"
 
 // The callees below are not identified yet. Names not in the reference map.

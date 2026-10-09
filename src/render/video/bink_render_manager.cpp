@@ -1,6 +1,6 @@
-#include "render/resources/video/bink_render_manager.h"
+#include "render/video/bink_render_manager.h"
 
-#include "render/resources/video/bink_render_manager_adapters.h"
+#include "render/video/bink_render_manager_adapters.h"
 
 namespace rb4 {
 

@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "render/core/frame/render_extent.h"
-#include "render/core/platform/render_platform.h"
+#include "render/frame/render_extent.h"
+#include "render/system/render_platform.h"
 
 // The engine's platform enumeration. It is reconstructed as
 // rb4::RenderPlatform until the platform tables are converted. Name in the

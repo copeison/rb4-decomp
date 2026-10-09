@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/core/frame/render_extent.h"
+#include "render/frame/render_extent.h"
 
 class RndBufferCollection;
 

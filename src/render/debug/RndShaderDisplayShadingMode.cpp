@@ -1,4 +1,4 @@
-#include "render/core/debug/RndShaderDisplayShadingMode.h"
+#include "render/debug/RndShaderDisplayShadingMode.h"
 
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"

@@ -1,6 +1,6 @@
-#include "render/core/capture/screenshot_capture.h"
+#include "render/debug/screenshot_capture.h"
 
-#include "render/core/capture/screenshot_capture_adapters.h"
+#include "render/debug/screenshot_capture_adapters.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 

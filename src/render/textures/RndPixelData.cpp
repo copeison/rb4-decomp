@@ -6,7 +6,7 @@
 #include <limits>
 
 #include "os/memory/MemMgr.h"
-#include "render/core/textures/render_data_format.h"
+#include "render/textures/render_data_format.h"
 #include "render/textures/RndPixelCanvas.h"
 
 namespace {

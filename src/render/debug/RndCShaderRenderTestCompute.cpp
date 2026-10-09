@@ -1,4 +1,4 @@
-#include "render/core/debug/RndCShaderRenderTestCompute.h"
+#include "render/debug/RndCShaderRenderTestCompute.h"
 
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"

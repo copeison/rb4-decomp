@@ -1,4 +1,4 @@
-#include "render/resources/shaders/shader_draw_state.h"
+#include "render/shaders/shader_draw_state.h"
 
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/buffers/RndShaderCBuffer.h"

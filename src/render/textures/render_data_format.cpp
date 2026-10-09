@@ -1,4 +1,4 @@
-#include "render/core/textures/render_data_format.h"
+#include "render/textures/render_data_format.h"
 
 #include <array>
 #include <cstddef>

@@ -1,6 +1,6 @@
 #include "render/shaders/RndShaderResourceConfig.h"
 
-#include "render/resources/shaders/shader_source_hash.h"
+#include "render/shaders/shader_source_hash.h"
 #include "utl/text/Symbol.h"
 
 using namespace rb4;

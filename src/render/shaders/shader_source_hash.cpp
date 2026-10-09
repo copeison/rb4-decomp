@@ -1,4 +1,4 @@
-#include "render/resources/shaders/shader_source_hash.h"
+#include "render/shaders/shader_source_hash.h"
 
 #include <cstddef>
 

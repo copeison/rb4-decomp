@@ -1,4 +1,4 @@
-#include "render/core/debug/render_debug_mode.h"
+#include "render/debug/render_debug_mode.h"
 
 #include <array>
 #include <cctype>

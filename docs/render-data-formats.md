@@ -3,7 +3,7 @@
 The engine represents a requested texture format with a 20-byte descriptor:
 total bit width, channel-layout code, numeric-type code, layout code, and an
 optional platform variant. The inverse mapping at `0x68DB80` is source-owned in
-`src/render/core/textures/render_data_format.cpp` for all format IDs from the
+`src/render/textures/render_data_format.cpp` for all format IDs from the
 executable.
 
 Format IDs `0` through `26` and `53` through `56` use fixed descriptor tuples.

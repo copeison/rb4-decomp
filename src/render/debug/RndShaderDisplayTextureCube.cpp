@@ -1,4 +1,4 @@
-#include "render/core/debug/RndShaderDisplayTextureCube.h"
+#include "render/debug/RndShaderDisplayTextureCube.h"
 
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
