@@ -78,7 +78,7 @@ void render_system_release_back_buffer(RenderSystem& system) {
 void render_system_release_render_contexts(RenderSystem& system) {
     auto& runtime = render_system_core_state(system);
     if (runtime.render_context != nullptr) {
-        delete &(runtime.render_context);
+        delete runtime.render_context;
         runtime.render_context = nullptr;
     }
 
@@ -86,7 +86,7 @@ void render_system_release_render_contexts(RenderSystem& system) {
         --runtime.render_contexts.end;
         auto* context = *runtime.render_contexts.end;
         if (context != nullptr) {
-            delete &(context);
+            delete context;
         }
     }
 }
