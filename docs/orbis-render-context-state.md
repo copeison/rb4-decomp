@@ -43,6 +43,49 @@ After any clear, the method allocates a label from the draw command buffer and
 writes it at `kEopCsDone` with `kCacheActionWriteBackAndInvalidateL1andL2`. The
 graphics pipe then waits for the label to equal 1.
 
+## Depth and stencil clears
+
+`_ClearDepthStencil(const DepthRenderTarget&, float, unsigned char)`
+(`0x8E99E0`) returns whether it dispatched compute work.
+
+**With HTILE**, it triggers `kEventTypeFlushAndInvalidateDbMeta` and clears
+every slice of the target's array view with `RndCShaderClearBuffer`, as an R32
+data buffer of GPU-coherent memory with 64 dwords per group:
+1. When HTILE excludes stencil and the target has a stencil surface, it first
+   clears the stencil surface. The clear value is the stencil byte replicated
+   into a dword, converted to float.
+2. It then clears the HTILE to zero. The depth value is not used, since the
+   target's Z-compare base gives the cleared depth.
+
+**Without HTILE**, it uses the depth block's fast clear:
+1. It enables the depth and stencil clears in `DbRenderControl`, with depth
+   writes and the stencil test always passing and replacing.
+2. It sets the stencil control to `FF`, the clear values and a zero render
+   target mask.
+3. `_FlushClear` (`0x8EBDA0`) selects `RndShaderBasic` and turns color writes
+   off. It unbinds the pixel shader and draws a full-target quad through
+   `RndDrawUtl::DrawQuad2D`, keeping the selected shader and state, then turns
+   color writes back on.
+4. It resets `DbRenderControl` with depth compression forbidden, then restores
+   the color-write mask and the cached depth-stencil state.
+
+`RndDrawUtl::DrawQuad2D` (`0x3E0C50`) draws a colored, optionally textured
+quad with an identity view-projection:
+- The rectangle is given in pixels, normalized, aspect-corrected or clip-space
+  coordinates.
+- A quad covering the whole target becomes one oversized triangle (clip
+  `(-1, 1)`, `(-1, -3)`, `(3, 1)`); others are four-vertex strips.
+- Unless kept, it sets the blend mode, depth mode and no culling.
+- Unless kept, it selects `RndShaderBasic` (`0x639980`) in the standard
+  shading mode.
+
+`RndShaderBasic::Select` commits the color, binds the texture (or a
+render-target-sliced texture with select flag 2), and keys the shading mode,
+the alpha cut (never in wireframe), the texture mode and the red-as-alpha
+option. `RndContext::SetShadingMode` (`0x6BD5D0`) switches wireframe on and off
+with the fill and depth-bias state, and `SetUsingIdentityViewProjection`
+(`0x6BD340`) resyncs the camera constants when no camera overrides them.
+
 ## Blending
 
 `_SetBlendModeImpl` maps the engine's blend-mode number to a packed Gnm

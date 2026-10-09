@@ -22,14 +22,17 @@ RndContext::RndContext(bool disableComputeQueues)
       mSliceMode(-1),
       mCameraCBufferOverride(nullptr),
       mUnknown120{},
+      mRenderTargetWidth(0.0F),
+      mRenderTargetHeight(0.0F),
+      mUnknown136{},
       mUnknown140(1.0F),
-      mUnknown18768(false),
+      mUsingIdentityViewProjection(false),
       mUnknown18776(0),
       mActiveShaderStages(0),
-      mUnknown18788(5),
+      mBlendMode(RndBlendMode::kSource),
       mInputSlotLimits{},
       mOutputSlotLimits{},
-      mShadingMode(0),
+      mShadingMode(kShadingModeStandard),
       mUnknown18972(-1),
       mUnknown18976(-1),
       mActivePipe(0),
@@ -119,4 +122,32 @@ void RndContext::_ReselectGlobalCBuffers() {
         mLightSlots[2].mEnabled || mLightSlots[3].mEnabled;
     auto* lights = lit ? mCBuffers[2] : device->mBuiltinCBuffers[1];
     lights->_SelectImpl(*this);
+}
+
+// Reconstructed from eboot.elf at 0x6BD340. An overriding camera keeps its
+// constants.
+void RndContext::SetUsingIdentityViewProjection(bool identity) {
+    if (mUsingIdentityViewProjection == identity) {
+        return;
+    }
+    mUsingIdentityViewProjection = identity;
+    if (mUnknown18776 == 0) {
+        _SyncCameraCBuffer();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x6BD5D0.
+void RndContext::SetShadingMode(RndShadingMode mode) {
+    const auto previous = mShadingMode;
+    if (previous == mode) {
+        return;
+    }
+    mShadingMode = mode;
+    if (mode == kShadingModeWireframe) {
+        _SetFillModeImpl(false);
+        _SetDepthBiasEnabledImpl(true);
+    } else if (previous == kShadingModeWireframe) {
+        _SetFillModeImpl(true);
+        _SetDepthBiasEnabledImpl(false);
+    }
 }

@@ -48,12 +48,6 @@ public:
         std::uint64_t mRenderEpoch = 0;
     };
 
-    // GPU range a depth or HTILE clear fills. Name not in the reference map.
-    struct DepthClearRange {
-        std::uint64_t mGpuAddress = 0;
-        std::uint32_t mDwordCount = 0;
-    };
-
     PS4Context();            // 0x8E72B0
     ~PS4Context() override;  // 0x8E8070, 0x8E82B0
 
@@ -134,12 +128,17 @@ public:
     // retired. Names not in the reference map.
     bool _SubmissionsComplete() const;
     bool _FrameSubmissionsComplete(std::size_t frame) const;
-    // The map has _ClearDepthStencil(float, unsigned char); this build also
-    // passes the depth target and returns whether HTILE was cleared.
+    // Clears a depth target: with HTILE, by clearing the HTILE and any
+    // separate stencil with the clear compute shader; otherwise with the
+    // fast-clear draw. The map has _ClearDepthStencil(float, unsigned char);
+    // this build also passes the depth target and returns whether it
+    // dispatched compute work.
     bool _ClearDepthStencil(
         const sce::Gnm::DepthRenderTarget& target,
         float depth,
         unsigned char stencil);  // 0x8E99E0
+    // Draws a full-target quad with color writes off, so the depth block
+    // applies its clear.
     void _FlushClear();          // 0x8EBDA0
 
 private:
@@ -196,16 +195,6 @@ private:
     bool _RecordingGraphics() const;
     bool _RecordingCompute() const;
     sce::Gnm::EndOfPipeEventType _GpuTimestampEvent() const;
-
-    // Depth clears. Names not in the reference map; not yet reconstructed.
-    void _FlushDepthMetadata();
-    void _DispatchDepthClear(const DepthClearRange& range, std::uint32_t clearValue);
-    void _BeginRasterDepthClear(float depth, std::uint8_t stencil);
-    void _FinishRasterDepthClear();
-    void _BindDepthClearShader();
-    void _SetDepthClearDrawState(bool enabled);
-    void _UnbindPixelShader();
-    void _SubmitDepthClearDraw();
 
     // Resource barriers. Names not in the reference map; not yet
     // reconstructed unless an address is given.

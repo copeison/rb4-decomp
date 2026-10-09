@@ -20,6 +20,30 @@ enum RndShaderGeoType : int {
     kShaderGeoTypeDefault = 0,
 };
 
+// Shading modes, the values of HX_SHADING_MODE. The name is the map's; the
+// enumerators follow the HX_SHADING_MODE_* defines.
+enum RndShadingMode : int {
+    kShadingModeStandard = 0,
+    kShadingModeStandardFog = 1,
+    kShadingModeStandardVScat = 2,
+    kShadingModeDepthOnly = 3,
+    kShadingModeSolidColor = 4,
+    kShadingModeDeferredNormalsAndZFill = 5,
+    kShadingModeDeferredUnlit = 6,
+    kShadingModeDeferredUnlitAndZFill = 7,
+    kShadingModeDeferredLit = 8,
+    kShadingModeDeferredLitAndZFill = 9,
+    kShadingModeDeferredLitEmissive = 10,
+    kShadingModeDeferredLitEmissiveAndZFill = 11,
+    kShadingModeDeferredDecalTransparent = 12,
+    kShadingModeFwdLitOpaque = 13,
+    kShadingModeSceneMask = 14,
+    kShadingModeImpostorMaps = 15,
+    kShadingModeFastCheap = 16,
+    kShadingModeWireframe = 17,
+    kShadingModeDebugMisc = 18,
+};
+
 // User-facing shading modes, in the order of ToString's name table; the first
 // is "Lit". Enumerator names are not in the reference map.
 enum RndUserShadingMode : unsigned int {

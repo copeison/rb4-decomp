@@ -1,6 +1,10 @@
 #include "render/shaders/RndShaderBasic.h"
 
+#include <cstring>
+
+#include "render/context/RndContext.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
+#include "render/shaders/RndShaderDrawUtl.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 #include "render/textures/RndTextureBase.h"
 
@@ -85,4 +89,40 @@ bool RndShaderBasic::_UsesShaderKeyImpl(
 // Reconstructed from eboot.elf at 0x639EF0.
 bool RndShaderBasic::_SupportsRTSlicing() const {
     return true;
+}
+
+// Reconstructed from eboot.elf at 0x639980.
+void RndShaderBasic::Select(RndContext& context, const Params& params) {
+    constexpr unsigned long kPixelKey = 3;
+    auto& cbuffer = RndShaderDrawUtl::GetCBuffer(context, mCBufferSize);
+    std::memcpy(
+        RndShaderDrawUtl::GetCBufferMember(cbuffer, mColor),
+        &params.mColor,
+        sizeof(params.mColor));
+    RndShaderDrawUtl::CommitCBuffer(cbuffer, context, mCBufferSize);
+
+    if (params.mTexture != nullptr) {
+        params.mTexture->Select(context, kShaderProgramPixel, mTexture2D, 0, 0);
+    } else if (params.mRTSlicedTexture != nullptr) {
+        params.mRTSlicedTexture->Select(
+            context,
+            kShaderProgramPixel,
+            mTexture2DRTSliced,
+            RndShaderResource::kSelectRTSliced,
+            0);
+    }
+
+    const auto shadingMode = context.mShadingMode;
+    RndShaderKeyGroup keys{};
+    auto key = mShadingMode.SetValue(0, static_cast<unsigned int>(shadingMode));
+    key = mAlphaCut.SetValue(
+        key, params.mAlphaCut && shadingMode != kShadingModeWireframe ? 1U : 0U);
+    if (params.mTexture != nullptr || params.mRTSlicedTexture != nullptr) {
+        key = mTextureMode.SetValue(key, params.mTexture != nullptr ? 1U : 2U);
+        key = mUseTexRedAsAlpha.SetValue(key, params.mUseTexRedAsAlpha ? 1U : 0U);
+    } else {
+        key = mTextureMode.SetValue(key, 0);
+    }
+    keys.mKeys[kPixelKey] = key;
+    _SelectShaderCollection(context, keys);
 }

@@ -13,6 +13,8 @@
 #include "render/shaders/RndShaderEnums.h"
 #include "render/system/RndDevice.h"
 #include "render/buffers/RndCShaderClearBuffer.h"
+#include "render/drawing/RndDrawUtl.h"
+#include "render/shaders/RndShaderBasic.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/textures/RndTextureBase.h"
 #include "renderps4/buffers/PS4ComputeBuffer.h"
@@ -22,16 +24,6 @@
 #include "renderps4/system/PS4Device.h"
 #include "renderps4/system/PS4Fence.h"
 #include "renderps4/system/PS4RenderUtl.h"
-
-// Depth-target queries the depth clear uses. They have no original home
-// yet; not yet reconstructed. Names not in the reference map.
-bool orbis_depth_target_has_htile(
-    const sce::Gnm::DepthRenderTarget& target);
-bool orbis_depth_target_stencil_clear_range(
-    const sce::Gnm::DepthRenderTarget& target,
-    PS4Context::DepthClearRange& range);
-PS4Context::DepthClearRange orbis_depth_target_htile_clear_range(
-    const sce::Gnm::DepthRenderTarget& target);
 
 namespace {
 
@@ -1068,9 +1060,98 @@ RndGpuStatSample PS4Context::_EvalAndRetireGpuStatsImpl(unsigned long key) {
 
 // Reconstructed from eboot.elf at 0x8EBDA0.
 void PS4Context::_FlushClear() {
-    _BindDepthClearShader();
-    _SetDepthClearDrawState(false);
-    _UnbindPixelShader();
-    _SubmitDepthClearDraw();
-    _SetDepthClearDrawState(true);
+    RndShaderBasic::Params basic;
+    gPS4Device->mShaderMgr.mBasicShader->Select(*this, basic);
+    SetCbEnabled(false);
+    _ActiveGfxContext().setPsShader(nullptr);
+
+    RndDrawUtl::Quad2DParams quad;
+    quad.mKeepShader = true;
+    quad.mKeepState = true;
+    RndDrawUtl::DrawQuad2D(*this, quad);
+    SetCbEnabled(true);
+}
+
+// Reconstructed from eboot.elf at 0x8E99E0. The compute clears cover every
+// slice of the target's array view, 64 dwords per thread group.
+bool PS4Context::_ClearDepthStencil(
+    const sce::Gnm::DepthRenderTarget& target,
+    float depth,
+    unsigned char stencil) {
+    if (target.getHtileAccelerationEnable()) {
+        _ActiveGfxContext().triggerEvent(sce::Gnm::kEventTypeFlushAndInvalidateDbMeta);
+        const auto baseSlice = target.getBaseArraySliceIndex();
+        const auto numSlices = target.getLastArraySliceIndex() - baseSlice + 1;
+        if (target.getHtileStencilDisable() && target.getStencilWriteAddress() != nullptr) {
+            RndCShaderClearBuffer::Params params;
+            const auto value = static_cast<float>(stencil * 0x01010101U);
+            params.mClearValue = Hmx::Color(value, value, value, value);
+            const auto slot =
+                TheRndDevice()->mShaderMgr.mClearBufferCShader->Select(*this, params);
+            const auto sliceSize = target.getStencilSliceSizeInBytes();
+            const auto dwords = numSlices * (sliceSize / 4);
+            sce::Gnm::Buffer buffer;
+            buffer.initAsDataBuffer(
+                static_cast<std::uint8_t*>(target.getStencilWriteAddress()) + baseSlice * sliceSize,
+                sce::Gnm::kDataFormatR32Uint,
+                dwords);
+            buffer.setResourceMemoryType(sce::Gnm::kResourceMemoryTypeGC);
+            _ActiveGfxContext().setRwBuffers(
+                sce::Gnm::kShaderStageCs, static_cast<std::uint32_t>(slot), 1, &buffer);
+            _DispatchComputeImpl(dwords / 64 + (dwords / 64 * 64 < dwords ? 1 : 0), 1, 1);
+        }
+
+        RndCShaderClearBuffer::Params params;
+        const auto slot = TheRndDevice()->mShaderMgr.mClearBufferCShader->Select(*this, params);
+        const auto sliceSize = target.getHtileSliceSizeInBytes();
+        const auto dwords = numSlices * (sliceSize / 4);
+        sce::Gnm::Buffer buffer;
+        buffer.initAsDataBuffer(
+            static_cast<std::uint8_t*>(target.getHtileAddress()) + baseSlice * sliceSize,
+            sce::Gnm::kDataFormatR32Uint,
+            dwords);
+        buffer.setResourceMemoryType(sce::Gnm::kResourceMemoryTypeGC);
+        _ActiveGfxContext().setRwBuffers(
+            sce::Gnm::kShaderStageCs, static_cast<std::uint32_t>(slot), 1, &buffer);
+        _DispatchComputeImpl(dwords / 64 + (dwords / 64 * 64 < dwords ? 1 : 0), 1, 1);
+        return true;
+    }
+
+    sce::Gnm::DbRenderControl renderControl;
+    renderControl.init();
+    renderControl.setDepthClearEnable(true);
+    renderControl.setStencilClearEnable(true);
+    _ActiveGfxContext().setDbRenderControl(renderControl);
+    sce::Gnm::DepthStencilControl depthStencil;
+    depthStencil.init();
+    depthStencil.setDepthControl(sce::Gnm::kDepthControlZWriteEnable, sce::Gnm::kCompareFuncAlways);
+    depthStencil.setStencilFunction(sce::Gnm::kCompareFuncAlways);
+    depthStencil.setDepthEnable(true);
+    depthStencil.setStencilEnable(true);
+    _ActiveGfxContext().setDepthStencilControl(depthStencil);
+    sce::Gnm::StencilOpControl stencilOps;
+    stencilOps.init();
+    stencilOps.setStencilOps(
+        sce::Gnm::kStencilOpReplaceTest,
+        sce::Gnm::kStencilOpReplaceTest,
+        sce::Gnm::kStencilOpReplaceTest);
+    _ActiveGfxContext().setStencilOpControl(stencilOps);
+    sce::Gnm::StencilControl stencilControl;
+    stencilControl.m_testVal = 0xFF;
+    stencilControl.m_mask = 0xFF;
+    stencilControl.m_writeMask = 0xFF;
+    stencilControl.m_opVal = 0xFF;
+    _ActiveGfxContext().setStencil(stencilControl);
+    _ActiveGfxContext().setDepthClearValue(depth);
+    _ActiveGfxContext().setStencilClearValue(stencil);
+    _ActiveGfxContext().setRenderTargetMask(0);
+    _FlushClear();
+
+    renderControl.init();
+    renderControl.setDepthTileWriteBackPolicy(sce::Gnm::kDbTileWriteBackPolicyCompressionForbidden);
+    _ActiveGfxContext().setDbRenderControl(renderControl);
+    _SetColorWriteMaskImpl(
+        static_cast<unsigned char>(mColorWriteTargets), mColorWriteChannels);
+    _SyncDepthStencilControl();
+    return false;
 }

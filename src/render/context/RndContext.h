@@ -43,6 +43,7 @@ enum RndWriteMaskChannelSet : unsigned int {
 // reference map.
 enum class RndPrimitive : unsigned int {
     kTriangles = 3,
+    kTriangleStrip = 4,
 };
 
 // Camera and projection state, built by the constructor at 0x3D8170 and
@@ -197,6 +198,14 @@ public:
     // Selects the context's global constant buffers, falling back to the
     // device's defaults for the camera and the lights when none are set.
     void _ReselectGlobalCBuffers();  // 0x6BD930
+    // Draws with an identity view-projection, for screen-space geometry,
+    // or with the camera's.
+    void SetUsingIdentityViewProjection(bool identity);  // 0x6BD340
+    // Wireframe shading also draws lines with depth bias.
+    void SetShadingMode(RndShadingMode mode);  // 0x6BD5D0
+    // Selects the camera constants for the current view-projection mode.
+    // Not yet reconstructed.
+    void _SyncCameraCBuffer();  // 0x6BCCD0
     // Starts a frame with the given activation flags. Not yet reconstructed;
     // name not in the reference map.
     void BeginFrame(unsigned int flags);
@@ -215,13 +224,17 @@ public:
     FixedVector<void*, 8> mUnknown24;
     // Set by the map's SetCameraCBufferOverrideContext.
     const RndCameraContext* mCameraCBufferOverride;
-    unsigned char mUnknown120[20];
+    unsigned char mUnknown120[8];
+    // Size of the bound render targets, in pixels.
+    float mRenderTargetWidth;
+    float mRenderTargetHeight;
+    unsigned char mUnknown136[4];
     float mUnknown140;
     RndCameraContext mCameras[2];
-    bool mUnknown18768;
+    bool mUsingIdentityViewProjection;
     unsigned long mUnknown18776;
     unsigned char mActiveShaderStages;  // A bit per stage with a program.
-    int mUnknown18788;
+    RndBlendMode mBlendMode;
     unsigned long mInputSlotLimits[kNumShaderProgramTypes];
     unsigned long mOutputSlotLimits[kNumShaderProgramTypes];
     // Four light slots; a set enabled flag selects the context's light
@@ -234,7 +247,7 @@ public:
         int mUnknown16 = 0;
     };
     LightSlot mLightSlots[4];
-    int mShadingMode;
+    RndShadingMode mShadingMode;
     int mUnknown18972;
     int mUnknown18976;
     // 0 records on the graphics context, 1 on a compute context.
@@ -253,9 +266,10 @@ public:
 static_assert(offsetof(RndContext, mSliceMode) == 0x10);
 static_assert(offsetof(RndContext, mUnknown24) == 24);
 static_assert(offsetof(RndContext, mCameras) == 144);
-static_assert(offsetof(RndContext, mUnknown18768) == 18768);
+static_assert(offsetof(RndContext, mUsingIdentityViewProjection) == 18768);
+static_assert(offsetof(RndContext, mRenderTargetWidth) == 128);
 static_assert(offsetof(RndContext, mActiveShaderStages) == 0x4960);
-static_assert(offsetof(RndContext, mUnknown18788) == 0x4964);
+static_assert(offsetof(RndContext, mBlendMode) == 0x4964);
 static_assert(offsetof(RndContext, mInputSlotLimits) == 0x4968);
 static_assert(offsetof(RndContext, mOutputSlotLimits) == 0x4998);
 static_assert(sizeof(RndContext::LightSlot) == 20);

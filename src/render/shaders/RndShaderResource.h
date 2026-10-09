@@ -35,6 +35,8 @@ public:
     // Select flag for a read-write (output) bind. Name not in the reference
     // map.
     static constexpr unsigned int kSelectReadWrite = 1;
+    // Binds a render-target-sliced view. Name not in the reference map.
+    static constexpr unsigned int kSelectRTSliced = 2;
 
     // Stamps the resource with the frame epoch, raises the context's input-
     // or, for read-write binds, output-slot limit for the stage past the
