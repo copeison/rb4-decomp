@@ -33,7 +33,7 @@ void orbis_transient_vertex_buffer_destruct(
 // Reconstructed from eboot.elf at 0x8EC7E0.
 void orbis_transient_vertex_buffer_initialize(
     OrbisTransientVertexBuffer& buffer,
-    RenderMeshFormat format,
+    RndVertexType format,
     std::size_t vertex_capacity) {
     const auto* descriptor = render_mesh_format_descriptor(format);
     buffer.data = static_cast<std::uint8_t*>(MemAlloc(

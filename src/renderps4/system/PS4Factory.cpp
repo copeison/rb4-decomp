@@ -1,6 +1,5 @@
 #include "renderps4/system/PS4Factory.h"
 
-#include "render/platform/orbis/meshes/orbis_mesh.h"
 #include "renderps4/textures/PS4Texture1D.h"
 #include "renderps4/textures/PS4Texture2D.h"
 #include "renderps4/textures/PS4Texture3D.h"
@@ -21,12 +20,6 @@
 // Reconstructed from eboot.elf at 0x8D85C0.
 RndFence* PS4Factory::CreateFence() {
     return new PS4Fence;
-}
-
-rb4::RenderMesh* PS4Factory::CreateMesh(
-    rb4::RenderMeshFormat type,
-    const char* name) {
-    return rb4::orbis_create_mesh(type, name);
 }
 
 // Reconstructed from eboot.elf at 0x8D8980.

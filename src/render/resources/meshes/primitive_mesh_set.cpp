@@ -1,6 +1,6 @@
 #include "render/resources/meshes/primitive_mesh_set.h"
 
-#include "render/core/meshes/render_mesh.h"
+#include "render/meshes/RndMesh.h"
 #include "render/resources/meshes/primitive_mesh_set_adapters.h"
 
 namespace rb4 {
@@ -18,7 +18,7 @@ void render_primitive_mesh_set_construct(RenderPrimitiveMeshSet& mesh_set) {
 void render_primitive_mesh_set_destruct(RenderPrimitiveMeshSet& mesh_set) {
     for (std::size_t index = 0; index < mesh_set.mesh_count; ++index) {
         if (mesh_set.meshes[index] != nullptr) {
-            render_mesh_release_dynamic(*mesh_set.meshes[index]);
+            delete mesh_set.meshes[index];
             mesh_set.meshes[index] = nullptr;
         }
     }

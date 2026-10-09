@@ -10,6 +10,7 @@ class RndShaderCBuffer;
 class RndShaderProgram;
 
 #include "render/buffers/RndComputeBuffer.h"
+#include "render/meshes/RndMesh.h"
 #include "render/textures/RndTexture1D.h"
 #include "render/textures/RndTexture2D.h"
 #include "render/textures/RndTexture3D.h"
@@ -18,20 +19,15 @@ class RndShaderProgram;
 #include "render/textures/RndTextureArrayCube.h"
 #include "render/textures/RndTextureCube.h"
 
-namespace rb4 {
-struct RenderMesh;
-enum class RenderMeshFormat : unsigned int;
-}  // namespace rb4
 
-// Platform object factory. The mesh slot still uses the unconverted mesh
-// type.
+// Platform object factory.
 class RndFactory {
 public:
     virtual ~RndFactory() {}  // slots 0-1
 
     // Slot 2. Not in the reference map, which predates fences.
     virtual RndFence* CreateFence() = 0;
-    virtual rb4::RenderMesh* CreateMesh(rb4::RenderMeshFormat type, const char* name) = 0;
+    virtual RndMesh* CreateMesh(RndVertexType type, const char* name) = 0;
     virtual RndTexture1D* CreateTexture1D(const RndTexture1D::Description& desc) = 0;
     virtual RndTexture2D* CreateTexture2D(const RndTexture2D::Description& desc) = 0;
     virtual RndTexture3D* CreateTexture3D(const RndTexture3D::Description& desc) = 0;

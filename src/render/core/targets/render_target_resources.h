@@ -10,9 +10,10 @@ class RndComputeBuffer;
 class RndTextureBase;
 class RndTexture3D;
 
+class RndMesh;
+
 namespace rb4 {
 
-struct RenderMesh;
 
 struct RenderPartialFrameState {
     std::int32_t values_00[5];
@@ -82,7 +83,7 @@ struct RenderTargetResources {
     RndTextureBase* shadow_contribution_scratch[2];
     RndTextureBase* shadow_soften_tiles[2];
     RndTextureBase* tiled_scene_mask[2];
-    RenderMesh* tiled_scene_mask_mesh;
+    RndMesh* tiled_scene_mask_mesh;
 
     RenderTargetResourceBlock* blocks_begin;
     std::size_t block_count;

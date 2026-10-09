@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/core/meshes/render_mesh.h"
+#include "render/meshes/RndMesh.h"
 #include "render/core/settings/render_settings.h"
 #include "render/core/system/render_system_globals.h"
 #include "render/core/targets/render_target_resource_factory.h"
@@ -78,15 +78,19 @@ void release_target(
     }
 }
 
+RndVertexPosOnly& position(RndMesh& mesh, std::size_t index) {
+    return *static_cast<RndVertexPosOnly*>(mesh._GetVertexVoidImpl(index));
+}
+
 void build_tile_mesh(
-    RenderMesh& mesh,
+    RndMesh& mesh,
     RenderExtent extent,
     std::uint32_t tile_size,
     RenderExtent tile_extent) {
     const auto tile_count =
         static_cast<std::size_t>(tile_extent.width) * tile_extent.height;
-    render_mesh_resize_position_vertices(mesh, tile_count * 4);
-    render_mesh_resize_triangles(mesh, tile_count * 2);
+    mesh._SetNumVerticesImpl(tile_count * 4);
+    mesh.mFaces.resize(tile_count * 2);
 
     std::size_t tile_index = 0;
     for (std::uint32_t row = 0; row < tile_extent.height; ++row) {
@@ -115,22 +119,18 @@ void build_tile_mesh(
                                    extent.width -
                                1.0F;
             const auto vertex_base = tile_index * 4;
-            render_mesh_position_vertex_at(mesh, vertex_base + 0) =
-                {{left, top, 0.0F}};
-            render_mesh_position_vertex_at(mesh, vertex_base + 1) =
-                {{right, top, 0.0F}};
-            render_mesh_position_vertex_at(mesh, vertex_base + 2) =
-                {{left, bottom, 0.0F}};
-            render_mesh_position_vertex_at(mesh, vertex_base + 3) =
-                {{right, bottom, 0.0F}};
+            position(mesh, vertex_base + 0) = {{left, top, 0.0F}};
+            position(mesh, vertex_base + 1) = {{right, top, 0.0F}};
+            position(mesh, vertex_base + 2) = {{left, bottom, 0.0F}};
+            position(mesh, vertex_base + 3) = {{right, bottom, 0.0F}};
 
             const auto triangle_base = tile_index * 2;
-            mesh.triangles.begin[triangle_base + 0] = {{
+            mesh.mFaces[triangle_base + 0] = {{
                 static_cast<std::uint32_t>(vertex_base + 0),
                 static_cast<std::uint32_t>(vertex_base + 1),
                 static_cast<std::uint32_t>(vertex_base + 2),
             }};
-            mesh.triangles.begin[triangle_base + 1] = {{
+            mesh.mFaces[triangle_base + 1] = {{
                 static_cast<std::uint32_t>(vertex_base + 1),
                 static_cast<std::uint32_t>(vertex_base + 3),
                 static_cast<std::uint32_t>(vertex_base + 2),
@@ -167,9 +167,9 @@ void render_scene_mask_tiles_create(
         tile_extent);
 
     auto* mesh =
-        render_create_mesh(RenderMeshFormat::kPositionOnly, "Scene Mask Mesh");
+        RndMesh::New(kVertexPosOnly, "Scene Mask Mesh");
     build_tile_mesh(*mesh, extent, tile_size, tile_extent);
-    render_mesh_finalize(*mesh);
+    mesh->SyncStatic();
     resources.tiled_scene_mask_mesh = mesh;
 }
 
@@ -180,7 +180,7 @@ void render_scene_mask_tiles_release(RenderTargetResources& resources) {
 
     auto*& mesh = resources.tiled_scene_mask_mesh;
     if (mesh != nullptr) {
-        render_mesh_release_dynamic(*mesh);
+        delete mesh;
         mesh = nullptr;
     }
 }

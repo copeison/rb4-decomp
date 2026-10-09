@@ -3,14 +3,15 @@
 ## Snapshot
 
 This document describes the repository on branch `main` after the
-`decomp: convert textures to original classes` milestone, the third step
+`decomp: convert meshes to original classes` milestone, the fourth step
 of the conversion to the reference map's original names, classes, and module
 layout (see [naming.md](naming.md) and [code-review.md](code-review.md)). The
-engine foundation, the render resource objects, and textures are converted; the
+engine foundation, the render resource objects, textures, and meshes are
+converted; the
 rest of the renderer, audio, and game code still use the earlier names. The
 working tree was clean when the snapshot was taken.
 
-The current PS4 object build compiles **187 C++ translation units**. It creates
+The current PS4 object build compiles **181 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
 executable. The latest unresolved-symbol report contains 586 unique entries,
 covering engine code that has not been reconstructed, external runtime APIs,
@@ -199,7 +200,8 @@ The latest focused commits, newest first, are:
 
 | Commit | Milestone |
 | --- | --- |
-| (this) | Textures converted to original classes |
+| (this) | Meshes converted to original classes |
+| `32dba93` | Textures converted to original classes |
 | `c589005` | Render resource objects converted to original classes |
 | `3338af8` | Engine foundation converted to original classes |
 | `3797688` | DOF sprite draw and per-stage binding |

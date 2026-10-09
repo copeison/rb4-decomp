@@ -5,13 +5,12 @@
 #include "os/memory/MemMgr.h"
 #include "render/platform/orbis/meshes/orbis_gnm_mesh_api.h"
 #include "render/platform/orbis/meshes/orbis_mesh_formats.h"
-#include "render/platform/orbis/meshes/orbis_skinned_mesh.h"
+#include "render/meshes/RndVertex.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 #include "render/platform/orbis/system/orbis_render_system_globals.h"
 
 namespace rb4 {
 
-static_assert(sizeof(SkinnedMeshVertex) == 100);
 static_assert(sizeof(OrbisMeshInstanceData) == 120);
 
 namespace {
@@ -31,16 +30,18 @@ OrbisMeshInstanceData identity_instance_data() {
     return instance;
 }
 
-SkinnedMeshVertex default_skinned_vertex() {
-    SkinnedMeshVertex vertex{};
-    vertex.normal[2] = 1.0F;
-    vertex.tangent[0] = 1.0F;
-    vertex.bitangent[1] = 1.0F;
-    vertex.color[0] = 1.0F;
-    vertex.color[1] = 1.0F;
-    vertex.color[2] = 1.0F;
-    vertex.color[3] = 1.0F;
-    vertex.bone_weights[0] = 1.0F;
+// The default stream data: a unit normal, tangent, and bitangent, opaque
+// white, and full weight on the first bone. Name not in the reference map.
+RndVertexSkinned DefaultStreamVertex() {
+    RndVertexSkinned vertex;
+    vertex.mNorm[2] = 1.0F;
+    vertex.mTangent[0] = 1.0F;
+    vertex.mBitangent[1] = 1.0F;
+    vertex.mColor[0] = 1.0F;
+    vertex.mColor[1] = 1.0F;
+    vertex.mColor[2] = 1.0F;
+    vertex.mColor[3] = 1.0F;
+    vertex.mWeights[0] = 1.0F;
     return vertex;
 }
 
@@ -49,12 +50,12 @@ SkinnedMeshVertex default_skinned_vertex() {
 // Reconstructed from eboot.elf at 0x8D7DB0.
 void orbis_create_default_vertex_buffer(OrbisRenderSystem& system) {
     const auto* format =
-        render_mesh_format_descriptor(RenderMeshFormat::kSkinned);
+        render_mesh_format_descriptor(kVertexSkinned);
     auto* buffer = MemAlloc(
         format->vertex_stride, kDefaultVertexBufferName, 4);
     orbis_set_default_vertex_buffer(system, buffer);
 
-    const auto vertex = default_skinned_vertex();
+    const auto vertex = DefaultStreamVertex();
     std::memcpy(buffer, &vertex, sizeof(vertex));
     std::uint32_t descriptor_mask = 0;
     orbis_build_mesh_vertex_descriptors(

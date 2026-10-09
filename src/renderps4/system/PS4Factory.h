@@ -2,14 +2,14 @@
 
 #include "render/system/RndFactory.h"
 
-// PS4 object factory. The mesh slot forwards to the unconverted Orbis mesh
-// creation function.
+// PS4 object factory. CreateMesh is defined with the mesh template in
+// PS4MeshTyped.cpp.
 class PS4Factory : public RndFactory {
 public:
     ~PS4Factory() override {}
 
     RndFence* CreateFence() override;                                        // 0x8D85C0
-    rb4::RenderMesh* CreateMesh(rb4::RenderMeshFormat type, const char* name) override;
+    RndMesh* CreateMesh(RndVertexType type, const char* name) override;  // 0x8D85F0
     RndTexture1D* CreateTexture1D(const RndTexture1D::Description& desc) override;
     RndTexture2D* CreateTexture2D(const RndTexture2D::Description& desc) override;
     RndTexture3D* CreateTexture3D(const RndTexture3D::Description& desc) override;

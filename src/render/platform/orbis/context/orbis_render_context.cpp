@@ -91,7 +91,7 @@ void orbis_render_context_construct(OrbisRenderContext& context) {
             orbis_transient_vertex_buffer_initialize(
                 orbis_render_context_transient_vertex_buffer(
                     context, bank, format),
-                static_cast<RenderMeshFormat>(format),
+                static_cast<RndVertexType>(format),
                 kTransientVertexCapacity);
         }
     }

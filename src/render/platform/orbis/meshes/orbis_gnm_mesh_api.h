@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "render/platform/orbis/meshes/orbis_mesh.h"
+#include "render/meshes/RndMesh.h"
 #include "render/platform/orbis/meshes/orbis_mesh_draw.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 

@@ -155,7 +155,7 @@ const std::array<RenderMeshFormatDescriptor, kFormatCount> kFormats = {{
 
 // Reconstructed from eboot.elf at 0x4430C0 and 0x4435E0.
 const RenderMeshFormatDescriptor* render_mesh_format_descriptor(
-    RenderMeshFormat format) {
+    RndVertexType format) {
     const auto index = static_cast<std::size_t>(format);
     return index < kFormats.size() ? &kFormats[index] : nullptr;
 }

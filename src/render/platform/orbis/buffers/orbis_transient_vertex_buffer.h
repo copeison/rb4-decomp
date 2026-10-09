@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "render/platform/orbis/meshes/orbis_mesh.h"
+#include "render/meshes/RndMesh.h"
 #include "render/platform/orbis/meshes/orbis_vertex_descriptors.h"
 
 namespace rb4 {
@@ -33,7 +33,7 @@ void orbis_transient_vertex_buffer_destruct(
     OrbisTransientVertexBuffer& buffer);
 void orbis_transient_vertex_buffer_initialize(
     OrbisTransientVertexBuffer& buffer,
-    RenderMeshFormat format,
+    RndVertexType format,
     std::size_t vertex_capacity);
 void orbis_transient_vertex_buffer_reset(
     OrbisTransientVertexBuffer& buffer);

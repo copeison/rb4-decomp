@@ -89,6 +89,42 @@ public:
         mpEnd = mpBegin;
     }
 
+    // Grows by default-constructing new elements, or shrinks by destroying
+    // trailing ones.
+    void resize(unsigned long count) {
+        const auto current = size();
+        if (count <= current) {
+            for (auto* element = mpBegin + count; element != mpEnd; ++element) {
+                element->~T();
+            }
+            mpEnd = mpBegin + count;
+            return;
+        }
+        if (count > capacity()) {
+            const auto grown = current == 0 ? 1UL : current * 2;
+            reserve(grown > count ? grown : count);
+        }
+        while (size() < count) {
+            new (mpEnd) T();
+            ++mpEnd;
+        }
+    }
+
+    // Shrinking to zero releases the storage.
+    void set_capacity(unsigned long count) {
+        if (count == 0) {
+            DestroyElements();
+            Free();
+            mpBegin = mpEnd = mpCapacity = nullptr;
+            return;
+        }
+        reserve(count);
+    }
+
+    T* data() {
+        return mpBegin;
+    }
+
     T* mpBegin;
     T* mpEnd;
     T* mpCapacity;

@@ -14,7 +14,7 @@ namespace rb4 {
 void orbis_render_context_draw_transient(
     OrbisRenderContext& context,
     MeshPrimitiveType primitive_type,
-    RenderMeshFormat format,
+    RndVertexType format,
     const void* vertices,
     std::size_t vertex_count) {
     const auto frame = orbis_render_context_active_frame(context);

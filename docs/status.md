@@ -463,6 +463,9 @@
   stage selects; introduce a shared `eastl::vector`. Fix `SyncStatic`'s
   keep-pixel-data test and remove a border-color parameter the binary never
   had.
+- [x] Convert meshes to original classes: `RndDrawable`, `RndDynamicGpuData`,
+  `RndMesh`, and the `RndMeshTyped`/`PS4MeshTyped` templates, which replace
+  seven copied per-layout files. Forward the update context instead of null.
 - [x] Reconstruct all built-in graphics-shader constructors, including their
   shared permutation bindings and verified trailing handle state.
 - [x] Reconstruct the seven remaining compute-shader constructors, completing

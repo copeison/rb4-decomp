@@ -2,15 +2,16 @@
 
 #include <cstddef>
 
+class RndMesh;
+
 namespace rb4 {
 
-struct RenderMesh;
 
 struct RenderPrimitiveMeshSet {
-    RenderMesh** meshes;
+    RndMesh** meshes;
     std::size_t mesh_count;
     std::size_t mesh_capacity;
-    RenderMesh* inline_meshes[2];
+    RndMesh* inline_meshes[2];
 };
 
 static_assert(offsetof(RenderPrimitiveMeshSet, meshes) == 0);
