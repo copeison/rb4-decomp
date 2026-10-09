@@ -37,10 +37,6 @@ bool orbis_color_render_target_requires_sync(
     std::size_t slot);
 bool orbis_depth_render_target_requires_prepare(
     const RndContext::RenderTargetParams& binding);
-std::uint32_t orbis_build_blend_control(
-    RndBlendMode mode,
-    const RndContext::BlendParams& configuration,
-    std::size_t target_slot);
 bool orbis_depth_target_has_htile(
     const sce::Gnm::DepthRenderTarget& target);
 bool orbis_depth_target_stencil_clear_range(
@@ -76,7 +72,6 @@ constexpr unsigned int kGeometryStageBit = 1U << kShaderProgramGeometry;
 
 constexpr std::size_t kColorRenderTargetCount = 8;
 constexpr std::int32_t kUnboundTargetKind = -1;
-constexpr std::int32_t kPerTargetBlendMode = 11;
 constexpr std::array<std::uint8_t, 10> kStencilMasks = {
     0xFF, 0x07, 0x08, 0x10, 0x0F,
     0x1F, 0x20, 0x28, 0x30, 0xC0,
@@ -91,11 +86,6 @@ constexpr std::uint32_t kResourceReadyValue = 1;
 
 std::uint8_t StencilMask(std::uint32_t index) {
     return index < kStencilMasks.size() ? kStencilMasks[index] : 0;
-}
-
-std::uint32_t ReplicateByte(std::uint8_t value) {
-    const auto word = static_cast<std::uint32_t>(value);
-    return word | (word << 8) | (word << 16) | (word << 24);
 }
 
 bool IsState(RndResourceState state, RndResourceState expected) {
@@ -136,6 +126,16 @@ PS4Context* PS4Context::_CreateImmediate(PS4Device& device) {
 // not yet modeled.
 PS4Context::PS4Context()
     : RndContext(false),
+      mDepthMode(0),
+      mStencilMode(0),
+      mFrontFace(1),
+      mCullMode(kCullNone),
+      mFillMode(1),
+      mStencilReference(0),
+      mStencilReadMask(0xFF),
+      mStencilWriteMask(0xFF),
+      mColorWriteTargets(0xF),
+      mColorWriteChannels(kWriteRGBA),
       mGpuTimestamps(nullptr),
       mNextGpuStatBlock(0),
       mCachedShaderStages(static_cast<sce::Gnm::ActiveShaderStages>(-1)),
@@ -331,22 +331,24 @@ void PS4Context::_SetRenderTargetsImpl(int mode, const RenderTargetParams& param
     }
 }
 
-// Reconstructed from eboot.elf at 0x8E92D0.
-void PS4Context::_SetBlendModeImpl(RndBlendMode mode, const BlendParams& params) {
-    if (static_cast<std::int32_t>(mode) == kPerTargetBlendMode) {
-        for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
-            _SetGnmBlendControl(slot, orbis_build_blend_control(mode, params, slot));
-        }
-        return;
+// Reconstructed from eboot.elf at 0x8E92D0. Decal-lit blending rebuilds the
+// control for every target.
+void PS4Context::_SetBlendModeImpl(RndBlendMode mode, const BlendParams&) {
+    auto& gfx = _ActiveGfxContext();
+    sce::Gnm::BlendControl control;
+    if (mode != RndBlendMode::kDecalLitSourceAlpha) {
+        PS4RenderStateUtl::InitBlendControl(control, mode);
     }
-
-    const auto control = orbis_build_blend_control(mode, params, 0);
-    for (std::size_t slot = 0; slot < kColorRenderTargetCount; ++slot) {
-        _SetGnmBlendControl(slot, control);
+    for (unsigned int slot = 0; slot < kColorRenderTargetCount; ++slot) {
+        if (mode == RndBlendMode::kDecalLitSourceAlpha) {
+            PS4RenderStateUtl::InitBlendControl(control, mode);
+        }
+        gfx.setBlendControl(slot, control);
     }
 }
 
-// Reconstructed from eboot.elf at 0x8E96F0.
+// Reconstructed from eboot.elf at 0x8E96F0. Each selected target writes all
+// four channels or only RGB; other channel sets write nothing.
 void PS4Context::_SetColorWriteMaskImpl(unsigned char targets, RndWriteMaskChannelSet channels) {
     std::uint32_t channelMask = 0;
     if (channels == kWriteRGBA) {
@@ -361,65 +363,68 @@ void PS4Context::_SetColorWriteMaskImpl(unsigned char targets, RndWriteMaskChann
             gnmMask |= channelMask << (slot * 4);
         }
     }
-    _SetGnmRenderTargetMask(gnmMask);
-    _CacheColorWriteMask(targets, channels);
+    _ActiveGfxContext().setRenderTargetMask(gnmMask);
+    mColorWriteTargets = targets;
+    mColorWriteChannels = channels;
 }
 
-// Reconstructed from eboot.elf at 0x8E99E0.
-bool PS4Context::_ClearDepthStencil(
-    const sce::Gnm::DepthRenderTarget& target,
-    float depth,
-    unsigned char stencil) {
-    if (orbis_depth_target_has_htile(target)) {
-        _FlushDepthMetadata();
+// Inlined into the depth and stencil setters and the depth clear.
+void PS4Context::_SyncDepthStencilControl() {
+    sce::Gnm::DepthStencilControl depthStencil;
+    PS4RenderStateUtl::InitDepthStencilControl(depthStencil, mDepthMode, mStencilMode);
+    sce::Gnm::StencilControl stencil;
+    PS4RenderStateUtl::InitStencilControl(
+        stencil, mStencilMode, mStencilReference, mStencilReadMask, mStencilWriteMask);
+    sce::Gnm::StencilOpControl stencilOps;
+    PS4RenderStateUtl::InitStencilOpControl(stencilOps, mStencilMode);
+    auto& gfx = _ActiveGfxContext();
+    gfx.setDepthStencilControl(depthStencil);
+    gfx.setStencil(stencil);
+    gfx.setStencilOpControl(stencilOps);
+}
 
-        DepthClearRange stencilRange = {};
-        if (orbis_depth_target_stencil_clear_range(target, stencilRange)) {
-            _DispatchDepthClear(stencilRange, ReplicateByte(stencil));
-        }
-
-        _DispatchDepthClear(orbis_depth_target_htile_clear_range(target), 0);
-        return true;
-    }
-
-    _BeginRasterDepthClear(depth, stencil);
-    _FlushClear();
-    _FinishRasterDepthClear();
-    return false;
+// Inlined into the front-face, cull and fill setters.
+void PS4Context::_SyncPrimitiveSetup() {
+    sce::Gnm::PrimitiveSetup setup;
+    PS4RenderStateUtl::InitPrimitiveSetup(setup, mFrontFace, mCullMode, mFillMode);
+    _ActiveGfxContext().setPrimitiveSetup(setup);
 }
 
 // Reconstructed from eboot.elf at 0x8E9F60.
 void PS4Context::_SetDepthModeImpl(unsigned int mode) {
-    _CacheDepthMode(mode);
+    mDepthMode = mode;
     _SyncDepthStencilControl();
 }
 
-// Reconstructed from eboot.elf at 0x8EA030.
+// Reconstructed from eboot.elf at 0x8EA030. The masks are indices into the
+// stencil mask table.
 void PS4Context::_SetStencilModeImpl(
     unsigned int mode,
     unsigned char reference,
     unsigned int readMask,
     unsigned int writeMask) {
-    _CacheStencilState(
-        mode, reference, StencilMask(readMask), StencilMask(writeMask));
+    mStencilMode = mode;
+    mStencilReference = reference;
+    mStencilReadMask = StencilMask(readMask);
+    mStencilWriteMask = StencilMask(writeMask);
     _SyncDepthStencilControl();
 }
 
 // Reconstructed from eboot.elf at 0x8EA150.
 void PS4Context::_SetFrontFaceImpl(bool counterClockwise) {
-    _CacheFrontFace(counterClockwise);
+    mFrontFace = counterClockwise;
     _SyncPrimitiveSetup();
 }
 
 // Reconstructed from eboot.elf at 0x8EA1C0.
 void PS4Context::_SetCullModeImpl(RndCullMode mode) {
-    _CacheCullMode(mode);
+    mCullMode = mode;
     _SyncPrimitiveSetup();
 }
 
 // Reconstructed from eboot.elf at 0x8EA230.
 void PS4Context::_SetFillModeImpl(bool solid) {
-    _CachePolygonFill(solid);
+    mFillMode = solid;
     _SyncPrimitiveSetup();
 }
 

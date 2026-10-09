@@ -575,6 +575,8 @@
 - [x] Reconstruct FMOD audio-input bus routing and record-driver discovery.
 - [x] Reconstruct the FMOD-backed recording audio render target.
 - [x] Identify the synchronized six-sample interpolation kernel.
+- [x] Reconstruct the `PS4RenderStateUtl` blend, depth-stencil, stencil and
+  primitive-setup builders and the `PS4Context` state setters.
 - [x] Reconstruct the `PS4Context` GPU statistics and timestamp pool, with an
   `eastl::map` model in `src/utl/containers/Map.h`.
 - [x] Reconstruct the `PS4Context` fences, compute dispatch and debug markers

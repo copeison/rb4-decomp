@@ -59,3 +59,33 @@ Color-write control at `0x8E96F0` takes an eight-bit render-target selection.
 It expands each selected bit to one Gnm nibble: `F` writes RGBA, `7` writes RGB,
 and zero disables color writes. The eight nibbles form the 32-bit mask passed
 to `setRenderTargetMask`.
+
+## Builders
+
+The Gnm controls come from the map's `PS4RenderStateUtl` builders:
+- **`InitBlendControl` (`0x8EC310`).** Covers the twelve blend modes the map
+  names in `RndShaderGraphUtl::GetBlendModeName`'s table at `0x1911F20`:
+  - SrcAlpha: `SrcAlpha + OneMinusSrcAlpha`
+  - SrcAlphaAdd and DecalLitSrcAlpha: `SrcAlpha + One`
+  - Pre-Mult Alpha: `One + OneMinusSrcAlpha`
+  - Screen: `OneMinusDestColor + One`
+  - Dst: `Zero + One`
+  - Src: blending off, `One + Zero`
+  - Add: `One + One`
+  - Subtract: `One - One`
+  - Multiply: `DestColor + Zero`
+  - Lighten and Darken: `One max/min One`
+
+  Decal-lit blending rebuilds the control for each of the eight targets.
+- **`InitDepthStencilControl` (`0x8EC450`).** Depth modes 1 to 4 test with
+  greater-or-equal (write), equal, greater-or-equal (no write), and always
+  (write). Stencil modes 1 to 5 use always, equal, equal, not-equal and
+  less-or-equal.
+- **`InitStencilControl` (`0x8EC5A0`).** Uses the reference as both test and
+  replacement value.
+- **`InitStencilOpControl` (`0x8EC5B0`).** Modes 1 and 3 replace on pass.
+- **`InitPrimitiveSetup` (`0x8EC600`).**
+
+The setters cache the state at `0x40D98`-`0x40DB7`; the constructor's
+defaults are depth and stencil off, counter-clockwise front faces, no
+culling, solid fill, stencil masks `FF`, and all four targets writing RGBA.

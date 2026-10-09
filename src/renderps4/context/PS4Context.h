@@ -204,25 +204,15 @@ private:
         const sce::Gnm::DepthRenderTarget& target,
         const RenderTargetParams& params);
     void _FinishRenderTargetSync();
-    void _SetGnmBlendControl(std::size_t targetSlot, std::uint32_t blendControl);
     void _ResetCachedPipelineState();
     void _SetDefaultRasterState();
     void _SetDefaultDepthStencilState();
     void _DisableStreamOutput();
     void _ClearShaderResources();
-    void _CacheDepthMode(std::uint32_t depthMode);
-    void _CacheStencilState(
-        std::uint32_t stencilMode,
-        std::uint8_t reference,
-        std::uint8_t readMask,
-        std::uint8_t writeMask);
+    // Rebuild and set the Gnm depth-stencil and primitive-setup state from
+    // the cache. Map names; inlined into the setters in this build.
     void _SyncDepthStencilControl();
-    void _CacheFrontFace(bool counterClockwise);
-    void _CacheCullMode(RndCullMode cullMode);
-    void _CachePolygonFill(bool enabled);
     void _SyncPrimitiveSetup();
-    void _SetGnmRenderTargetMask(std::uint32_t writeMask);
-    void _CacheColorWriteMask(std::uint8_t targetMask, RndWriteMaskChannelSet writeMode);
 
     // Whether commands go to the graphics or a compute context. Names not
     // in the reference map.
@@ -318,7 +308,18 @@ public:
     // Nine compute contexts per frame slot.
     sce::Gnmx::ComputeContext mComputeContexts[kFrameSlotCount][kComputeContextsPerFrame];
     std::size_t mActiveFrame;
-    unsigned char mUnknown265624[0x20];
+    // The cached depth, stencil, raster and color-write state the setters
+    // rebuild the Gnm controls from. Names not in the reference map.
+    unsigned int mDepthMode;
+    unsigned int mStencilMode;
+    unsigned int mFrontFace;  // 1 is counter-clockwise.
+    RndCullMode mCullMode;
+    unsigned int mFillMode;   // 1 is solid.
+    std::uint8_t mStencilReference;
+    std::uint8_t mStencilReadMask;
+    std::uint8_t mStencilWriteMask;
+    unsigned int mColorWriteTargets;
+    RndWriteMaskChannelSet mColorWriteChannels;
     // One bank per frame, indexed by vertex type.
     PS4TransientBuffer mTransientBuffers[kFrameSlotCount][kTransientFormatCount];
     // GPU-stat timestamp pairs, used as a ring, with their GPU memory and
@@ -350,7 +351,9 @@ static_assert(offsetof(PS4Context, mUnknown141520) == 0x228D0);
 static_assert(sizeof(sce::Gnmx::ComputeContext) == 0x1AE0);
 static_assert(offsetof(PS4Context, mComputeContexts) == 0x229D0);
 static_assert(offsetof(PS4Context, mActiveFrame) == 0x40D90);
-static_assert(offsetof(PS4Context, mUnknown265624) == 0x40D98);
+static_assert(offsetof(PS4Context, mDepthMode) == 0x40D98);
+static_assert(offsetof(PS4Context, mStencilReference) == 0x40DAC);
+static_assert(offsetof(PS4Context, mColorWriteTargets) == 0x40DB0);
 static_assert(offsetof(PS4Context, mTransientBuffers) == 0x40DB8);
 static_assert(offsetof(PS4Context, mGpuStatBlocks) == 0x41838);
 static_assert(offsetof(PS4Context, mGpuTimestamps) == 0x44838);

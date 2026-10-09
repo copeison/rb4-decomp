@@ -33,6 +33,11 @@ enum class RndBlendMode : std::int32_t {
     kDestination = 4,
     kSource = 5,
     kAdd = 6,
+    kSubtract = 7,
+    kMultiply = 8,
+    kLighten = 9,
+    kDarken = 10,
+    kDecalLitSourceAlpha = 11,
 };
 
 RndSceneResource* resource_manager_load_scene(
