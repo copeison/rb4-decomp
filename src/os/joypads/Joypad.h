@@ -46,3 +46,14 @@ class EditorJoypadDataCom {
 public:
     static void Init();  // 0x368D00
 };
+
+// A joypad button (26 of them) and a joypad action (15), the parameters of
+// the UI button messages. The map names the types; their enumerators are
+// not recovered.
+enum JoypadButton : int {};
+enum JoypadAction : int {};
+
+// The display names of a button and an action, which UIInputReceiverCom's
+// exported events list. Not reconstructed.
+const char* JoypadActionToName(JoypadAction action);  // 0x39E050
+const char* JoypadButtonToName(JoypadButton button);  // 0x39E060

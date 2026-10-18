@@ -46,3 +46,14 @@ public:
 };
 
 static_assert(sizeof(BoundingHull) == 108);
+
+// An axis-aligned box between two corners (math/Geo.o). Its methods are not
+// reconstructed; RndMeshUtl::ComputeAABB returns one. Field names are not in
+// the reference map.
+class Box {
+public:
+    Vector3 mMin;
+    Vector3 mMax;
+};
+
+static_assert(sizeof(Box) == 24);

@@ -15,6 +15,12 @@ class ComMetaData;
 class PropRegistry;
 class TransCom;
 
+// The label and the help text of a show/hide flag bit ("" and "<NO HELP>"
+// for the others). Emitted among the RndUtl helpers. Names not in the
+// reference map.
+const char* GetShowHideFlagName(int flag);  // 0x441C90
+const char* GetShowHideFlagHelp(int flag);  // 0x441D50
+
 // The component that places an object in the scene's draw hierarchy
 // (render/RndDrawNodeCom.o, 0x6C3D40 to 0x6C944F): "Holds hierarchical
 // drawing-related info (bounding volume, environment, show/hide". Its class
@@ -239,8 +245,7 @@ public:
     // Registers the class description and the properties, with the
     // callbacks of "showing", "environment" and
     // "nested_light_environments" and the upgrade of the show/hide flags
-    // (the functor vtables at 0x1937F18 to 0x1938008). Not reconstructed:
-    // the property metadata's attributes are not modelled.
+    // (the functor vtables at 0x1937F18 to 0x1938008).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x6C4060

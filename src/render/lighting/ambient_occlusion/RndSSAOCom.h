@@ -79,9 +79,13 @@ public:
         RndCameraContext& camera,
         const RndSceneDrawParams& params);  // 0x4AD150
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F0CA0
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x404750
     // Describes the class and registers "quality_settings", "radius",
-    // "angleBias" and "intensity". Not reconstructed: the property
-    // metadata it fills is not modelled.
+    // "angleBias" and "intensity", with the settings' summary (0x4AD9F0)
+    // and the revision 1 handler (0x4AD8E0).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x4AC540

@@ -70,3 +70,6 @@ static_assert(sizeof(Color) == 16);
 
 // Converts an sRGB-encoded color to linear space; alpha is copied.
 void GammaToLinear_sRGB(const Hmx::Color& gamma, Hmx::Color& linear);
+// Converts a linear color to sRGB encoding; alpha is copied. Not
+// reconstructed.
+void LinearToGamma_sRGB(const Hmx::Color& linear, Hmx::Color& gamma);  // 0x211350

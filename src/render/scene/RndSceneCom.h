@@ -1,23 +1,28 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 
 #include "entity/core/ComMetaData.h"
 #include "entity/core/GameObject.h"
 #include "entity/props/PropArray.h"
 #include "entity/props/PropPath.h"
+#include "entity/props/PropRef.h"
 #include "entity/props/PropRegistry.h"
 #include "math/color/Color.h"
 #include "math/vector/Vector4.h"
 #include "render/scene/RndDrawableEntityCom.h"
+#include "stategraph/props/DrivenProp.h"
 #include "utl/containers/Map.h"
 #include "utl/containers/Vector.h"
+#include "utl/text/Str.h"
 #include "utl/text/Symbol.h"
 #include "utl/threading/PollMgr.h"
 #include "utl/threading/ThreadedJob.h"
 
 class Entity;
 class EntityResource;
+class GroupMetadata;
 class RndAtmosphereCom;
 class RndCMAACom;
 class RndCameraCom;
@@ -29,6 +34,7 @@ class RndSkyCom;
 class RndTexture2D;
 class RndVolumetricScatteringCom;
 class TimelinesCom;
+struct TagArgs;
 
 // The scene settings component on a scene entity's root object
 // (render/RndSceneCom.o, 0x407F30-0x419170). Its class id is "Scene". It
@@ -47,50 +53,21 @@ public:
         int mSignedDistanceWidth;  // "signed_distance_width"
     };
 
-    // The map's PropRef (entity/PropRef.o), a reference to a property of a
-    // component of an object, which is not modelled under src/entity. These
-    // are its members; the default constructor (PropRef::PropRef() at
-    // 0x17F4F0, which the arrays' element constructors call) leaves no
-    // object, no component and an empty path. Name not in the reference
-    // map.
-    struct PropRefData {
-        PropRefData() : mObject{0xFFFFFFFFU} {}
+    // One entry of the shader-graph globals' "floats" and "colors" arrays:
+    // a "comment" and the driven value. The registry names the types
+    // "GlobalEntry<float>" and "GlobalEntry<Hmx::Color>"; their construction
+    // is inlined into the arrays' Construct (0x412CE0 and its colour
+    // counterpart). Name not in the reference map.
+    template <class T>
+    struct GlobalEntry {
+        // The editor's summary of the entry: the driving property when it
+        // drives, else the value, then the comment in parentheses. The
+        // binary emits the float and colour copies at 0x413C70 and
+        // 0x4158E0. Name not in the reference map.
+        String GetSummary(const Component& component, const PropPath& path) const;
 
-        GameObjectId mObject;
-        Symbol mCom;
-        PropPath mPath;
-    };
-
-    // A value a property can drive: the value, the driving property and
-    // whether it drives. The registrations at 0x4107C0 and 0x410EF0, which
-    // other classes call as well, describe them ("value", the property and
-    // "is_driven"). Names not in the reference map.
-    struct DrivenFloat {
-        DrivenFloat() : mValue(0.0F), mIsDriven(false) {}
-
-        float mValue;
-        PropRefData mProp;
-        bool mIsDriven;
-    };
-    struct DrivenColor {
-        DrivenColor() : mValue(0.0F, 0.0F, 0.0F, 0.0F), mIsDriven(false) {}
-
-        Hmx::Color mValue;
-        PropRefData mProp;
-        bool mIsDriven;
-    };
-
-    // The elements of the shader-graph globals' "floats" and "colors"
-    // arrays: a "comment" and the value. Their construction is inlined into
-    // the arrays' Construct (0x412CE0 and its colour counterpart). Names
-    // not in the reference map.
-    struct GlobalFloat {
         Symbol mComment;
-        DrivenFloat mValue;
-    };
-    struct GlobalColor {
-        Symbol mComment;
-        DrivenColor mValue;
+        DrivenProp<T> mValue;
     };
 
     // One row of the property hysteresis texture: the "default_values"
@@ -100,7 +77,7 @@ public:
         PropHysteresisEntry() : mDefaultValues(Vector4::sZero) {}
 
         Vector4 mDefaultValues;
-        PropRefData mProps[4];
+        PropRef mProps[4];
     };
 
     // The "prop_hysteresis" settings: the clock that advances the texture,
@@ -120,7 +97,7 @@ public:
         }
 
         int mTimeline;     // "timeline", a TimeUnits.
-        int mTextureSize;  // "texture_size", the width in texels.
+        unsigned int mTextureSize;  // "texture_size", the width in texels.
         int mWrapMode;     // "wrap_mode"
         int mFilterMode;   // "filter_mode"
         PropArray<PropHysteresisEntry> mEntries;  // "entries"
@@ -336,6 +313,9 @@ public:
     // filled with its default values. The map has
     // _CreatePropHysteresisTexture() and _ClearPropHysteresisTexture().
     void _CreatePropHysteresisTexture();  // 0x411880
+    // Refills the hysteresis texture's rows with their default values: the
+    // "reset" action of "prop_hysteresis".
+    void _ClearPropHysteresisTexture();  // 0x411B40
 
     // Registers the class (InitComponentClass), emitted in render/RndInit.o.
     static void Init();  // 0x3F1F60
@@ -345,12 +325,11 @@ public:
     // clear_type, clear_color, the clear_depth group (after_post_proc_0
     // and 1), framerate_deprecated, camera, aux_camera, light_manager, sky,
     // atmosphere, post_proc_0 and 1, antialiasing, mask_buffer, the globals
-    // group (floats, colors), shadergraph_data (trans_0 to trans_3),
-    // prop_hysteresis, the lod group (enable_lod, medium_lod_distance,
-    // low_lod_distance, isolate_lod), never_cull, num_draw_entries and the
-    // utilities. The element types are registered by 0x410090, 0x410240
-    // and 0x4103F0. Not reconstructed: the property metadata it fills is
-    // not modelled.
+    // group (floats, colors), shadergraph_data (trans_0 to trans_3 and the
+    // prop_hysteresis group), the lod group (enable_lod,
+    // medium_lod_distance, low_lod_distance, isolate_lod), never_cull,
+    // num_draw_entries and the utilities, with the upgrade of the four older
+    // revisions.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x40B490
 
     static Symbol sId;  // 0x1A722A8, "Scene"
@@ -375,8 +354,8 @@ public:
     GameObjectId mPostProcs[2];      // "post_proc_0", "post_proc_1"
     GameObjectId mAntialiasing;      // "antialiasing"
     MaskBuffer mMaskBuffer;          // "mask_buffer"
-    PropArray<GlobalFloat> mFloats;  // "floats"
-    PropArray<GlobalColor> mColors;  // "colors"
+    PropArray<GlobalEntry<float>> mFloats;       // "floats"
+    PropArray<GlobalEntry<Hmx::Color>> mColors;  // "colors"
     // "trans_0" to "trans_3": the objects whose transforms the shader
     // graph receives as TransInfo #0 to #3.
     GameObjectId mShaderGraphTrans[4];
@@ -418,11 +397,10 @@ public:
 };
 
 static_assert(sizeof(RndSceneCom::MaskBuffer) == 8);
-static_assert(sizeof(RndSceneCom::PropRefData) == 216);
-static_assert(sizeof(RndSceneCom::DrivenFloat) == 0xE8);
-static_assert(sizeof(RndSceneCom::DrivenColor) == 0xF0);
-static_assert(sizeof(RndSceneCom::GlobalFloat) == 0xF0);
-static_assert(sizeof(RndSceneCom::GlobalColor) == 0xF8);
+static_assert(offsetof(DrivenProp<Hmx::Color>, mDriven) == 0xE8);
+static_assert(sizeof(DrivenProp<Hmx::Color>) == 0xF0);
+static_assert(sizeof(RndSceneCom::GlobalEntry<float>) == 0xF0);
+static_assert(sizeof(RndSceneCom::GlobalEntry<Hmx::Color>) == 0xF8);
 static_assert(sizeof(RndSceneCom::PropHysteresisEntry) == 0x370);
 static_assert(offsetof(RndSceneCom::PropHysteresis, mEntries) == 0x10);
 static_assert(offsetof(RndSceneCom::PollSplitJob, mResource) == 0x90);

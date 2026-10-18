@@ -42,7 +42,7 @@ public:
     // component's constructor (0x6C1500) and _Imprint (0x6C3790).
     struct RuntimeData {
         RuntimeData()
-            : mReserved(false),
+            : mLodsChanged(false),
               mRegistered(false),
               mInstancesInited(false),
               mRegistrationSuppressed(false),
@@ -55,8 +55,9 @@ public:
               mMaterialReference(nullptr),
               mDefaultMaterial(nullptr) {}
 
-        // Cleared by the constructor; no reader is identified.
-        bool mReserved;
+        // Set when "lods" changes (0x6C3940); no reader is identified, so
+        // the name is weak.
+        bool mLodsChanged;
         // Set once the component tried to register with its scene drawer.
         bool mRegistered;
         // Set by InitDrawInstances; the poll syncs the instances only then.
@@ -182,10 +183,20 @@ public:
     // Inlined everywhere. Name not in the reference map.
     static unsigned long NumSceneLods();
 
-    // Registers the class description and the properties. Not
-    // reconstructed: the property metadata's attributes are written through
-    // helpers that are not modelled.
+    // Registers the class (InitComponentClass) as a superclass root that is
+    // not created itself, emitted in render/RndInit.o.
+    static void Init();  // 0x3F6880
+    // The class factory, emitted in render/RndInit.o.
+    static Component* _Create();  // 0x4055A0
+    // Registers "billboarding", "sort_by", "sorting_hint", "lods",
+    // "extra_data", "extra_data_1" and their colour views. The class
+    // requires a draw node and brings a material.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x6C17F0
+    // Makes the class the superclass of a subclass's metadata and runs
+    // _Init on the subclass's registry in the "metadata" heap, keeping
+    // the stricter editor restrictions. Seven subclasses' _Init call it.
+    // Name not in the reference map.
+    static void _InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata);  // 0x449960
 
     static Symbol sId;          // 0x1AB0370, "DrawInstance"
     // The class symbol GameObject::CreateComponent takes; also
@@ -198,8 +209,8 @@ public:
     int mBillboarding;
     // "sort_by".
     int mSortBy;
-    // "sorting_hint".
-    bool mSortingHint;
+    // "sorting_hint": the state-sorting order of opaque instances.
+    signed char mSortingHint;
     // "lods": the scene levels the object is drawn at, all three by default.
     unsigned int mLods;
     // "extra_data" and "extra_data_1", copied into every instance.

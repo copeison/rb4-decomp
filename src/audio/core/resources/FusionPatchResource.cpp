@@ -39,7 +39,7 @@ bool FusionPatchResource::NeedsReload() {
     if (patch == nullptr) {
         return true;
     }
-    for (unsigned int index = 0; index < patch->mNumKeyzones; ++index) {
+    for (unsigned int index = 0; index < patch->mKeyzones.size(); ++index) {
         AudioSampleResource* const sample = patch->mKeyzones[index].mSample;
         if (sample != nullptr && (sample->mFileChangedOnDisk || sample->NeedsReload())) {
             return true;
@@ -59,7 +59,7 @@ void FusionPatchResource::GetDependencies(eastl::vector<ResourcePtr<Resource>>& 
     if (patch == nullptr) {
         return;
     }
-    for (unsigned int index = 0; index < patch->mNumKeyzones; ++index) {
+    for (unsigned int index = 0; index < patch->mKeyzones.size(); ++index) {
         AudioSampleResource* const sample = patch->mKeyzones[index].mSample;
         if (sample == nullptr) {
             continue;

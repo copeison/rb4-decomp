@@ -246,7 +246,7 @@ void ComMetaData::Init(
             const bool noResourceClass =
                 file.mResourceId.mMode == TagBase<Symbol>::kModeConstant && file.mResourceId.mValue == Symbol();
             if (noResourceClass && file.mCustomExtensions.mMode == TagBase<eastl::vector<Symbol>>::kModeUnset
-                && !file.mIsRelativeToEntity) {
+                && !file.mAllowsUntyped) {
                 char text[512] = {};
                 path.ToString(text, sizeof(text));
             }

@@ -1,8 +1,8 @@
-// render/RndLightFlareCom.o (0x47A3C0 to 0x47E7AF). The registry builder
-// (_Init, 0x47A780), the subflare type's registration (the map's
-// PropArray<RndLightFlareCom::Subflare>::Init(Symbol), 0x47BC70) and the
-// property handlers after the identity slots (0x47D880-0x47E4D0) are not
-// reconstructed. The object's static initializer is at 0x47E6B0.
+// render/RndLightFlareCom.o (0x47A3C0 to 0x47E7AF). The subflare type's
+// registration (the map's PropArray<RndLightFlareCom::Subflare>::Init(Symbol),
+// 0x47BC70) and the property handlers after the identity slots
+// (0x47D880-0x47E4D0) are the registry builder's. The object's static
+// initializer is at 0x47E6B0.
 #include "render/lighting/flares/RndLightFlareCom.h"
 
 #include <algorithm>
@@ -14,6 +14,9 @@
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
+#include "entity/props/PropUtl.h"
 #include "math/geometry/Sphere.h"
 #include "render/context/RndCameraContext.h"
 #include "render/context/RndContext.h"
@@ -29,6 +32,7 @@
 #include "render/queries/RndOcclusionQuery.h"
 #include "render/queries/RndOcclusionQueryMgr.h"
 #include "render/scene/RndDrawNodeCom.h"
+#include "render/scene/RndDrawableEntityResource.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
@@ -46,6 +50,27 @@ GameObjectId gNullObjectId = {0xFFFFFFFFU};              // 0x1A87DE8
 // reference map.
 constexpr float kMinDivisor = 0.0001F;
 constexpr float kPi = 3.14159265F;
+
+// The conversions of the "angle" accessors. Names not in the reference
+// map.
+constexpr float kDegreesPerRadian = 57.2957764F;
+constexpr float kRadiansPerDegree = 0.0174532924F;
+
+// Reads a property of the component that holds the properties as they were
+// saved into `value`; a missing or unconvertible property keeps the value.
+// The release build keeps only the arguments of the error it reports.
+// Inlined into the revision handler. Name not in the reference map.
+template <typename T>
+void ReadSavedProp(const Component& saved, const PropPath& path, T& value, PropertyType type) {
+    void* storage = const_cast<Component*>(&saved);
+    const PropInfo* const info = const_cast<Component&>(saved)._GetPropRegistry().FindProp(path, &storage);
+    if (info != nullptr && _GetProp(saved, path, *info, storage, &value, type)) {
+        return;
+    }
+    static_cast<void>(saved.MakeErrorName());
+    char text[512] = {};
+    path.ToString(text, sizeof(text));
+}
 
 // The instances of a list, which the component writes in place. Name not
 // in the reference map.
@@ -141,6 +166,276 @@ RndLightFlareCom::RndLightFlareCom()
 RndLightFlareCom::~RndLightFlareCom() {
     delete mRuntime.mOcclusionQuery;
     mRuntime.mOcclusionQuery = nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x47A780. "angle" has no storage: its
+// accessors (0x47D880, 0x47D8A0) show "angle_radians" in degrees. An
+// attached light drives the color and intensity, which are then
+// read-only; the spotlight multiplier is read-only unless the light is a
+// spotlight, and a ghost's intensity scaling always is. The revision 2
+// handler (0x47DBA0) turns the "camera_angle_power" of flares saved before
+// revision 2 into the centering intensity, and drops the subflares of
+// revision 0 that diverge backwards. The binary emits the struct
+// registration at 0x47BC70.
+void RndLightFlareCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<Subflare>(Symbol("Subflare"));
+    _InitAsSuperclass(registry, metadata);
+    metadata.mDescription =
+        "Attach to a point or spotlight to render a screen-space flare when looking directly at the light source";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryLight;
+    metadata.mAllowedResources.push_back(RndDrawableEntityResource::Id());
+    RndLightFlareCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 1) {
+                return;
+            }
+            RndLightFlareCom* const flare = static_cast<RndLightFlareCom*>(args.mComponent);
+            float cameraAnglePower = 0.0F;
+            ReadSavedProp(
+                *args.mSavedProps,
+                PropPath(Symbol("camera_angle_power")),
+                cameraAnglePower,
+                kPropertyFloat);
+            flare->mCamCenteringIntensity = 1.0F - powf(2.0F / (2.0F + cameraAnglePower), 0.25F);
+            if (args.mSavedRev > 0) {
+                return;
+            }
+            PropArray<Subflare>& subflares = flare->mSubflares;
+            for (int index = static_cast<int>(subflares.size()) - 1; index >= 0; --index) {
+                if (subflares[index].mDivergence >= 0.0F) {
+                    continue;
+                }
+                subflares.Destruct(1, subflares.ElementAt(index));
+                const unsigned int size = subflares.size();
+                if (static_cast<unsigned long>(index) < size - 1) {
+                    subflares.Move(
+                        size - 1 - index,
+                        subflares.ElementAt(index),
+                        subflares.ElementAt(index + 1));
+                }
+                --subflares.mSize;
+            }
+        };
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry == &own) {
+        own.SetCurrentRev(2);
+        own.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    FloatMetadata& radius = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "light_source_radius", offsetof(RndLightFlareCom, mLightSourceRadius), kPropertyFloat, 4),
+        prototype.mLightSourceRadius);
+    radius.mDefault = prototype.mLightSourceRadius;
+    static_cast<void>(Symbol("prop"));
+    radius.mHelp = String("Radius of the light source (ie. of the occlusion test sphere), in world units");
+    radius.mMin = 0.001F;
+
+    GroupMetadata& size = static_cast<GroupMetadata&>(
+        *registry.RegisterProp("size", offsetof(RndLightFlareCom, mSize), kPropertyStruct, 8).mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    // The members' defaults come from a zeroed size, not the prototype.
+    const float sizePrototype[2] = {0.0F, 0.0F};
+    size.mHelp = String("Size of the rendered flare, in [0-1] screen dimensions");
+    size.mKind = 1;
+    FloatMetadata& width =
+        TypeSpecificMetadata(size.mRegistry.RegisterProp("width", 0, kPropertyFloat, 4), sizePrototype[0]);
+    width.mDefault = sizePrototype[0];
+    static_cast<void>(Symbol("prop"));
+    width.mMin = 0.0F;
+    FloatMetadata& height = TypeSpecificMetadata(
+        size.mRegistry.RegisterProp("height", sizeof(float), kPropertyFloat, 4), sizePrototype[1]);
+    height.mDefault = sizePrototype[1];
+    static_cast<void>(Symbol("prop"));
+    height.mMin = 0.0F;
+
+    const float angleType = 0.0F;
+    FloatMetadata& angle = TypeSpecificMetadata(registry.RegisterProp("angle", -1, kPropertyFloat, 0), angleType);
+    static_cast<void>(Symbol("prop"));
+    angle.mHelp = String("Counterclockwise rotation applied to all subflares");
+    angle.mGetter = [](const PropAccessorArgs& args) {
+        return static_cast<const RndLightFlareCom*>(args.mComponent)->mAngleRadians * kDegreesPerRadian;
+    };
+    angle.mSetter = [](const PropAccessorArgs& args) {
+        static_cast<RndLightFlareCom*>(args.mComponent)->mAngleRadians =
+            *static_cast<const float*>(args.mValue) * kRadiansPerDegree;
+    };
+    angle.mDefault = 0.0F;
+    angle.mMin = 0.0F;
+    angle.mMax = 360.0F;
+    angle.mSlider = true;
+    angle.mUnits = Symbol("degrees");
+
+    FloatMetadata& angleRadians = TypeSpecificMetadata(
+        registry.RegisterProp("angle_radians", offsetof(RndLightFlareCom, mAngleRadians), kPropertyFloat, 4),
+        prototype.mAngleRadians);
+    angleRadians.mDefault = prototype.mAngleRadians;
+    static_cast<void>(Symbol("prop"));
+    angleRadians.mIsHidden = true;
+
+    GameObjectIdMetadata& light = TypeSpecificMetadata(
+        registry.RegisterProp("light", offsetof(RndLightFlareCom, mLight), kPropertyGameObjectId, 4),
+        prototype.mLight);
+    light.mDefault = prototype.mLight;
+    static_cast<void>(Symbol("prop"));
+    light.mHelp = String("If specified, color and alpha will be driven by the light's color and intensity");
+    light.mRequiredInterfaces = {RndLightCom::sClassName};
+
+    ColorMetadata& color = TypeSpecificMetadata(
+        registry.RegisterProp("color", offsetof(RndLightFlareCom, mColor), kPropertyColor, 16), prototype.mColor);
+    color.mDefault = prototype.mColor;
+    static_cast<void>(Symbol("prop"));
+    color.mHelp = String("Vertex color of the flare (if attached to a light, driven by the light's color)");
+    color.mHasAlpha = false;
+    color.mReadOnly._Set([](const TagArgs& args) {
+        return static_cast<const RndLightFlareCom&>(args.mComponent).mLight.mId != gNullObjectId.mId;
+    });
+
+    FloatMetadata& intensity = TypeSpecificMetadata(
+        registry.RegisterProp("intensity", offsetof(RndLightFlareCom, mIntensity), kPropertyFloat, 4),
+        prototype.mIntensity);
+    intensity.mDefault = prototype.mIntensity;
+    static_cast<void>(Symbol("prop"));
+    intensity.mHelp = String(
+        "Intensity of the flare (if attached to a light, driven by the light's intensity; typically manifests "
+        "as vertex alpha)");
+    intensity.mReadOnly._Set([](const TagArgs& args) {
+        return static_cast<const RndLightFlareCom&>(args.mComponent).mLight.mId != gNullObjectId.mId;
+    });
+
+    FloatMetadata& centering = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "cam_centering_intensity", offsetof(RndLightFlareCom, mCamCenteringIntensity), kPropertyFloat, 4),
+        prototype.mCamCenteringIntensity);
+    centering.mDefault = prototype.mCamCenteringIntensity;
+    static_cast<void>(Symbol("prop"));
+    centering.mHelp = String(
+        "How much to intensify flares based on how close they are on screen to the center of the camera");
+    centering.mMin = 0.0F;
+    centering.mMax = 1.0F;
+    centering.mSlider = true;
+
+    FloatMetadata& angleMult = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "spotlight_angle_mult", offsetof(RndLightFlareCom, mSpotlightAngleMult), kPropertyFloat, 4),
+        prototype.mSpotlightAngleMult);
+    angleMult.mDefault = prototype.mSpotlightAngleMult;
+    static_cast<void>(Symbol("prop"));
+    angleMult.mHelp = String("How much to fudge the spotlight angle by");
+    angleMult.mMin = 0.0F;
+    angleMult.mMax = 4.0F;
+    angleMult.mSlider = true;
+    angleMult.mReadOnly._Set([](const TagArgs& args) {
+        const RndLightFlareCom& flare = static_cast<const RndLightFlareCom&>(args.mComponent);
+        if (flare.mLight.mId == gNullObjectId.mId) {
+            return true;
+        }
+        const GameObject* const object = flare.mObject->mEntity->GetObject(flare.mLight);
+        return object == nullptr || object->GetCom<RndLightSpotCom>() == nullptr;
+    });
+
+    PropInfo& subflares = registry.RegisterPropArray(
+        "subflares", offsetof(RndLightFlareCom, mSubflares), sizeof(PropArray<Subflare>));
+    ArrayMetadata& subflaresMetadata = static_cast<ArrayMetadata&>(*subflares.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    PropRegistry::RegisterPropArrayItem(subflares, kPropertyStruct, sizeof(Subflare));
+    PropRegistry& subflare =
+        static_cast<GroupMetadata&>(*subflaresMetadata.mItemInfo.mMetadata.Get()).mRegistry;
+    static_cast<void>(Symbol("struct_item"));
+    const Subflare subflarePrototype;
+
+    PropInfo& typeInfo = subflare.RegisterProp("type", offsetof(Subflare, mType), kPropertyInt, 4);
+    IntMetadata<int>& type = static_cast<IntMetadata<int>&>(*typeInfo.mMetadata.Get());
+    type.mDefault = subflarePrototype.mType;
+    static_cast<void>(Symbol("prop"));
+    type.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {Subflare::kStarburst,
+         String("Starburst"),
+         String(
+             "A bright starburst; intensity independent of size. Typically you want just one, right at the light "
+             "source (ie. divergence = 0)")},
+        {Subflare::kGhost,
+         String("Ghost"),
+         String("A ghosted image of the lens aperture; intensity will decrease as size increases")},
+    };
+
+    GameObjectIdMetadata& material = TypeSpecificMetadata(
+        subflare.RegisterProp("material", offsetof(Subflare, mMaterial), kPropertyGameObjectId, 4),
+        subflarePrototype.mMaterial);
+    material.mDefault = subflarePrototype.mMaterial;
+    static_cast<void>(Symbol("prop"));
+    material.mHelp = String("Optional material to use when drawing this subflare");
+    material.mRequiredInterfaces = {RndMaterialCom::GetMaterialProviderId()};
+
+    FloatMetadata& scale = TypeSpecificMetadata(
+        subflare.RegisterProp("scale", offsetof(Subflare, mScale), kPropertyFloat, 4), subflarePrototype.mScale);
+    scale.mDefault = subflarePrototype.mScale;
+    static_cast<void>(Symbol("prop"));
+    scale.mHelp = String("Relative scale of this subflare");
+    scale.mMin = 0.0F;
+    scale.mMax = 10.0F;
+    scale.mSlider = true;
+
+    ColorMetadata& tint = TypeSpecificMetadata(
+        subflare.RegisterProp("tint", offsetof(Subflare, mTint), kPropertyColor, 16), subflarePrototype.mTint);
+    tint.mDefault = subflarePrototype.mTint;
+    static_cast<void>(Symbol("prop"));
+    tint.mHelp = String("Optional tint applied to this subflare's vertex color");
+
+    FloatMetadata& intensityMult = TypeSpecificMetadata(
+        subflare.RegisterProp("intensity_mult", offsetof(Subflare, mIntensityMult), kPropertyFloat, 4),
+        subflarePrototype.mIntensityMult);
+    intensityMult.mDefault = subflarePrototype.mIntensityMult;
+    static_cast<void>(Symbol("prop"));
+    intensityMult.mHelp = String("Intensity multiplier applied to this subflare");
+    intensityMult.mMin = 0.0F;
+    intensityMult.mMax = 100.0F;
+    intensityMult.mSliderLogResolution = 2.0F;
+    intensityMult.mSlider = true;
+
+    FloatMetadata& intensityScaling = TypeSpecificMetadata(
+        subflare.RegisterProp("intensity_scaling", offsetof(Subflare, mIntensityScaling), kPropertyFloat, 4),
+        subflarePrototype.mIntensityScaling);
+    intensityScaling.mDefault = subflarePrototype.mIntensityScaling;
+    static_cast<void>(Symbol("prop"));
+    intensityScaling.mHelp =
+        String("How much should we display changes to intensity as changes to scale? (starbursts only)");
+    intensityScaling.mMin = 0.0F;
+    intensityScaling.mMax = 1.0F;
+    intensityScaling.mSlider = true;
+    intensityScaling.mReadOnly._Set([](const TagArgs& args) {
+        const RndLightFlareCom& flare = static_cast<const RndLightFlareCom&>(args.mComponent);
+        return flare.mSubflares[static_cast<int>(args.mPath[-2].mValue)].mType == Subflare::kGhost;
+    });
+
+    FloatMetadata& divergence = TypeSpecificMetadata(
+        subflare.RegisterProp("divergence", offsetof(Subflare, mDivergence), kPropertyFloat, 4),
+        subflarePrototype.mDivergence);
+    divergence.mDefault = subflarePrototype.mDivergence;
+    static_cast<void>(Symbol("prop"));
+    divergence.mHelp = String(
+        "Determines how far this subflare diverges from the light source (along the line from the light source "
+        "through the screen center)");
+    divergence.mMin = 0.0F;
+    divergence.mMax = 5.0F;
+    divergence.mSlider = true;
+
+    FloatMetadata& divergenceAccel = TypeSpecificMetadata(
+        subflare.RegisterProp("divergence_accel", offsetof(Subflare, mDivergenceAccel), kPropertyFloat, 4),
+        subflarePrototype.mDivergenceAccel);
+    divergenceAccel.mDefault = subflarePrototype.mDivergenceAccel;
+    static_cast<void>(Symbol("prop"));
+    divergenceAccel.mHelp = String(
+        "Determines how rapidly this subflare diverges from the light source (along the line from the light "
+        "source through the screen center)");
+    divergenceAccel.mMin = 0.0F;
+    divergenceAccel.mMax = 10.0F;
+    divergenceAccel.mSliderLogResolution = 2.0F;
+    divergenceAccel.mSlider = true;
 }
 
 // Reconstructed from eboot.elf at 0x47BE20.
@@ -554,4 +849,11 @@ ComMetaData& RndLightFlareCom::_GetMetaData() {
 // with the other render factories.
 Component* RndLightFlareCom::_Create() {
     return new RndLightFlareCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F7040. The binary emits the
+// registration in render/RndInit.o; the placement factory beside the
+// factory is at 0x405670.
+void RndLightFlareCom::Init() {
+    InitComponentClass<RndLightFlareCom>();
 }

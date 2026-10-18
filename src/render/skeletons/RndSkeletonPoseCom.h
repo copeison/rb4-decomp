@@ -7,6 +7,7 @@
 #include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
 
+class CharSkeleton;
 class RndShaderCBuffer;
 
 // The component that poses a skeleton on an entity's root object
@@ -19,6 +20,10 @@ public:
     // The class symbol, "Skeleton", constructed by the static initializer at
     // 0x44141A.
     static Symbol sId;  // 0x1A73BE0
+
+    // The pose's own skeleton, or else its skeleton resource's while that
+    // has not failed. Not reconstructed.
+    const CharSkeleton* GetSkeleton() const;  // 0x43EC60
 
     // The members from 22 to the bone transforms; not modelled.
     unsigned char mMembers[90];

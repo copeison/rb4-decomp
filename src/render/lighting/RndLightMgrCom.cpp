@@ -1,5 +1,4 @@
-// render/RndLightMgrCom.o (0x480280 to 0x48ED8F). Slot 30 (0x480D80), the
-// probe capture (0x48BB20-0x48C4F5) and the registry (0x486830) are not
+// render/RndLightMgrCom.o (0x480280 to 0x48ED8F). Slot 30 (0x480D80) is not
 // reconstructed.
 #include "render/lighting/RndLightMgrCom.h"
 
@@ -11,6 +10,9 @@
 #include <new>
 
 #include "entity/core/Entity.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
+#include "entity/props/PropUtl.h"
 #include "math/vector/Vector3i.h"
 #include "os/memory/MemMgr.h"
 #include "math/geometry/Frustum.h"
@@ -39,6 +41,7 @@
 #include "render/lighting/tiled/RndCShaderTiledLightsStereoToMono.h"
 #include "render/postprocessing/tonemap/RndTonemapShader.h"
 #include "render/scene/RndDrawNodeCom.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
@@ -315,6 +318,84 @@ const RndPixelData* FindCookieMip(const RndPixelData& pixels, int size) {
         level = level->mMip;
     }
     return level;
+}
+
+// The registry's constants: the index of the 4096-texel spot shadow maps,
+// the most shadow-casting spotlights "max_shadow_casting_spotlights" offers,
+// and the "tonemapping_operator" value Power (Linear/Power Hybrid is 3).
+// Names not in the reference map.
+constexpr std::uint32_t kMaxSpotShadowResolution = 6;
+constexpr unsigned long kMaxShadowCastingSpotlights = 8;
+constexpr int kNumSpotShadowResolutions = static_cast<int>(kSpotShadowResolutions.size());
+constexpr int kTonemapOperatorPower = 2;
+
+// Reads a property of the component that holds the properties as they were
+// saved into `value`; false when it is missing or cannot be converted.
+// Inlined into the revision handler. Name not in the reference map.
+template <typename T>
+bool TryReadSavedProp(const Component& saved, const PropPath& path, T& value, PropertyType type) {
+    void* storage = const_cast<Component*>(&saved);
+    const PropInfo* const info = const_cast<Component&>(saved)._GetPropRegistry().FindProp(path, &storage);
+    return info != nullptr && _GetProp(saved, path, *info, storage, &value, type);
+}
+
+// The property callbacks _Init installs (0x48D010 to 0x48D3C0). Names not
+// in the reference map.
+
+// _SyncMasterIntensityMult, inlined.
+void OnMasterIntensityMultChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightMgrCom*>(args.mComponent)->_SyncMasterIntensityMult();
+}
+
+void OnCookieTextureSizeChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightMgrCom*>(args.mComponent)->mCookieTexArraysDirty = true;
+}
+
+void OnDefaultEnvironmentChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightMgrCom*>(args.mComponent)->mDefaultEnvironDirty = true;
+}
+
+// The "states" insertion: a new state at the path's index, with
+// _InsertProbeState inlined.
+void InsertProbeState(const PropAccessorArgs& args) {
+    const PropPath& path = *static_cast<const PropPath*>(args.mPath);
+    static_cast<RndLightMgrCom*>(args.mComponent)
+        ->_InsertProbeState(path[-1].mValue, RndLightProbeCom::GetNewStateName());
+}
+
+// The "states" removal hook.
+void RemoveProbeState(const PropAccessorArgs& args) {
+    const PropPath& path = *static_cast<const PropPath*>(args.mPath);
+    static_cast<RndLightMgrCom*>(args.mComponent)->_RemoveProbeState(path[-1].mValue);
+}
+
+// A renamed state is applied by the next poll.
+void OnProbeStateRenamed(const PropAccessorArgs& args) {
+    if (args.mOldValue == nullptr) {
+        return;
+    }
+    const PropPath& path = *static_cast<const PropPath*>(args.mPath);
+    static_cast<RndLightMgrCom*>(args.mComponent)
+        ->mRenamedProbeStates.push_back(RndLightMgrCom::RenamedProbeState{
+            *static_cast<const Symbol*>(args.mOldValue), path[-1].mValue});
+}
+
+void OnCurStateAChanged(const PropAccessorArgs& args) {
+    RndLightMgrCom* const mgr = static_cast<RndLightMgrCom*>(args.mComponent);
+    mgr->mCurProbeStateAIndex = Find(mgr->mProbeStates, mgr->mCurStateA);
+}
+
+void OnCurStateBChanged(const PropAccessorArgs& args) {
+    RndLightMgrCom* const mgr = static_cast<RndLightMgrCom*>(args.mComponent);
+    mgr->mCurProbeStateBIndex = Find(mgr->mProbeStates, mgr->mCurStateB);
+}
+
+void OnMaxShadowCastingSpotlightsChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightMgrCom*>(args.mComponent)->mSpotShadowDepthTexArrayDirty = true;
+}
+
+void OnSpotlightShadowmapResolutionChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightMgrCom*>(args.mComponent)->mSpotShadowDepthTexArrayDirty = true;
 }
 
 }  // namespace
@@ -1549,6 +1630,497 @@ void RndLightMgrCom::UpdateDrawTarget(RndSceneDrawTarget& target) const {
     }
 }
 
+// Reconstructed from eboot.elf at 0x486830. The tonemapping settings are
+// read-only while the scene is not tonemapped, the power also unless the
+// operator is Power or Linear/Power Hybrid, and the probe actions while
+// there are no probes or no capture state. The registered objects are
+// shown read-only for debugging and not saved. The revision 4 handler
+// (0x48D630) collects the probe states of scenes saved before revision 2,
+// turns the "overbright_luminance" of revisions before 3 into the exposure,
+// and gives scenes before revision 4 the three quality levels at the
+// 4096-texel spot shadow maps. The binary emits the struct registration at
+// 0x489DC0.
+void RndLightMgrCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<QualitySettings>(Symbol("QualitySettings"));
+    metadata.mCategory = ComMetaData::kCategoryLight;
+    metadata.mDescription = "Manages global lighting settings for an entire scene";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    RndLightMgrCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            RndLightMgrCom* const mgr = static_cast<RndLightMgrCom*>(args.mComponent);
+            if (args.mSavedRev <= 2) {
+                if (args.mSavedRev <= 1) {
+                    mgr->mUpgradeProbeStates = true;
+                }
+                float overbrightLuminance = 1.0F;
+                if (TryReadSavedProp(
+                        *args.mSavedProps,
+                        PropPath(Symbol("overbright_luminance")),
+                        overbrightLuminance,
+                        kPropertyFloat)) {
+                    mgr->mTonemappingExposure = 1.0F / overbrightLuminance;
+                }
+            }
+            if (args.mSavedRev > 3) {
+                return;
+            }
+            mgr->mQualitySettings.Resize(3);
+            mgr->mQualitySettings[0].mSpotlightShadowmapResolution = kMaxSpotShadowResolution;
+            mgr->mQualitySettings[1].mSpotlightShadowmapResolution = kMaxSpotShadowResolution;
+            mgr->mQualitySettings[2].mSpotlightShadowmapResolution = kMaxSpotShadowResolution;
+        };
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry == &own) {
+        own.SetCurrentRev(4);
+        own.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    FloatMetadata& masterIntensity = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "master_intensity_mult", offsetof(RndLightMgrCom, mMasterIntensityMult), kPropertyFloat, 4),
+        prototype.mMasterIntensityMult);
+    masterIntensity.mDefault = prototype.mMasterIntensityMult;
+    static_cast<void>(Symbol("prop"));
+    masterIntensity.mHelp = String("Multiplier applied to the intensity of all lighting (both direct and indirect)");
+    masterIntensity.mMin = 0.0F;
+    masterIntensity.mMax = 4.0F;
+    masterIntensity.mSlider = true;
+    masterIntensity.mOnChanged = OnMasterIntensityMultChanged;
+
+    PropInfo& tonemappingInfo =
+        registry.RegisterProp("tonemapping", offsetof(RndLightMgrCom, mTonemapping), kPropertyInt, 4);
+    IntMetadata<int>& tonemapping = static_cast<IntMetadata<int>&>(*tonemappingInfo.mMetadata.Get());
+    tonemapping.mDefault = prototype.mTonemapping;
+    static_cast<void>(Symbol("prop"));
+    tonemapping.mHelp = String("Should the scene be tonemapped, and if so when?");
+    tonemapping.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {0, String("None"), String("No tonemapping applied")},
+        {1, String("Before Post Proc 0"), String("Tonemapping applied before first post proc")},
+        {2, String("Before Post Proc 1"), String("Tonemapping applied before second post proc")},
+    };
+    tonemapping.mAnimatable = false;
+
+    PropInfo& operatorInfo = registry.RegisterProp(
+        "tonemapping_operator", offsetof(RndLightMgrCom, mTonemappingOperator), kPropertyInt, 4);
+    IntMetadata<int>& tonemapOperator = static_cast<IntMetadata<int>&>(*operatorInfo.mMetadata.Get());
+    tonemapOperator.mDefault = prototype.mTonemappingOperator;
+    static_cast<void>(Symbol("prop"));
+    tonemapOperator.mHelp = String("What method should be used to compute tonemapping?");
+    tonemapOperator.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {0, String("Kevin's"), String("Preserves contrast in the midtones and darks of the source pixels")},
+        {1, String("Linear"), String("Simple linear remapping to the displayable range")},
+        {2,
+         String("Power"),
+         String(
+             "Simple power curve, adds some contrast to midtones and darks, reduces apparenty intensity of "
+             "overbright pixels")},
+        {3,
+         String("Linear/Power Hybrid"),
+         String("Linear remapping in the displayable range, power curve in the overbright range")},
+    };
+    tonemapOperator.mAnimatable = false;
+    tonemapOperator.mReadOnly._Set([](const TagArgs& args) {
+        return static_cast<const RndLightMgrCom&>(args.mComponent).mTonemapping == 0;
+    });
+
+    FloatMetadata& exposure = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "tonemapping_exposure", offsetof(RndLightMgrCom, mTonemappingExposure), kPropertyFloat, 4),
+        prototype.mTonemappingExposure);
+    exposure.mDefault = prototype.mTonemappingExposure;
+    static_cast<void>(Symbol("prop"));
+    exposure.mHelp = String(
+        "How much to \"expose\" the image during tonemapping (1 leaves it untouched, >1 brightens, <1 darkens)");
+    exposure.mMin = 0.05F;
+    exposure.mMax = 10.0F;
+    exposure.mSlider = true;
+    exposure.mReadOnly._Set([](const TagArgs& args) {
+        return static_cast<const RndLightMgrCom&>(args.mComponent).mTonemapping == 0;
+    });
+
+    FloatMetadata& power = TypeSpecificMetadata(
+        registry.RegisterProp("tonemapping_power", offsetof(RndLightMgrCom, mTonemappingPower), kPropertyFloat, 4),
+        prototype.mTonemappingPower);
+    power.mDefault = prototype.mTonemappingPower;
+    static_cast<void>(Symbol("prop"));
+    power.mMin = 0.05F;
+    power.mMax = 1.0F;
+    power.mSlider = true;
+    power.mReadOnly._Set([](const TagArgs& args) {
+        const RndLightMgrCom& mgr = static_cast<const RndLightMgrCom&>(args.mComponent);
+        return mgr.mTonemapping == 0 || (mgr.mTonemappingOperator & ~1) != kTonemapOperatorPower;
+    });
+
+    FloatMetadata& smoothness = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "material_smoothness_adjustment",
+            offsetof(RndLightMgrCom, mMaterialSmoothnessAdjustment),
+            kPropertyFloat,
+            4),
+        prototype.mMaterialSmoothnessAdjustment);
+    smoothness.mDefault = prototype.mMaterialSmoothnessAdjustment;
+    static_cast<void>(Symbol("prop"));
+    smoothness.mHelp = String(
+        "Decreases high-smoothness in areas of high apparent curvature (bigger values make a bigger "
+        "adjustment)");
+    smoothness.mMin = 0.001F;
+    smoothness.mMax = 10.0F;
+    smoothness.mSlider = true;
+
+    IntMetadata<unsigned long>& cookieSize = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "cookie_texture_size", offsetof(RndLightMgrCom, mCookieTextureSize), kPropertyUInt64, 8),
+        prototype.mCookieTextureSize);
+    cookieSize.mDefault = prototype.mCookieTextureSize;
+    static_cast<void>(Symbol("prop"));
+    cookieSize.mHelp = String("All light cookie textures will be forced to this size when used for tiled lighting");
+    {
+        eastl::vector<AllowedValue<unsigned long>> sizes;
+        unsigned int savedTemp;
+        MemPushTemp(savedTemp, true, true);
+        for (unsigned long size = 64; size <= 1024; size *= 2) {
+            sizes.push_back(AllowedValue<unsigned long>{size, String(""), String("")});
+        }
+        MemPopTemp(savedTemp);
+        cookieSize.mAllowedValues = sizes;
+        cookieSize.mOnChanged = OnCookieTextureSizeChanged;
+    }
+
+    const GameObjectId isolatedLightPrototype = {static_cast<unsigned int>(prototype.mIsolatedLight)};
+    GameObjectIdMetadata& isolatedLight = TypeSpecificMetadata(
+        registry.RegisterProp("isolated_light", offsetof(RndLightMgrCom, mIsolatedLight), kPropertyGameObjectId, 4),
+        isolatedLightPrototype);
+    isolatedLight.mDefault = isolatedLightPrototype;
+    static_cast<void>(Symbol("prop"));
+    isolatedLight.mRequiredInterfaces = {RndLightCom::sClassName};
+    isolatedLight.mSaves = false;
+
+    GameObjectIdMetadata& defaultEnvironment = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "default_environment", offsetof(RndLightMgrCom, mDefaultEnvironment), kPropertyGameObjectId, 4),
+        prototype.mDefaultEnvironment);
+    defaultEnvironment.mDefault = prototype.mDefaultEnvironment;
+    static_cast<void>(Symbol("prop"));
+    defaultEnvironment.mRequiredComs = {RndLightEnvironCom::sId};
+    defaultEnvironment.mOnChanged = OnDefaultEnvironmentChanged;
+
+    GameObjectIdMetadata& ambientOcclusion = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "ambient_occlusion", offsetof(RndLightMgrCom, mAmbientOcclusion), kPropertyGameObjectId, 4),
+        prototype.mAmbientOcclusion);
+    ambientOcclusion.mDefault = prototype.mAmbientOcclusion;
+    static_cast<void>(Symbol("prop"));
+    ambientOcclusion.mHelp =
+        String("Ambient occlusion which modulates amount of ambient light contribution in the scene");
+    ambientOcclusion.mRequiredComs = {RndSSAOCom::sId};
+
+    // The probe settings.
+    PropRegistry& probeLighting =
+        static_cast<GroupMetadata&>(*registry.RegisterProp("probe_lighting", 0, kPropertyStruct, 0).mMetadata.Get())
+            .mRegistry;
+    static_cast<void>(Symbol("struct"));
+
+    const GameObjectId isolatedProbePrototype = {static_cast<unsigned int>(prototype.mIsolatedProbe)};
+    GameObjectIdMetadata& isolatedProbe = TypeSpecificMetadata(
+        probeLighting.RegisterProp(
+            "isolated_probe", offsetof(RndLightMgrCom, mIsolatedProbe), kPropertyGameObjectId, 4),
+        isolatedProbePrototype);
+    isolatedProbe.mDefault = isolatedProbePrototype;
+    static_cast<void>(Symbol("prop"));
+    isolatedProbe.mRequiredComs = {RndLightProbeCom::sId};
+    isolatedProbe.mSaves = false;
+
+    PropInfo& states = probeLighting.RegisterPropArray(
+        "states", offsetof(RndLightMgrCom, mProbeStates), sizeof(PropArray<Symbol>));
+    ArrayMetadata& statesMetadata = static_cast<ArrayMetadata&>(*states.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    statesMetadata.mInsert = InsertProbeState;
+    statesMetadata.mHook2 = reinterpret_cast<void*>(RemoveProbeState);
+    PropRegistry::RegisterPropArrayItem(states, kPropertySymbol, sizeof(Symbol));
+    const Symbol stateType;
+    SymbolMetadata& state = TypeSpecificMetadata(statesMetadata.mItemInfo, stateType);
+    static_cast<void>(Symbol("item"));
+    state.mOnChanged = OnProbeStateRenamed;
+
+    SymbolMetadata& curStateA = TypeSpecificMetadata(
+        probeLighting.RegisterProp("cur_state_a", offsetof(RndLightMgrCom, mCurStateA), kPropertySymbol, 8),
+        prototype.mCurStateA);
+    curStateA.mDefault = prototype.mCurStateA;
+    static_cast<void>(Symbol("prop"));
+    curStateA.mAllowedValues._Set([](const TagArgs& args) {
+        eastl::vector<AllowedValue<Symbol>> values;
+        static_cast<const RndLightMgrCom&>(args.mComponent).GetAllowedProbeStates(values);
+        return values;
+    });
+    curStateA.mOnChanged = OnCurStateAChanged;
+
+    SymbolMetadata& curStateB = TypeSpecificMetadata(
+        probeLighting.RegisterProp("cur_state_b", offsetof(RndLightMgrCom, mCurStateB), kPropertySymbol, 8),
+        prototype.mCurStateB);
+    curStateB.mDefault = prototype.mCurStateB;
+    static_cast<void>(Symbol("prop"));
+    curStateB.mAllowedValues._Set([](const TagArgs& args) {
+        eastl::vector<AllowedValue<Symbol>> values;
+        static_cast<const RndLightMgrCom&>(args.mComponent).GetAllowedProbeStates(values);
+        return values;
+    });
+    curStateB.mOnChanged = OnCurStateBChanged;
+
+    FloatMetadata& curStateBlend = TypeSpecificMetadata(
+        probeLighting.RegisterProp(
+            "cur_state_blend", offsetof(RndLightMgrCom, mCurStateBlend), kPropertyFloat, 4),
+        prototype.mCurStateBlend);
+    curStateBlend.mDefault = prototype.mCurStateBlend;
+    static_cast<void>(Symbol("prop"));
+    curStateBlend.mMin = 0.0F;
+    curStateBlend.mMax = 1.0F;
+    curStateBlend.mSlider = true;
+
+    PropRegistry& capture =
+        static_cast<GroupMetadata&>(*probeLighting.RegisterProp("capture", 0, kPropertyStruct, 0).mMetadata.Get())
+            .mRegistry;
+    static_cast<void>(Symbol("struct"));
+
+    SymbolMetadata& captureState = TypeSpecificMetadata(
+        capture.RegisterProp("state", offsetof(RndLightMgrCom, mCaptureState), kPropertySymbol, 8),
+        prototype.mCaptureState);
+    captureState.mDefault = prototype.mCaptureState;
+    static_cast<void>(Symbol("prop"));
+    captureState.mHelp = String("Which light probe state should we capture?");
+    captureState.mAllowedValues._Set([](const TagArgs& args) {
+        eastl::vector<AllowedValue<Symbol>> values;
+        static_cast<const RndLightMgrCom&>(args.mComponent).GetAllowedProbeStates(values);
+        return values;
+    });
+
+    IntMetadata<unsigned long>& numBounces = TypeSpecificMetadata(
+        capture.RegisterProp("num_bounces", offsetof(RndLightMgrCom, mCaptureNumBounces), kPropertyUInt64, 8),
+        prototype.mCaptureNumBounces);
+    numBounces.mDefault = prototype.mCaptureNumBounces;
+    static_cast<void>(Symbol("prop"));
+    numBounces.mHelp = String(
+        "How many light bounces should we simulate during probe capture (more bounces will take longer, but "
+        "will propagate more light throughout the scene)");
+    {
+        eastl::vector<AllowedValue<unsigned long>> bounces;
+        unsigned int savedTemp;
+        MemPushTemp(savedTemp, true, true);
+        for (unsigned long count = 1; count <= static_cast<unsigned long>(RndLightProbeCom::GetMaxCaptureBounces());
+             ++count) {
+            bounces.push_back(AllowedValue<unsigned long>{
+                count, String(IntToStaticString(static_cast<int>(count))), String("")});
+        }
+        MemPopTemp(savedTemp);
+        numBounces.mAllowedValues = bounces;
+    }
+
+    ActionMetadata& captureAll = static_cast<ActionMetadata&>(*capture.RegisterAction("capture_all").mMetadata.Get());
+    static_cast<void>(Symbol("action"));
+    captureAll.mHelp =
+        String("Generate light probe captures for all light probes in the scene, using the current capture state");
+    captureAll.mHistory = false;
+    captureAll.mAction = [](const TagArgs& args) {
+        const_cast<RndLightMgrCom&>(static_cast<const RndLightMgrCom&>(args.mComponent)).CaptureAllProbes();
+    };
+    captureAll.mReadOnly._Set([](const TagArgs& args) {
+        const RndLightMgrCom& mgr = static_cast<const RndLightMgrCom&>(args.mComponent);
+        return mgr.mProbes.empty() || mgr.mCaptureState == Symbol();
+    });
+
+    ActionMetadata& zeroAll = static_cast<ActionMetadata&>(*capture.RegisterAction("zero_all").mMetadata.Get());
+    static_cast<void>(Symbol("action"));
+    zeroAll.mHelp =
+        String("Zero out light probe captures for all light probes in the scene, using the current capture state");
+    zeroAll.mHistory = false;
+    zeroAll.mAction = [](const TagArgs& args) {
+        const_cast<RndLightMgrCom&>(static_cast<const RndLightMgrCom&>(args.mComponent)).ZeroAllProbes();
+    };
+    zeroAll.mReadOnly._Set([](const TagArgs& args) {
+        const RndLightMgrCom& mgr = static_cast<const RndLightMgrCom&>(args.mComponent);
+        return mgr.mProbes.empty() || mgr.mCaptureState == Symbol();
+    });
+
+    // The settings per quality level.
+    PropInfo& quality = registry.RegisterPropArray(
+        "quality_settings", offsetof(RndLightMgrCom, mQualitySettings), sizeof(PropArray<QualitySettings>));
+    ArrayMetadata& qualityMetadata = static_cast<ArrayMetadata&>(*quality.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    qualityMetadata.mFixedSize = true;
+    PropRegistry::RegisterPropArrayItem(quality, kPropertyStruct, sizeof(QualitySettings));
+    GroupMetadata& level = static_cast<GroupMetadata&>(*qualityMetadata.mItemInfo.mMetadata.Get());
+    static_cast<void>(Symbol("struct_item"));
+    const QualitySettings levelPrototype = {0, 2, true};
+    level.mSummary._Set([](const TagArgs& args) {
+        return String(RndQualityLevelDisplayName(static_cast<RndQualityLevel>(args.mPath[-1].mValue)));
+    });
+    PropRegistry& levelRegistry = level.mRegistry;
+
+    BoolMetadata& tonemappingEnabled = TypeSpecificMetadata(
+        levelRegistry.RegisterProp(
+            "tonemapping_enabled", offsetof(QualitySettings, mTonemappingEnabled), kPropertyBool, 1),
+        levelPrototype.mTonemappingEnabled);
+    tonemappingEnabled.mDefault = levelPrototype.mTonemappingEnabled;
+    static_cast<void>(Symbol("prop"));
+    tonemappingEnabled.mHelp = String("Should tonemapping be enabled for this quality setting");
+    tonemappingEnabled.mAnimatable = false;
+
+    IntMetadata<unsigned long>& maxSpotlights = TypeSpecificMetadata(
+        levelRegistry.RegisterProp(
+            "max_shadow_casting_spotlights",
+            offsetof(QualitySettings, mMaxShadowCastingSpotlights),
+            kPropertyUInt64,
+            8),
+        levelPrototype.mMaxShadowCastingSpotlights);
+    maxSpotlights.mDefault = levelPrototype.mMaxShadowCastingSpotlights;
+    static_cast<void>(Symbol("prop"));
+    maxSpotlights.mHelp = String("Maximum number of shadow casting spotlights allowed");
+    {
+        eastl::vector<AllowedValue<unsigned long>> counts;
+        counts.reserve(kMaxShadowCastingSpotlights + 1);
+        for (unsigned long count = 0; count != kMaxShadowCastingSpotlights + 1; ++count) {
+            const StackString<32> label(MakeString("%d", count));
+            counts.push_back(AllowedValue<unsigned long>{count, String(label.c_str()), String("")});
+        }
+        maxSpotlights.mAllowedValues = counts;
+    }
+    maxSpotlights.mOnChanged = OnMaxShadowCastingSpotlightsChanged;
+    maxSpotlights.mAnimatable = false;
+
+    PropInfo& resolutionInfo = levelRegistry.RegisterProp(
+        "spotlight_shadowmap_resolution",
+        offsetof(QualitySettings, mSpotlightShadowmapResolution),
+        kPropertyInt,
+        4);
+    IntMetadata<int>& resolution = static_cast<IntMetadata<int>&>(*resolutionInfo.mMetadata.Get());
+    resolution.mDefault = static_cast<int>(levelPrototype.mSpotlightShadowmapResolution);
+    static_cast<void>(Symbol("prop"));
+    resolution.mHelp = String("Resolution of the spotlight shadow maps");
+    {
+        eastl::vector<AllowedValue<int>> resolutions;
+        resolutions.reserve(kNumSpotShadowResolutions);
+        for (int index = 0; index != kNumSpotShadowResolutions; ++index) {
+            const int size = RndSpotShadowResolution(index);
+            const StackString<32> label(MakeString("%d", size));
+            FormatString format("Use %dx%d spotlight shadowmaps");
+            format << size << size;
+            const StackString<32> description(format.Str());
+            resolutions.push_back(
+                AllowedValue<int>{index, String(label.c_str()), String(description.c_str())});
+        }
+        resolution.mAllowedValues = resolutions;
+    }
+    resolution.mOnChanged = OnSpotlightShadowmapResolutionChanged;
+    resolution.mAnimatable = false;
+
+    // The registered objects.
+    PropInfo& environments = registry.RegisterPropArray(
+        "environments", offsetof(RndLightMgrCom, mEnvironments), sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& environmentsMetadata = static_cast<ArrayMetadata&>(*environments.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    PropRegistry::RegisterPropArrayItem(environments, kPropertyGameObjectId, sizeof(GameObjectId));
+    environmentsMetadata.mReadOnly = true;
+    environmentsMetadata.mDebug = true;
+    environmentsMetadata.mSaves = false;
+
+    GroupMetadata& lights =
+        static_cast<GroupMetadata&>(*registry.RegisterProp("lights", 0, kPropertyStruct, 0).mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    lights.mDebug = true;
+    PropRegistry& lightsRegistry = lights.mRegistry;
+
+    PropInfo& activeInfo =
+        lightsRegistry.RegisterProp("active_filter", offsetof(RndLightMgrCom, mActiveFilter), kPropertyInt, 4);
+    IntMetadata<int>& activeFilter = static_cast<IntMetadata<int>&>(*activeInfo.mMetadata.Get());
+    activeFilter.mDefault = prototype.mActiveFilter;
+    static_cast<void>(Symbol("prop"));
+    activeFilter.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {1, String("Only Active"), String("")},
+        {2, String("Only Inactive"), String("")},
+        {3, String("All"), String("")},
+    };
+
+    PropInfo& entityInfo =
+        lightsRegistry.RegisterProp("entity_filter", offsetof(RndLightMgrCom, mEntityFilter), kPropertyInt, 4);
+    IntMetadata<int>& entityFilter = static_cast<IntMetadata<int>&>(*entityInfo.mMetadata.Get());
+    entityFilter.mDefault = prototype.mEntityFilter;
+    static_cast<void>(Symbol("prop"));
+    entityFilter.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {1, String("Only in-Scene"), String("")},
+        {2, String("Only Nested in-Entity"), String("")},
+        {3, String("All"), String("")},
+    };
+
+    PropInfo& shadowInfo =
+        lightsRegistry.RegisterProp("shadow_filter", offsetof(RndLightMgrCom, mShadowFilter), kPropertyInt, 4);
+    IntMetadata<int>& shadowFilter = static_cast<IntMetadata<int>&>(*shadowInfo.mMetadata.Get());
+    shadowFilter.mDefault = prototype.mShadowFilter;
+    static_cast<void>(Symbol("prop"));
+    shadowFilter.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {1, String("Only Shadow-Casting"), String("")},
+        {2, String("Only Non-Shadow-Casting"), String("")},
+        {3, String("All"), String("")},
+    };
+
+    PropInfo& volumetricInfo = lightsRegistry.RegisterProp(
+        "volumetric_filter", offsetof(RndLightMgrCom, mVolumetricFilter), kPropertyInt, 4);
+    IntMetadata<int>& volumetricFilter = static_cast<IntMetadata<int>&>(*volumetricInfo.mMetadata.Get());
+    volumetricFilter.mDefault = prototype.mVolumetricFilter;
+    static_cast<void>(Symbol("prop"));
+    volumetricFilter.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {1, String("Only Volumetric"), String("")},
+        {2, String("Only Non-Volumetric"), String("")},
+        {3, String("All"), String("")},
+    };
+
+    PropInfo& lightIds = lightsRegistry.RegisterPropArray(
+        "lights", offsetof(RndLightMgrCom, mLightIds), sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& lightIdsMetadata = static_cast<ArrayMetadata&>(*lightIds.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    lightIdsMetadata.mReadOnly = true;
+    lightIdsMetadata.mSaves = false;
+    PropRegistry::RegisterPropArrayItem(lightIds, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId lightType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& light = TypeSpecificMetadata(lightIdsMetadata.mItemInfo, lightType);
+    static_cast<void>(Symbol("item"));
+    light.mEntity._Set([](const TagArgs& args) {
+        const RndLightMgrCom& mgr = static_cast<const RndLightMgrCom&>(args.mComponent);
+        return mgr.mLightEntities[args.mPath[-1].mValue];
+    });
+
+    PropInfo& probes =
+        registry.RegisterPropArray("probes", offsetof(RndLightMgrCom, mProbeIds), sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& probesMetadata = static_cast<ArrayMetadata&>(*probes.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    PropRegistry::RegisterPropArrayItem(probes, kPropertyGameObjectId, sizeof(GameObjectId));
+    probesMetadata.mReadOnly = true;
+    probesMetadata.mDebug = true;
+    probesMetadata.mSaves = false;
+
+    IntMetadata<unsigned long>& stateAIndex = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "cur_probe_state_a_index", offsetof(RndLightMgrCom, mCurProbeStateAIndex), kPropertyUInt64, 8),
+        prototype.mCurProbeStateAIndex);
+    stateAIndex.mDefault = prototype.mCurProbeStateAIndex;
+    static_cast<void>(Symbol("prop"));
+    stateAIndex.mDebug = true;
+    stateAIndex.mReadOnly = true;
+    stateAIndex.mSaves = false;
+
+    IntMetadata<unsigned long>& stateBIndex = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "cur_probe_state_b_index", offsetof(RndLightMgrCom, mCurProbeStateBIndex), kPropertyUInt64, 8),
+        prototype.mCurProbeStateBIndex);
+    stateBIndex.mDefault = prototype.mCurProbeStateBIndex;
+    static_cast<void>(Symbol("prop"));
+    stateBIndex.mDebug = true;
+    stateBIndex.mReadOnly = true;
+    stateBIndex.mSaves = false;
+}
+
 // Reconstructed from eboot.elf at 0x489F70.
 void RndLightMgrCom::_PostCreate() {
     const Symbol defaultState = RndLightProbeCom::GetDefaultStateName();
@@ -2144,4 +2716,17 @@ void RndLightMgrCom::CullResults::Reserve(
     }
     mProbes.reserve(probeCount);
     mShadowLights.reserve(gRndDevice->mSettings->mMaxShadowContribBuffers);
+}
+
+// Reconstructed from eboot.elf at 0x4047A0. The binary emits the factory
+// with the class's Init (0x3F1060); the placement factory at 0x4047D0
+// constructs in given storage.
+Component* RndLightMgrCom::_Create() {
+    return new RndLightMgrCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F1060. The binary emits the
+// registration in render/RndInit.o.
+void RndLightMgrCom::Init() {
+    InitComponentClass<RndLightMgrCom>();
 }

@@ -19,10 +19,9 @@ class RndSceneResource;
 // ("Layout-wide rendering settings"): the order the layout's scenes poll
 // and draw in, and the scenes drawn only over the HMD mirror. Its class
 // symbol is "UILayout". It lies before UILayoutResource in the binary
-// (0x8A9340 to 0x8AAA3F); the map, which is older, has no object for it.
-// Only the members the layout uses are declared, and only its poll
-// manager and groups are reconstructed. The vtable is at 0x195D018; the object is 280
-// bytes. Name not in the reference map.
+// (0x8A9340 to 0x8AAA3F, with the static initializer at 0x8AA970); the
+// map, which is older, has no object for it. The vtable at 0x195D018 has 41
+// slots. The object is 280 bytes. Name not in the reference map.
 class UILayoutCom : public RndDrawableEntityCom {
 public:
     // A scene entity that became ready while the layout's poll range was
@@ -33,10 +32,47 @@ public:
         Entity* mEntity;
     };
 
-    // Registers the class: its property registry, metadata and factory.
-    // Emitted in ui/UI.o at 0x892360. Not reconstructed: the registration
-    // helpers it inlines are not modelled.
-    static void Init();
+    UILayoutCom();  // 0x8A9400
+    // The imprint's copy keeps the orders; the poll state starts afresh.
+    // Inlined into _Imprint. Not in the reference map.
+    UILayoutCom(const UILayoutCom& other)
+        : RndDrawableEntityCom(other),
+          mPollOrder(),
+          mDrawOrder(),
+          mHmdMirrorOverlays(),
+          mPollMgr(nullptr),
+          mPollGroup(nullptr),
+          mScenePollGroups(nullptr),
+          mThreadedScenes(),
+          mStartPollGroups(),
+          mReadyScenes(),
+          mPollRangeReleased(false) {
+        mPollOrder._Copy(other.mPollOrder);
+        mDrawOrder._Copy(other.mDrawOrder);
+        mHmdMirrorOverlays._Copy(other.mHmdMirrorOverlays);
+    }
+    // Slots 0-1: 0x8A9600, 0x8A98B0. Destroys the poll groups and the poll
+    // manager.
+    ~UILayoutCom() override;
+
+    Symbol GetId() const override;         // slot 4: 0x8AA510
+    Symbol GetClassName() const override;  // slot 5: 0x8AA520
+    int CurrentRev() const override;       // slot 7: 0x8AA530
+    bool IsA(Symbol type) const override;  // slot 8: 0x8AA550
+    Component* AsComponent() override;     // slot 9: 0x8AA580
+    // Slot 10. The map's _Imprint(char*, Component*&, bool).
+    char* _Imprint(char* buffer, Component** imprint) override;  // 0x8AA590
+    PropRegistry& _GetPropRegistry() override;  // slot 22: 0x8AA830
+    ComMetaData& _GetMetaData() override;       // slot 23: 0x8AA840
+
+    // Registers the class (InitComponentClass), emitted in ui/UI.o.
+    static void Init();  // 0x892360
+    // The class factory, emitted in ui/UI.o. The placement factory beside
+    // it (0x8950A0) is InitComponentClass's.
+    static Component* _Create();  // 0x895070
+    // Describes the class after RndDrawableEntityCom::_InitAsSuperclass and
+    // registers the three scene orders.
+    static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x8A9E30
 
     // Removes the object from the poll, draw and HMD mirror orders. Name
     // not in the reference map.
@@ -52,10 +88,12 @@ public:
     // for the layout's file. Name not in the reference map.
     void _CreatePollGroups();  // 0x8A9960
 
-    static Symbol sId;         // 0x1AC8D50, "UILayout"
+    static Symbol sId;                  // 0x1AC8D50, "UILayout"
     // The class symbol GameObject::CreateComponent takes; also
     // "UILayout". Name not in the reference map.
-    static Symbol sClassName;  // 0x1AC8D58
+    static Symbol sClassName;           // 0x1AC8D58
+    static PropRegistry sPropRegistry;  // 0x1AC8D60
+    static ComMetaData sMetaData;       // 0x1AC8E00
 
     // Field names are not in the reference map.
     // "poll_order": the scenes in poll order, the reverse of the order

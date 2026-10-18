@@ -30,3 +30,8 @@ void DataSetMacro(Symbol name, DataArray* value);  // 0x23B800
 // A new one-node array holding a copy of the node, without a reference.
 // The map instantiates it in os/PlatformMgr.o.
 DataArray* MakeDataArray(const DataNode& node);  // 0x363FE0
+// New two- and three-node arrays holding copies of the nodes, without a
+// reference. The map emits copies in audio/FusionPatchCom.o and
+// anim/PropKeysQuatCom.o.
+DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1);  // 0x82E00
+DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1, const DataNode& node2);  // 0x83540

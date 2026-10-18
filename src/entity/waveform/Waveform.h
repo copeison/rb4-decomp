@@ -8,6 +8,7 @@
 
 class Component;
 class EntityResource;
+class PropPath;
 
 // A waveform's random evaluation state: the blend between its two curves
 // at the start, and how far the blend moves over the waveform's span
@@ -31,6 +32,12 @@ static_assert(sizeof(WaveformEvalData) == 8);
 template <class T>
 class WaveformResource : public Resource {
 public:
+    // An empty resource of type -1 whose tracks hold one default key.
+    // Emitted at 0x1CAC80 for Hmx::Color; inlined for float, for example by
+    // RndParticleCom::_Init (0x603850). Not reconstructed: the key tracks are
+    // not modelled.
+    WaveformResource();
+
     ResourceMetaData* GetMetaData() const override;
     Symbol GetId() const override;
     bool IsA(Symbol type) const override;
@@ -39,6 +46,23 @@ public:
     bool Fail() const override;
 
     static ResourcePtr<WaveformResource> sDefault;
+
+    // Sets the type (the map's SetType(WaveformType)) and rebuilds the
+    // tracks for it: 0x2416E0 for float, 0x2419F0 for Hmx::Color. Not
+    // reconstructed.
+    void SetType(int type);
+    // Sets the value of the curve's first key, then rebakes the samples:
+    // 0x5E5EA0 for float; inlined for Hmx::Color (its rebake is 0x242170).
+    // Not reconstructed.
+    void SetValue(unsigned long curve, T value);
+    // The waveform as editor text: its value or values, or its curve type,
+    // with the blend mode. 0x1474A0 for float, 0x148AE0 for Hmx::Color. Not
+    // reconstructed.
+    const char* Description() const;
+    // The type's name, such as "Single value" or "Blend between two
+    // curves". The map's TypeToString(WaveformType). 0x1477A0 for float,
+    // 0x148E50 for Hmx::Color. Not reconstructed.
+    static const char* TypeToString(int type);
 
     // The map's WaveformType: 0 evaluates the first key of the first track,
     // 1 blends the first keys of both tracks, 2 samples the first baked
@@ -94,7 +118,16 @@ public:
     Waveform() : mResource(WaveformResource<T>::sDefault.Get()), mRand(nullptr), mOverride(), mOverrideData{0, 0} {
         DrawEvalData();
     }
-    Waveform& operator=(const Waveform&) = delete;
+    // Takes the other waveform's resources and keeps the evaluation state
+    // and generator. Inlined into RndParticleCom's waveform setters (for
+    // example at 0x6189F0) and its swap (0x618720).
+    Waveform& operator=(const Waveform& other) {
+        mResource = other.mResource.Get();
+        mOverride = other.mOverride.Get();
+        mOverrideData[0] = other.mOverrideData[0];
+        mOverrideData[1] = other.mOverrideData[1];
+        return *this;
+    }
 
     // Takes the resource and gRand as the generator and drops the
     // modulating resource, keeping the evaluation state. Inlined into the
@@ -107,6 +140,11 @@ public:
         mOverrideData[0] = 0;
         mOverrideData[1] = 0;
     }
+
+    // The value at the time, from 0 to 1, by the resource's type and blend
+    // mode. At 0x2D7C60 for float. Name not in the reference map. Not
+    // reconstructed.
+    float Evaluate(float time) const;
 
     // Draws the blend and its rate from gRand, which becomes the
     // generator. Inlined. Name not in the reference map.
@@ -138,6 +176,9 @@ static_assert(sizeof(Waveform<float>) == 40);
 // Builds the default waveform resources and registers the key types the
 // waveforms use. The map's WaveformInit(). Not reconstructed.
 void WaveformInit();  // 0x1C8B70
+// The default resource of a float waveform property, which WaveformInit
+// builds at 0x19E4A00. Name not in the reference map. Not reconstructed.
+ResourcePtr<WaveformResource<float>>& GetDefaultFloatWaveformResource();  // 0x1C9A80
 // Loads the resources of the component's waveform properties (property
 // types 18 and 19), recursing into arrays and structs; called by
 // Component::LoadResources unless it is quiet. The map's signature is
@@ -147,3 +188,10 @@ void LoadWaveformResources(Component* component);  // 0x1C9A90
 // waveform properties use. The map's InlineWaveformResources(
 // EntityResource&, unsigned long). Not reconstructed.
 void InlineWaveformResources(EntityResource& resource, unsigned long layer);  // 0x1C9C00
+// The path of the inline waveform resource that holds the value of the
+// component's waveform property at the path. Name not in the reference map.
+// Not reconstructed.
+ResourcePath GetInlineWaveformPath(const Component& component, const PropPath& path);  // 0x1CFEE0
+// Whether the blend mode blends in HSV (modes 3 to 5). The map's
+// IsHSVWaveformBlendMode(WaveformBlendMode). Not reconstructed.
+bool IsHSVWaveformBlendMode(int mode);  // 0x1C9EB0

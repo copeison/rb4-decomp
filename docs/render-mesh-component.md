@@ -99,13 +99,29 @@ path, resource type and usage, `driven` and `static_bounding_sphere`; the
 draw-instance `RuntimeData`, the mesh resource, the mesh, the skeleton and
 the pending sync and usage start afresh.
 
-## Not reconstructed
+## Registration
 
-- `_Init` of both classes (the mesh's is 100 KB of properties and utility
-  actions).
-- The mesh's property-handler stubs (`0x5CA9E0`-`0x5CE170`).
-- The utility parameter blocks the mesh's static initializer builds
-  (`0x1AA6048`-`0x1AA6407`).
+`RndMeshCom::Init` (`0x3F7420`, placement factory `0x4056C0`) is
+`InitComponentClass<RndMeshCom>`. `_Init` (`0x5C3660`) registers the mesh
+properties, `mesh_resource_properties` (the resource's build options and
+usage flags through `RndMeshResource`'s setters), read-only statistics
+(`vertex_type`, `num_faces`, `num_vertices`, `vertices_size`, `root_bone`,
+`root_bone_index`, `extents` through `RndMeshUtl::ComputeAABB`), and the
+`utilities`: `bake_xfm`, `combine`, `make_triangle`, `make_quad`,
+`make_triangle_fan`, `make_cube`, `make_box`, `make_sphere`,
+`make_cylinder`, `make_capsule`, `make_cone`, `make_torus`,
+`make_icosahedron`, `make_spline_fan` and `export_to_fbx` (an empty
+action). Each utility edits a file-scope parameter block
+(`0x1AA6040`-`0x1AA6408`, `gBakeXfmMode` at `0x19BDCC8`) through the
+accessors at `0x5CA9E0`-`0x5CB7BF` and builds an inline mesh; it is
+read-only while `driven`. Revision 1 turns saved mesh paths into
+sub-object paths. The new builder parameter types (`CreateTriangleParams`,
+constructor `0x5CA890`, `CreateConeParams`, `CreateTorusParams`,
+`CreateIcosahedronParams`, `CreateSplineFanParams`) and the builders are
+declared in `RndMeshUtl.h`; `Box`, `RndVertex::GetTypeName`/
+`IsTypeCompressed`/`CanCompressType`, `RndSkeletonPoseCom::GetSkeleton`,
+`CharSkeleton` (bone names only) and `RndSplineCom` (class id only) are
+declared for it.
 
 ## Weak evidence
 
@@ -114,6 +130,9 @@ the pending sync and usage start afresh.
 - `mPendingMeshSync`.
 - `RndMesh::mGeometryFrame` read as the root bone index.
 - `RndSkeletonPoseCom::mRenderXfms`.
+- The utility accessors' and parameter globals' names; `CreateSplineFan`
+  and its parameters (not in the map); `Combine`'s last flag.
+- `StructMetadata::mKind`, which `extents` and the vector structs set to 1.
 
 `render/RndDynamicGpuDataMgr.o` is reconstructed in
 `src/render/meshes/RndDynamicGpuDataMgr.cpp`: the constructor (`0x6C9D40`),

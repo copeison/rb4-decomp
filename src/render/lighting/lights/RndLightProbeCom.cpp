@@ -1,14 +1,18 @@
-// render/RndLightProbeCom.o (0x498080-0x49DB9F). The object's std::function
-// handlers for the registry (0x49D0A0-0x49D910), the vector growth
+// render/RndLightProbeCom.o (0x498080-0x49DB9F). The registry's revision
+// handler (0x49D400 to 0x49D910) is the lambda in _Init. The vector growth
 // helpers (0x49AA20, 0x49D0E0, 0x49D920) and the unreferenced description
 // setup at 0x49AB00 are not reconstructed.
 #include "render/lighting/lights/RndLightProbeCom.h"
 
+#include <functional>
 #include <new>
 
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
+#include "entity/props/PropUtl.h"
 #include "math/geometry/Sphere.h"
 #include "math/transform/Transform.h"
 #include "math/vector/Vector3.h"
@@ -17,6 +21,8 @@
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/scene/RndDrawNodeCom.h"
 #include "render/scene/RndSceneCom.h"
+#include "render/scene/RndSceneResource.h"
+#include "render/shaders/RndShaderEnums.h"
 #include "render/textures/RndPixelDataCube.h"
 #include "render/textures/RndPixelFormat.h"
 #include "render/textures/RndTextureCubeResource.h"
@@ -41,6 +47,26 @@ RndLightMgrCom* FindLightMgr(const Component& component) {
     }
     return scene->GetLightMgr();
 }
+
+// Reads a property of the component that holds the properties as they were
+// saved into `value`; a missing or unconvertible property keeps the value.
+// The release build keeps only the arguments of the error it reports.
+// Inlined into the revision handler. Name not in the reference map.
+template <typename T>
+void ReadSavedProp(const Component& saved, const PropPath& path, T& value, PropertyType type) {
+    void* storage = const_cast<Component*>(&saved);
+    const PropInfo* const info = const_cast<Component&>(saved)._GetPropRegistry().FindProp(path, &storage);
+    if (info != nullptr && _GetProp(saved, path, *info, storage, &value, type)) {
+        return;
+    }
+    static_cast<void>(saved.MakeErrorName());
+    char text[512] = {};
+    path.ToString(text, sizeof(text));
+}
+
+// The falloff callbacks _Init installs. Names not in the reference map.
+void OnFalloffStartChanged(const PropAccessorArgs& args);  // 0x49D0A0
+void OnFalloffEndChanged(const PropAccessorArgs& args);    // 0x49D0C0
 
 }  // namespace
 
@@ -209,6 +235,148 @@ int RndLightProbeCom::GetNumSpecularMips() {
     return 6;
 }
 
+// Reconstructed from eboot.elf at 0x49B290. "isolate" and
+// "use_raw_texture" are bound to run-time fields and not saved. Revision 2
+// takes the probe-state names from the "states" array of probes saved
+// before it.
+void RndLightProbeCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mDescription = "Light probe, used to capture and apply global illumination at a given location";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryLight;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mRequiredComponents.push_back(RndDrawNodeCom::sClassName);
+    RndLightProbeCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 1) {
+                return;
+            }
+            RndLightProbeCom* const probe = static_cast<RndLightProbeCom*>(args.mComponent);
+            const Component& saved = *args.mSavedProps;
+            const unsigned long count = static_cast<unsigned long>(saved.Size(PropPath(Symbol("states"))));
+            probe->mStateNames.Resize(count);
+            for (unsigned long i = 0; i < count; ++i) {
+                PropPath::Node states;
+                PropPath::Node index;
+                PropPath::Node name;
+                const PropPath path(states = Symbol("states"), index = i, name = Symbol("name"));
+                Symbol stateName;
+                ReadSavedProp(saved, path, stateName, kPropertySymbol);
+                probe->mStateNames[i] = stateName;
+            }
+        };
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry == &own) {
+        own.SetCurrentRev(2);
+        own.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    BoolMetadata& enabled = TypeSpecificMetadata(
+        registry.RegisterProp("enabled", offsetof(RndLightProbeCom, mEnabled), kPropertyBool, 1),
+        prototype.mEnabled);
+    enabled.mDefault = prototype.mEnabled;
+
+    BoolMetadata& isolate = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "isolate",
+            offsetof(RndLightProbeCom, mRuntime) + offsetof(RuntimeData, mIsolate),
+            kPropertyBool,
+            1),
+        prototype.mRuntime.mIsolate);
+    isolate.mDefault = prototype.mRuntime.mIsolate;
+    static_cast<void>(Symbol("prop"));
+    isolate.mSaves = false;
+
+    FloatMetadata& falloffStart = TypeSpecificMetadata(
+        registry.RegisterProp("falloff_start", offsetof(RndLightProbeCom, mFalloffStart), kPropertyFloat, 4),
+        prototype.mFalloffStart);
+    falloffStart.mDefault = prototype.mFalloffStart;
+    static_cast<void>(Symbol("prop"));
+    falloffStart.mMin = 0.0F;
+    falloffStart.mMax = 2000.0F;
+    falloffStart.mSlider = true;
+    falloffStart.mSliderLogResolution = 2.0F;
+    falloffStart.mOnChanged = OnFalloffStartChanged;
+
+    FloatMetadata& falloffEnd = TypeSpecificMetadata(
+        registry.RegisterProp("falloff_end", offsetof(RndLightProbeCom, mFalloffEnd), kPropertyFloat, 4),
+        prototype.mFalloffEnd);
+    falloffEnd.mDefault = prototype.mFalloffEnd;
+    static_cast<void>(Symbol("prop"));
+    falloffEnd.mMin = 0.1F;
+    falloffEnd.mMax = 2000.0F;
+    falloffEnd.mSlider = true;
+    falloffEnd.mSliderLogResolution = 2.0F;
+    falloffEnd.mOnChanged = OnFalloffEndChanged;
+
+    IntMetadata<int>& falloffFunction = static_cast<IntMetadata<int>&>(*registry.RegisterProp(
+        "falloff_function",
+        offsetof(RndLightProbeCom, mFalloffFunction), kPropertyInt, 4).mMetadata.Get());
+    falloffFunction.mDefault = prototype.mFalloffFunction;
+    static_cast<void>(Symbol("prop"));
+    falloffFunction.mHelp =
+        String("Controls how light intensity falls off as you move away from the probe center.");
+    {
+        eastl::vector<AllowedValue<int>> functions;
+        unsigned int savedTemp;
+        MemPushTemp(savedTemp, true, true);
+        for (int index = 0; index < kNumFalloffFunctions; ++index) {
+            const RndFalloffFunction function = static_cast<RndFalloffFunction>(index);
+            functions.push_back(
+                AllowedValue<int>{index, String(ToString(function)), String(ToDescription(function))});
+        }
+        MemPopTemp(savedTemp);
+        falloffFunction.mAllowedValues = functions;
+    }
+
+    PropRegistry& capture =
+        static_cast<GroupMetadata&>(*registry.RegisterProp("capture", 0, kPropertyStruct, 0).mMetadata.Get())
+            .mRegistry;
+    static_cast<void>(Symbol("struct"));
+
+    FloatMetadata& range = TypeSpecificMetadata(
+        capture.RegisterProp("range", offsetof(RndLightProbeCom, mRange), kPropertyFloat, 4),
+        prototype.mRange);
+    range.mDefault = prototype.mRange;
+    static_cast<void>(Symbol("prop"));
+    range.mHelp = String("The range (ie. camera far distance) to use when running the probe capture");
+    range.mMin = 1.0F;
+    range.mMax = 10000.0F;
+    range.mSlider = true;
+    range.mSliderLogResolution = 1.0F;
+
+    BoolMetadata& atmosphere = TypeSpecificMetadata(
+        capture.RegisterProp(
+            "include_atmosphere", offsetof(RndLightProbeCom, mIncludeAtmosphere), kPropertyBool, 1),
+        prototype.mIncludeAtmosphere);
+    atmosphere.mDefault = prototype.mIncludeAtmosphere;
+    static_cast<void>(Symbol("prop"));
+    atmosphere.mHelp = String("Should we draw the atmosphere during probe capture?");
+
+    ColorMetadata& background = TypeSpecificMetadata(
+        capture.RegisterProp(
+            "background_color", offsetof(RndLightProbeCom, mBackgroundColor), kPropertyColor, 16),
+        prototype.mBackgroundColor);
+    background.mDefault = prototype.mBackgroundColor;
+    static_cast<void>(Symbol("prop"));
+    background.mHelp = String(
+        "Background color to use during probe capture (ignored if the scene has its own background color)");
+
+    BoolMetadata& rawTexture = TypeSpecificMetadata(
+        capture.RegisterProp(
+            "use_raw_texture",
+            offsetof(RndLightProbeCom, mRuntime) + offsetof(RuntimeData, mUseRawTexture),
+            kPropertyBool,
+            1),
+        prototype.mRuntime.mUseRawTexture);
+    rawTexture.mDefault = prototype.mRuntime.mUseRawTexture;
+    static_cast<void>(Symbol("prop"));
+    rawTexture.mDebug = true;
+    rawTexture.mSaves = false;
+}
+
 // Reconstructed from eboot.elf at 0x49BE90.
 void RndLightProbeCom::_PreDestroy(DestroyType type) {
     if (type < kDestroyInstance) {
@@ -350,6 +518,20 @@ PropRegistry& RndLightProbeCom::_GetPropRegistry() {
 ComMetaData& RndLightProbeCom::_GetMetaData() {
     return sMetaData;
 }
+
+namespace {
+
+// Reconstructed from eboot.elf at 0x49D0A0.
+void OnFalloffStartChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightProbeCom*>(args.mComponent)->_SyncFalloffStart();
+}
+
+// Reconstructed from eboot.elf at 0x49D0C0.
+void OnFalloffEndChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightProbeCom*>(args.mComponent)->_SyncFalloffEnd();
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x4046B0. The binary emits the factory
 // with the class's Init (0x3F04E0), before the renderer's components.

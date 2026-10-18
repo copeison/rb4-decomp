@@ -1,7 +1,6 @@
-// render/RndAtmosphereCom.o (0x451450 to 0x451C6F). The object also emits
-// the registry's property callbacks (0x451B60, 0x451B80). The tiny
-// initializer before it (0x451430) sets the shared header's ints for the
-// previous object and is not modelled.
+// render/RndAtmosphereCom.o (0x451450 to 0x451C6F). The tiny initializer
+// before it (0x451430) sets the shared header's ints for the previous object
+// and is not modelled.
 #include "render/atmosphere/RndAtmosphereCom.h"
 
 #include <new>
@@ -9,7 +8,9 @@
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
 #include "render/scene/RndSceneCom.h"
+#include "render/scene/RndSceneResource.h"
 
 // The object's statics, in the order of its static initializer (0x451BA0).
 // The three ints it first sets come from a shared header and are not
@@ -26,6 +27,58 @@ RndAtmosphereCom::RndAtmosphereCom()
 // Reconstructed from eboot.elf at 0x4514A0. The deleting destructor is at
 // 0x4514B0.
 RndAtmosphereCom::~RndAtmosphereCom() {}
+
+// Reconstructed from eboot.elf at 0x4514D0. The distances are edited in
+// meters, up to ten kilometers; a change to either pulls the start in to the
+// end (0x451B60, 0x451B80), as _SyncEndDist does.
+void RndAtmosphereCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mInterface = sClassName;
+    metadata.mDescription = "Base class for atmosphere components";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mEditorRestrictions = 0;
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    RndAtmosphereCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    BoolMetadata& enabled = TypeSpecificMetadata(
+        registry.RegisterProp("enabled", offsetof(RndAtmosphereCom, mEnabled), kPropertyBool, 1),
+        prototype.mEnabled);
+    enabled.mDefault = prototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+
+    FloatMetadata& startDist = TypeSpecificMetadata(
+        registry.RegisterProp("start_dist", offsetof(RndAtmosphereCom, mStartDist), kPropertyFloat, 4),
+        prototype.mStartDist);
+    startDist.mDefault = prototype.mStartDist;
+    static_cast<void>(Symbol("prop"));
+    startDist.mMin = 0.0F;
+    startDist.mMax = gUnitsPerMeter * 10000.0F;
+    startDist.mSlider = true;
+    startDist.mSliderLogResolution = gUnitsPerMeter * 10.0F;
+    startDist.mUnits = Symbol(" meters");
+    startDist.mOnChanged = [](const PropAccessorArgs& args) {
+        static_cast<RndAtmosphereCom*>(args.mComponent)->_SyncEndDist();
+    };
+    startDist.mNoTest = true;
+
+    FloatMetadata& endDist = TypeSpecificMetadata(
+        registry.RegisterProp("end_dist", offsetof(RndAtmosphereCom, mEndDist), kPropertyFloat, 4),
+        prototype.mEndDist);
+    endDist.mDefault = prototype.mEndDist;
+    static_cast<void>(Symbol("prop"));
+    endDist.mMin = 0.0F;
+    endDist.mMax = gUnitsPerMeter * 10000.0F;
+    endDist.mSlider = true;
+    endDist.mSliderLogResolution = gUnitsPerMeter * 10.0F;
+    endDist.mUnits = Symbol(" meters");
+    endDist.mOnChanged = [](const PropAccessorArgs& args) {
+        static_cast<RndAtmosphereCom*>(args.mComponent)->_SyncEndDist();
+    };
+    endDist.mNoTest = true;
+}
 
 // Reconstructed from eboot.elf at 0x4518C0.
 void RndAtmosphereCom::SetStartDist(float dist) {
@@ -115,4 +168,18 @@ PropRegistry& RndAtmosphereCom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x451B50.
 ComMetaData& RndAtmosphereCom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x404110. The binary emits the factory
+// with the class's Init (0x3EC0F0); the placement factory at 0x404140
+// constructs in given storage.
+Component* RndAtmosphereCom::_Create() {
+    return new RndAtmosphereCom();
+}
+
+// Reconstructed from eboot.elf at 0x3EC0F0. The binary emits the
+// registration in render/RndInit.o. The class is a base that is not created
+// itself.
+void RndAtmosphereCom::Init() {
+    InitComponentClass<RndAtmosphereCom>(false, true);
 }

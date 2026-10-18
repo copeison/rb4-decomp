@@ -132,7 +132,7 @@ static bool sThreadPollDefaultEmitter;    // 0x19C5758
 static Semaphore sDefaultEmitterPollSem;  // 0x19C575C
 static bool sStopDefaultEmitterPoll;      // 0x19C5770
 static NamedThread sDefaultEmitterPollThread;  // 0x19C5778
-void (*SoundManager::sAddSoundHandleFunc)(unsigned int handle, Symbol name);
+bool (*SoundManager::sAddSoundHandleFunc)(unsigned int handle, Symbol name);
 static GenManagerConfig sDefaultGenManagerConfig = {
     8, 8, 8, 16, 32, 28, 0, false, true, 16, 16, 16, 128, 32, 8, 8, 32,
 };

@@ -61,10 +61,23 @@ node and the parent object's instance pool.
   instanced entities for `RndLightCom` objects.
 
 `_Imprint` (`0x6C8A70`) copies the properties and starts a fresh
-`RuntimeData`. `_Init`, its property callbacks (`0x6C8CA0`-`0x6C8DBA`) and
-its functor classes (vtables `0x1937F18`-`0x1938008`) stay with the
-unreconstructed registry builder. `0x6C7370` is an unreferenced copy of
-`_Exit`'s body.
+`RuntimeData`. `0x6C7370` is an unreferenced copy of `_Exit`'s body.
+
+`_Init` (`0x6C4060`) makes the class a rendering class of
+`TransEntityResource`s (alias "RndDrawNodeCom") at revision 4. Its
+revision handler takes the default environment for revision 0 data and
+moves the show/hide bits up for revisions below 2 and 3. `showing` and
+`world_showing` are storage-less views of bit 0 (`0x6C8CA0`, `0x6C8CB0`,
+`0x6C8DB0`); the flag properties list each bit's label and help
+(`GetShowHideFlagName`/`Help`, `0x441C90`, `0x441D50`, declared),
+`show_hide_flags` without the bits `0xCC1`. `environment` shows only in a
+scene; `nested_light_environments` only for an instancing object in a
+scene, read-only unless the instanced entities hold lights, with a
+removal hook (`0x6C8CE0`, `ArrayMetadata::mHook2`, which `_RemoveProp`
+calls instead of its own removal). `sphere_radius_mult` dirties the local
+sphere (`0x6C8DA0`). The runtime properties are read-only debug
+properties that are not saved; the spheres register `center` (a Vector3
+struct) and `radius`, the world clip planes `a` to `d`.
 
 The math helpers `Sphere::GrowToContain` (`0x117D500`) and
 `MultiplyMinScale` (`0x117D7B0`, name not in the map) are declared in

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <functional>
 
+#include "entity/props/PropArray.h"
 #include "entity/props/PropInfo.h"
 #include "entity/props/PropPath.h"
 #include "utl/containers/Vector.h"
@@ -40,7 +41,11 @@ public:
         // The component being loaded.
         Component* mComponent;
         // Passed through from the load; not identified.
-        const void* mContext[3];
+        const void* mContext[2];
+        // A component of the class holding the properties as they were
+        // saved, which the handlers read old properties from through
+        // FindProp and _GetProp. Name not in the reference map.
+        Component* mSavedProps;
         // The revision the properties were saved under.
         int mSavedRev;
     };
@@ -75,13 +80,11 @@ public:
         PropInfo& array,
         PropertyType type,
         unsigned long count);  // 0x1808A0
-    // Adds an action, a property without storage. Not reconstructed: its
-    // metadata class (vtable 0x18E87D0) is not modelled.
+    // Adds an action, a property without storage, with an ActionMetadata.
     PropInfo& RegisterAction(const char* name);  // 0x180910
     // Adds a property to the dynamic storage, placed at the next offset its
     // alignment allows. `dynamicOffset` locates the storage pointer (see
-    // PropInfo::mDynamicOffset). Not reconstructed: actions take the
-    // RegisterAction path, which is not modelled.
+    // PropInfo::mDynamicOffset). An action takes the RegisterAction path.
     PropInfo& RegisterDynamicProp(
         const char* name,
         PropertyType type,
@@ -105,9 +108,9 @@ public:
     void AddInheritedRegistry(Symbol name, const PropRegistry& registry);  // 0x181180
     // Hashes the saved properties' layout into the class CRC: the
     // registry's revision, then each saved property's offsets, type and
-    // count and its struct's revision, visited through VisitPropInfo. Not
-    // reconstructed; the flag's meaning is not identified.
-    void UpdateCRC(unsigned int& crc, bool flag) const;  // 0x180D20
+    // count and its struct's revision, visited through VisitPropInfo. With
+    // `dynamicOnly`, only the properties in dynamic storage are hashed.
+    void UpdateCRC(unsigned int& crc, bool dynamicOnly) const;  // 0x180D20
 
     // Visits every property depth first with the path to it: the visitor
     // sees a property and, when it returns true, the element of an array
@@ -116,8 +119,8 @@ public:
     // leaves one lower. The map's VisitPropInfo; its users inline it, and
     // the binary emits _VisitPropInfo for each visitor (0xE69F0 for
     // ComMetaData::Init, 0x184550 for UpdateCRC).
-    template <class Visitor>
-    void VisitPropInfo(Visitor& visitor, unsigned long* const& depth) const {
+    template <class Visitor, class Count>
+    void VisitPropInfo(Visitor& visitor, Count* const& depth) const {
         PropPath path;
         for (const PropEntry* entry = mProps.begin(); entry != mProps.end(); ++entry) {
             PropPath::Node node;
@@ -126,12 +129,12 @@ public:
             path.PopNode();
         }
     }
-    template <class Visitor>
+    template <class Visitor, class Count>
     static void _VisitPropInfo(
         const PropInfo& info,
         PropPath& path,
         Visitor& visitor,
-        unsigned long* const& depth) {
+        Count* const& depth) {
         if (visitor(info, static_cast<const PropPath&>(path))) {
             if ((info.mType & kPropertyArray) != 0) {
                 PropPath::Node node;
@@ -151,6 +154,53 @@ public:
         if (*depth != 0) {
             --*depth;
         }
+    }
+    // Visits every property with its storage in `base` (the component, or
+    // the struct or element that holds the registry's properties): the
+    // visitor sees the property and, when it returns true, the elements of
+    // an array or the members of a struct; `after` runs once the property
+    // and what it holds are visited. The map's VisitProps and _VisitProp
+    // take std::functions; this build inlines VisitProps and emits
+    // _VisitProp for each visitor (0xE9930 for Component::Dump, 0xE9C30 for
+    // Component::_ImprintRegistry).
+    template <class Visitor, class After>
+    void VisitProps(void* base, Visitor& visitor, After& after) const {
+        PropPath path;
+        for (const PropEntry* entry = mProps.begin(); entry != mProps.end(); ++entry) {
+            PropPath::Node node;
+            path.PushNode(node = entry->mName);
+            _VisitProp(entry->mInfo, path, entry->mInfo.Storage(base), visitor, after);
+            path.PopNode();
+        }
+    }
+    template <class Visitor, class After>
+    static void _VisitProp(
+        const PropInfo& info,
+        PropPath& path,
+        void* storage,
+        Visitor& visitor,
+        After& after) {
+        if (visitor(info, static_cast<const PropPath&>(path), storage)) {
+            if ((info.mType & kPropertyArray) != 0) {
+                const PropArrayBase& array = *static_cast<const PropArrayBase*>(storage);
+                const PropInfo& item = info.PropArrayItemInfo();
+                for (unsigned long index = 0; index < array.mSize; ++index) {
+                    PropPath::Node node;
+                    path.PushNode(node = index);
+                    _VisitProp(item, path, array.ElementAt(index), visitor, after);
+                    path.PopNode();
+                }
+            } else if (const PropRegistry* const registry = info.GetStructRegistry()) {
+                const PropEntry* const end = registry->mProps.end();
+                for (const PropEntry* entry = registry->mProps.begin(); entry != end; ++entry) {
+                    PropPath::Node node;
+                    path.PushNode(node = entry->mName);
+                    _VisitProp(entry->mInfo, path, entry->mInfo.Storage(storage), visitor, after);
+                    path.PopNode();
+                }
+            }
+        }
+        after();
     }
     // Writes the property infos, then the component's values.
     void Save(const Component& component, BinStream& stream);  // 0x1813D0

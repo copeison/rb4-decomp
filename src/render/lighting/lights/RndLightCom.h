@@ -56,6 +56,14 @@ static_assert(sizeof(RndLightProbeParams) == 32);
 // declarations short.
 using RndLightCullPlanes = VectorAdapter<Vector4>;
 
+// The luminous efficacy, in lumens per watt, of a black body at the
+// temperature in kelvins: Planck's law weighed by the eye's sensitivity
+// table (0x1AB1990) and scaled by 683. The "calculate" actions of the point
+// and spot lights' "intensity_calculator" call it. Name not in the
+// reference map, whose build has no such function; its object is not
+// identified.
+float CalcLuminousEfficacy(float temperature);  // 0x6DDDB0
+
 // The base of the light components (render/RndLightCom.o, 0x46C950 to
 // 0x4705FF). Its class id is "Light"; the class is not creatable on its own
 // ("Properties common to all lights, should not be directly creatable").
@@ -288,10 +296,20 @@ public:
     // The light manager of the light's own scene.
     RndLightMgrCom* _FindSiblingLightMgr() const;  // 0x46F3A0
 
-    // Not reconstructed: the property metadata, and the handlers at
-    // 0x46F7E0-0x46FAD4 that it binds as std::function objects, are not
-    // modelled.
+    // Registers the class (InitComponentClass) as a base that is not
+    // created itself, emitted in render/RndInit.o.
+    static void Init();  // 0x3EF980
+    // The class factory.
+    static Component* _Create();  // 0x4045C0
+    // Builds the registry: the light interface, the common properties and
+    // their tag functions and accessors (0x46F7E0-0x4704B0).
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x46D760
+    // Builds a subclass's registry on the light's: makes the light its
+    // superclass, runs _Init in the "metadata" heap and keeps the
+    // subclass's editor restrictions. Emitted in
+    // render/RndLightDirectionalCom.o, the first subclass that calls it.
+    // Name not in the reference map.
+    static void _InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata);  // 0x472D80
 
     // The class symbol, "Light", constructed by the static initializer at
     // 0x470530.

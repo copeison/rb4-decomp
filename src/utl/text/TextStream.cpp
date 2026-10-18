@@ -48,3 +48,10 @@ TextStream& TextStream::operator<<(unsigned long value) {
     Print(buffer);
     return *this;
 }
+
+// Reconstructed from eboot.elf at 0x258B20.
+void TextStream::Space(int count) {
+    for (; count != 0; --count) {
+        Print(" ");
+    }
+}

@@ -79,10 +79,14 @@ public:
     // accessor. Name not in the reference map.
     bool CopyOnInstance() const;  // 0x1D51B0
 
+    // The factory; emitted with the other entity registrations.
+    static Component* _Create();  // 0x112DFC0
+    // Registers the class (InitComponentClass). Name not in the reference
+    // map, which has no class.
+    static void Init();  // 0x112A480
     // Describes the class and registers its properties, among them the
     // "poll_order" view of the entity's poll order (ten objects from a
-    // start index kept at 0x19E4CE8). Not reconstructed: the property
-    // metadata and the std::function handlers it binds are not modelled.
+    // start index kept at 0x19E4CE8).
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x1D21D0
 
     // "EntityHeader", constructed by the static initializer at 0x1D8C80.

@@ -14,6 +14,7 @@
 #include "utl/messages/MsgSink.h"
 #include "utl/text/Symbol.h"
 
+class Entity;
 class Frustum;
 class RndFence;
 class RndScenePartialFramerateData;
@@ -425,8 +426,15 @@ public:
         const RndPixelDataCube& pixels,
         RndPixelDataCube& cube) const;  // 0x48B9D0
 
-    // Not reconstructed: the property metadata, and the std::function
-    // handlers it binds, are not modelled.
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F1060
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x4047A0
+    // Describes the class and registers the lighting, tonemapping, probe
+    // and quality settings and the read-only lists of the registered
+    // objects, with the revision 4 handler (0x48D630), the property
+    // callbacks (0x48D010-0x48D3C0) and the tag functions (0x48D8D0-
+    // 0x48E600).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x486830
@@ -486,8 +494,10 @@ public:
     eastl::vector<RndLightCom*> mLights;
     eastl::vector<RndLightProbeCom*> mProbes;
     PropArray<GameObjectId> mLightIds;
-    // Constructed and destroyed only; no reader or writer was found.
-    eastl::vector<void*> mUnusedList;
+    // The entities the "lights" ids refer into, which the items' entity
+    // tag reads (0x48E600), as RndLightEnvironCom keeps its nested lights'.
+    // No writer was found, so it stays empty.
+    eastl::vector<Entity*> mLightEntities;
     PropArray<GameObjectId> mProbeIds;
     // The cookies' places per texture type (RndTextureBase slot 2) and
     // whether the texture's flags have bit 1 set.
@@ -563,7 +573,7 @@ static_assert(offsetof(RndLightMgrCom, mEnvironComs) == 264);
 static_assert(offsetof(RndLightMgrCom, mLights) == 296);
 static_assert(offsetof(RndLightMgrCom, mProbes) == 328);
 static_assert(offsetof(RndLightMgrCom, mLightIds) == 360);
-static_assert(offsetof(RndLightMgrCom, mUnusedList) == 400);
+static_assert(offsetof(RndLightMgrCom, mLightEntities) == 400);
 static_assert(offsetof(RndLightMgrCom, mProbeIds) == 432);
 static_assert(offsetof(RndLightMgrCom, mCookieArrayElems) == 472);
 static_assert(offsetof(RndLightMgrCom, mCookieTexArraysDirty) == 984);

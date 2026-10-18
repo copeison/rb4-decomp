@@ -210,9 +210,13 @@ public:
     // the reference map. Not reconstructed.
     void _SetCascadeCamera(unsigned int cascade, const Frustum& frustum);  // 0x474EE0
 
-    // Not reconstructed: the property metadata, and the std::function
-    // handlers at 0x475950-0x475A2B that keep the cascade distances and
-    // the softness range ordered, are not modelled.
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3EFD40
+    // The class factory.
+    static Component* _Create();  // 0x404610
+    // Builds the registry on RndLightCom's: the cookie and the "shadows"
+    // group, with the handlers (0x475950-0x475A2B) that keep the cascade
+    // distances and the softness range ordered.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x4709A0
 
     // The class symbol, "LightDirectional", constructed by the static

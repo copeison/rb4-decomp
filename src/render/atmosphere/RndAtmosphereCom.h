@@ -54,16 +54,20 @@ public:
     // build.
     void _SyncEndDist();  // 0x4518F0
 
-    // Describes the class and registers "enabled", "start_dist" and
-    // "end_dist" (in meters). Not reconstructed: the property metadata it
-    // fills is not modelled.
+    // Registers the class (InitComponentClass) as a base that is not
+    // created itself, emitted in render/RndInit.o.
+    static void Init();  // 0x3EC0F0
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x404110
+    // Describes the class as the "Atmosphere" interface and registers
+    // "enabled", "start_dist" and "end_dist" (in meters), with their change
+    // callbacks (0x451B60, 0x451B80).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x4514D0
     // Initializes a subclass's metadata as this class's subclass and runs
-    // _Init in the metadata heap. Emitted in render/RndFogCom.o. Not
-    // reconstructed, as RndOptionsCom's is not. Name not in the reference
-    // map.
+    // _Init in the metadata heap. Emitted in render/RndFogCom.o. Name not in
+    // the reference map.
     static void _InitAsSuperclass(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x4522E0

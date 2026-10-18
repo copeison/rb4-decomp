@@ -13,6 +13,7 @@
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/system/RndInit.h"
+#include "stategraph/graph/StateGraph.h"
 #include "ui/core/UI.h"
 #include "ui/layout/UILayoutResource.h"
 #include "ui/manager/UIMgr.h"
@@ -26,7 +27,6 @@ struct DingoService;
 void engine_register_types();
 void animation_register_types();
 void physics_register_types();
-void game_audio_register_types();
 void dingo_initialize(DingoService& service);
 void audio_configure_time_stretch();
 void input_refresh_player_assignments();
@@ -97,7 +97,7 @@ bool App::Initialize(int argc, char** argv) {
     engine_register_types();
     animation_register_types();
     physics_register_types();
-    game_audio_register_types();
+    StateGraph::Init();
 
     RndInitParams options{};
     options.mReservedOption = true;

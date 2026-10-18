@@ -235,9 +235,10 @@ public:
     // Writes and reads the values of the properties under the path.
     bool StorePropState(const PropPath& path, BinStream& stream) const;  // 0xE8310
     bool ApplyPropState(const PropPath& path, BinStream& stream);       // 0xE8320
-    // Prints the properties to the stream, or to TheDebug when it is null.
-    // The map's signature starts with an ObjPtr const&.
-    void Dump(TextStream* stream, bool verbose) const;  // 0xE8330
+    // Prints the properties to the stream, or to TheDebug when it is null;
+    // with `testableOnly`, only those a test may set. The map's signature
+    // starts with an ObjPtr const&.
+    void Dump(TextStream* stream, bool testableOnly) const;  // 0xE8330
     // The "remove" and "insert" handlers: the message's nodes from 2 on
     // are the path.
     DataNode _OnRemove(DataArray* msg);  // 0xE84C0
@@ -251,7 +252,7 @@ public:
 
     // Copies the properties of the registry into the buffer, for the
     // imprint's registry when there is an imprint, and returns the end of
-    // the copies. Name not in the reference map. Not reconstructed.
+    // the copies. Name not in the reference map.
     char* _ImprintRegistry(
         char* buffer,
         Component* imprint,

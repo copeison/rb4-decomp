@@ -24,21 +24,42 @@ string is `"RndVolumetricScatteringCom::QualitySettings"`.
 
 ## Class registration
 
-| Class | Id | `sId` | `sClassName` | `sPropRegistry` | `sMetaData` | `_Init` |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `RndCMAACom` | `AntiAliasing` | `0x1A75358` | `0x1A75360` | `0x1A75370` | `0x1A75410` | `0x44EBB0` |
-| `RndAtmosphereCom` | `Atmosphere` | `0x1A75618` | `0x1A75620` | `0x1A75630` | `0x1A756D0` | `0x4514D0` |
-| `RndFogCom` | `Fog` | `0x1A75890` | `0x1A75898` | `0x1A758A0` | `0x1A75940` | `0x451DD0` |
-| `RndSkyCom` | `Sky` | `0x1A75B20` | `0x1A75B28` | `0x1A75B30` | `0x1A75BD0` | `0x453060` |
-| `RndVolumetricScatteringCom` | `VolumetricScattering` | `0x1A75DB8` | `0x1A75DC0` | `0x1A75DD0` | `0x1A75E70` | `0x454A70` |
-| `RndSSAOCom` | `SSAO` | `0x1A89888` | `0x1A89890` | `0x1A898A0` | `0x1A89940` | `0x4AC540` |
+| Class | Id | `sId` | `sClassName` | `sPropRegistry` | `sMetaData` | `_Init` | `Init` | `_Create` |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `RndCMAACom` | `AntiAliasing` | `0x1A75358` | `0x1A75360` | `0x1A75370` | `0x1A75410` | `0x44EBB0` | `0x3EC880` | `0x4041B0` |
+| `RndAtmosphereCom` | `Atmosphere` | `0x1A75618` | `0x1A75620` | `0x1A75630` | `0x1A756D0` | `0x4514D0` | `0x3EC0F0` | `0x404110` |
+| `RndFogCom` | `Fog` | `0x1A75890` | `0x1A75898` | `0x1A758A0` | `0x1A75940` | `0x451DD0` | `0x3EDB10` | `0x404340` |
+| `RndSkyCom` | `Sky` | `0x1A75B20` | `0x1A75B28` | `0x1A75B30` | `0x1A75BD0` | `0x453060` | `0x3F83A0` | `0x4057D0` |
+| `RndVolumetricScatteringCom` | `VolumetricScattering` | `0x1A75DB8` | `0x1A75DC0` | `0x1A75DD0` | `0x1A75E70` | `0x454A70` | `0x3F1BA0` | `0x404890` |
+| `RndSSAOCom` | `SSAO` | `0x1A89888` | `0x1A89890` | `0x1A898A0` | `0x1A89940` | `0x4AC540` | `0x3F0CA0` | `0x404750` |
 
 The identity slots, the constructors, destructors and `_Imprint` copies are
-reconstructed. `_Init` and `RndAtmosphereCom::_InitAsSuperclass`
-(`0x4522E0`, emitted in the fog's object and shared with the volumetric
-scattering) stay declared: the property metadata is not modelled. The
-quality-settings arrays are `PropArray`s of one entry per
-`RndQualityLevel`, sized to three by `_PostCreate` (slot 19).
+reconstructed, and so are the registrations. `Init` is
+`InitComponentClass<T>` in `render/RndInit.o`; the atmosphere is a
+superclass root that is not created itself. Its builder registers the
+"Atmosphere" interface. `RndAtmosphereCom::_InitAsSuperclass` (`0x4522E0`)
+is emitted in the fog's object and shared with the volumetric scattering.
+The quality-settings arrays are `PropArray`s of one entry per
+`RndQualityLevel`, sized to three by `_PostCreate` (slot 19). Each is
+registered as a struct type (`RegisterPropStruct`, at `0x44F260`,
+`0x4ACD10` and `0x456000`), fixed in size and summarized by the level's
+name. Each class's revision handler sizes the array for older saves:
+CMAA and SSAO at revision 1, the volumetric scattering at revision 4.
+Notes on the builders:
+
+- Both distance change callbacks (`0x451B60`, `0x451B80`) pull the start in
+  to the end, as `_SyncEndDist` does.
+- The fog and the volumetric resolution offer their values as allowed
+  values. The sky's "texture_resolution" does the same.
+- The volumetric handler (`0x456C10`) moves the old `fog_start_dist` and
+  `fog_end_dist` into the atmosphere's distances. Before revision 2 it ends
+  the fog at the far plane. Before revision 1 it copies `resolution` into
+  every level.
+- The volumetric builder makes the default height density
+  (`gDefaultHeightDensity`, `0x1A76020`) a type-2 waveform. Its inlined
+  keys (0, 1) and (1, 1) are not reconstructed: the key tracks are not
+  modelled.
+- SSAO's per-level `enabled` help repeats CMAA's text, as in the binary.
 
 ## Atmosphere, fog and sky
 

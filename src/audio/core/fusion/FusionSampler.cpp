@@ -445,9 +445,9 @@ void FusionSampler::_ProcessNoteOn(unsigned char note, unsigned char velocity, b
     }
     if (mPatchCom != nullptr) {
         signed char* lastZones = noteOn ? mLastNoteOnZones : mLastNoteOffZones;
-        int numZones = static_cast<int>(mPatchCom->mNumKeyzones);
+        int numZones = static_cast<int>(mPatchCom->mKeyzones.size());
         if (numZones > 0) {
-            const FusionPatchCom::KeyzoneSettings* zones = mPatchCom->mKeyzones;
+            const FusionPatchCom::KeyzoneSettings* zones = mPatchCom->mKeyzones.data();
             unsigned char key = static_cast<unsigned char>(note + mTranspose);
             unsigned short candidates[128];
             int numCandidates = 0;
@@ -511,12 +511,12 @@ int FusionSampler::_FindKeyzones(
     unsigned char key,
     unsigned char velocity,
     bool noteOn,
-    const FusionKeyzoneArray& keyzones,
+    const PropArray<FusionPatchCom::KeyzoneSettings>& keyzones,
     unsigned short* indices) {
     int count = 0;
-    int numZones = static_cast<int>(keyzones.mSize);
+    int numZones = static_cast<int>(keyzones.size());
     for (int i = 0; i < numZones; ++i) {
-        const FusionPatchCom::KeyzoneSettings& zone = keyzones.mData[i];
+        const FusionPatchCom::KeyzoneSettings& zone = keyzones[i];
         if (!zone.mSample || !zone.ContainsNoteAndVelocity(key, velocity) || noteOn != !zone.mTriggerOnNoteOff) {
             continue;
         }
@@ -624,7 +624,7 @@ void FusionSampler::LoadPatch(const ResourcePtr<FusionPatchResource>& patch) {
 // Reconstructed from eboot.elf at 0x987E0. The patch component is not
 // checked. Only the filter's type, switch, frequency and Q are taken.
 void FusionSampler::_LoadPreset() {
-    unsigned long lastPreset = static_cast<unsigned long>(mPatchCom->mNumPresets) - 1;
+    unsigned long lastPreset = static_cast<unsigned long>(mPatchCom->mPresets.size()) - 1;
     if (mPresetIndex > lastPreset) {
         mPresetIndex = lastPreset;
     }

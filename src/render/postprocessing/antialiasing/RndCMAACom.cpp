@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <new>
 
+#include "entity/props/PropMetadata.h"
 #include "math/color/Color.h"
 #include "render/buffers/RndCShaderClearBuffer.h"
 #include "render/context/RndContext.h"
@@ -16,6 +17,7 @@
 #include "render/postprocessing/antialiasing/RndCShaderCMAAEdgePrune.h"
 #include "render/postprocessing/antialiasing/RndCShaderCMAAFinalProcess.h"
 #include "render/postprocessing/antialiasing/RndCShaderCMAAShapeFit.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
@@ -77,6 +79,81 @@ RndCMAACom::RndCMAACom()
 // Reconstructed from eboot.elf at 0x44EA50. The deleting destructor is at
 // 0x44EB20.
 RndCMAACom::~RndCMAACom() {}
+
+// Reconstructed from eboot.elf at 0x44EBB0. Each quality level's settings
+// are summarized by the level's name; revision 1 gives components saved
+// before it the three quality levels. The binary emits the struct
+// registration at 0x44F260.
+void RndCMAACom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<QualitySettings>(Symbol("RndCMAACom::QualitySettings"));
+    metadata.mDescription = "Performs anti aliasing on the scene.";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    RndCMAACom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    PropInfo& quality = registry.RegisterPropArray(
+        "quality_settings", offsetof(RndCMAACom, mQualitySettings), sizeof(PropArray<QualitySettings>));
+    ArrayMetadata& qualityMetadata = static_cast<ArrayMetadata&>(*quality.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    qualityMetadata.mFixedSize = true;
+    qualityMetadata.mAnimatable = false;
+    PropRegistry::RegisterPropArrayItem(quality, kPropertyStruct, sizeof(QualitySettings));
+    GroupMetadata& level = static_cast<GroupMetadata&>(*qualityMetadata.mItemInfo.mMetadata.Get());
+    static_cast<void>(Symbol("struct_item"));
+    const QualitySettings levelPrototype;
+    level.mSummary._Set([](const TagArgs& args) {
+        return String(RndQualityLevelName(static_cast<RndQualityLevel>(args.mPath[-1].mValue)));
+    });
+    PropRegistry& levelRegistry = level.mRegistry;
+
+    BoolMetadata& levelEnabled = TypeSpecificMetadata(
+        levelRegistry.RegisterProp("enabled", offsetof(QualitySettings, mEnabled), kPropertyBool, 1),
+        levelPrototype.mEnabled);
+    levelEnabled.mDefault = levelPrototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+    levelEnabled.mHelp = String("Is antialiasing enabled at this quality level?");
+
+    FloatMetadata& edgeThreshold = TypeSpecificMetadata(
+        registry.RegisterProp("edge_threshold", offsetof(RndCMAACom, mEdgeThreshold), kPropertyFloat, 4),
+        prototype.mEdgeThreshold);
+    edgeThreshold.mDefault = prototype.mEdgeThreshold;
+    static_cast<void>(Symbol("prop"));
+    edgeThreshold.mHelp = String(
+        "Threshold controlling what is considered an edge. Lower values result in more edges being "
+        "antialiased.");
+    edgeThreshold.mMin = 0.001F;
+    edgeThreshold.mMax = 0.3F;
+    edgeThreshold.mSlider = true;
+
+    FloatMetadata& nonDominant = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "non_dominant_edge_threshold", offsetof(RndCMAACom, mNonDominantEdgeThreshold), kPropertyFloat, 4),
+        prototype.mNonDominantEdgeThreshold);
+    nonDominant.mDefault = prototype.mNonDominantEdgeThreshold;
+    static_cast<void>(Symbol("prop"));
+    nonDominant.mHelp = String(
+        "Threshold controlling what is considered an unimportant edge. Lower values result in more edges "
+        "being antialiased.");
+    nonDominant.mMin = 0.001F;
+    nonDominant.mMax = 0.99F;
+    nonDominant.mSlider = true;
+
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 0) {
+                return;
+            }
+            static_cast<RndCMAACom*>(args.mComponent)->mQualitySettings.Resize(3);
+        };
+    if (&registry == &sPropRegistry) {
+        sPropRegistry.SetCurrentRev(1);
+        sPropRegistry.mRevisionFunc = onRevision;
+    }
+}
 
 // Reconstructed from eboot.elf at 0x44F410.
 void RndCMAACom::_PostCreate() {
@@ -274,4 +351,17 @@ PropRegistry& RndCMAACom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x44FE50.
 ComMetaData& RndCMAACom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x4041B0. The binary emits the factory
+// with the class's Init (0x3EC880); the placement factory at 0x4041E0
+// constructs in given storage.
+Component* RndCMAACom::_Create() {
+    return new RndCMAACom();
+}
+
+// Reconstructed from eboot.elf at 0x3EC880. The binary emits the
+// registration in render/RndInit.o.
+void RndCMAACom::Init() {
+    InitComponentClass<RndCMAACom>();
 }

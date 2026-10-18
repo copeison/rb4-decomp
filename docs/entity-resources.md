@@ -16,7 +16,7 @@ map puts all of this in its `entity` module.
 | `entity/TransEntityResource.o` | `0x1BAAA0`-`0x1BB9F2` | `src/entity/core/TransEntityResource.cpp` |
 | `entity/Entity.o` (part) | `0xEBB70`-`0xF7960` | `src/entity/core/Entity.cpp` |
 | `entity/GameObject.o` (part) | `0x115F60`-`0x117A40` | `src/entity/core/GameObject.cpp` |
-| `entity/TransCom.o` (part) | `0x127730`, `0x1B3A90` | `src/entity/core/TransCom.cpp` |
+| `entity/TransCom.o` (part) | `0x127730`, `0x1AFFB0`-`0x1BAA91` | `src/entity/core/TransCom.cpp` |
 | `entity/EntityConstants.o` | data only | `src/entity/core/EntityConstants.cpp` |
 | `entity/InstanceCom.o` (part) | `0x118DC0`-`0x11BF8F` | `src/entity/core/InstanceCom.cpp` |
 | entity header (not in the map) | `0x1D1E90`-`0x1D8D37` | `src/entity/core/EntityHeaderCom.cpp` |
@@ -196,7 +196,16 @@ options (`copy_on_instance`, `drives_parent`, `static`,
 moves `icon_data` into the resource's root data (`SetIconData`,
 `0x1024C0`) and applies `static` as the TransEntityResource's
 `mSuppressPoll`, asking for one poll (`mPollRequested`). The map's older
-build keeps these properties on `InstanceCom`.
+build keeps these properties on `InstanceCom`. `Init` (`0x112A480`) and
+`_Create` (`0x112DFC0`) are emitted with the other registrations; the
+registry is described in [entity-components.md](entity-components.md).
+
+`TransCom` ("Transform", 128 bytes, vtable `0x18E8AC0`, alias
+"TransCom") overrides slots 0-2, 4, 5, 7-10, 22, 23, 27, 29, 31, 33, 35,
+36 and 38. Slot 27 makes the parent poll first and slot 29 clears a parent
+that names the object itself; the handler (`0x1B47F0`), `_Enter`
+(`0x1B4040`) and `_Poll` (`0x1B4140`) are declared. `Init` (`0x112D830`)
+and `_Create` (`0x112EF60`) are emitted in `entity/Utl.o`.
 
 `InstanceCom` ("Instance", 128 bytes, vtable `0x18E6D58`, 49 slots) loads
 a TransEntityResource from "file" through `ResourceCom<T>` (a

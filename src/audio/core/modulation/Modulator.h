@@ -13,6 +13,10 @@ public:
     // One element of a Fusion patch's "modulators" array. Field names follow
     // the "target", "range" and "depth" properties.
     struct Settings {
+        // No target, range or depth. Inlined into FusionPatchCom's
+        // modulator array (0x85DB0).
+        Settings() : mTarget(ModulatorTarget::kTargetNone), mRange(0.0f), mDepth(0.0f) {}
+
         ModulatorTarget::Target mTarget;
         float mRange;  // The range magnitude, in the target's units.
         float mDepth;

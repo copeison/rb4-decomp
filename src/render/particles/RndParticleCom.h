@@ -432,8 +432,7 @@ public:
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x405B30
     // Registers the class description, the defaults of the waveforms and the
-    // properties. Not reconstructed: the waveform resources and the property
-    // metadata's attributes are not modelled.
+    // properties.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x603850
 
     // The object's statics, in the order of its static initializer

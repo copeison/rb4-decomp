@@ -7,6 +7,7 @@
 #include <new>
 
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
 #include "math/color/Color.h"
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/context/RndContext.h"
@@ -14,6 +15,7 @@
 #include "render/drawing/RndSceneDrawParams.h"
 #include "render/lighting/fog/RndShaderFogDeferred.h"
 #include "render/materials/RndMaterialCom.h"
+#include "render/shaders/RndShaderEnums.h"
 #include "render/shaders/RndShaderDrawUtl.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
@@ -56,6 +58,51 @@ RndFogCom::RndFogCom()
 // 0x451D90.
 RndFogCom::~RndFogCom() {
     RndShaderCBuffer::SafeDelete(mRuntime.mCBuffer);
+}
+
+// Reconstructed from eboot.elf at 0x451DD0. The falloff function offers the
+// four RndFalloffFunction values.
+void RndFogCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    _InitAsSuperclass(registry, metadata);
+    metadata.mDescription = "Material-based fog";
+    metadata.mAuthor = "Daniel Sproul";
+    RndFogCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    PropInfo& falloffInfo =
+        registry.RegisterProp("falloff_function", offsetof(RndFogCom, mFalloffFunction), kPropertyInt, 4);
+    IntMetadata<int>& falloff = static_cast<IntMetadata<int>&>(*falloffInfo.mMetadata.Get());
+    falloff.mDefault = prototype.mFalloffFunction;
+    static_cast<void>(Symbol("prop"));
+    falloff.mHelp = String("Controls how a pixel fades into the atmosphere");
+    {
+        eastl::vector<AllowedValue<int>> functions;
+        unsigned int savedTemp;
+        MemPushTemp(savedTemp, true, true);
+        for (int index = 0; index < kNumFalloffFunctions; ++index) {
+            const RndFalloffFunction function = static_cast<RndFalloffFunction>(index);
+            functions.push_back(
+                AllowedValue<int>{index, String(ToString(function)), String(ToDescription(function))});
+        }
+        MemPopTemp(savedTemp);
+        falloff.mAllowedValues = functions;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4522E0.
+void RndAtmosphereCom::_InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.InitSuperclass("RndAtmosphereCom", sMetaData);
+    const ComMetaData::EditorRestriction restrictions =
+        static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions);
+    static const long heap = MemFindHeap("metadata");
+    MemPushHeap(heap);
+    _Init(registry, metadata);
+    MemPopHeap();
+    metadata.mEditorRestrictions = ComMetaData::InheritEditorRestrictions(
+        static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions),
+        restrictions);
 }
 
 // Reconstructed from eboot.elf at 0x452390. The fog blends over the light
@@ -245,4 +292,17 @@ PropRegistry& RndFogCom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x452BC0.
 ComMetaData& RndFogCom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x404340. The binary emits the factory
+// with the class's Init (0x3EDB10); the placement factory at 0x404370
+// constructs in given storage.
+Component* RndFogCom::_Create() {
+    return new RndFogCom();
+}
+
+// Reconstructed from eboot.elf at 0x3EDB10. The binary emits the
+// registration in render/RndInit.o.
+void RndFogCom::Init() {
+    InitComponentClass<RndFogCom>();
 }

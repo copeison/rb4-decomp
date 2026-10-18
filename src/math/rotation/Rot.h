@@ -17,3 +17,6 @@ bool IsVertical(const Hmx::Matrix3& matrix);  // 0x215BC0
 // come from the interpolated table (Sine), otherwise from the C library.
 // Not reconstructed.
 void MakeRotMatrix(const Vector3& euler, Hmx::Matrix3& matrix, bool useTable);  // 0x217090
+// The Euler angles, in radians, and the row lengths of a scaled rotation.
+// Not reconstructed.
+void MakeEulerScale(const Hmx::Matrix3& matrix, Vector3& euler, Vector3& scale);  // 0x215EE0

@@ -333,8 +333,7 @@ public:
 };
 
 // The game-wide emitter names as allowed values for "emitter_name", read
-// under sNamedEmittersLock. At 0x358E0. Name not in the reference map. Not
-// reconstructed.
+// under sNamedEmittersLock. At 0x358E0. Name not in the reference map.
 eastl::vector<AllowedValue<Symbol>> GetGameWideEmitterNameValues();
 
 // Adds an empty entry for the emitter name to AudioEmitterCom::

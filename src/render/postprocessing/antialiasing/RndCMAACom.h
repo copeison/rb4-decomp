@@ -68,9 +68,13 @@ public:
         RndBufferCollection& buffers,
         const RndSceneDrawTarget& target);  // 0x44F430
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3EC880
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x4041B0
     // Describes the class and registers "quality_settings",
-    // "edge_threshold" and "non_dominant_edge_threshold". Not
-    // reconstructed: the property metadata it fills is not modelled.
+    // "edge_threshold" and "non_dominant_edge_threshold", with the
+    // settings' summary (0x4501F0) and the revision 1 handler (0x450330).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x44EBB0

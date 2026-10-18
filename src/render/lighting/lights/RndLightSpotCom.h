@@ -249,8 +249,9 @@ public:
     static void Init();  // 0x3F08C0
     // The class factory.
     static Component* _Create();
-    // Not reconstructed: the property metadata and the std::function
-    // handlers (0x4A6FD0-0x4A85FF) are not modelled.
+    // Builds the registry on RndLightCom's: the falloffs, the cone, the
+    // "shadows" group, the cookie and "intensity_calculator", with the
+    // handlers at 0x4A7030-0x4A7240.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x49F9A0
 
     // The object's statics, constructed by the static initializer before
@@ -274,7 +275,8 @@ public:
     bool mCastsShadows;
     PropArray<ShadowQualitySettings> mQualitySettings;
     bool mOnlyFlaggedObjects;
-    std::int32_t mCastContext;
+    // "cast_context" flags: 1 volumetrics, 2 geometry.
+    unsigned int mCastContext;
     // Returned by RndDefaults::GetLightingShadowOffset.
     float mShadowOffset;
     float mShadowSoftnessMin;

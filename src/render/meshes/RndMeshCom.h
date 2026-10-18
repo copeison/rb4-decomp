@@ -109,13 +109,13 @@ public:
     // render transform. The map's signature starts with an ObjPtr const&.
     void _PollSkinnedSphere();  // 0x5CA020
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F7420
     // The class factory. Emitted with the renderer's component
     // registration at 0x405690.
     static Component* _Create();
     // Registers the properties, the mesh utilities and the class
-    // description (100 KB). Not reconstructed: the property metadata's
-    // attributes and actions are written through helpers that are not
-    // modelled.
+    // description.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x5C3660
 
     static Symbol sId;          // 0x1AA5DE0, "Mesh"

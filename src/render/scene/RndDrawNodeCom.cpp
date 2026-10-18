@@ -1,6 +1,5 @@
 // render/RndDrawNodeCom.o (0x6C3D40 to 0x6C944F). The object also emits
-// the registry's property callbacks (0x6C8CA0 to 0x6C8DBA) and the functor
-// classes of _Init (0x6C8DC0 to 0x6C9370), which stay with _Init, and an
+// the functor classes of _Init's lambdas (0x6C8DC0 to 0x6C9370) and an
 // unreferenced copy of _Exit's body at 0x6C7370.
 #include "render/scene/RndDrawNodeCom.h"
 
@@ -13,7 +12,11 @@
 #include "entity/core/EntityHeaderCom.h"
 #include "entity/core/InstanceCom.h"
 #include "entity/core/TransCom.h"
+#include "entity/core/TransEntityResource.h"
+#include "entity/props/PropMetadata.h"
 #include "entity/props/PropRegistry.h"
+#include "math/geometry/Plane.h"
+#include "os/memory/MemMgr.h"
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/lighting/lights/RndLightCom.h"
 #include "render/lighting/lights/RndLightEnvironCom.h"
@@ -112,6 +115,83 @@ RndDrawNodeCom* GetRootDrawNode(const Entity* entity) {
     return entity->GetRoot()->GetCom<RndDrawNodeCom>();
 }
 
+// The show/hide bits "show_hide_flags" does not list: hidden (edited as
+// "showing"), hidden from selection, show nothing, and the two selection
+// bits. Name not in the reference map.
+constexpr unsigned int kUnlistedShowHideFlags = 0xCC1;
+
+// The allowed values of a show/hide flags property: each bit from 1 to
+// 0x800 not in `excluded`, with its label and help, built under the
+// temporary heap. Inlined into _Init three times. Name not in the
+// reference map.
+eastl::vector<AllowedValue<unsigned int>> ShowHideFlagValues(unsigned int excluded) {
+    eastl::vector<AllowedValue<unsigned int>> values;
+    unsigned int temp;
+    MemPushTemp(temp, true, true);
+    unsigned int flag = 1;
+    do {
+        if ((flag & excluded) == 0) {
+            values.push_back(AllowedValue<unsigned int>{
+                flag,
+                String(GetShowHideFlagName(static_cast<int>(flag))),
+                String(GetShowHideFlagHelp(static_cast<int>(flag)))});
+        }
+        flag <<= 1;
+    } while ((flag & 0xFFE) != 0);
+    MemPopTemp(temp);
+    return values;
+}
+
+// Registers the float members "x", "y" and "z" of a Vector3 struct
+// property. Name not in the reference map.
+void RegisterVector3Members(PropRegistry& registry, const Vector3& value) {
+    TypeSpecificMetadata(registry.RegisterProp("x", offsetof(Vector3, x), kPropertyFloat, 4), value.x)
+        .mDefault = value.x;
+    TypeSpecificMetadata(registry.RegisterProp("y", offsetof(Vector3, y), kPropertyFloat, 4), value.y)
+        .mDefault = value.y;
+    TypeSpecificMetadata(registry.RegisterProp("z", offsetof(Vector3, z), kPropertyFloat, 4), value.z)
+        .mDefault = value.z;
+}
+
+// Registers a Sphere struct property's "center", a Vector3 struct with
+// zero defaults, and "radius". Inlined into _Init for "local_sphere" and
+// "world_sphere". Name not in the reference map.
+void RegisterSphereMembers(PropRegistry& registry, const Sphere& value) {
+    GroupMetadata& center = static_cast<GroupMetadata&>(
+        *registry.RegisterProp("center", offsetof(Sphere, center), kPropertyStruct, sizeof(Vector3))
+             .mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    const Vector3 centerType = {0.0F, 0.0F, 0.0F};
+    // The struct registrations set this word; its reader is not identified.
+    center.mKind = 1;
+    RegisterVector3Members(center.mRegistry, centerType);
+    TypeSpecificMetadata(registry.RegisterProp("radius", offsetof(Sphere, radius), kPropertyFloat, 4), value.radius)
+        .mDefault = value.radius;
+}
+
+// Registers the float members "a" to "d" of a Plane struct property.
+// Inlined into _Init for the world clip planes. Name not in the reference
+// map.
+void RegisterPlaneMembers(PropRegistry& registry, const Plane& value) {
+    TypeSpecificMetadata(registry.RegisterProp("a", offsetof(Plane, a), kPropertyFloat, 4), value.a)
+        .mDefault = value.a;
+    TypeSpecificMetadata(registry.RegisterProp("b", offsetof(Plane, b), kPropertyFloat, 4), value.b)
+        .mDefault = value.b;
+    TypeSpecificMetadata(registry.RegisterProp("c", offsetof(Plane, c), kPropertyFloat, 4), value.c)
+        .mDefault = value.c;
+    TypeSpecificMetadata(registry.RegisterProp("d", offsetof(Plane, d), kPropertyFloat, 4), value.d)
+        .mDefault = value.d;
+}
+
+// The property callbacks _Init installs (0x6C8CA0 to 0x6C8DB0). Names not
+// in the reference map.
+bool GetShowing(const PropAccessorArgs& args);
+void SetShowing(const PropAccessorArgs& args);
+void OnNestedLightEnvironmentChanged(const PropAccessorArgs& args);
+void RemoveNestedLightEnvironment(const PropAccessorArgs& args);
+void OnSphereRadiusMultChanged(const PropAccessorArgs& args);
+bool GetWorldShowing(const PropAccessorArgs& args);
+
 }  // namespace
 
 // The object's statics, in the order of its static initializer (0x6C9380).
@@ -165,6 +245,244 @@ RndDrawNodeCom::~RndDrawNodeCom() {}
 // Reconstructed from eboot.elf at 0x6C3FE0.
 void RndDrawNodeCom::SetLocalSphereFromWorld(const Sphere& worldSphere) {
     SetLocalSphere(MultiplyMinScale(worldSphere, mRuntime.mInvWorldXfm));
+}
+
+// Reconstructed from eboot.elf at 0x6C4060. Revision 1 data takes the
+// scene's default environment, and the upgrades to revisions 2 and 3 move
+// the show/hide bits up as flags were inserted. "showing" and
+// "world_showing" are views of bit 0; the runtime properties are read-only
+// debug properties that are not saved. "environment" shows only in a
+// scene, and "nested_light_environments" only for an instancing object in
+// a scene; it is read-only unless the instanced entities hold lights.
+void RndDrawNodeCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mDescription =
+        "Holds hierarchical drawing-related info (bounding volume, environment, show/hide flags)";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    metadata.mAllowedResources.push_back(TransEntityResource::Id());
+    metadata.mLightweight = true;
+    metadata.mAliases.push_back(Symbol("RndDrawNodeCom"));
+    RndDrawNodeCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            RndDrawNodeCom* const node = static_cast<RndDrawNodeCom*>(args.mComponent);
+            const int rev = args.mSavedRev;
+            if (rev < 1) {
+                node->mRuntime.mUseDefaultEnviron = true;
+            }
+            if (rev < 2) {
+                node->mShowHideFlags = (node->mShowHideFlags & ~0x38U) | ((node->mShowHideFlags << 1) & 0x70);
+            }
+            if (rev < 3) {
+                node->mShowHideFlags = (node->mShowHideFlags & ~0x70U) | ((node->mShowHideFlags & 0x70) << 1);
+                node->mShowHideFlags = (node->mShowHideFlags & ~0xFEU) | ((node->mShowHideFlags << 2) & 0x3F8);
+            }
+        };
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry == &own) {
+        own.SetCurrentRev(4);
+        own.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    const bool showingType = false;
+    BoolMetadata& showing = TypeSpecificMetadata(registry.RegisterProp("showing", -1, kPropertyBool, 0), showingType);
+    static_cast<void>(Symbol("prop"));
+    showing.mGetter = GetShowing;
+    showing.mSetter = SetShowing;
+    showing.mSaves = false;
+    showing.mDefault = true;
+
+    IntMetadata<unsigned int>& flags = TypeSpecificMetadata(
+        registry.RegisterProp("show_hide_flags", offsetof(RndDrawNodeCom, mShowHideFlags), kPropertyUInt, 4),
+        prototype.mShowHideFlags);
+    flags.mDefault = prototype.mShowHideFlags;
+    static_cast<void>(Symbol("prop"));
+    flags.mBitfield = true;
+    flags.mAllowedValues = ShowHideFlagValues(kUnlistedShowHideFlags);
+
+    IntMetadata<int>& inheritFrom = static_cast<IntMetadata<int>&>(*registry.RegisterProp(
+        "inherit_from", offsetof(RndDrawNodeCom, mInheritFrom), kPropertyInt, 4).mMetadata.Get());
+    inheritFrom.mDefault = prototype.mInheritFrom;
+    static_cast<void>(Symbol("prop"));
+    inheritFrom.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        AllowedValue<int>{
+            kInheritTransformParent,
+            String("Transform Parent"),
+            String("Will inherit show/hide state and clip planes from my immediate Transform parent")},
+        AllowedValue<int>{
+            kInheritEntityRoot,
+            String("Entity Root"),
+            String("Will inherit show/hide state and clip planes from my entity root")}};
+    inheritFrom.mAnimatable = false;
+
+    GameObjectIdMetadata& environment = TypeSpecificMetadata(
+        registry.RegisterProp("environment", offsetof(RndDrawNodeCom, mEnvironment), kPropertyGameObjectId, 4),
+        prototype.mEnvironment);
+    environment.mDefault = prototype.mEnvironment;
+    static_cast<void>(Symbol("prop"));
+    environment.mHelp = String("Which environment does this object receive light from?");
+    environment.mRequiredComs = {RndLightEnvironCom::sId};
+    environment.mIsHidden._Set([](const TagArgs& args) {
+        return args.mComponent.mObject->mEntity->GetRoot()->GetCom<RndSceneCom>() == nullptr;
+    });
+
+    PropInfo& nested = registry.RegisterPropArray(
+        "nested_light_environments",
+        offsetof(RndDrawNodeCom, mNestedLightEnvironments),
+        sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& nestedMetadata = static_cast<ArrayMetadata&>(*nested.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    nestedMetadata.mHelp = String("Which environments do lights contained in this instance contribute light to?");
+    PropRegistry::RegisterPropArrayItem(nested, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId environType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& nestedEnviron = TypeSpecificMetadata(nestedMetadata.mItemInfo, environType);
+    static_cast<void>(Symbol("item"));
+    nestedEnviron.mRequiredComs = {RndLightEnvironCom::sId};
+    nestedEnviron.mAllowsDuplicates = false;
+    nestedEnviron.mAllowsNull = false;
+    nestedEnviron.mOnChanged = OnNestedLightEnvironmentChanged;
+    // The hook that replaces the default removal of an element
+    // (_RemoveProp, 0x199300).
+    nestedMetadata.mHook2 = reinterpret_cast<void*>(RemoveNestedLightEnvironment);
+    nestedMetadata.mIsHidden._Set([](const TagArgs& args) {
+        const GameObject* const object = args.mComponent.mObject;
+        if (object->mEntity->GetRoot()->GetCom<RndSceneCom>() == nullptr) {
+            return true;
+        }
+        return FindInstanceCom(object) == nullptr;
+    });
+    nestedMetadata.mReadOnly._Set([](const TagArgs& args) {
+        const RndDrawNodeCom& node = static_cast<const RndDrawNodeCom&>(args.mComponent);
+        Component* const instance = FindInstanceCom(node.mObject);
+        if (instance == nullptr) {
+            return true;
+        }
+        return !node._ContainsNestedLightsRecur(*instance);
+    });
+
+    GroupMetadata& localSphere = static_cast<GroupMetadata&>(*registry.RegisterProp(
+        "local_sphere", offsetof(RndDrawNodeCom, mLocalSphere), kPropertyStruct, sizeof(Sphere))
+        .mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    const Sphere localSphereType = {};
+    localSphere.mReadOnly = true;
+    localSphere.mHelp = String("Local bounding sphere");
+    RegisterSphereMembers(localSphere.mRegistry, localSphereType);
+
+    FloatMetadata& radiusMult = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "sphere_radius_mult", offsetof(RndDrawNodeCom, mSphereRadiusMult), kPropertyFloat, 4),
+        prototype.mSphereRadiusMult);
+    radiusMult.mDefault = prototype.mSphereRadiusMult;
+    static_cast<void>(Symbol("prop"));
+    radiusMult.mMin = 0.01F;
+    radiusMult.mOnChanged = OnSphereRadiusMultChanged;
+
+    IntMetadata<unsigned int>& editorFlags = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "editor_show_hide_flags",
+            offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mEditorShowHideFlags),
+            kPropertyUInt,
+            4),
+        prototype.mRuntime.mEditorShowHideFlags);
+    editorFlags.mDefault = prototype.mRuntime.mEditorShowHideFlags;
+    static_cast<void>(Symbol("prop"));
+    editorFlags.mReadOnly = true;
+    editorFlags.mDebug = true;
+    editorFlags.mSaves = false;
+    editorFlags.mBitfield = true;
+    editorFlags.mAllowedValues = ShowHideFlagValues(0);
+
+    const bool worldShowingType = false;
+    BoolMetadata& worldShowing =
+        TypeSpecificMetadata(registry.RegisterProp("world_showing", -1, kPropertyBool, 0), worldShowingType);
+    static_cast<void>(Symbol("prop"));
+    worldShowing.mReadOnly = true;
+    worldShowing.mDebug = true;
+    worldShowing.mGetter = GetWorldShowing;
+
+    IntMetadata<unsigned int>& worldFlags = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "world_show_hide_flags",
+            offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mWorldShowHideFlags),
+            kPropertyUInt,
+            4),
+        prototype.mRuntime.mWorldShowHideFlags);
+    worldFlags.mDefault = prototype.mRuntime.mWorldShowHideFlags;
+    static_cast<void>(Symbol("prop"));
+    worldFlags.mReadOnly = true;
+    worldFlags.mDebug = true;
+    worldFlags.mSaves = false;
+    worldFlags.mBitfield = true;
+    worldFlags.mAllowedValues = ShowHideFlagValues(0);
+
+    IntMetadata<int>& environIndex = static_cast<IntMetadata<int>&>(*registry.RegisterProp(
+        "environ_index",
+        offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mEnvironIndex),
+        kPropertyInt,
+        4).mMetadata.Get());
+    environIndex.mDefault = prototype.mRuntime.mEnvironIndex;
+    static_cast<void>(Symbol("prop"));
+    environIndex.mReadOnly = true;
+    environIndex.mDebug = true;
+    environIndex.mSaves = false;
+
+    GroupMetadata& worldSphere = static_cast<GroupMetadata&>(*registry.RegisterProp(
+        "world_sphere",
+        offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mWorldSphere),
+        kPropertyStruct,
+        sizeof(Sphere)).mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    const Sphere worldSphereType = {};
+    worldSphere.mHelp = String("World bounding sphere (dynamically updated at runtime)");
+    worldSphere.mReadOnly = true;
+    worldSphere.mDebug = true;
+    worldSphere.mSaves = false;
+    RegisterSphereMembers(worldSphere.mRegistry, worldSphereType);
+
+    GameObjectIdMetadata& clipPlane0 = TypeSpecificMetadata(
+        registry.RegisterProp("clip_plane_0", offsetof(RndDrawNodeCom, mClipPlanes), kPropertyGameObjectId, 4),
+        prototype.mClipPlanes[0]);
+    clipPlane0.mDefault = prototype.mClipPlanes[0];
+    static_cast<void>(Symbol("prop"));
+    clipPlane0.mHelp =
+        String("If specified, this object and its children will clip based on the target transform's Z-axis");
+    GameObjectIdMetadata& clipPlane1 = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "clip_plane_1", offsetof(RndDrawNodeCom, mClipPlanes) + sizeof(GameObjectId), kPropertyGameObjectId, 4),
+        prototype.mClipPlanes[1]);
+    clipPlane1.mDefault = prototype.mClipPlanes[1];
+    static_cast<void>(Symbol("prop"));
+    clipPlane1.mHelp =
+        String("If specified, this object and its children will clip based on the target transform's Z-axis");
+
+    GroupMetadata& worldClipPlane0 = static_cast<GroupMetadata&>(*registry.RegisterProp(
+        "world_clip_plane_0",
+        offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mWorldClipPlanes),
+        kPropertyStruct,
+        sizeof(Plane)).mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    const Plane plane0Type;
+    worldClipPlane0.mKind = 1;
+    worldClipPlane0.mDebug = true;
+    worldClipPlane0.mReadOnly = true;
+    worldClipPlane0.mSaves = false;
+    RegisterPlaneMembers(worldClipPlane0.mRegistry, plane0Type);
+
+    GroupMetadata& worldClipPlane1 = static_cast<GroupMetadata&>(*registry.RegisterProp(
+        "world_clip_plane_1",
+        offsetof(RndDrawNodeCom, mRuntime) + offsetof(RuntimeData, mWorldClipPlanes) + sizeof(Vector4),
+        kPropertyStruct,
+        sizeof(Plane)).mMetadata.Get());
+    static_cast<void>(Symbol("struct"));
+    const Plane plane1Type;
+    worldClipPlane1.mKind = 1;
+    worldClipPlane1.mDebug = true;
+    worldClipPlane1.mReadOnly = true;
+    worldClipPlane1.mSaves = false;
+    RegisterPlaneMembers(worldClipPlane1.mRegistry, plane1Type);
 }
 
 // Reconstructed from eboot.elf at 0x6C5C80.
@@ -688,6 +1006,55 @@ PropRegistry& RndDrawNodeCom::_GetPropRegistry() {
 ComMetaData& RndDrawNodeCom::_GetMetaData() {
     return sMetaData;
 }
+
+namespace {
+
+// Reconstructed from eboot.elf at 0x6C8CA0.
+bool GetShowing(const PropAccessorArgs& args) {
+    return (static_cast<RndDrawNodeCom*>(args.mComponent)->mShowHideFlags & RndDrawNodeCom::kHidden) == 0;
+}
+
+// Reconstructed from eboot.elf at 0x6C8CB0.
+void SetShowing(const PropAccessorArgs& args) {
+    RndDrawNodeCom* const node = static_cast<RndDrawNodeCom*>(args.mComponent);
+    const unsigned int flags = node->mShowHideFlags;
+    node->mShowHideFlags = *static_cast<const bool*>(args.mValue) ? flags & ~RndDrawNodeCom::kHidden
+                                                                  : flags | RndDrawNodeCom::kHidden;
+}
+
+// Reconstructed from eboot.elf at 0x6C8CD0.
+void OnNestedLightEnvironmentChanged(const PropAccessorArgs& args) {
+    static_cast<RndDrawNodeCom*>(args.mComponent)->mRuntime.mNestedLightEnvironsDirty = true;
+}
+
+// Reconstructed from eboot.elf at 0x6C8CE0. Removes the element the path's
+// last index names, as the default removal does, and marks the nested
+// lights for re-registration.
+void RemoveNestedLightEnvironment(const PropAccessorArgs& args) {
+    RndDrawNodeCom* const node = static_cast<RndDrawNodeCom*>(args.mComponent);
+    PropArrayBase& environs = node->mNestedLightEnvironments;
+    const unsigned long index = (*static_cast<const PropPath*>(args.mPath))[-1].mValue;
+    environs.Destruct(1, environs.ElementAt(index));
+    const unsigned int last = environs.mSize - 1;
+    if (static_cast<unsigned int>(index) < last) {
+        environs.Move(last - index, environs.ElementAt(index), environs.ElementAt(index + 1));
+    }
+    environs.mSize = last;
+    node->mRuntime.mNestedLightEnvironsDirty = true;
+}
+
+// Reconstructed from eboot.elf at 0x6C8DA0.
+void OnSphereRadiusMultChanged(const PropAccessorArgs& args) {
+    static_cast<RndDrawNodeCom*>(args.mComponent)->mRuntime.mLocalSphereDirty = true;
+}
+
+// Reconstructed from eboot.elf at 0x6C8DB0.
+bool GetWorldShowing(const PropAccessorArgs& args) {
+    return (static_cast<RndDrawNodeCom*>(args.mComponent)->mRuntime.mWorldShowHideFlags &
+            RndDrawNodeCom::kHidden) == 0;
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x404430. The binary emits the factory
 // with the other render factories.

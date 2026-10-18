@@ -53,6 +53,17 @@ public:
         mNodes[0] = (node = name);
         mSize = 1;
     }
+    // A path of the given nodes; the trailing nodes default to unused ones,
+    // which end the path.
+    PropPath(
+        const Node& node0,
+        const Node& node1,
+        const Node& node2 = Node(),
+        const Node& node3 = Node(),
+        const Node& node4 = Node(),
+        const Node& node5 = Node(),
+        const Node& node6 = Node(),
+        const Node& node7 = Node());  // 0x17E8B0
 
     // Sets the path from the message's nodes from `start` on: symbols name
     // members and integers index arrays.

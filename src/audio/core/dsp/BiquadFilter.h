@@ -2,6 +2,11 @@
 
 #include <cstddef>
 
+#include "utl/containers/Vector.h"
+
+template <class T>
+struct AllowedValue;
+
 // Two-pole, two-zero filter (audio/BiquadFilter.o). The map's object holds
 // only the Coefs and Settings members; the filter itself is inline. Only what
 // FusionVoice uses is declared. The object is 208 bytes.
@@ -25,6 +30,9 @@ public:
         // Inlined into FusionVoice's constructor at 0x9D920 and
         // FusionSampler's at 0x95C40.
         Settings() : mType(kTypeLowPass), mEnabled(false), mFrequency(630.0f), mQ(1.0f), mGain(0.0f) {}
+
+        // The "type" values with their names and help. At 0xD8D60.
+        static eastl::vector<AllowedValue<signed char>> GetAllowedTypeValues();
 
         Type mType;
         bool mEnabled;

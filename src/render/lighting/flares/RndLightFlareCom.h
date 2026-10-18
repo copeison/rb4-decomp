@@ -206,10 +206,12 @@ public:
     // factories.
     static Component* _Create();
 
-    // Registers the class description and the properties, with handlers
-    // that convert "angle" (degrees) to "angle_radians" (0x47D880,
-    // 0x47D8A0). Not reconstructed: the property metadata and the
-    // std::function handlers are not modelled.
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F7040
+    // Registers the class description and the properties, with the
+    // accessors that show "angle_radians" as "angle" in degrees (0x47D880,
+    // 0x47D8A0), the read-only tags (0x47E090-0x47E430) and the revision 2
+    // handler (0x47DBA0).
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x47A780

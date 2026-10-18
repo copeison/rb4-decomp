@@ -12,6 +12,8 @@ class Waveform;
 enum RndDefaultTextureType : int;
 // The engine's texture wrap modes; the enumerators are not recovered.
 enum RndTexWrapMode : int;
+// The engine's texture filter modes; the enumerators are not recovered.
+enum RndTexFilterMode : int;
 
 // Texture helpers shared by the renderer.
 class RndTextureUtl {
@@ -39,4 +41,14 @@ public:
         const Waveform<float>& waveform,
         RndTexWrapMode wrap,
         Vector2i size);  // 0x6AF510
+
+    // The editor label and help of a wrap mode ("Default", "Clamp",
+    // "Repeat", "Border (Zero)", "Border (White)", "Mirror"), or null past
+    // them.
+    static const char* GetWrapModeName(RndTexWrapMode mode);  // 0x6ACB70
+    static const char* GetWrapModeHelp(RndTexWrapMode mode);  // 0x6ACC40
+    // The same for a filter mode ("Default", "Point", "Bilinear",
+    // "Trilinear" and the four anisotropic levels).
+    static const char* GetFilterModeName(RndTexFilterMode mode);  // 0x6ACC60
+    static const char* GetFilterModeHelp(RndTexFilterMode mode);  // 0x6ACD90
 };

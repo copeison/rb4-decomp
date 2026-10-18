@@ -107,11 +107,16 @@ public:
     // not modelled. Name not in the reference map.
     void _SyncMaskingScenes();  // 0x436710
 
+    // Registers the class (InitComponentClass), emitted in
+    // render/RndInit.o.
+    static void Init();  // 0x3F2800
+    // The class factory, emitted in render/RndInit.o.
+    static Component* _Create();  // 0x404C10
     // Registers "draw_order", "unique_resource", "use_threaded_poll",
     // "reenter_shared_children", "projection_offset", "projection_rect",
     // "masked_by_scenes", "masked_by_dynamic_scenes" and
-    // "disable_load_tag" after InstanceCom's. Not reconstructed: the
-    // property metadata and its handlers are not modelled.
+    // "disable_load_tag" after InstanceCom's, and gives the file property
+    // the scene resource class.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x436AB0
 
     static Symbol sId;  // 0x1A72AD8, "SceneInstance"

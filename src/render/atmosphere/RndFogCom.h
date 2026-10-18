@@ -88,9 +88,12 @@ public:
     // RndAtmosphereCom.
     void _SyncFalloffParams();  // 0x452820
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3EDB10
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x404340
     // Describes the class and registers "falloff_function" after
-    // RndAtmosphereCom::_InitAsSuperclass. Not reconstructed: the property
-    // metadata it fills is not modelled.
+    // RndAtmosphereCom::_InitAsSuperclass.
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x451DD0

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include "entity/core/Component.h"
 #include "utl/text/Symbol.h"
 
@@ -13,4 +15,11 @@ public:
     // The class symbol GameObject::CreateComponent takes. Name not in the
     // reference map.
     static Symbol sClassName;  // 0x19FB698
+
+    // "default_timeline": the TimeUnits the state graphs' transitions use
+    // when they ask for the driver's (StateGraphInstance::ResolveTimeUnits).
+    // Name not in the reference map.
+    int mDefaultTimeline;
 };
+
+static_assert(offsetof(AnimDriverCom, mDefaultTimeline) == 24);

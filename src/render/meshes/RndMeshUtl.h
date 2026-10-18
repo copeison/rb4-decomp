@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+#include "math/color/Color.h"
+#include "math/geometry/Geo.h"
 #include "math/geometry/Sphere.h"
 #include "math/geometry/TruncatedRoundedCone.h"
 #include "math/vector/Vector2.h"
@@ -10,6 +12,8 @@
 #include "utl/containers/Vector.h"
 
 class RndMesh;
+class RndMeshCom;
+class RndSplineCom;
 class Transform;
 
 // Procedural mesh builders. Each Create function makes a mesh through the
@@ -315,5 +319,99 @@ RndMesh* CreateTruncatedRoundedCone(
 void _GenerateTruncatedRoundedConeContour(
     const CreateTruncatedRoundedConeParams& params,
     eastl::vector<ContourVertex>& contour);  // 0x5E0C90
+
+// A triangle with a color per corner. The map names the type; field names are
+// not in the reference map.
+struct CreateTriangleParams : public CreateMeshParams {
+    // Reconstructed from eboot.elf at 0x5CA890, emitted in RndMeshCom.o for
+    // the mesh utilities. A unit-high triangle on the x axis: (0.5, 0, 0),
+    // (0, 1, 0) and (-0.5, 0, 0), white at every corner; the colors are
+    // first built as opaque black.
+    CreateTriangleParams()
+        : mPoints{{0.5F, 0.0F, 0.0F}, {0.0F, 1.0F, 0.0F}, {-0.5F, 0.0F, 0.0F}},
+          mColors{
+              Hmx::Color(0.0F, 0.0F, 0.0F),
+              Hmx::Color(0.0F, 0.0F, 0.0F),
+              Hmx::Color(0.0F, 0.0F, 0.0F)} {
+        mColors[0] = Hmx::Color::GetWhite();
+        mColors[1] = Hmx::Color::GetWhite();
+        mColors[2] = Hmx::Color::GetWhite();
+    }
+
+    Vector3 mPoints[3];
+    Hmx::Color mColors[3];
+};
+
+static_assert(offsetof(CreateTriangleParams, mPoints) == 36);
+static_assert(offsetof(CreateTriangleParams, mColors) == 72);
+static_assert(sizeof(CreateTriangleParams) == 120);
+
+// A cone along z swept around the axis. The map names the type; field names
+// are not in the reference map.
+struct CreateConeParams : public CreateRadialSurfaceParams {
+    float mRadius;
+    float mHeight;
+    unsigned long mNumHeightSegments;
+};
+
+static_assert(offsetof(CreateConeParams, mRadius) == 72);
+static_assert(offsetof(CreateConeParams, mNumHeightSegments) == 80);
+static_assert(sizeof(CreateConeParams) == 88);
+
+// A torus around z: the ring's radius and the tube's. The map names the type;
+// field names are not in the reference map.
+struct CreateTorusParams : public CreateRadialSurfaceParams {
+    float mPrimaryRadius;
+    float mSecondaryRadius;
+    // Segments around the tube.
+    unsigned long mNumLatitudeSegments;
+};
+
+static_assert(offsetof(CreateTorusParams, mPrimaryRadius) == 72);
+static_assert(offsetof(CreateTorusParams, mNumLatitudeSegments) == 80);
+static_assert(sizeof(CreateTorusParams) == 88);
+
+// The map names the type; field names are not in the reference map.
+struct CreateIcosahedronParams : public CreateMeshParams {
+    float mRadius;
+};
+
+static_assert(offsetof(CreateIcosahedronParams, mRadius) == 36);
+static_assert(sizeof(CreateIcosahedronParams) == 40);
+
+// A fan following a spline's contour. Name and field names not in the
+// reference map.
+struct CreateSplineFanParams : public CreateMeshParams {
+    unsigned long mSectionsPerKnotSpan;
+};
+
+static_assert(offsetof(CreateSplineFanParams, mSectionsPerKnotSpan) == 40);
+static_assert(sizeof(CreateSplineFanParams) == 48);
+
+// What BakeXfm moves into the vertices. The map names the type; the
+// enumerator names follow RndMeshCom's labels.
+enum BakeXfmMode : int {
+    kBakeXfmScale = 0,
+    kBakeXfmRotationAndScale = 1,
+    kBakeXfmFull = 2,
+};
+
+// The builders, transforms and queries RndMeshCom's utilities call. Not
+// reconstructed.
+RndMesh* CreateTriangle(const CreateTriangleParams& params);        // 0x5DAFA0
+RndMesh* CreateCone(const CreateConeParams& params);                // 0x5DF9A0
+RndMesh* CreateTorus(const CreateTorusParams& params);              // 0x5E1450
+RndMesh* CreateIcosahedron(const CreateIcosahedronParams& params);  // 0x5E1830
+// Name not in the reference map.
+RndMesh* CreateSplineFan(const RndSplineCom& spline, const CreateSplineFanParams& params);  // 0x5E28D0
+// Bakes the object's local transform into the mesh. The map's signature is
+// BakeXfm(ObjPtr const&, BakeXfmMode); this build takes the component.
+void BakeXfm(RndMeshCom& com, BakeXfmMode mode);  // 0x5DA870
+// Appends the other component's geometry, moved into this object's space,
+// and deletes the other object when asked. The map's signature is
+// Combine(ObjPtr const&, ObjPtr const&, bool, bool); this build takes the
+// components. The last flag's meaning is not recovered.
+void Combine(RndMeshCom& com, RndMeshCom& other, bool deleteOriginal, bool flag);  // 0x5DAD50
+Box ComputeAABB(const RndMesh& mesh);  // 0x5D8920
 
 }  // namespace RndMeshUtl

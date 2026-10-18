@@ -33,7 +33,7 @@ public:
         kResolutionEighth = 3,
     };
 
-    // Inlined into the class's factory and _Init.
+    // Inlined into the class's factory, Init and _Init.
     RndSkyCom() : mTextureResolution(kResolutionHalf) {}
     // Inlined into _Imprint.
     RndSkyCom(const RndSkyCom& other)
@@ -63,9 +63,12 @@ public:
         RndContext& context,
         const RndSceneBatchContext& batch);  // 0x453640
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F83A0
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x4057D0
     // Describes the class, requires RndMaterialCom and registers
-    // "texture_resolution". Not reconstructed: the property metadata it
-    // fills is not modelled.
+    // "texture_resolution".
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x453060

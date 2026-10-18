@@ -121,7 +121,13 @@ public:
             mData->AddRef();
         }
     }
-    DataArrayPtr(const DataArrayPtr&) = delete;
+    // Shares the other's array. Inline; the property metadata's Dump
+    // overrides return their base's array through it.
+    DataArrayPtr(const DataArrayPtr& other) : mData(other.mData) {
+        if (mData != nullptr) {
+            mData->AddRef();
+        }
+    }
     DataArrayPtr& operator=(const DataArrayPtr&) = delete;
     // Holds a reference to the new array and releases the old one. Inlined
     // into its users, for example SystemInit (0x368000) and

@@ -36,3 +36,20 @@ void DataSetDefaultEntity(Entity* entity) {
     value.mType = kDataObject;
     DataVariable(sEntityVar) = value;
 }
+
+// Reconstructed from eboot.elf at 0x82E00.
+DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1) {
+    auto* array = new DataArray(2);
+    array->Node(0) = node0;
+    array->Node(1) = node1;
+    return array;
+}
+
+// Reconstructed from eboot.elf at 0x83540.
+DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1, const DataNode& node2) {
+    auto* array = new DataArray(3);
+    array->Node(0) = node0;
+    array->Node(1) = node1;
+    array->Node(2) = node2;
+    return array;
+}

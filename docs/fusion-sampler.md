@@ -148,6 +148,45 @@ lock on a master's handle; this build inlines it.
 The other names are weak: `FusionPlayArgs`, `mBusGenerator`,
 `GetPatchNames` (`0x42090`) and `sPatchMapCritSec`.
 
+## FusionPatchCom
+
+`audio/FusionPatchCom.o` (`0x67740` to `0x95C3F`) is reconstructed in
+`src/audio/core/fusion/FusionPatchCom.{h,cpp}`. The component (232 bytes,
+vtable `0x18E2D68`, 41 slots, matched slot for slot) holds the current
+preset index (`+0x18`), the `PropArray`s of `PresetSettings` (`+0x20`,
+392 bytes) and `KeyzoneSettings` (`+0x48`, 120 bytes), two placeholder
+`PropArray<int>`s (`+0x70` with two elements, `+0x98` with four), the
+resource (`+0xC0`) and the loaded samples (`+0xC8`), which the keyzones
+point at without a reference. It overrides the identity slots, `_Imprint`
+(slot 10, `0x85790`; the copy leaves out the resource and the samples)
+and `_OnResourcesLoaded` (slot 29, `0x84320`), which loads each keyzone's
+sample: a `MoggSampleResource` for `.mogg` files, otherwise a
+`WaveResource` (`_LoadSample`, `0x84600`).
+
+`_Init` (`0x68040`) names the struct types (`ADSR::Settings`,
+`LFO::Settings`, `Modulator::Settings`, `KeyzoneSettings`,
+`PresetSettings` and `TrackChannelInfo`, `0x68340`-`0x68BB0`), sets the
+description, revision 1 and calls thirteen builders (`0x68D60` to
+`0x74320`). The editor sees the current preset through properties without
+storage whose accessors (`0x863A0`-`0x897D0`) read and write it and mark the
+resource for reloading (`mFileChangedOnDisk`): the scalars, "adsrs" and
+"lfos" (over the two placeholders), "filter", "portamento", "modulators"
+(over the four), "bitcrusher", "delay", "distortion" and "amp_simulation".
+The seven filters share one registration template. "keyzones" is stored;
+its insert and remove hooks call `AddKeyZone` (`0x84EF0`) and
+`DeleteKeyZone` (`0x85420`), which send `pre_`/`post_create_keyzone` and
+`pre_`/`post_destroy_keyzone` to the resource's entity, and range, sample
+and priority edits send `keyzone_property_changed` (`0x848C0`).
+"preset_options" selects, adds (up to eight), renames and removes presets;
+the hidden "preset_data" registers the presets themselves.
+`TrackChannelInfo` (`MoggResource.o`, 72 bytes) is declared only.
+
+`_LoadFromDTAFile` (`0x76B20`) is reconstructed; `_LoadFromDataArray`
+(`0x76BB0` and its helpers to `0x79990`), `_SaveToDataArray` (`0x79A50`)
+and `_LoadFromSXTFile` (`0x83BB0`) remain declared. Weak: `ArrayMetadata::mHook2` as
+the remove hook, the inserted sample path in `PropAccessorArgs::mOldValue`, `TrackChannelInfo`'s `mIndex`
+and `mAlias`, and the placeholder and helper names.
+
 ## FusionPatchResource
 
 `audio/FusionPatchResource.o` (`0x5B590` to `0x5C282`) is reconstructed in

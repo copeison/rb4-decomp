@@ -8,6 +8,7 @@
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
 #include "math/color/Color.h"
 #include "render/context/RndContext.h"
 #include "render/context/RndResourceBarrier.h"
@@ -16,6 +17,7 @@
 #include "render/materials/RndMaterialCom.h"
 #include "render/materials/RndMaterialRuntimeData.h"
 #include "render/scene/RndSceneCom.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
@@ -32,6 +34,33 @@ ComMetaData RndSkyCom::sMetaData;
 // Reconstructed from eboot.elf at 0x453030. The deleting destructor is at
 // 0x453040.
 RndSkyCom::~RndSkyCom() {}
+
+// Reconstructed from eboot.elf at 0x453060. The sky draws its object's
+// material.
+void RndSkyCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mDescription = "Material-based sky (ie. background color)";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mRequiredComponents.push_back(RndMaterialCom::sClassName);
+    RndSkyCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    PropInfo& resolutionInfo =
+        registry.RegisterProp("texture_resolution", offsetof(RndSkyCom, mTextureResolution), kPropertyInt, 4);
+    IntMetadata<int>& resolution = static_cast<IntMetadata<int>&>(*resolutionInfo.mMetadata.Get());
+    resolution.mDefault = prototype.mTextureResolution;
+    static_cast<void>(Symbol("prop"));
+    resolution.mHelp =
+        String("What size should be used for the sky texture? (relative to the full screen resolution)");
+    resolution.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        {kResolutionFull, String("Full"), String("Full screen resolution")},
+        {kResolutionHalf, String("Half"), String("Half screen resolution")},
+        {kResolutionQuarter, String("Quarter"), String("Quarter screen resolution")},
+        {kResolutionEighth, String("1/8"), String("1/8 screen resolution")},
+    };
+}
 
 // Reconstructed from eboot.elf at 0x453630.
 RndTextureBase* RndSkyCom::GetAtmosphereTexture(
@@ -142,4 +171,17 @@ PropRegistry& RndSkyCom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x453B20.
 ComMetaData& RndSkyCom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x4057D0. The binary emits the factory
+// with the class's Init (0x3F83A0); the placement factory at 0x405800
+// constructs in given storage.
+Component* RndSkyCom::_Create() {
+    return new RndSkyCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F83A0. The binary emits the
+// registration in render/RndInit.o.
+void RndSkyCom::Init() {
+    InitComponentClass<RndSkyCom>();
 }

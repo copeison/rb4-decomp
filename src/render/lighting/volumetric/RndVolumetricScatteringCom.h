@@ -138,12 +138,19 @@ public:
     // blends two baked curves (type 3).
     void _CreateTexture();  // 0x456460
 
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F1BA0
+    // The class factory, emitted with Init.
+    static Component* _Create();  // 0x404890
     // Describes the class and registers "quality_settings",
     // "use_camera_end_dist", "fog_density", "height_density",
     // "height_range_begin", "height_range_end" and
     // "volumetric_light_intensity" after
-    // RndAtmosphereCom::_InitAsSuperclass. Not reconstructed: the property
-    // metadata it fills is not modelled.
+    // RndAtmosphereCom::_InitAsSuperclass, with the revision 4 handler
+    // (0x456C10), the settings' summary and read-only tags (0x457220,
+    // 0x457360), the end distance's read-only tag (0x457490) and the change
+    // callbacks of the fog density and the height density (0x456740,
+    // 0x456760). The default height density's keys are not reconstructed.
     static void _Init(
         PropRegistry& registry,
         ComMetaData& metadata);  // 0x454A70

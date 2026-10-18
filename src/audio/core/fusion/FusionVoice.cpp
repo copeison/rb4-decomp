@@ -121,12 +121,12 @@ bool FusionVoice::AssignIDs(
     mDecoder = nullptr;
     if (mPcmDecoder->CanDecode(static_cast<AudioData::EncodedFormat>(data->GetEncodedFormat()))) {
         mDecoder = mPcmDecoder;
-        mDecoder->SetAudioData(data, pitchShift, keyzone->mTrackMap, mSampler);
+        mDecoder->SetAudioData(data, pitchShift, &keyzone->mTrackMap, mSampler);
     } else if (
         mMoggDecoder != nullptr &&
         mMoggDecoder->CanDecode(static_cast<AudioData::EncodedFormat>(data->GetEncodedFormat()))) {
         mDecoder = mMoggDecoder;
-        mDecoder->SetAudioData(data, pitchShift, keyzone->mTrackMap, mSampler);
+        mDecoder->SetAudioData(data, pitchShift, &keyzone->mTrackMap, mSampler);
     } else if (
         mXmaDecoder != nullptr &&
         mXmaDecoder->CanDecode(static_cast<AudioData::EncodedFormat>(data->GetEncodedFormat()))) {

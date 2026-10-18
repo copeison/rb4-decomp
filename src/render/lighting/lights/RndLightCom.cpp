@@ -1,7 +1,5 @@
-// render/RndLightCom.o (0x46C950 to 0x4705FF). The object also emits the
-// std::function handlers that the registry binds to "environments",
-// "illumination_type", "clip_plane", "is_on", "has_zero_color" and
-// "has_zero_intensity" (0x46F7E0-0x4704C0); they are not modelled.
+// render/RndLightCom.o (0x46C950 to 0x4705FF). The registry's tag functions
+// (0x46FAE0 to 0x470520) are the lambdas in _Init.
 #include "render/lighting/lights/RndLightCom.h"
 
 #include <cmath>
@@ -11,10 +9,13 @@
 #include "entity/core/Entity.h"
 #include "entity/core/InstanceCom.h"
 #include "entity/core/TransCom.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
 #include "entity/props/PropRegistry.h"
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/lighting/lights/RndLightEnvironCom.h"
 #include "render/scene/RndDrawNodeCom.h"
+#include "render/scene/RndDrawableEntityResource.h"
 #include "render/scene/RndSceneCom.h"
 
 namespace {
@@ -74,6 +75,16 @@ float InverseLength(float x, float y, float z) {
     const float length = std::sqrt(x * x + y * y + z * z);
     return length != 0.0F ? 1.0F / length : 0.0F;
 }
+
+// The property callbacks _Init installs (0x46F7E0 to 0x46FAC0). Names not
+// in the reference map.
+void RemoveEnvironment(const PropAccessorArgs& args);
+void OnEnvironmentChanged(const PropAccessorArgs& args);
+void OnIlluminationTypeChanged(const PropAccessorArgs& args);
+void OnClipPlaneChanged(const PropAccessorArgs& args);
+bool GetIsOn(const PropAccessorArgs& args);
+bool GetHasZeroColor(const PropAccessorArgs& args);
+bool GetHasZeroIntensity(const PropAccessorArgs& args);
 
 }  // namespace
 
@@ -243,6 +254,211 @@ Plane RndLightCom::GetLocalClipPlane() const {
     plane.c *= scale;
     plane.d *= scale;
     return plane;
+}
+
+// Reconstructed from eboot.elf at 0x46D760. Lights implement the "Light"
+// interface and need a draw node. A subtracting light (illumination type 3)
+// gets the narrower intensity range; the run-time fields at the end are
+// shown read-only for debugging and not saved.
+void RndLightCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mCategory = ComMetaData::kCategoryLight;
+    metadata.mInterface = sClassName;
+    metadata.mDescription = "Properties common to all lights, should not be directly creatable";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mEditorRestrictions = 0;
+    metadata.mRequiredComponents.push_back(RndDrawNodeCom::sClassName);
+    metadata.mAllowedResources.push_back(RndDrawableEntityResource::Id());
+    RndLightCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    BoolMetadata& enabled = TypeSpecificMetadata(
+        registry.RegisterProp("enabled", offsetof(RndLightCom, mEnabled), kPropertyBool, 1),
+        prototype.mEnabled);
+    enabled.mDefault = prototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+
+    BoolMetadata& isolate = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "isolate",
+            offsetof(RndLightCom, mRuntime) + offsetof(RuntimeData, mIsolate),
+            kPropertyBool,
+            1),
+        prototype.mRuntime.mIsolate);
+    isolate.mDefault = prototype.mRuntime.mIsolate;
+    static_cast<void>(Symbol("prop"));
+    isolate.mSaves = false;
+
+    BoolMetadata& volumetric = TypeSpecificMetadata(
+        registry.RegisterProp("volumetric", offsetof(RndLightCom, mVolumetric), kPropertyBool, 1),
+        prototype.mVolumetric);
+    volumetric.mDefault = prototype.mVolumetric;
+    static_cast<void>(Symbol("prop"));
+    volumetric.mHelp = String("Does this light contribute to volumetric scattering?");
+
+    PropInfo& environments = registry.RegisterPropArray(
+        "environments",
+        offsetof(RndLightCom, mEnvironments),
+        sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& environmentsMetadata = static_cast<ArrayMetadata&>(*environments.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    environmentsMetadata.mHelp = String("Which environments does this light contribute light to?");
+    environmentsMetadata.mIsHidden._Set([](const TagArgs& args) {
+        return args.mComponent.mObject->mEntity->GetRoot()->GetCom<RndSceneCom>() == nullptr;
+    });
+    environmentsMetadata.mHook2 = reinterpret_cast<void*>(RemoveEnvironment);
+    PropRegistry::RegisterPropArrayItem(environments, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId environType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& environ = TypeSpecificMetadata(environmentsMetadata.mItemInfo, environType);
+    static_cast<void>(Symbol("item"));
+    environ.mRequiredComs = {RndLightEnvironCom::sId};
+    environ.mAllowsDuplicates = false;
+    environ.mAllowsNull = false;
+    environ.mOnChanged = OnEnvironmentChanged;
+
+    ColorMetadata& color = TypeSpecificMetadata(
+        registry.RegisterProp("color", offsetof(RndLightCom, mColor), kPropertyColor, 16),
+        prototype.mColor);
+    color.mDefault = prototype.mColor;
+    static_cast<void>(Symbol("prop"));
+
+    FloatMetadata& intensity = TypeSpecificMetadata(
+        registry.RegisterProp("intensity", offsetof(RndLightCom, mIntensity), kPropertyFloat, 4),
+        prototype.mIntensity);
+    intensity.mDefault = prototype.mIntensity;
+    static_cast<void>(Symbol("prop"));
+    intensity.mHelp = String(
+        "Controls the overall brightness of the light (intensity 1 is roughly equivalent to a 75W incadescent "
+        "lightbulb");
+    intensity.mMin = 0.0F;
+    intensity.mMax._Set([](const TagArgs& args) {
+        return static_cast<const RndLightCom&>(args.mComponent).mIlluminationType == 3 ? 1.0F : 50.0F;
+    });
+    intensity.mUnits._Set([](const TagArgs& args) {
+        const RndLightCom& light = static_cast<const RndLightCom&>(args.mComponent);
+        if (light.mIlluminationType == 3) {
+            return Symbol("");
+        }
+        return light._GetIntensityUnitsImpl();
+    });
+    intensity.mSlider = true;
+    intensity.mSliderLogResolution._Set([](const TagArgs& args) {
+        return static_cast<const RndLightCom&>(args.mComponent).mIlluminationType == 3 ? 0.01F : 0.5F;
+    });
+
+    IntMetadata<int>& illumination = static_cast<IntMetadata<int>&>(*registry.RegisterProp(
+        "illumination_type",
+        offsetof(RndLightCom, mIlluminationType), kPropertyInt, 4).mMetadata.Get());
+    illumination.mDefault = prototype.mIlluminationType;
+    static_cast<void>(Symbol("prop"));
+    illumination.mHelp = String("Controls what type of illumination this light provides");
+    illumination.mAllowedValues._Set([](const TagArgs& args) {
+        eastl::vector<AllowedValue<int>> types;
+        types.push_back(AllowedValue<int>{
+            0, String("Diffuse and Specular"), String("Contributes both diffuse and specular light")});
+        types.push_back(AllowedValue<int>{1, String("Diffuse Only"), String("Contributes only diffuse light")});
+        types.push_back(AllowedValue<int>{2, String("Specular Only"), String("Contributes only specular light")});
+        if ((static_cast<const RndLightCom&>(args.mComponent).mRuntime.mCapabilities & 1) != 0) {
+            types.push_back(
+                AllowedValue<int>{3, String("Negative"), String("Darkens any nearby accumulated light")});
+        }
+        return types;
+    });
+    illumination.mOnChanged = OnIlluminationTypeChanged;
+
+    FloatMetadata& lightWrap = TypeSpecificMetadata(
+        registry.RegisterProp("light_wrap", offsetof(RndLightCom, mLightWrap), kPropertyFloat, 4),
+        prototype.mLightWrap);
+    lightWrap.mDefault = prototype.mLightWrap;
+    static_cast<void>(Symbol("prop"));
+    lightWrap.mHelp = String(
+        "Controls how light wraps around a surface (1.0 is physically correct, falling to zero for surfaces "
+        "perpendicular to the light; 2.0 falls to zero for surfaces pointing away from the light source; 4.0 "
+        "blasts light equally from all directions)");
+    lightWrap.mMin = 0.0F;
+    lightWrap.mMax = 4.0F;
+    lightWrap.mSlider = true;
+
+    GameObjectIdMetadata& clipPlane = TypeSpecificMetadata(
+        registry.RegisterProp("clip_plane", offsetof(RndLightCom, mClipPlaneObject), kPropertyGameObjectId, 4),
+        prototype.mClipPlaneObject);
+    clipPlane.mDefault = prototype.mClipPlaneObject;
+    static_cast<void>(Symbol("prop"));
+    clipPlane.mHelp = String("If specified, light will be clipped based on the object's Z axis");
+    clipPlane.mIsHidden._Set([](const TagArgs& args) {
+        return (static_cast<const RndLightCom&>(args.mComponent).mRuntime.mCapabilities & 2) == 0;
+    });
+    clipPlane.mOnChanged = OnClipPlaneChanged;
+
+    IntMetadata<unsigned int>& environBits = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "environ_bits",
+            offsetof(RndLightCom, mRuntime) + offsetof(RuntimeData, mEnvironBits),
+            kPropertyUInt,
+            4),
+        prototype.mRuntime.mEnvironBits);
+    environBits.mDefault = prototype.mRuntime.mEnvironBits;
+    static_cast<void>(Symbol("prop"));
+    environBits.mHelp = String("Raw environments bitfield");
+    environBits.mReadOnly = true;
+    environBits.mDebug = true;
+    environBits.mSaves = false;
+
+    IntMetadata<unsigned long>& cookieIndex = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "tiled_cookie_index",
+            offsetof(RndLightCom, mRuntime) + offsetof(RuntimeData, mTiledCookieIndex),
+            kPropertyUInt64,
+            8),
+        prototype.mRuntime.mTiledCookieIndex);
+    cookieIndex.mDefault = prototype.mRuntime.mTiledCookieIndex;
+    static_cast<void>(Symbol("prop"));
+    cookieIndex.mHelp = String("Index of cookie texture in my lightmgr's cookie texarray");
+    cookieIndex.mReadOnly = true;
+    cookieIndex.mDebug = true;
+    cookieIndex.mSaves = false;
+
+    BoolMetadata& isOn = TypeSpecificMetadata(registry.RegisterProp("is_on", -1, kPropertyBool, 0), false);
+    static_cast<void>(Symbol("prop"));
+    isOn.mReadOnly = true;
+    isOn.mDebug = true;
+    isOn.mSaves = false;
+    isOn.mGetter = GetIsOn;
+
+    BoolMetadata& zeroColor =
+        TypeSpecificMetadata(registry.RegisterProp("has_zero_color", -1, kPropertyBool, 0), false);
+    static_cast<void>(Symbol("prop"));
+    zeroColor.mReadOnly = true;
+    zeroColor.mDebug = true;
+    zeroColor.mSaves = false;
+    zeroColor.mGetter = GetHasZeroColor;
+
+    BoolMetadata& zeroIntensity =
+        TypeSpecificMetadata(registry.RegisterProp("has_zero_intensity", -1, kPropertyBool, 0), false);
+    static_cast<void>(Symbol("prop"));
+    zeroIntensity.mReadOnly = true;
+    zeroIntensity.mDebug = true;
+    zeroIntensity.mSaves = false;
+    zeroIntensity.mGetter = GetHasZeroIntensity;
+
+    PropInfo& active = registry.RegisterPropArray(
+        "active_environments",
+        offsetof(RndLightCom, mRuntime) + offsetof(RuntimeData, mActiveEnvironments),
+        sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& activeMetadata = static_cast<ArrayMetadata&>(*active.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    activeMetadata.mReadOnly = true;
+    activeMetadata.mDebug = true;
+    activeMetadata.mSaves = false;
+    PropRegistry::RegisterPropArrayItem(active, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId activeType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& activeEnviron = TypeSpecificMetadata(activeMetadata.mItemInfo, activeType);
+    static_cast<void>(Symbol("item"));
+    activeEnviron.mEntity._Set([](const TagArgs& args) {
+        return static_cast<const RndLightCom&>(args.mComponent)._FindEnvironmentEntity();
+    });
 }
 
 // Reconstructed from eboot.elf at 0x46E910.
@@ -551,4 +767,86 @@ void RndLightCom::_GenerateDeferredShadowContributionImpl(
 // Reconstructed from eboot.elf at 0x46F7D0.
 bool RndLightCom::_IsOnImpl() const {
     return true;
+}
+
+namespace {
+
+// Reconstructed from eboot.elf at 0x46F7E0. Removes the element the path
+// names from "environments" in place of the array's own removal; dropping
+// a set environment registers the light again.
+void RemoveEnvironment(const PropAccessorArgs& args) {
+    RndLightCom* const light = static_cast<RndLightCom*>(args.mComponent);
+    const unsigned long index = (*static_cast<const PropPath*>(args.mPath))[-1].mValue;
+    PropArray<GameObjectId>& environments = light->mEnvironments;
+    if (environments[index].mId != gNullObjectId.mId) {
+        light->mRuntime.mBookkeepingDirty = true;
+    }
+    environments.Destruct(1, environments.ElementAt(index));
+    const unsigned int size = environments.size();
+    if (static_cast<unsigned int>(index) < size - 1) {
+        environments.Move(size - 1 - index, environments.ElementAt(index), environments.ElementAt(index + 1));
+    }
+    --environments.mSize;
+}
+
+// Reconstructed from eboot.elf at 0x46F8A0.
+void OnEnvironmentChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightCom*>(args.mComponent)->mRuntime.mBookkeepingDirty = true;
+}
+
+// Reconstructed from eboot.elf at 0x46F8B0. A light that becomes
+// subtracting keeps its intensity at most 1, and white, which would add
+// nothing, turns black.
+void OnIlluminationTypeChanged(const PropAccessorArgs& args) {
+    RndLightCom* const light = static_cast<RndLightCom*>(args.mComponent);
+    if (light->mIlluminationType != 3) {
+        return;
+    }
+    light->mIntensity = 1.0F < light->mIntensity ? 1.0F : light->mIntensity;
+    const Hmx::Color& white = Hmx::Color::GetWhite();
+    const Hmx::Color& color = light->mColor;
+    if (color.red == white.red && color.green == white.green && color.blue == white.blue &&
+        color.alpha == white.alpha) {
+        light->mColor = Hmx::Color::GetBlack();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x46F9B0.
+void OnClipPlaneChanged(const PropAccessorArgs& args) {
+    static_cast<RndLightCom*>(args.mComponent)->mRuntime.mClipPlaneDirty = true;
+}
+
+// Reconstructed from eboot.elf at 0x46F9C0.
+bool GetIsOn(const PropAccessorArgs& args) {
+    return static_cast<RndLightCom*>(args.mComponent)->IsOn();
+}
+
+// Reconstructed from eboot.elf at 0x46F9D0. The color that adds nothing,
+// as IsOn tests it.
+bool GetHasZeroColor(const PropAccessorArgs& args) {
+    const RndLightCom* const light = static_cast<RndLightCom*>(args.mComponent);
+    const Hmx::Color& noLight =
+        light->mIlluminationType == 3 ? Hmx::Color::GetWhite() : Hmx::Color::GetBlack();
+    return ColorMatches(light->mColor, noLight);
+}
+
+// Reconstructed from eboot.elf at 0x46FAC0.
+bool GetHasZeroIntensity(const PropAccessorArgs& args) {
+    return !(kColorEpsilon < static_cast<RndLightCom*>(args.mComponent)->mIntensity);
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x4045C0. The binary emits the factory
+// with the class's Init; the placement factory at 0x4045F0 constructs in
+// given storage.
+Component* RndLightCom::_Create() {
+    return new RndLightCom();
+}
+
+// Reconstructed from eboot.elf at 0x3EF980. The binary emits the
+// registration in render/RndInit.o. The class is a base that is not
+// created itself.
+void RndLightCom::Init() {
+    InitComponentClass<RndLightCom>(false, true);
 }

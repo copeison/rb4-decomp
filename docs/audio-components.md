@@ -34,12 +34,16 @@ The inline `Init` is `InitComponentClass` (see
 [entity-components.md](entity-components.md)); both classes' `Init` and
 `_Init` are reconstructed. The emitter registers its properties with their
 accessors (`0x37D70`-`0x37E50`), `emitter_name`'s game-wide names
-(`GetGameWideEmitterNameValues`, `0x358E0`, declared) and the
+(`GetGameWideEmitterNameValues`, `0x358E0`, which lists the registered
+names under the lock without labels) and the
 `tempo_aware_buses` struct, whose bus fields hide each other through
 `use_preloaded_bank`; it is lightweight and also found as
 "AudioEmitterCom". `_Imprint` stays declared: the thread's imprint state
-is not modelled. `FusionPatchCom`'s registration is not reconstructed: the
-class itself is not.
+is not modelled. `FusionPatchCom` (`sId` `0x19C8BB8`, `sClassName`
+`0x19C8BC0`, `sPropRegistry` `0x19C8BD0`, `sMetaData` `0x19C8C70`; `Init`
+`0x5350`, `_Create` `0xD880`, `_Init` `0x68040`) is described in
+[fusion-sampler.md](fusion-sampler.md); its `Init` is `InitComponentClass`'s
+shape without the superclass flag.
 `SoundManager::_InitComponents` calls `AudioEmitterCom::Init` and
 `FusionPatchCom::Init` in the binary's order.
 
@@ -72,8 +76,7 @@ A named emitter joins `sNamedEmitters` (`0x19C7730`, guarded at
 
 Not reconstructed: `Handle` (`0x35B40`), `_Imprint`, the
 `PlayDialog(Symbol, ...)` overloads (`0x34D90`, `0x37BE0`), the
-`RuntimeData` copy constructor (`0x37F70`), the editor enumeration helper
-at `0x358E0`, the `_Init` accessors and lambdas (`0x37D70`-`0x390B0`) and
+`RuntimeData` copy constructor (`0x37F70`), the `_Init` accessors and lambdas (`0x37D70`-`0x390B0`) and
 `DefaultEmitterProxyCom` (`0x36B50`-`0x37710`), which the object also
 holds.
 

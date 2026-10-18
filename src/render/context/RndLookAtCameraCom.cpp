@@ -1,5 +1,4 @@
-// render/RndLookAtCameraCom.o (0x4066D0 to 0x407F2B). The property
-// callbacks at 0x407C10-0x407E50 are not reconstructed.
+// render/RndLookAtCameraCom.o (0x4066D0 to 0x407F2B).
 #include "render/context/RndLookAtCameraCom.h"
 
 #include <cmath>
@@ -9,11 +8,14 @@
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropUtl.h"
 #include "math/matrix/Matrix3.h"
 #include "math/rotation/Rot.h"
 #include "math/transform/Transform.h"
 #include "render/context/RndCameraCom.h"
 #include "render/drawing/RndBillboard.h"
+#include "render/scene/RndDrawableEntityResource.h"
 #include "render/scene/RndSceneCom.h"
 
 namespace {
@@ -67,6 +69,88 @@ ComMetaData RndLookAtCameraCom::sMetaData;
 // Reconstructed from eboot.elf at 0x4066D0.
 RndLookAtCameraCom::RndLookAtCameraCom()
     : mFacingType(kBillboardCamera), mFacingAxis(kBillboardAxisNegY) {}
+
+// Reconstructed from eboot.elf at 0x406710. Before revision 1 the class had
+// a bool "use_camera_up_vector": set (or missing), the object faces the
+// camera directly; clear, it keeps world Z up. The revision handler's call
+// operator is at 0x407C90.
+void RndLookAtCameraCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RndLookAtCameraCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 0) {
+                return;
+            }
+            bool useCameraUp = true;
+            Component* const saved = args.mSavedProps;
+            const PropPath path(Symbol("use_camera_up_vector"));
+            void* storage = saved;
+            const PropInfo* const info = saved->_GetPropRegistry().FindProp(path, &storage);
+            int facingType = kBillboardCamera;
+            if (info != nullptr) {
+                _GetProp(*saved, path, *info, storage, &useCameraUp, kPropertyBool);
+                facingType = useCameraUp ? kBillboardCamera : kBillboardCameraNoRoll;
+            }
+            RndLookAtCameraCom* const com = static_cast<RndLookAtCameraCom*>(args.mComponent);
+            com->mFacingType = facingType;
+            com->mFacingAxis = kBillboardAxisPosY;
+        };
+    if (&registry == &sPropRegistry) {
+        sPropRegistry.SetCurrentRev(1);
+        sPropRegistry.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    IntMetadata<int>& facingType = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "facing_type",
+            offsetof(RndLookAtCameraCom, mFacingType),
+            kPropertyInt,
+            4),
+        prototype.mFacingType);
+    facingType.mDefault = prototype.mFacingType;
+    static_cast<void>(Symbol("prop"));
+    facingType.mHelp = String("How to orient this object towards the camera");
+    eastl::vector<AllowedValue<int>> types;
+    types.reserve(5);
+    for (int type = kBillboardNone; type <= kBillboardCameraNoRoll; ++type) {
+        types.push_back(AllowedValue<int>{
+            type,
+            String(GetBillboardTypeName(type)),
+            String(GetBillboardTypeHelp(type))});
+    }
+    facingType.mAllowedValues = types;
+
+    IntMetadata<int>& facingAxis = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "facing_axis",
+            offsetof(RndLookAtCameraCom, mFacingAxis),
+            kPropertyInt,
+            4),
+        prototype.mFacingAxis);
+    facingAxis.mDefault = prototype.mFacingAxis;
+    static_cast<void>(Symbol("prop"));
+    facingAxis.mHelp = String("Which local axis should we point towards the camera?");
+    facingAxis.mAllowedValues = eastl::vector<AllowedValue<int>>{
+        AllowedValue<int>{
+            kBillboardAxisPosY,
+            String("+Y"),
+            String("Point my local +Y axis towards the camera")},
+        AllowedValue<int>{
+            kBillboardAxisNegY,
+            String("-Y"),
+            String("Point my local -Y axis towards the camera")}};
+
+    metadata.mDescription =
+        "Points this transform at the Scene's current camera. Can be placed on objects in "
+        "entities; at runtime this component will look up to find the owning Scene and its "
+        "current camera.";
+    metadata.mAuthor = "Matt Sharpe";
+    metadata.mCategory = ComMetaData::kCategoryMiscellaneous;
+    metadata.mAllowedResources.push_back(RndDrawableEntityResource::Id());
+    metadata.mAliases.push_back(Symbol("RndLookAtCameraCom"));
+}
 
 // Reconstructed from eboot.elf at 0x406F30. The deleting destructor is at
 // 0x407A20.
@@ -221,4 +305,10 @@ ComMetaData& RndLookAtCameraCom::_GetMetaData() {
 // with the other render factories.
 Component* RndLookAtCameraCom::_Create() {
     return new RndLookAtCameraCom();
+}
+
+// Reconstructed from eboot.elf at 0x3EE2A0. The binary emits the
+// registration in render/RndInit.o.
+void RndLookAtCameraCom::Init() {
+    InitComponentClass<RndLookAtCameraCom>();
 }

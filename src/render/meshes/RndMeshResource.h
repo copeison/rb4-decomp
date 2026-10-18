@@ -66,6 +66,16 @@ public:
     bool IsKeepMeshData() const;              // 0x5D40B0
     unsigned int GetVertexUsageFlags() const;  // 0x5D4100
     unsigned int GetFaceUsageFlags() const;    // 0x5D4140
+    // RndMeshCom's "mesh_resource_properties" accessors call them. Not
+    // reconstructed.
+    bool AreVerticesCompressed() const;               // 0x5D2770
+    void SetCompressVertices(bool compress);          // 0x5D2790
+    void SetSmoothTangents(bool smooth);              // 0x5D4020
+    void SetCalcUVScale(bool calc);                   // 0x5D4050
+    void SetCalcCurvature(bool calc);                 // 0x5D4080
+    void SetKeepMeshData(bool keep);                  // 0x5D40C0
+    void SetVertexUsageFlags(unsigned int flags);     // 0x5D4110
+    void SetFaceUsageFlags(unsigned int flags);       // 0x5D4150
 
     // The class's metadata; its last extension names the inline mesh files
     // RndMeshCom::SetResourceType makes (0x5C3236).

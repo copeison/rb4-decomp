@@ -19,3 +19,10 @@ public:
     // value.
     static Symbol GetLightTypeName(RndLightType type);  // 0x4AB460
 };
+
+// The edge in texels of the spot shadow maps at the resolution index (256,
+// 512, 1024, 1600, 2048, 3200 or 4096); -1 for any other index. Emitted
+// after GetLightTypeName; the light manager's "spotlight_shadowmap_resolution"
+// labels call it, and the spot shadow depth array inlines it. Name not in the
+// reference map.
+int RndSpotShadowResolution(unsigned int index);  // 0x4AB4A0

@@ -10,16 +10,19 @@ the entity objects that hold the components are in
 | Object | Range | Source |
 | --- | --- | --- |
 | `entity/ComMetaData.o` (part) | `0xE56C0`-`0xE6870`, `0xE69F0` | `src/entity/core/ComMetaData.cpp` |
-| `entity/Component.o` (part) | `0xE7190`-`0xE9060`, `0xAEA0`, `0xAED0` | `src/entity/core/Component.cpp` |
+| `entity/Component.o` (part) | `0xE7190`-`0xE9060`, `0xE9930`, `0xE9C30`, `0xAEA0`, `0xAED0` | `src/entity/core/Component.cpp` |
 | `entity/EditorCom.o` (part) | `0xEABC0`-`0xEABD0` | `src/entity/core/EditorCom.cpp` |
 | `entity/PropInfo.o` | `0x12DBE0`-`0x12DD00` | `src/entity/props/PropInfo.cpp` |
 | `entity/PropRegistry.o` (part) | `0x1804C0`-`0x1813D0` | `src/entity/props/PropRegistry.cpp` |
-| `PropArrayBase` | `0xA660`, `0x2ABE0` | `src/entity/props/PropUtl.cpp` |
-| `entity/PropMetadata.o` (part) | `0x12DD40`-`0x12E610`, `0x140A20`-`0x143C20` | `src/entity/props/PropMetadata.cpp` |
+| `PropArrayBase`, `entity/PropUtl.o` (part) | `0xA660`, `0x2ABE0`, `0x189380` | `src/entity/props/PropUtl.cpp` |
+| `entity/PropMetadata.o` (part) | `0x12DD40`-`0x12ED70`, `0x134E50`-`0x13F620`, `0x140A20`-`0x143C20`, `0x14DA30`-`0x171C30`, `0x17E790`, `0x183640`-`0x183700` | `src/entity/props/PropMetadata.cpp` |
 | `entity/InstanceCom.o` (registry) | `0x118E60`, `0x11B8A0`-`0x11B8E0` | `src/entity/core/InstanceCom.cpp` |
+| `entity/TransCom.o` (registry) | `0x1AFFB0`, `0x1B4EF0`-`0x1BA960` | `src/entity/core/TransCom.cpp` |
+| entity header (registry) | `0x1D21D0`, `0x1D5A40`-`0x1D8B80` | `src/entity/core/EntityHeaderCom.cpp` |
 
-`PropPath` and the `PropUtl.o` helpers are declared in `src/entity/props`;
-their bodies are not reconstructed.
+`PropPath` and the `PropUtl.o` helpers (`_GetProp`, `DumpProp`,
+`PropertySize`, ...) are declared in `src/entity/props`; of the helpers only
+`IsPropTestable` is reconstructed.
 
 ## Component
 
@@ -66,7 +69,7 @@ entity resource classes it may live in, its aliases, required, default and
 dependent classes, exported events and property registry. `Init`
 (`0xE5B80`) fills the dependency lists of the classes it names, hashes
 the class CRC (the class and interface names, the post-poll flag, the
-order-dependency CRC and `PropRegistry::UpdateCRC`, `0x180D20`, declared),
+order-dependency CRC and `PropRegistry::UpdateCRC`, `0x180D20`),
 sets `mHasFlaggedProps` when a property has an instance access, through
 `PropRegistry::VisitPropInfo` (its visitor copy is `0xE69F0`), and adds
 the class to `sComMetaDataList` (`0x19E28B8`). The release build keeps the
@@ -79,11 +82,27 @@ the class, created through its factory, hashes its poll-order and
 component-order dependencies (`_GetOrderDepsCRC`, `0xE7380`). Each list is
 sorted without regard to case and hashed with FNV-1a, with `'-'` between
 lists; the hash of non-empty lists starts from `671913016` rather than the
-basis. Both names are inferred. `Dump` and `_ImprintRegistry` remain
-declared: they walk the registry through property visitors (`0xE9930`,
-`0xE9C30`) and `PropUtl` helpers that are not modelled. Slots 12 and 13
-(`0x107220`, `0x107300`) belong to the prop-storage serializer outside
-`Component.o` and remain declared.
+basis. Both names are inferred.
+
+`Dump` (`0xE8330`) and `_ImprintRegistry` (`0xE8D90`) walk the registry
+with `PropRegistry::VisitProps`, the template this build emits for each
+visitor in place of the map's `VisitProps`/`_VisitProp` over
+`std::function`s (`0xE9930`, `0xE9C30`). `Dump` prints "name: value" lines
+indented by depth through `DumpProp` (`0x1A2610`, declared); its flag keeps
+only the properties `IsPropTestable` allows. `_ImprintRegistry` places each
+saved array's elements in the imprint buffer and copies the waveforms that
+live in arrays or dynamic storage. Slots 12 and 13 (`0x107220`,
+`0x107300`) hand the component to the prop-storage serializer
+(`0x1073A0`, `0x108590`, with per-property writers `0x10F520` and
+`0x112EB0`); that serializer is newer than the map and not modelled, so
+they remain declared.
+
+`PropRegistry::UpdateCRC` hashes the registry's revision, then, through
+`VisitPropInfo`, each saved property's offsets, type, count and struct
+revision, byte by byte with sign extension. Offsets of properties in the
+component are hashed only when negative; with its flag only properties in
+dynamic storage count. `RegisterAction` (`0x180910`) and
+`RegisterDynamicProp` (`0x180980`) are reconstructed.
 
 `GameObject::_CreateComponent` keeps one component per interface and, unless
 the class sets `mAllowMultiple`, one per class. It refuses classes the
@@ -140,9 +159,58 @@ getter and two unread ones) and a `mDefault`; `NumberMetadata<T>` adds
 `StructMetadata`/`GroupMetadata` (`summary`, the member registry) and
 `ArrayMetadata` (the element `PropInfo`, the insert hooks, `summary`) are
 modelled with `static_assert`ed layouts. `TypeSpecificMetadata` returns
-the class for a value type (`0x140A20`, `0x141B90`-`0x141D70`).
+the class for a value type (`0x140A20`, `0x141410` for `Vector3`,
+`0x141B90`-`0x141D70`); the Euler angle overload (`0x141420`) has no
+modelled value type.
 `PropertyType` names the 23 types after `PropertySize` and
 `PropMetadata::Create`.
+
+`Create` (`0x12ED70`) makes the class for a type, constructing most of them
+inline. Types 20 to 22, newer than the map, get `Vector3Metadata`,
+`EulerMetadata` (radians shown in degrees) and `XfmMetadata` (a 36-byte
+scale, rotation and translation, `PropXfm`); their `GetStructRegistry`
+returns a shared member registry that the object's static initializer
+(`0x17E790`) constructs and `InitRegistry` (`0x1406B0`, `0x140BA0`,
+`0x1410A0`) fills: "x", "y", "z"; "pitch", "roll", "yaw" in degrees;
+"scale", "rotation", "translation". Each member's accessors read and
+write the whole struct through the parent's path (`_GetProp`/`_SetProp`,
+or the struct behind the member's storage), and its default is a function
+of the parent's default. A float waveform gets `FloatWaveformMetadata`, which adds a
+number's range; actions get `ActionMetadata` from `RegisterAction`, whose
+`std::function` the editor runs. The constructors' defaults: a number's
+range is its type's limits (+-1e30 for float), a color is white, an object
+id the null id. Each attribute's aggregator is one of the map's `Agg*`
+templates: `AggUseFirstResult`, `AggUseMin`/`AggUseMax` for the bounds,
+`AggUseNullIfConflicted`, `AggVectorIntersection` for allowed values and
+`AggVectorUnion` for required classes, sorting by `AggCompare` (symbols
+without regard to case). `TagBase<T>::Get` evaluates an attribute for a
+component (`0x171380` for `String`, `0x1893F0` for `bool`).
+
+`Dump` returns a `DataArray` of `(key value)` arrays, `(key value
+"bool")` for flags (`MakeDataArray`, `0x82E00`/`0x83540`), for the
+attributes that are constant and differ from their defaults, followed by
+`DumpAllowedValuesHelp`'s `("allowed_values_help" text)`; subclasses add
+their own keys (`min`/`max` when narrower than the type, `fixed_size`,
+`summary`, `allowed_types` by `TypeName`, waveform types and blend modes
+by name, ...). The typed `ValueToString`/`IsValueAllowed` overloads (map
+names, `T const&`) sit behind thunks in the slots: a value is named by its
+allowed value's label when asked, a number gets its prefix, units and
+decimal places, a bitfield integer joins its set flags with "|", a color
+shows its sRGB channels and an object its name; a value is allowed when
+it is one of the allowed values, else within the range (numbers), of a
+valid extension (paths, through `GetValidExtensions`), among
+`GetAllowedObjects` (objects) or passing the reference's type, component
+class and read-only/animatable/debug restrictions (`PropRef`).
+`_GetAllowedValuesHelp<T>`/`_DumpAllowedValuesHelp<T>` (one copy per
+class) list the allowed values as "- label: description" lines, the
+labels' punctuation escaped. `OptionalTag<T>::operator()` gives a value
+for one component or aggregates several, reporting conflicts.
+
+`DefaultDisplayName` (`0x19E3D00`, call operator `0x14D1A0`) makes a name
+from the path's last node: an index as a number; a name lower-cased with
+spaces for underscores, its words capitalized for a struct or array and
+"?" appended for a bool, cached by symbol. `StaticDefaultDisplayName`
+(`0x19E3D30`, `0x1437A0`) returns the node as it is.
 
 ## Class registration
 
@@ -162,6 +230,24 @@ symbol it does not use) and fills its metadata, and sets the class
 description; a revision handler (`PropRegistry::RevisionArgs`) upgrades
 older saved properties.
 
+`TransCom::_Init` (revision 2) saves the local transform through the
+floats "x" to "z_scale" (the angles edited in degrees, the scales kept
+off zero) and adds unsaved views: "position", "scale" and "rotation"
+(types 20 and 21, for PropAnim), "local_transform" (its axes computed
+through `MakeRotMatrix`) and "world_transform". The root object's
+transform is read-only and not animatable. "parent" lists the objects
+`GetValidTransParentsFromObject` (`0x1141C0`, declared) gives, and
+"utilities" holds the "reset" action and "copy_world_xfm", which uses
+`TransUtl::CalcNewLocalXfm` (`0x1C8220`, declared). The revision handler
+converts the rotation matrix "mxx" to "mzz" of revisions 0 and 1, read
+through `_GetProp` from the component in `RevisionArgs::mSavedProps`. The
+local transform has `PropXfm`'s layout, which `TransCom::LocalXfm`
+converts from. `EntityHeaderCom::_Init` (revision 1) hides the instancing,
+statistics and icon camera properties outside a TransEntityResource and
+adds the debug "poll_order" view: the poll order's size and ten objects
+from a shared start index (`0x19E4CE8`). Its revision handler clears a
+non-finite icon camera translation.
+
 ## Weak evidence
 
 - The slot names 3, 5, 6, 9, 12-14, 17, 18, 24-26 and 28-30 rest on their
@@ -170,16 +256,29 @@ older saved properties.
   own parent poll dependency in slot 42 (`_HasParentPollDep`).
 - `ComMetaData::mLightweight`, `mEditorRestrictions` and `mClassName`, and
   `Component::mPropsSynced`, are named from their few readers.
-- `GroupMetadata` as the struct metadata class is inferred.
+- `GroupMetadata` as the struct metadata class is inferred. The map puts
+  `Dump` on `GroupMetadata` and `ValueToString` on `StructMetadata`, the
+  reverse of the slots of the classes so named here, which suggests the
+  two names are swapped.
+- `Vector3Metadata`, `EulerMetadata`, `XfmMetadata`, `PropXfm`,
+  `FloatWaveformMetadata`, `ColorWaveformMetadata` and
+  `EulerMetadata::sZeroAngles` (`0x19E6630`, zero data in the math
+  module's globals) are inferred. `GameObjectIdMetadata::mExcludedObjects`
+  and `PropRefMetadata::mExcludedTypes` are named from their union
+  aggregators, `PropRefMetadata::mObject` from its type.
 - Attribute names that `Dump` does not write: the three set-by-default
   `PropMetadata` tags (`mExtraFlag0`-`2`, no reader), `mInstanceFile`,
   the number tags `mReserved` and `mEnabled`, `GameObjectIdMetadata`'s
-  `mEntity`, `mAllowedObjects`, `mAllowedEntities`, `mRequiredInterfaces`
-  and `mFilterClass`, `ResourcePathMetadata`'s `mDefaultExtension` and
-  flags, `PropRefMetadata`'s `mArrayIndex`, `mAllowedComs`,
-  `mAllowedProps` and `mAllowsArrays`, `ArrayMetadata`'s hooks and
-  `mFixedSize`, and `IntMetadata::mBitfield` (which `Dump` writes as
-  "prefix").
+  `mEntity`, `mAllowedObjects`, `mRequiredInterfaces` and `mFilterClass`,
+  `ResourcePathMetadata`'s `mAllowsInlined`, `mEntity`,
+  `mDefaultExtension`, `mAllowsUntyped` and `mFlag1`, `PropRefMetadata`'s
+  `mAllowedComs` and `mAllowsDebug` (named from `IsValueAllowed`),
+  `ArrayMetadata`'s hooks and `mSummary`, and `IntMetadata::mBitfield`
+  (which `Dump` writes as "prefix").
+- Names of the helpers absent from the map: `GetAllowedValueName`,
+  `IntMetadata::FormatValue`, `InitRegistry` and the member accessors,
+  `OptionalTagArgs`' fields and `TagValueEquals`. `TypeName` takes a
+  second flag (the "k" prefix) the map's signature lacks.
 - `PropTypeSizes`, `PropTypeName`, `InitComponentClass`,
   `RegisterPropStruct` and `RevisionArgs`' fields are inferred.
   `LoadWaveformResources` (`0x1C9A90`), which `LoadResources` calls, takes

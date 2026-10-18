@@ -1,6 +1,7 @@
 #include "entity/core/Component.h"
 
 #include <kernel.h>
+#include <new>
 #include <strings.h>
 
 #include "entity/core/ComMetaData.h"
@@ -12,6 +13,7 @@
 #include "entity/props/PropUtl.h"
 #include "entity/resources/Resource.h"
 #include "entity/waveform/Waveform.h"
+#include "os/debug/Debug.h"
 #include "os/memory/MemMgr.h"
 #include "utl/data/DataArray.h"
 #include "utl/streams/BinStream.h"
@@ -291,6 +293,32 @@ bool Component::ApplyPropState(const PropPath& path, BinStream& stream) {
     return _ApplyStoredPropState(*this, path, stream, false);
 }
 
+// Reconstructed from eboot.elf at 0xE8330. Each property is printed as
+// "name: value" on its own line, indented by its depth, with the elements
+// of arrays and the members of structs below it; with `testableOnly` only
+// the properties a test may set (IsPropTestable) and what they hold.
+void Component::Dump(TextStream* stream, bool testableOnly) const {
+    TextStream* const out = stream != nullptr ? stream : &TheDebug;
+    Component& component = const_cast<Component&>(*this);
+    const PropRegistry& registry = component._GetPropRegistry();
+    auto dumpProp = [this, testableOnly, out](const PropInfo& info, const PropPath& path, void* storage) {
+        if (testableOnly && !IsPropTestable(*this, path, info)) {
+            return false;
+        }
+        out->Space(2 * static_cast<int>(path.mSize) + 2);
+        const PropPath::Node& node = path[-1];
+        const char* name = node.NameStr();
+        if (node.mType == PropPath::Node::kNodeIndex) {
+            name = MakeString("%u", node.mValue);
+        }
+        out->Print(MakeString("%s: ", name));
+        DumpProp(*this, info, path, storage, out);
+        return true;
+    };
+    auto after = []() {};
+    registry.VisitProps(&component, dumpProp, after);
+}
+
 // Reconstructed from eboot.elf at 0xE84C0.
 DataNode Component::_OnRemove(DataArray* msg) {
     PropPath path;
@@ -391,6 +419,67 @@ char* Component::_ImprintProps(char* buffer, Component* imprint) {
     const PropRegistry& registry = _GetPropRegistry();
     const PropRegistry* imprintRegistry = imprint != nullptr ? &imprint->_GetPropRegistry() : nullptr;
     return _ImprintRegistry(buffer, imprint, registry, imprintRegistry);
+}
+
+// Reconstructed from eboot.elf at 0xE8D90. The component's own members
+// are copied by its class; this places the arrays' elements in the buffer
+// and points the imprint's arrays at them, and copies the waveforms that
+// live in arrays or dynamic storage, which the class copy does not reach.
+// Without an imprint it only sizes the copy. Two counts track the nesting
+// in dynamic storage and in arrays.
+char* Component::_ImprintRegistry(
+    char* buffer,
+    Component* imprint,
+    const PropRegistry& registry,
+    const PropRegistry* imprintRegistry) {
+    long dynamicDepth = 0;
+    long arrayDepth = 0;
+    auto imprintProp = [&dynamicDepth, &arrayDepth, imprint, imprintRegistry, &buffer](
+                           const PropInfo& info,
+                           const PropPath& path,
+                           void* storage) {
+        if (dynamicDepth != 0 || info.mDynamicOffset >= 0) {
+            ++dynamicDepth;
+        }
+        const unsigned int type = info.mType;
+        if (arrayDepth != 0 || (type & kPropertyArray) != 0) {
+            ++arrayDepth;
+        }
+        const bool saves = info.mMetadata->mSaves;
+        if ((type & kPropertyArray) == 0 || !saves) {
+            const bool waveform = type == kPropertyWaveformFloat || type == kPropertyWaveformColor;
+            if (imprint != nullptr && (dynamicDepth != 0 || arrayDepth != 0) && waveform) {
+                void* copy = imprint;
+                imprintRegistry->FindProp(path, &copy);
+                if (type == kPropertyWaveformColor) {
+                    new (copy) Waveform<Hmx::Color>(*static_cast<const Waveform<Hmx::Color>*>(storage));
+                } else {
+                    new (copy) Waveform<float>(*static_cast<const Waveform<float>*>(storage));
+                }
+            }
+            return saves;
+        }
+        PropArrayBase* copy = nullptr;
+        if (imprint != nullptr) {
+            void* found = imprint;
+            imprintRegistry->FindProp(path, &found);
+            copy = static_cast<PropArrayBase*>(found);
+        }
+        buffer = static_cast<const PropArrayBase*>(storage)->_ImprintElements(buffer, copy);
+        const unsigned int itemType = info.PropArrayItemInfo().mType;
+        return itemType == kPropertyStruct || itemType == kPropertyWaveformFloat
+            || itemType == kPropertyWaveformColor || (itemType & kPropertyArray) != 0;
+    };
+    auto after = [&dynamicDepth, &arrayDepth]() {
+        if (dynamicDepth != 0) {
+            --dynamicDepth;
+        }
+        if (arrayDepth != 0) {
+            --arrayDepth;
+        }
+    };
+    registry.VisitProps(this, imprintProp, after);
+    return buffer;
 }
 
 // Reconstructed from eboot.elf at 0xE8FA0.

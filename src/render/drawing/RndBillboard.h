@@ -19,12 +19,17 @@ enum RndBillboardType : int {
     kBillboardCameraNoRoll = 4,
 };
 
+// The label and the help text of a billboard type ("" past the last).
+// Emitted among the RndUtl helpers. Names not in the reference map.
+const char* GetBillboardTypeName(int type);  // 0x441E10
+const char* GetBillboardTypeHelp(int type);  // 0x441E30
+
 // Which local axis points at the camera: RndLookAtCameraCom's
-// "facing_axis". Only the negative Y axis changes the result. Names not in
-// the reference map; the evidence for the other values is weak.
+// "facing_axis", whose allowed values are these two (0x406710). Only the
+// negative Y axis changes the result. Names not in the reference map.
 enum RndBillboardAxis : int {
     // "Point my local +Y axis towards the camera".
-    kBillboardAxisPosY = 3,
+    kBillboardAxisPosY = 1,
     // "Point my local -Y axis towards the camera".
     kBillboardAxisNegY = 4,
 };

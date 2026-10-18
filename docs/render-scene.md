@@ -34,8 +34,8 @@ an inlined copy constructor keeps the properties, copies the scene's
 and starts the run-time state afresh (the scene's poll groups, drawer and
 counters, `isolate_lod`, the camera's stereo eyes and the drawable entity's
 texture renderers). The camera's `_Init` is reconstructed with its clip,
-pixel-accuracy and field-of-view callbacks (`0x6B8310`-`0x6B83A0`); the
-scene's stays declared. `RndEntityCom::_Init` offers the level names
+pixel-accuracy and field-of-view callbacks (`0x6B8310`-`0x6B83A0`), and so
+is the scene's (see below). `RndEntityCom::_Init` offers the level names
 (`RndUtl::GetLodName`, `0x4423A0`); the classes' `Init` registrations are
 reconstructed. `RndDrawableEntityCom::_Init` is reconstructed:
 "Goes on the root object of all drawable entities", a rendering class
@@ -119,10 +119,34 @@ the groups; `ClearPollSplitJobs` (`0x408600`) destroys them.
 (key 0); a scene below another stops its polls from waiting for its
 drawer's.
 
-Not reconstructed: `_Init`, `UpdatePropHysteresisTexture`
-(`0x409710`, the per-frame texel update), the job's `_DoPoll`
-(`0x407F30`: the audio lock and the entity's poll window) and the array
-type registrations (`0x410090`, `0x410240`, `0x4103F0`).
+### Registry
+
+`_Init` (`0x40B490`) registers the struct types "GlobalEntry<float>",
+"GlobalEntry<Hmx::Color>" and "PropHysteresisEntry"
+(`RegisterPropStruct`, `0x410090`-`0x4103F0`), makes the class a
+`RndDrawableEntityCom` ("Global scene settings", `RndSceneResource` only)
+and registers the properties. The groups `clear_depth`, `globals`,
+`shadergraph_data` (with the nested `prop_hysteresis`), `lod` and
+`utilities` have no storage; their members carry the component's offsets.
+The globals' fixed-size arrays name and summarize each entry by its index
+(`GlobalEntry<T>::GetSummary`, `0x413C70`/`0x4158E0`: the driving property
+or the value, then the comment); their `value` is the map's
+`DrivenProp<T>` from `src/stategraph/props/DrivenProp.h` (`Register` at
+`0x4107C0`/`0x410EF0` is declared but not reconstructed). The hysteresis settings are read-only without
+entries and recreate the texture (`0x412A10`-`0x412C50`); the array's
+insert and remove hooks (`0x412A90`, `0x412B60`) do too, and the "reset"
+action refills it (`_ClearPropHysteresisTexture`, `0x411B40`). The LOD
+distances keep medium at most low (`0x412C60`, `0x412C80`). The revision
+handler (revision 5) reads the saved properties from the component in the
+third context pointer: the old `post_proc` (revision 0), LOD on
+(below 2), a single hysteresis row from `shadergraph_data` (below 3),
+`atmosphere`/`volumetric_scattering` as `sky`/`atmosphere` (below 4), and
+a stripped warning for a half-rate `framerate` (below 5).
+`mTextureSize` is unsigned: `texture_size` registers type 7.
+
+Not reconstructed: `UpdatePropHysteresisTexture` (`0x409710`, the
+per-frame texel update), the job's `_DoPoll` (`0x407F30`: the audio lock
+and the entity's poll window) and `DrivenProp<T>::Register`.
 
 ## RndCameraCom
 
@@ -196,6 +220,31 @@ entity instances to the light manager's default environment.
 `RndSceneInstanceCom::GetSceneDrawerPollGroup` and `GetScenePollGroup`
 (`0x4366C0`, `0x4366E0`) return the instanced scene's groups.
 
+`RndSceneInstanceCom::_Init` (`0x436AB0`) runs `InstanceCom`'s
+registration first (`0x437910`, an `InstanceCom::_InitAsSuperclass` copy
+with the file property "file"), allows the class in `UILayoutResource`s
+under the `InstanceCom` interface, points "file" at scene resources and
+registers `draw_order` (read-only debug, shown as "old draw order"),
+`unique_resource`, `use_threaded_poll` (read-only while the entity runs in
+the game mode), `reenter_shared_children`, `projection_offset` and
+`projection_rect` (sliders whose members default to zero),
+`masked_by_scenes` (scene instances other than itself),
+`masked_by_dynamic_scenes` (scene paths) and the debug `disable_load_tag`;
+the handlers (`0x437FB0`-`0x437FD0`) set the reload and masking flags.
+`Init` is `0x3F2800`, `_Create` `0x404C10`.
+
+`RndDrawInstanceCom::_Init` (`0x6C17F0`) describes the draw-instance
+interface (requires a draw node, brings a material, drawable entities
+only): `billboarding` (every type but Camera No Roll, hidden for classes
+that draw no geometry, slot 45), `sort_by`, `sorting_hint` (an int8, shown
+only for an opaque Src material), `lods` (a bitfield of the three levels;
+its change sets `RuntimeData::mLodsChanged`), the Vector4 structs
+`extra_data` and `extra_data_1` and their storage-less colour views
+(`0x6C3950`-`0x6C3990`, the setters keep w). `Init` (`0x3F6880`) registers
+it as a superclass root that is not created; `_Create` is `0x4055A0` and
+`_InitAsSuperclass` `0x449960`. The billboard labels come from
+`GetBillboardTypeName`/`Help` (`0x441E10`, `0x441E30`, declared).
+
 Names inferred from bodies and callers: `_OnPolledImmediately` (the
 binary shows slot 22 is no `_DestroyLayerEntity`), `_SyncTimelines`,
 `gScenePollSplitComId`, the scene-instance group getters, and on
@@ -235,8 +284,12 @@ inferred name, in `src/render/drawing/RndBillboard.cpp`) for the facing
 rotation, moves it into the parent's frame, rebuilds an orthonormal basis
 around the facing Y axis (or, for "Camera Keep Z", around the current local
 Z axis) and stores it as the transform's local Euler angles. The camera's
-object polls first (`_GetPollDeps`). `_Init` (`0x406710`) and the property
-callbacks (`0x407C10`-`0x407E50`) are not reconstructed.
+object polls first (`_GetPollDeps`). `_Init` (`0x406710`) registers both
+properties at revision 1 with the billboard types and the +Y (1) and -Y
+(4) axes as allowed values; its revision handler (`0x407C90`) turns an
+older component's bool "use_camera_up_vector", read through `_GetProp`,
+into facing type 1 (set or missing) or 4, with axis +Y. `Init`
+(`0x3EE2A0`, emitted in `render/RndInit.o`) registers the class.
 
 `ComputeBillboardXfm` serves the draw instances' "billboarding" too
 (`0x463199`). Its types are None, Camera (the camera's up axis), Camera

@@ -245,7 +245,7 @@ public:
     // Registers a handle under PlayArgs::mGlobalSoundHandle; set to
     // StateGraphDriverCom::AddSoundHandle at 0x701620. At 0x19C5800. Name
     // not in the reference map.
-    static void (*sAddSoundHandleFunc)(unsigned int handle, Symbol name);
+    static bool (*sAddSoundHandleFunc)(unsigned int handle, Symbol name);
 
     // Field names are not in the reference map.
     bool mStandardGenManagersInitialized;

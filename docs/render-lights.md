@@ -28,10 +28,8 @@ and `"LightSpot"`), `sPropRegistry` and `sMetaData`:
 `Init` and `_Create` are emitted together before the renderer's components
 (`0x3F0000`-`0x405000`), as `SoundManager.o` emits the audio ones. The
 identity slots, the factories, the constructors and destructors are
-reconstructed, and so are every `Init` (`InitComponentClass`) and
-`RndLightEnvironCom::_Init`. The lights' `_Init` builders stay declared:
-their tag functions and accessors (`0x46F7E0`-`0x4704B0` for
-`RndLightCom`) are not reconstructed.
+reconstructed, and so are every `Init` (`InitComponentClass`) and every
+light's `_Init`; see [Registries](#registries).
 
 `_Imprint` (slot 10) is reconstructed for every light: `RndLightCom`
 (`0x46F490`), `RndLightDirectionalCom` (`0x4757B0`), `RndLightPointCom`
@@ -88,8 +86,7 @@ capture pipeline (`Capture`, `_CreateCameraEntity`, `_ProcessDiffuse`,
 `_ProcessSpecular`, `_DownsampleTo`, `CreateCaptureHelperTexture`,
 `_PixelToSolidAngle`, `_ReplaceInlineCubetexResource`), the drawing
 (`_FrustumExcludes`, `DrawDeferredLightNoCompute`, `_GetBlendTextures`,
-`_GetComputeShaderData`, `AddToComputeBuffer`), `SyncTexarrays` and the
-`_Init` handlers.
+`_GetComputeShaderData`, `AddToComputeBuffer`) and `SyncTexarrays`.
 
 ## RndLightPointCom
 
@@ -155,6 +152,41 @@ Not reconstructed: slot 29 (the inlined-resource lookup and
 `_CreateShadowMapData`, `_SyncShadowPlanes`, `_CalcGeoClipPlane`,
 `_SyncShadowGenConstants` and `_CalcCameraXfms`.
 
+## Registries
+
+The builders follow the binary's order of registrations and attributes.
+`RndLightCom` is a base that is not created (`InitComponentClass(false,
+true)`); it sets the "Light" interface, requires `RndDrawNodeCom` and
+allows `RndDrawableEntityResource`. Its subclasses start with
+`RndLightCom::_InitAsSuperclass` (`0x472D80`, emitted in the directional
+light's object), and the directional, point and spot lights first register
+their `ShadowQualitySettings` element type (`RegisterPropStruct`, emitted
+at `0x472BD0`, `0x492030` and `0x4A2120`).
+
+- `RndLightCom`: "environments" (hidden outside a scene, removed through
+  the array hook `0x46F7E0`, elements must be `LightEnviron` objects),
+  "intensity" (range and units follow "illumination_type"; type 3 is
+  offered only with capability bit 0), "clip_plane" (hidden without
+  capability bit 1), and the debug fields `environ_bits`,
+  `tiled_cookie_index`, `is_on`, `has_zero_color`, `has_zero_intensity`
+  and `active_environments`.
+- The shadow groups are read-only while the light, or every quality level,
+  casts no shadows. Each `quality_settings` element is summarized by its
+  quality level's name (`RndQualityLevelDisplayName`, `0x4425A0`).
+- Revisions: the directional light (1) sizes its cascade and quality
+  arrays; the point and spot lights (2) clear `only_flagged_objects`
+  before revision 1 and copy the old `shadows.soften` into each quality
+  level; the probe (2) reads its state names from the old `states` array.
+  The old values come from the component in `RevisionArgs::mSavedProps`
+  through `_GetProp` (`0x18B390`) and the eight-node `PropPath`
+  constructor (`0x17E8B0`).
+- The point and spot lights' "intensity_calculator" has no storage: the
+  flux, temperature and (spot) beam angle live in globals
+  (`0x19BDC30`-`0x19BDC40`), and its "calculate" action (registered at
+  `0x491F44` and `0x4A2020`) sets the intensity from the flux and
+  `CalcLuminousEfficacy` (`0x6DDDB0`, a black body's lumens per watt) over
+  the point light's constant or the spot beam's solid angle.
+
 ## Supporting declarations
 
 - `RndDrawNodeCom` (`src/render/scene`) declares the bounding sphere, its
@@ -176,6 +208,9 @@ Not reconstructed: slot 29 (the inlined-resource lookup and
   no caller).
 - `ShadowQualitySettings`, and the runtime field names of all three
   classes.
+- `CalcLuminousEfficacy`, `RndQualityLevelDisplayName`,
+  `RndLightCom::_InitAsSuperclass`, the handler names, and
+  `RevisionArgs::mSavedProps` as the component of the saved properties.
 
 ## RndLightCom, RndLightDirectionalCom, RndLightMgrCom and RndLightGlobals
 
@@ -192,6 +227,8 @@ Not reconstructed: slot 29 (the inlined-resource lookup and
 | `sPropRegistry` | `0x1A873C0` | `0x1A87650` | `0x1A88320` |
 | `sMetaData` | `0x1A87460` | `0x1A876F0` | `0x1A883C0` |
 | `_Init` | `0x46D760` | `0x4709A0` | `0x486830` |
+| `Init` | `0x3EF980` | `0x3EFD40` | `0x3F1060` |
+| `_Create` | `0x4045C0` | `0x404610` | `0x4047A0` |
 | static initializer | `0x470530` | `0x477240` | `0x48ECC0` |
 
 The class ids are `"Light"`, `"LightDirectional"` and `"LightMgr"`. Each
@@ -335,7 +372,23 @@ Slot 30 (`0x480D80`) receives the load pass (0-9) of
 counts the lights, reserves both cull lists (`CullResults::Reserve`,
 `0x6DB070`), syncs the cookie arrays and rebuilds the probe arrays.
 
-Not reconstructed: `_Init` and its handler `0x489DC0`.
+`_Init` (`0x486830`) and `Init` (`0x3F1060`) are reconstructed.
+`RegisterPropStruct<QualitySettings>` is emitted at `0x489DC0`. The
+property callbacks are `0x48D010`-`0x48D3C0`; the "states" insertion and
+removal call `_InsertProbeState` and `_RemoveProbeState`, and a renamed
+state queues a `RenamedProbeState`. The tag functions are
+`0x48D8D0`-`0x48E600`. The revision 4 handler (`0x48D630`) works by saved
+revision:
+
+- before 2: sets `mUpgradeProbeStates`;
+- before 3: turns `overbright_luminance` into the exposure (its
+  reciprocal);
+- before 4: gives three quality levels spot shadow resolution index 6
+  (4096 texels).
+
+The resolution labels call `RndSpotShadowResolution` (`0x4AB4A0`,
+declared in `RndLightUtl.h`; name inferred). The `lights` items' entity
+tag reads `+0x190`, which is now `mLightEntities`. Nothing writes it.
 
 ### RndLightGlobals
 
@@ -361,7 +414,7 @@ is also reconstructed.
 - The names of slot 42, `RndLightProbeParams`, `RndLightCullPlanes` and
   `GetLocalClipPlane`.
 - The camera type of slots 45 and 52.
-- The light manager's `CookieArrayElemInfo` fields, `mUnusedList`,
+- The light manager's `CookieArrayElemInfo` fields, `mLightEntities`,
   `mReserved` and the cookie-array order.
 - `RndLightEnvironCom::mRegistered`.
 - `ShadingModeKeepsLights` and `ShadingModeKeepsProbes`.
@@ -432,9 +485,14 @@ nested `SubflareDrawable` vtable (`0x1906080`, 3 slots) and the
   diverging subflare is drawn twice, mirrored about the light source along
   the line through the screen center. One that does not diverge is drawn
   once at double intensity.
-- Not reconstructed: `_Init` (`0x47A780`) with its std::function handlers
-  (`0x47D880`-`0x47E4D0`), and the subflare type registration
-  (`PropArray<Subflare>::Init(Symbol)`, `0x47BC70`).
+- `_Init` (`0x47A780`) and `Init` (`0x3F7040`) are reconstructed.
+  `RegisterPropStruct<Subflare>` is emitted at `0x47BC70`. "angle" has no
+  storage: its accessors (`0x47D880`, `0x47D8A0`) show `angle_radians` in
+  degrees. "light" and a subflare's "material" require interfaces, not
+  classes. The revision 2 handler (`0x47DBA0`) turns a saved
+  `camera_angle_power` p into a centering intensity of
+  `1 - (2 / (2 + p))^0.25`. For revision 0 it also drops subflares with
+  negative divergence.
 - Supporting changes: `RndDrawUtl::RotatedQuad2DParams` and
   `DrawRotatedQuad2D` (`0x3E1180`), `RndOcclusionQuery::SetShaderConstants`
   (`0x5F7E00`), and `RndOcclusionQueryMgr::RegisterQuery` (`0x5F8110`) and

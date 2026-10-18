@@ -1,6 +1,7 @@
 #include "entity/props/PropUtl.h"
 
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
 
 // PropArrayBase's out-of-line methods. The map keeps Resize and _Insert
 // with the weak copies of entity/PropUtl.o's templates; this build places
@@ -78,4 +79,11 @@ unsigned int PropArrayBase::_Insert(unsigned long index, const void* element) {
     Copy(1, ElementAt(index), copy);
     mSize = newSize;
     return newSize;
+}
+
+// Reconstructed from eboot.elf at 0x189380.
+bool IsPropTestable(const Component& component, const PropPath& path, const PropInfo& info) {
+    const PropMetadata& metadata = *info.mMetadata.Get();
+    return !metadata.mNoTest && !metadata.mIsHidden.Get(component, path)
+        && !metadata.mReadOnly.Get(component, path) && metadata.mHistory && metadata.mSaves;
 }

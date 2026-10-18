@@ -193,8 +193,9 @@ public:
     static void Init();  // 0x3F0120
     // The class factory.
     static Component* _Create();
-    // Not reconstructed: the property metadata and the std::function
-    // handlers (0x4958D0-0x4959E0) are not modelled.
+    // Builds the registry on RndLightCom's: the falloff, the "shadows"
+    // group, the cube cookie and "intensity_calculator", with the handlers
+    // at 0x495930-0x4959E0.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x490340
 
     // The object's statics, constructed by its static initializer before

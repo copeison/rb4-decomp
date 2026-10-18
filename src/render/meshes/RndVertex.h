@@ -104,3 +104,14 @@ static_assert(sizeof(RndVertexParticle) == 52);
 
 // Reconstructed from eboot.elf at 0x442930. Name not in the reference map.
 RndVertexType VertexTypeFromName(const char* name);
+
+// Queries on the vertex types (render/RndVertex.o). Not reconstructed.
+namespace RndVertex {
+// The type's name, or "Invalid" outside kVertexInvalid to
+// kVertexSkinnedCompressed.
+const char* GetTypeName(RndVertexType type);  // 0x442910
+// The two compressed layouts.
+bool IsTypeCompressed(RndVertexType type);  // 0x442A20
+// The two uncompressed lit layouts, which have compressed forms.
+bool CanCompressType(RndVertexType type);  // 0x442A50
+}  // namespace RndVertex

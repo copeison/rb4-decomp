@@ -6,12 +6,14 @@
 
 #include <new>
 
+#include "entity/props/PropMetadata.h"
 #include "math/color/Color.h"
 #include "math/random/Rand.h"
 #include "render/context/RndContext.h"
 #include "render/context/RndResourceBarrier.h"
 #include "render/drawing/RndSceneDrawParams.h"
 #include "render/lighting/ambient_occlusion/RndCShaderSSAOGen.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/targets/RndBufferCollection.h"
@@ -50,6 +52,86 @@ RndSSAOCom::RndSSAOCom()
 RndSSAOCom::~RndSSAOCom() {
     delete mRuntimeData.mNoiseTexture;
     mRuntimeData.mNoiseTexture = nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x4AC540. Each quality level's settings
+// are summarized by the level's name; the help of their "enabled" is
+// RndCMAACom's. Revision 1 gives components saved before it the three
+// quality levels. The binary emits the struct registration at 0x4ACD10.
+void RndSSAOCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<QualitySettings>(Symbol("RndSSAOCom::QualitySettings"));
+    metadata.mDescription = "Generates and applies screen space ambient occlusion";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    RndSSAOCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 0) {
+                return;
+            }
+            static_cast<RndSSAOCom*>(args.mComponent)->mQualitySettings.Resize(3);
+        };
+    if (&registry == &sPropRegistry) {
+        sPropRegistry.SetCurrentRev(1);
+        sPropRegistry.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    PropInfo& quality = registry.RegisterPropArray(
+        "quality_settings", offsetof(RndSSAOCom, mQualitySettings), sizeof(PropArray<QualitySettings>));
+    ArrayMetadata& qualityMetadata = static_cast<ArrayMetadata&>(*quality.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    qualityMetadata.mFixedSize = true;
+    qualityMetadata.mAnimatable = false;
+    PropRegistry::RegisterPropArrayItem(quality, kPropertyStruct, sizeof(QualitySettings));
+    GroupMetadata& level = static_cast<GroupMetadata&>(*qualityMetadata.mItemInfo.mMetadata.Get());
+    static_cast<void>(Symbol("struct_item"));
+    const QualitySettings levelPrototype;
+    level.mSummary._Set([](const TagArgs& args) {
+        return String(RndQualityLevelName(static_cast<RndQualityLevel>(args.mPath[-1].mValue)));
+    });
+    PropRegistry& levelRegistry = level.mRegistry;
+
+    BoolMetadata& levelEnabled = TypeSpecificMetadata(
+        levelRegistry.RegisterProp("enabled", offsetof(QualitySettings, mEnabled), kPropertyBool, 1),
+        levelPrototype.mEnabled);
+    levelEnabled.mDefault = levelPrototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+    levelEnabled.mHelp = String("Is antialiasing enabled at this quality level?");
+
+    FloatMetadata& radius = TypeSpecificMetadata(
+        registry.RegisterProp("radius", offsetof(RndSSAOCom, mRadius), kPropertyFloat, 4), prototype.mRadius);
+    radius.mDefault = prototype.mRadius;
+    static_cast<void>(Symbol("prop"));
+    radius.mHelp = String(
+        "Radius in which to search for occluders. Smaller values give a more localized occlusion effect.");
+    radius.mMin = 0.1F;
+    radius.mMax = 3.0F;
+    radius.mSlider = true;
+
+    FloatMetadata& angleBias = TypeSpecificMetadata(
+        registry.RegisterProp("angleBias", offsetof(RndSSAOCom, mAngleBias), kPropertyFloat, 4),
+        prototype.mAngleBias);
+    angleBias.mDefault = prototype.mAngleBias;
+    static_cast<void>(Symbol("prop"));
+    angleBias.mHelp =
+        String("Angle threshold to ignore as occluder. Increase this value if you are seeing artifacting.");
+    angleBias.mMin = 0.0F;
+    angleBias.mMax = 1.0F;
+    angleBias.mSlider = true;
+
+    FloatMetadata& intensity = TypeSpecificMetadata(
+        registry.RegisterProp("intensity", offsetof(RndSSAOCom, mIntensity), kPropertyFloat, 4),
+        prototype.mIntensity);
+    intensity.mDefault = prototype.mIntensity;
+    static_cast<void>(Symbol("prop"));
+    intensity.mHelp = String(
+        "Intensity of the occlusion. Increase this to get a greater effect from the ambient occlusion.");
+    intensity.mMin = 0.0F;
+    intensity.mMax = 10.0F;
+    intensity.mSlider = true;
 }
 
 // Reconstructed from eboot.elf at 0x4ACEC0.
@@ -186,4 +268,17 @@ PropRegistry& RndSSAOCom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x4AD540.
 ComMetaData& RndSSAOCom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x404750. The binary emits the factory
+// with the class's Init (0x3F0CA0); the placement factory at 0x404780
+// constructs in given storage.
+Component* RndSSAOCom::_Create() {
+    return new RndSSAOCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F0CA0. The binary emits the
+// registration in render/RndInit.o.
+void RndSSAOCom::Init() {
+    InitComponentClass<RndSSAOCom>();
 }

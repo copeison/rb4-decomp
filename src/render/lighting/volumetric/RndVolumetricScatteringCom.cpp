@@ -9,6 +9,9 @@
 
 #include <new>
 
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
+#include "entity/props/PropUtl.h"
 #include "math/random/Rand.h"
 #include "math/vector/Vector2.h"
 #include "math/vector/Vector2i.h"
@@ -43,11 +46,24 @@ ComMetaData RndVolumetricScatteringCom::sMetaData;
 namespace {
 
 // Header statics the initializer constructs last: the size the height
-// density is baked at (read by _CreateTexture, 0x456460), and the empty
-// waveform resource a new height density starts from. Names not in the
-// reference map.
+// density is baked at (read by _CreateTexture, 0x456460), and the waveform
+// resource a new height density starts from, which _Init (0x454A70) makes a
+// constant curve of one. Names not in the reference map.
 const Vector2i gWaveformTextureSize = {128, 8};  // 0x1A76018
-ResourcePtr<WaveformResource<float>> gEmptyWaveformResource;  // 0x1A76020
+ResourcePtr<WaveformResource<float>> gDefaultHeightDensity;  // 0x1A76020
+
+// The shaders' units of "fog_density". Name not in the reference map.
+constexpr float kFogDensityScale = 0.2F;
+
+// Reads a property of the component that holds the properties as they were
+// saved into `value`; false when it is missing or cannot be converted.
+// Inlined into the revision handler. Name not in the reference map.
+template <typename T>
+bool ReadSavedProp(Component& saved, const PropPath& path, T& value, PropertyType type) {
+    void* storage = &saved;
+    const PropInfo* const info = saved._GetPropRegistry().FindProp(path, &storage);
+    return info != nullptr && _GetProp(saved, path, *info, storage, &value, type);
+}
 
 // The fog range is kept at least this long.
 constexpr float kMinFogRange = 0.0001F;
@@ -136,7 +152,7 @@ RndVolumetricScatteringCom::RndVolumetricScatteringCom()
       mUseCameraEndDist(false),
       mHeightRangeBegin(0.0F),
       mHeightRangeEnd(5.0F),
-      mHeightDensity(gEmptyWaveformResource.Get()),
+      mHeightDensity(gDefaultHeightDensity.Get()),
       mVolumetricLightIntensity(1.0F),
       mRuntimeData{0.0F, false, ResourcePtr<RndTexture1DResource>()} {}
 
@@ -381,6 +397,192 @@ void RndVolumetricScatteringCom::SetNoAtmosphereFwdShadingConstants(
     cbuffer.mSyncPending = true;
 }
 
+// Reconstructed from eboot.elf at 0x454A70. The quality settings are
+// summarized by the level's display name, and a level's resolution is
+// read-only while it is disabled; the end distance is read-only while the
+// camera's far plane gives it. The revision 4 handler (0x456C10) moves the
+// distances saved before revision 4 as "fog_start_dist" and "fog_end_dist"
+// into the atmosphere's, has the fog end at the far plane before revision
+// 2, and before revision 1 gives every quality level the saved
+// "resolution". The binary emits the struct registration at 0x456000.
+void RndVolumetricScatteringCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<QualitySettings>(Symbol("RndVolumetricScatteringCom::QualitySettings"));
+    _InitAsSuperclass(registry, metadata);
+    // The default height density. The binary inlines the resource's
+    // constructor and SetType(2), then gives the first curve the keys
+    // (0, 1) and (1, 1) and rebakes it; that part is not reconstructed, as
+    // the key tracks are not modelled.
+    gDefaultHeightDensity = new WaveformResource<float>();
+    gDefaultHeightDensity->SetType(2);
+    metadata.mDescription = "Simulates volumetric light scattering throughout the scene volume";
+    metadata.mAuthor = "Daniel Sproul";
+    RndVolumetricScatteringCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            if (args.mSavedRev > 3) {
+                return;
+            }
+            RndVolumetricScatteringCom* const scattering =
+                static_cast<RndVolumetricScatteringCom*>(args.mComponent);
+            Component& saved = *args.mSavedProps;
+            float startDist;
+            if (ReadSavedProp(saved, PropPath(Symbol("fog_start_dist")), startDist, kPropertyFloat)) {
+                scattering->SetStartDist(startDist);
+            }
+            float endDist;
+            if (ReadSavedProp(saved, PropPath(Symbol("fog_end_dist")), endDist, kPropertyFloat)) {
+                scattering->SetEndDist(endDist);
+            }
+            if (args.mSavedRev > 1) {
+                return;
+            }
+            scattering->mUseCameraEndDist = true;
+            if (args.mSavedRev == 1) {
+                return;
+            }
+            scattering->mQualitySettings.Resize(3);
+            const PropPath path(Symbol("resolution"));
+            int resolution = 0;
+            if (!ReadSavedProp(saved, path, resolution, kPropertyInt)) {
+                // The release build keeps only the arguments of the error it
+                // reports.
+                static_cast<void>(saved.MakeErrorName());
+                char text[512] = {};
+                path.ToString(text, sizeof(text));
+            }
+            scattering->mQualitySettings[0].mResolution = resolution;
+            scattering->mQualitySettings[1].mResolution = resolution;
+            scattering->mQualitySettings[2].mResolution = resolution;
+        };
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry == &own) {
+        own.SetCurrentRev(4);
+        own.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    PropInfo& quality = registry.RegisterPropArray(
+        "quality_settings",
+        offsetof(RndVolumetricScatteringCom, mQualitySettings),
+        sizeof(PropArray<QualitySettings>));
+    ArrayMetadata& qualityMetadata = static_cast<ArrayMetadata&>(*quality.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    qualityMetadata.mFixedSize = true;
+    qualityMetadata.mAnimatable = false;
+    PropRegistry::RegisterPropArrayItem(quality, kPropertyStruct, sizeof(QualitySettings));
+    GroupMetadata& level = static_cast<GroupMetadata&>(*qualityMetadata.mItemInfo.mMetadata.Get());
+    static_cast<void>(Symbol("struct_item"));
+    const QualitySettings levelPrototype;
+    level.mSummary._Set([](const TagArgs& args) {
+        return String(RndQualityLevelDisplayName(static_cast<RndQualityLevel>(args.mPath[-1].mValue)));
+    });
+    PropRegistry& levelRegistry = level.mRegistry;
+
+    BoolMetadata& levelEnabled = TypeSpecificMetadata(
+        levelRegistry.RegisterProp("enabled", offsetof(QualitySettings, mEnabled), kPropertyBool, 1),
+        levelPrototype.mEnabled);
+    levelEnabled.mDefault = levelPrototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+    levelEnabled.mHelp = String("Is volumetric scattering enabled at this quality level?");
+
+    PropInfo& resolutionInfo =
+        levelRegistry.RegisterProp("resolution", offsetof(QualitySettings, mResolution), kPropertyInt, 4);
+    IntMetadata<int>& resolution = static_cast<IntMetadata<int>&>(*resolutionInfo.mMetadata.Get());
+    resolution.mDefault = levelPrototype.mResolution;
+    static_cast<void>(Symbol("prop"));
+    resolution.mHelp = String("Resolution at which volumetric scattering is simulated");
+    {
+        eastl::vector<AllowedValue<int>> resolutions;
+        resolutions.reserve(3);
+        resolutions.push_back(AllowedValue<int>{0, String("Low"), String("Uses 128 slices in depth")});
+        resolutions.push_back(AllowedValue<int>{1, String("Medium"), String("Uses 256 slices in depth")});
+        resolutions.push_back(AllowedValue<int>{2, String("High"), String("Uses 512 slices in depth")});
+        resolution.mAllowedValues = resolutions;
+    }
+    resolution.mReadOnly._Set([](const TagArgs& args) {
+        const RndVolumetricScatteringCom& scattering =
+            static_cast<const RndVolumetricScatteringCom&>(args.mComponent);
+        return !scattering.mQualitySettings[static_cast<int>(args.mPath[-2].mValue)].mEnabled;
+    });
+
+    static_cast<void>(registry.FindProp(PropPath(Symbol("end_dist")), nullptr));
+    const float distType = 0.0F;
+    FloatMetadata& endDist = TypeSpecificMetadata(
+        *const_cast<PropInfo*>(registry.FindProp(PropPath(Symbol("end_dist")), nullptr)), distType);
+    static_cast<void>(Symbol("prop"));
+    endDist.mReadOnly._Set([](const TagArgs& args) {
+        return static_cast<const RndVolumetricScatteringCom&>(args.mComponent).mUseCameraEndDist;
+    });
+
+    BoolMetadata& useCameraEndDist = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "use_camera_end_dist", offsetof(RndVolumetricScatteringCom, mUseCameraEndDist), kPropertyBool, 1),
+        prototype.mUseCameraEndDist);
+    useCameraEndDist.mDefault = prototype.mUseCameraEndDist;
+    static_cast<void>(Symbol("prop"));
+    useCameraEndDist.mHelp = String("Use the camera far plane distance as the fog end distance?");
+
+    FloatMetadata& fogDensity = TypeSpecificMetadata(
+        registry.RegisterProp("fog_density", offsetof(RndVolumetricScatteringCom, mFogDensity), kPropertyFloat, 4),
+        prototype.mFogDensity);
+    fogDensity.mDefault = prototype.mFogDensity;
+    static_cast<void>(Symbol("prop"));
+    fogDensity.mHelp = String("Density of the fog");
+    fogDensity.mMin = 0.0F;
+    fogDensity.mMax = 1.0F;
+    fogDensity.mSlider = true;
+    fogDensity.mOnChanged = [](const PropAccessorArgs& args) {
+        RndVolumetricScatteringCom* const scattering = static_cast<RndVolumetricScatteringCom*>(args.mComponent);
+        scattering->mRuntimeData.mFogDensity = scattering->mFogDensity * kFogDensityScale;
+    };
+
+    WaveformMetadata<float>& heightDensity = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "height_density",
+            offsetof(RndVolumetricScatteringCom, mHeightDensity),
+            kPropertyWaveformFloat,
+            sizeof(Waveform<float>)),
+        prototype.mHeightDensity);
+    heightDensity.mDefault = Waveform<float>(prototype.mHeightDensity);
+    static_cast<void>(Symbol("prop"));
+    heightDensity.mHelp = String("Specifies the density of the for over the specified height range");
+    heightDensity.mAllowedTypes = {0, 1, 2};
+    heightDensity.mOnChanged = [](const PropAccessorArgs& args) {
+        static_cast<RndVolumetricScatteringCom*>(args.mComponent)->mRuntimeData.mHeightDensityDirty = true;
+    };
+
+    FloatMetadata& rangeBegin = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "height_range_begin", offsetof(RndVolumetricScatteringCom, mHeightRangeBegin), kPropertyFloat, 4),
+        prototype.mHeightRangeBegin);
+    rangeBegin.mDefault = prototype.mHeightRangeBegin;
+    static_cast<void>(Symbol("prop"));
+    rangeBegin.mHelp = String("Beginning of the range for the density waveform");
+
+    FloatMetadata& rangeEnd = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "height_range_end", offsetof(RndVolumetricScatteringCom, mHeightRangeEnd), kPropertyFloat, 4),
+        prototype.mHeightRangeEnd);
+    rangeEnd.mDefault = prototype.mHeightRangeEnd;
+    static_cast<void>(Symbol("prop"));
+    rangeEnd.mHelp = String("End of the range for the density waveform");
+
+    FloatMetadata& lightIntensity = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "volumetric_light_intensity",
+            offsetof(RndVolumetricScatteringCom, mVolumetricLightIntensity),
+            kPropertyFloat,
+            4),
+        prototype.mVolumetricLightIntensity);
+    lightIntensity.mDefault = prototype.mVolumetricLightIntensity;
+    static_cast<void>(Symbol("prop"));
+    lightIntensity.mHelp = String("Intensity of volumetric lighting");
+    lightIntensity.mMin = 0.0F;
+    lightIntensity.mMax = 3000.0F;
+    lightIntensity.mSlider = true;
+}
+
 // Reconstructed from eboot.elf at 0x4561F0.
 void RndVolumetricScatteringCom::_PostCreate() {
     RndAtmosphereCom::_PostCreate();
@@ -477,4 +679,17 @@ RndVolumetricScatteringCom::RndVolumetricScatteringCom(
       mVolumetricLightIntensity(other.mVolumetricLightIntensity),
       mRuntimeData{0.0F, false, ResourcePtr<RndTexture1DResource>()} {
     mQualitySettings._Copy(other.mQualitySettings);
+}
+
+// Reconstructed from eboot.elf at 0x404890. The binary emits the factory
+// with the class's Init (0x3F1BA0); the placement factory at 0x4048C0
+// constructs in given storage.
+Component* RndVolumetricScatteringCom::_Create() {
+    return new RndVolumetricScatteringCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F1BA0. The binary emits the
+// registration in render/RndInit.o.
+void RndVolumetricScatteringCom::Init() {
+    InitComponentClass<RndVolumetricScatteringCom>();
 }

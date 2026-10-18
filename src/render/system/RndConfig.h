@@ -144,3 +144,7 @@ HxGfxApi RndGfxApiForPlatform(HxPlatform platform);  // 0x4414A0
 // Names not in the reference map.
 const char* RndQualityLevelName(RndQualityLevel level);  // 0x442520
 RndQualityLevel RndQualityLevelFromName(const char* name);  // 0x442540
+// The level's name with " (current)" after the device's current level,
+// for the light components' "quality_settings" summaries; "" for any other
+// value. Name not in the reference map.
+const char* RndQualityLevelDisplayName(RndQualityLevel level);  // 0x4425A0

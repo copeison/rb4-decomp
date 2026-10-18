@@ -23,6 +23,9 @@ public:
     TextStream& operator<<(const char* str);     // 0x2588E0
     TextStream& operator<<(Symbol sym);          // 0x258900
     TextStream& operator<<(unsigned long value);  // 0x2589D0
+
+    // Prints the number of spaces.
+    void Space(int count);  // 0x258B20
 };
 
 static_assert(sizeof(TextStream) == 8);

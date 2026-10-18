@@ -143,6 +143,22 @@ public:
         mStatic = 0;
         mType = sType;
     }
+    // Takes the other array's element size and type, then its elements
+    // through _Copy. Inlined into the copies of the structs that hold
+    // arrays, for example FusionPatchCom's at 0x857D2.
+    PropArray(const PropArray& other) : PropArrayBase() {
+        mData = nullptr;
+        mSize = 0;
+        mCapacity = 0;
+        mElemSize = other.mElemSize;
+        mStatic = 0;
+        mType = other.mType;
+        _Copy(other);
+    }
+    PropArray& operator=(const PropArray& other) {
+        _Copy(other);
+        return *this;
+    }
     ~PropArray() override {
         Resize(0);
         if (mStatic == 0) {

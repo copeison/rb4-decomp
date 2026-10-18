@@ -13,15 +13,27 @@ built on the component base in [entity-components.md](entity-components.md).
 | `ui/UIMgr.o` | `0x8C8440`-`0x8CC5B7` | `src/ui/manager/UIMgr.cpp` |
 | `ui/UILayoutResource.o` (part) | `0x8AAA40`-`0x8B1BAF` | `src/ui/layout/UILayoutResource.cpp` |
 | `UILayoutCom` (part; no map object) | `0x8A9340`-`0x8AAA3F` | `src/ui/layout/UILayoutCom.cpp` |
-| `ui/UIInputCom.o` (part) | `0x89ED90`-`0x89EF0F` | `src/ui/input/UIInputCom.cpp` |
+| `ui/UIInputCom.o` (part) | `0x89C8B0`-`0x8A481F` | `src/ui/input/UIInputCom.cpp` |
+| `ui/UIInputReceiverCom.o` (part) | `0x8A4A60`-`0x8A93FF` | `src/ui/input/UIInputReceiverCom.cpp` |
+| `ui/UIListCom.o` (part) | `0x8B2530`-`0x8C364F` | `src/ui/lists/UIListCom.cpp` |
+| `ui/UIListData.o` (part) | `0x8C3650`, `0x8C4A20` | `src/ui/lists/UIListData.cpp` |
+| `ui/UIListDtaProviderCom.o` (part) | `0x8C6610`-`0x8C750F` | `src/ui/lists/UIListDtaProviderCom.cpp` |
+| `UIListEditorDataCom` (no map object) | `0x8C7510`-`0x8C7B5F` | `src/ui/lists/UIListEditorDataCom.cpp` |
+| `ui/UIListItemCom.o` | `0x8C7B60`-`0x8C843F` | `src/ui/lists/UIListItemCom.cpp` |
+| `ui/UIScrollbarCom.o` (part) | `0x8CD200`-`0x8CDAEF` | `src/ui/widgets/UIScrollbarCom.cpp` |
+| `ui/UISliderCom.o` (part) | `0x8CDAF0`-`0x8CEF9F` | `src/ui/widgets/UISliderCom.cpp` |
+| `ui/UIComboBoxEnumCom.o` (part) | `0x898F30`-`0x89A3FF` | `src/ui/widgets/UIComboBoxEnumCom.cpp` |
+| `ui/UIComboBoxFileCom.o` (part) | `0x89A400`-`0x89BAAF` | `src/ui/widgets/UIComboBoxFileCom.cpp` |
+| `ui/UIComboBoxSymCom.o` (part) | `0x89BAB0`-`0x89C8AF` | `src/ui/widgets/UIComboBoxSymCom.cpp` |
+| `UIComboBoxBaseCom<T>` (template) | in `UI.o` from `0x895420` | `src/ui/widgets/UIComboBoxBaseCom.h` |
 | `rb_meta/RBMetaStateCom.o` (part) | `0xBB06A0` | `src/rb_meta/state/RBMetaStateCom.cpp` |
 
 `UI.o` starts before `0x894000`, where [progress.md](progress.md) places the
 `ui` range; the class factories it emits follow from `0x894FA0`
 (`UILayoutResource::_Create`, `new` of 1248 bytes, then `UIInputCom`'s of 408
-bytes and the others). The component classes `UI::Init` registers are declared, one
-header per object, in `src/ui/input`, `src/ui/layout`, `src/ui/lists` and
-`src/ui/widgets`; only their registration is declared.
+bytes and the others), then the members of the combo boxes' base template.
+The component classes `UI::Init` registers live one object per file in
+`src/ui/input`, `src/ui/layout`, `src/ui/lists` and `src/ui/widgets`.
 
 ## Startup and the main loop
 
@@ -48,7 +60,71 @@ callback. Each registration is the class's inline `Init`, emitted in `UI.o`:
 
 Each component class keeps `sId` eight bytes before `sClassName`, then its
 property registry and metadata, built by the object's static initializer
-(`UIInputCom`'s at `0x8A4820`, `UILayoutCom`'s at `0x8AA970`).
+(`UIInputCom`'s at `0x8A4820`, `UILayoutCom`'s at `0x8AA970`). Each `Init`
+is `InitComponentClass<T>`; `UIInputCom` and `UIInputReceiverCom` are
+superclass roots. The factories (`0x894FD0`-`0x898EE0`) follow `Terminate`.
+
+## Component classes
+
+Every class defines its identity slots, `_Imprint` (whose copy keeps the
+properties and starts the run-time state afresh), its registry accessors,
+its constructor and destructor, its `_Init` and its `Init`; each compiled
+vtable matches the binary's slot for slot (`orbis-objdump -r`). All are in
+the UI category; the property accessors and tag functions are file-local.
+
+| Class | Size | Vtable | Slots | `sId` / registry / metadata | Base |
+| --- | ---: | --- | ---: | --- | --- |
+| `UIInputCom` | 408 | `0x195CBB0` | 43 | `0x1AC8758` / `0x1AC8770` / `0x1AC8810` | `Component` |
+| `UIInputReceiverCom` | 88 | `0x195CDA8` | 44 | `0x1AC8A50` / `0x1AC8A60` / `0x1AC8B00` | `Component` |
+| `UILayoutCom` | 280 | `0x195D018` | 41 | `0x1AC8D50` / `0x1AC8D60` / `0x1AC8E00` | `RndDrawableEntityCom` |
+| `UIListCom` | 784 | `0x195D3F8` | 41 | `0x1AC9038` / `0x1AC9050` / `0x1AC90F0` | `Component` |
+| `UIListDtaProviderCom` | 176 | `0x195E038` | 41 | `0x1AC9350` / `0x1AC9360` / `0x1AC9400` | `Component` |
+| `UIListItemCom` | 40 | `0x195E378` | 41 | `0x1AC9810` / `0x1AC9820` / `0x1AC98C0` | `Component` |
+| `UIScrollbarCom` | 40 | `0x195E598` | 41 | `0x1AC9BA8` / `0x1AC9BC0` / `0x1AC9C60` | `Component` |
+| `UISliderCom` | 48 | `0x195E6F0` | 41 | `0x1AC9E10` / `0x1AC9E20` / `0x1AC9EC0` | `Component` |
+| `UIComboBoxEnumCom` | 144 | `0x195C748` | 45 | `0x1AC8010` / `0x1AC8020` / `0x1AC80C0` | `UIComboBoxBaseCom<int>` |
+| `UIComboBoxFileCom` | 144 | `0x195C8C0` | 45 | `0x1AC8278` / `0x1AC8290` / `0x1AC8330` | `UIComboBoxBaseCom<ResourcePath>` |
+| `UIComboBoxSymCom` | 104 | `0x195CA38` | 45 | `0x1AC84E8` / `0x1AC8500` / `0x1AC85A0` | `UIComboBoxBaseCom<Symbol>` |
+| `UIListEditorDataCom` | 48 | `0x195E190` | 59 | `0x1AC95B0` / `0x1AC95C0` / `0x1AC9660` | `RndEditorDrawCom` |
+
+- `UIInputCom` keeps a 344-byte `RuntimeData` (destructor `0x8A31E0`): the
+  focus per pad (`eastl::map<int, ReceiverRef>`), the harvested receivers,
+  the registered components, the pending animation and focus, and five
+  subscriptions to the entity's input events. Its properties follow from
+  368. It exports `ui_select` and `transition_done`; slots 41-42 are the
+  joypad's `OnMsg` overloads.
+- `UIInputReceiverCom` keeps the current, previous and queued `UIState`
+  and a pending selection (24-63), then `select_to_focus_params`, the
+  selecting frames, `can_select`, `can_navigate_to`, `locked_to_pad_num` and
+  `alternate_navigation_trans`. It exports `ui_state_change`,
+  `ui_button_down` and `ui_button_down_feedback` (with the joypad button and
+  action names, `JoypadButtonToName` and `JoypadActionToName`); revision 1
+  clears the selecting frames of older saves. Slots 41-43 are `OnMsg` for
+  the button down, button up and keyboard messages.
+- The combo boxes share `UIComboBoxBaseCom<T>` (104 bytes): the entries,
+  the text object (a `RndTextCom`), the switch sound and the current index;
+  slots 41-44 add and remove entries, show the current one and convert a
+  message node. Its registration `_InitComboBox<Derived>` (`0x899490`,
+  `0x89AB30`, `0x89BC80`) gives the interface `"UIComboBox"`; the enum and
+  file boxes add `display_list`.
+- `UIListCom` keeps a 528-byte `RuntimeData` (destructor `0x8B21E0`,
+  `Destroy` `0x8B2100`): `only_app_scrolling`, three
+  `LinkedListSizeTracked` lists of 56-byte `GridItem`s (showing, unused,
+  static focus), the instance and focus entity resources, the object's
+  `TransCom`, draw node and input receiver, the `UIListData` (at 120), the
+  last world transform, scroll and focus state, the selection handlers and
+  six subscriptions: the data's four messages and the entity's `ui_key` and
+  `ui_button_down`. `_Init` (`0x8B2B70`, revision 1) registers the
+  `PropertyBinding` struct, 26 properties with 30 tag functions (read-only
+  and range rules from the grid layout and the static focus) and 26
+  read-only debug views over the state. The constructor, copy, `_Enter`,
+  `_EditPoll`, `_PostPoll` and `_OnResourcesLoaded` are reconstructed.
+- `UIListDtaProviderCom` holds a `UIListData` (a `MsgSource` of 128 bytes:
+  rows, column names and the default row), the list it feeds and the DTA
+  file; `_Poll` and `_EditPoll` install it on the list
+  (`_InstallSelf`, `0x8C71E0`). `UIScrollbarCom` and `UIListCom` follow `AnimDriverCom` and
+  `RndDrawNodeCom` in the component order. `UISliderCom` exports
+  `slider_step_changed`.
 
 The placeholder adapters the main loop used are replaced by the binary's
 functions:
@@ -236,6 +312,21 @@ HMD mirror overlays without clearing.
   `mStartPollGroups` (nothing found fills it) are named from their bodies.
 - `UILayoutCom` and `UIListEditorDataCom` are named after their class
   symbols; the map, which is older, has neither.
+- Not in the map, named from their bodies: the classes' `RuntimeData`
+  fields, `UIInputCom::ReceiverRef`, `UIInputReceiverCom::SelectToFocusParams`,
+  `mSelectExport` and `mInputBlocked` (meanings weak),
+  `UIComboBoxBaseCom::_InitComboBox`, `mDisabled` and `mEntered` (weak),
+  `UIListItemCom::SetDataIndex`, `UIListCom::SetHidden`, the
+  `GridLayout` and `NavigationDirection` enums and the `RuntimeData` fields
+  `mIgnoreInput`, `mPrototype`, `mScrollState`, `mCanSelectOverridden`,
+  `mRestoreCanSelect` and `mFocusFromInput` (meanings weak), `_InitFocus`
+  (`0x8BA6F0`, weak), `UIListData`'s fields (which row flag
+  is which is weak), and the `UIState` and `UIInputCom::NavDirection`
+  enumerators.
+- `UIScrollbarCom` positions its thumb in slot 29 and `UIListItemCom` is
+  root-only, as the binary has them; the map has the scrollbar's `_Enter`.
+- `UIInputCom.cpp` builds `StateGraphResource::Id()` locally
+  (`StateGraphResourceId`): the class is not declared in this tree.
 - `JoypadClient::SetInputEnabled` (`0x39F6E0`), `RndDrawUtl::ClearBuffers`
   and `GameObject::_ReenterComponents` (`0x115DA0`) are named from their
   bodies.
@@ -248,9 +339,18 @@ HMD mirror overlays without clearing.
   end of the poll), which gives the partial-framerate scenes distinct
   intervals through a bit vector (vtable `0x195D3C8`, the map's
   `utl/BitVector.o` family) that is not modelled.
-- The rest of `UILayoutCom` and the UI component classes, including their
-  `Init` registrations: `InitComponentClass` needs each class's
-  constructor, statics and `_Init`, which are not reconstructed.
+- `UIListCom`'s behaviour: `Handle`, `SetData`, the rebuild, scrolling,
+  focus and instance management, and `_Poll`, which queues its post-poll
+  through `Entity::QueueForPostPoll` (`0xF5F40`, not declared in
+  `Entity.h`).
+- The behaviour of the other classes that needs unmodelled code: the
+  `Handle` and `OnMsg` slots (`ui/UIMsg.o`), `UIInputCom`'s enter, poll and
+  post-poll, `UIInputReceiverCom`'s poll and selection, the combo boxes'
+  `_Enter`, `_Poll`, `_UpdateCurrent` and entry helpers (`RndTextCom`),
+  `UISliderCom::_HandleUIAction` (its exported message),
+  `UIScrollbarCom::_UpdateCurPos` (`PropAnimResource`'s frame range),
+  `UIListDtaProviderCom::_ParseDta`, the current-focus getter
+  (`GetUIInputCurrentFocus`, `0x8A35E0`) and `UIStateToSym` (`0x8A48F0`).
 - `ui/UIMsg.o` (the button and select messages).
 - Outside the `ui` module: `RBMetaState`, `DialogMgrCom`, `JoypadClient`,
   `ResourceLoader::AcquireLoader` and `ReleaseLoader`, and

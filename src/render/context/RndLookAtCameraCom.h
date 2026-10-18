@@ -41,9 +41,11 @@ public:
     // Slot 38 at 0x4078E0: polls as in the game mode.
     void _EditPoll() override;
 
-    // Registers "facing_type" and "facing_axis". Not reconstructed: the
-    // property metadata it fills is not modelled.
+    // Registers "facing_type" and "facing_axis", at revision 1: an older
+    // component's "use_camera_up_vector" becomes the facing type.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x406710
+    // Registers the class. The binary emits it in render/RndInit.o.
+    static void Init();  // 0x3EE2A0
     // The class factory. Emitted at 0x4043E0 with the other render
     // factories.
     static Component* _Create();

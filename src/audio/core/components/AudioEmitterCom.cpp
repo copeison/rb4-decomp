@@ -767,6 +767,18 @@ AudioEmitterCom* GetGameWideEmitter(Symbol name) {
     return it->second.back();
 }
 
+// Reconstructed from eboot.elf at 0x358E0. Each name becomes a value
+// without a label or help text; the loop copies each entry.
+eastl::vector<AllowedValue<Symbol>> GetGameWideEmitterNameValues() {
+    ScopedCritSec lock(AudioEmitterCom::sNamedEmittersLock);
+    eastl::vector<AllowedValue<Symbol>> values;
+    values.reserve(AudioEmitterCom::sNamedEmitters.size());
+    for (const auto entry : AudioEmitterCom::sNamedEmitters) {
+        values.push_back(AllowedValue<Symbol>{entry.first, String(nullptr), String(nullptr)});
+    }
+    return values;
+}
+
 // Reconstructed from eboot.elf at 0x35B30.
 bool AudioEmitterCom::IsPlaying() const {
     return mRuntime.mComposite.IsPlaying();

@@ -88,7 +88,29 @@ queued birth transforms.
 `_Imprint` (`0x6181C0`) is reconstructed; it places a copy made by the copy
 constructor (`0x619130`) and imprints the properties past it.
 
-Not reconstructed: `_Init`, the copy constructor, `_InstallRand`,
+## Registration
+
+`_Init` (`0x603850`) builds the 16 default waveform resources (types and
+first-key values through `WaveformResource<T>::SetType`/`SetValue`, declared
+in `Waveform.h`), hides the draw instance's `extra_data` structs and colour
+views for meshes, and registers `time_units`, `sim_when_hidden`,
+`num_active`, `burst_count`, `kill_all` and the `emitter`, `particle`,
+`color`, `spin`, `collision`, `affectors`, `particle_extra_data` and
+`render` groups. Its lambdas (`0x61A6F0`-`0x61DCB0`) hide most properties
+for the other particle type and make the spin read-only under velocity
+alignment. The accessors (`0x618540`-`0x61912F`) are reconstructed: the
+type change swaps the sprite's single rotation, z scale and spin with the
+mesh's y ones (`std::swap`, `0x618720`, through `Waveform`'s assignment) and
+resets the pivots; `max_count` rebuilds the buffers; the `x/y/z_orientation`
+angles decompose and rebuild `mOrientation` (`MakeEulerScale`,
+`MakeRotMatrix`); the `z_*` spin properties are the sprite's members.
+Revision 5's handler remaps revision 0 alignments, reads revision 1
+`attractors`, revision 2 `extra_data.enabled` and revision 4's
+`spin.initial_spin`/`inherit_orientation` from the saved component
+(`RevisionArgs::mSavedProps`) through `_GetProp`, and resets the
+elasticity of revisions before 4.
+
+Not reconstructed: the copy constructor, `_InstallRand`,
 `_UpdatePositions`, `_UpdateRateEmission`, `_UpdateBirth`, `_UpdateSpin`,
 `_UpdatePivot`, `_UpdateColorSize`, `_UpdateExtraData`, `_InitParticles`
 and `_SyncDrawInstancesImpl`. They evaluate the waveforms
@@ -118,6 +140,8 @@ the names come from the editor strings.
   slot 20 and slot 41).
 - `mParticleTypeChanged` (written by the particle_type handler, never read
   here).
+- `RevisionArgs::mSavedProps` read as the component holding the saved
+  properties; the registry accessors' names.
 
 ## Particle collection
 

@@ -266,6 +266,11 @@ public:
     ~PushFixupEntity();  // 0x115040
 };
 
+// Destroys the object with the id when it exists and clears the id. The
+// map has it in entity/EntityUtl.o with the signature
+// SafeDestroyObject(EntityPtr const&, GameObjectId&). Not reconstructed.
+void SafeDestroyObject(Entity* entity, GameObjectId& id);  // 0x114FB0
+
 static_assert(sizeof(Entity::Layer) == 48);
 static_assert(offsetof(Entity::Layer, mNextSerial) == 40);
 static_assert(offsetof(Entity, mEventSinks) == 8);
@@ -276,3 +281,8 @@ static_assert(offsetof(Entity, mPollWindowStart) == 296);
 static_assert(offsetof(Entity, mFlags) == 300);
 static_assert(offsetof(Entity, mParentObject) == 304);
 static_assert(sizeof(Entity) == 320);
+
+// Whether the entity's resource holds an inlined resource with the path
+// (entity/Utl.o). The map's IsResourcePathInlined(ResourcePath, EntityPtr
+// const&). Not reconstructed.
+bool IsResourcePathInlined(ResourcePath path, Entity* entity);  // 0x114CC0

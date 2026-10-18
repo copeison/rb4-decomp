@@ -282,9 +282,8 @@ public:
     static void Init();  // 0x3F04E0
     // The class factory.
     static Component* _Create();
-    // Registers the class description and the properties. Not
-    // reconstructed: the property metadata's attributes and the
-    // std::function change handlers are not modelled.
+    // Registers the class description and the properties, with the
+    // falloff handlers at 0x49D0A0 and 0x49D0C0.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x49B290
 
     // The object's statics, constructed by the static initializer at

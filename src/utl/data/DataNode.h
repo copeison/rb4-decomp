@@ -11,6 +11,7 @@ class DataArrayPtr;
 class DataNode;
 class Entity;
 class GameObject;
+class GameObjectId;
 class String;
 class TextStream;
 
@@ -117,6 +118,9 @@ public:
     int Int(const DataArray* source) const;
     float Float(const DataArray* source) const;
     Symbol Sym(const DataArray* source) const;
+    // The object id the node evaluates to. Emitted with the entity code at
+    // 0xF9160. Not reconstructed.
+    GameObjectId ObjectId(const DataArray* source) const;
     const char* Str(const DataArray* source) const;  // 0x237570
     // The value as an array, evaluating variables, commands and
     // properties, with a reference held. Inline; the binary's copy is at

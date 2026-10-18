@@ -233,7 +233,7 @@ private:
         unsigned char key,
         unsigned char velocity,
         bool noteOn,
-        const FusionKeyzoneArray& keyzones,
+        const PropArray<FusionPatchCom::KeyzoneSettings>& keyzones,
         unsigned short* indices);
     // Starts one keyzone on a free voice. The map has
     // _TryKeyOnZone(unsigned char, unsigned char, float, KeyzoneSettings
