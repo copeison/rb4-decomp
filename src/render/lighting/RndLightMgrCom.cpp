@@ -111,7 +111,10 @@ void SafeDelete(T*& object) {
 void RemoveAt(PropArrayBase& array, unsigned long index) {
     array.Destruct(1, array.ElementAt(index));
     if (index < array.mSize - 1) {
-        array.Move(array.mSize - 1 - index, array.ElementAt(index), array.ElementAt(index + 1));
+        array.Move(
+            array.mSize - 1 - index,
+            array.ElementAt(index),
+            array.ElementAt(index + 1));
     }
     --array.mSize;
 }
@@ -444,12 +447,36 @@ RndLightMgrCom::~RndLightMgrCom() {
     }
     SafeDelete(mLightProbeBuffer);
     SafeDelete(mSliceZeroLightIdBuffer);
-    for (MsgSource::EventSinkElem* sink : {&mLeavingRecordModeSink, &mLeavingPlayModeSink}) {
+    for (MsgSource::EventSinkElem* sink :
+         {&mLeavingRecordModeSink, &mLeavingPlayModeSink}) {
         LinkedList::Node& link = sink->mLink;
         if (link.mNext != &link && link.mPrev != &link) {
             sink->mSource->RemoveSink(sink);
         }
     }
+}
+
+// Reconstructed from eboot.elf at 0x480D80. The binary clears 64 bytes for
+// the counts.
+bool RndLightMgrCom::_AreResourcesReady(int pass) {
+    if (pass != 1) {
+        return false;
+    }
+    unsigned long counts[3][2] = {};
+    for (RndLightCom* light : mLights) {
+        ++counts[light->_GetTypeImpl()][light->mIlluminationType == 3 ? 1 : 0];
+    }
+    mCullResults.Reserve(counts, mProbes.size());
+    mSliceZeroCullResults.Reserve(counts, mProbes.size());
+    _SyncCookieTexArrays();
+    mProbeTexArraysDirty = false;
+    if (gRndDevice->mSettings->mUseTiledLighting) {
+        SafeDelete(mProbeTexArrays[0]);
+        SafeDelete(mProbeTexArrays[1]);
+        RndLightProbeCom::SyncTexarrays(mObject->mEntity, mProbes, mProbeIds,
+                                        mProbeStates, mProbeTexArrays);
+    }
+    return true;
 }
 
 // Reconstructed from eboot.elf at 0x480F10. The cookies are kept per
@@ -548,7 +575,8 @@ void RndLightMgrCom::_SyncCookieTexArrays() {
     const Vector3i extent{size, size, 1};
     for (int flag = 0; flag < 2; ++flag) {
         RndTextureArray2D::Description& desc2D = descs2D[flag];
-        desc2D.mPixels.resize(mCookieArrayElems[RndTextureBase::kTexture2D][flag].size());
+        desc2D.mPixels.resize(
+            mCookieArrayElems[RndTextureBase::kTexture2D][flag].size());
         for (RndPixelData& pixels : desc2D.mPixels) {
             if ((desc2D.mFormat.mFlags & kPixelFormatRenderTarget) != 0) {
                 pixels.CreateEmpty(extent, desc2D.mDataFormat);
@@ -558,7 +586,8 @@ void RndLightMgrCom::_SyncCookieTexArrays() {
             }
         }
         RndTextureArrayCube::Description& descCube = descsCube[flag];
-        descCube.mCubes.resize(mCookieArrayElems[RndTextureBase::kTextureCube][flag].size());
+        descCube.mCubes.resize(
+            mCookieArrayElems[RndTextureBase::kTextureCube][flag].size());
         for (RndPixelDataCube& cube : descCube.mCubes) {
             if ((descCube.mFormat.mFlags & kPixelFormatRenderTarget) != 0) {
                 cube.CreateEmpty(size, descCube.mDataFormat);
@@ -629,7 +658,8 @@ void RndLightMgrCom::_SyncCookieTexArrays() {
 
     for (RndLightCom* light : mLights) {
         RndTextureBase* cookie = light->_GetCookieTextureImpl();
-        if (cookie != nullptr && cookie->_GetTypeImpl() == RndTextureBase::kTexture2D) {
+        if (cookie != nullptr &&
+            cookie->_GetTypeImpl() == RndTextureBase::kTexture2D) {
             static_cast<RndTexture2D*>(cookie)->SetLinkedTexture(
                 mCookieTexArrays[IsRenderedCookie(*cookie)],
                 static_cast<long>(light->mRuntime.mTiledCookieIndex));
@@ -666,7 +696,8 @@ void RndLightMgrCom::_ReindexEnvirons(unsigned long first, unsigned long last) {
     const Entity* entity = mObject->mEntity;
     for (unsigned long i = first; i < last; ++i) {
         const GameObjectId id = mEnvironments[i];
-        GameObject* object = id.mId != gNullObjectId.mId ? entity->GetObject(id) : nullptr;
+        GameObject* object =
+            id.mId != gNullObjectId.mId ? entity->GetObject(id) : nullptr;
         if (object == nullptr) {
             mEnvironComs[i] = nullptr;
             continue;
@@ -677,7 +708,8 @@ void RndLightMgrCom::_ReindexEnvirons(unsigned long first, unsigned long last) {
     }
     for (unsigned long i = first; i < last; ++i) {
         const GameObjectId id = mEnvironments[i];
-        GameObject* object = id.mId != gNullObjectId.mId ? entity->GetObject(id) : nullptr;
+        GameObject* object =
+            id.mId != gNullObjectId.mId ? entity->GetObject(id) : nullptr;
         if (object == nullptr) {
             continue;
         }
@@ -765,7 +797,8 @@ void RndLightMgrCom::RemoveProbe(RndLightProbeCom* probe) {
 
 // Reconstructed from eboot.elf at 0x482C80.
 void RndLightMgrCom::SetIsolatedProbe(RndLightProbeCom* probe) {
-    mIsolatedProbe = static_cast<std::int32_t>(probe != nullptr ? probe->mObject->mId.mId : gNullObjectId.mId);
+    mIsolatedProbe = static_cast<std::int32_t>(
+        probe != nullptr ? probe->mObject->mId.mId : gNullObjectId.mId);
     mIsolatedProbeCom = probe;
 }
 
@@ -784,8 +817,10 @@ void RndLightMgrCom::CullLights(
     const RndConfig& config = *gRndDevice->mSettings;
     for (auto& lists : mCullResults.mLights) {
         for (RndLightCom* light : lists[0]) {
-            const bool castsShadows = light->_CastsShadowsImpl(config.mQualityLevel);
-            if (light->_AcquireDeferredShadowContributionResourcesImpl(castsShadows && params.mDrawShadows, *this)) {
+            const bool castsShadows =
+                light->_CastsShadowsImpl(config.mQualityLevel);
+            if (light->_AcquireDeferredShadowContributionResourcesImpl(
+                    castsShadows && params.mDrawShadows, *this)) {
                 mCullResults.mShadowLights.push_back(light);
             }
         }
@@ -805,7 +840,8 @@ void RndLightMgrCom::_FrustumCullLights(
     const RndSceneDrawParams& params) {
     static_cast<void>(sceneDrawId);
     static_cast<void>(sceneDrawIndex);
-    const RndLightCullPlanes planes{camera.mDerivedCache.mData, camera.mDerivedCache.mSize};
+    const RndLightCullPlanes planes{
+        camera.mDerivedCache.mData, camera.mDerivedCache.mSize};
     CullResults& results = mCullResults;
     Clear(results);
     for (auto& lists : results.mLights) {
@@ -822,26 +858,32 @@ void RndLightMgrCom::_FrustumCullLights(
             if (!light->mRuntime.mVisible) {
                 continue;
             }
-            const unsigned int flags = light->mRuntime.mDrawNode->mRuntime.mWorldShowHideFlags;
-            if (showHide.mShowFlags != 0 && (flags & showHide.mShowFlags) == 0) {
+            const unsigned int flags =
+                light->mRuntime.mDrawNode->mRuntime.mWorldShowHideFlags;
+            if (showHide.mShowFlags != 0 &&
+                (flags & showHide.mShowFlags) == 0) {
                 continue;
             }
             if ((flags & showHide.mHideFlags) != 0) {
                 continue;
             }
-            if (light->mRuntime.mEnvironBits == 0 && (!light->mVolumetric || !config.mVolumetricScatteringEnabled)) {
+            if (light->mRuntime.mEnvironBits == 0 &&
+                (!light->mVolumetric ||
+                 !config.mVolumetricScatteringEnabled)) {
                 continue;
             }
             if (light->_FrustumExcludesImpl(camera.mFrustum, planes)) {
                 continue;
             }
             const int type = light->_GetTypeImpl();
-            results.mLights[type][light->mIlluminationType == 3 ? 1 : 0].push_back(light);
+            results.mLights[type][light->mIlluminationType == 3 ? 1 : 0]
+                .push_back(light);
         }
     }
     if (ShadingModeKeepsProbes(mode)) {
         for (RndLightProbeCom* probe : mProbes) {
-            if (probe->mRuntime.mVisible && !probe->_FrustumExcludes(camera.mFrustum, planes)) {
+            if (probe->mRuntime.mVisible &&
+                !probe->_FrustumExcludes(camera.mFrustum, planes)) {
                 results.mProbes.push_back(probe);
             }
         }
@@ -862,7 +904,8 @@ void RndLightMgrCom::_FrustumCullLights(
                     const int illuminationType = light->mIlluminationType;
                     for (unsigned long i = 0; i < numEnvirons; ++i) {
                         if (((bits >> i) & 1) != 0) {
-                            mEnvironComs[i]->AddCulledLight(light, type, illuminationType);
+                            mEnvironComs[i]->AddCulledLight(
+                                light, type, illuminationType);
                         }
                     }
                 }
@@ -873,12 +916,15 @@ void RndLightMgrCom::_FrustumCullLights(
     if (camera.mTargetMode != 1) {
         return;
     }
-    const float slice = 1.0F / static_cast<float>(static_cast<std::uint64_t>(config.mLightTileDepthSlices));
+    const float slice = 1.0F / static_cast<float>(
+        static_cast<std::uint64_t>(config.mLightTileDepthSlices));
     const Vector3* corners = camera.mFrustum.mCorners.mData;
     Vector3 sliceCorners[8];
     for (int i = 0; i < 4; ++i) {
         sliceCorners[i] = corners[i];
-        sliceCorners[i + 4] = slice == 0.0F ? corners[i] : LerpCorner(corners[i], corners[i + 4], slice);
+        sliceCorners[i + 4] = slice == 0.0F
+            ? corners[i]
+            : LerpCorner(corners[i], corners[i + 4], slice);
     }
     Frustum sliceFrustum;
     sliceFrustum.SetCorners(sliceCorners);
@@ -921,7 +967,9 @@ void RndLightMgrCom::_CullTiledLights(
 }
 
 // Reconstructed from eboot.elf at 0x484160.
-void RndLightMgrCom::_FillTiledLightBuffers(RndContext& ctx, const RndCameraContext& camera) {
+void RndLightMgrCom::_FillTiledLightBuffers(
+    RndContext& ctx,
+    const RndCameraContext& camera) {
     const RndConfig& config = *gRndDevice->mSettings;
     for (RndTiledLightsComputeBuffer& lights : mLightBuffers) {
         lights.mBuffer->mStagingSize = 0;
@@ -929,17 +977,21 @@ void RndLightMgrCom::_FillTiledLightBuffers(RndContext& ctx, const RndCameraCont
     for (unsigned long type = 0; type < kNumTiledLightsBufferTypes; ++type) {
         RndTiledLightsComputeBuffer& lights = mLightBuffers[type];
         RndComputeBuffer& buffer = *lights.mBuffer;
-        unsigned long* counts[2] = {&lights.mNumPosLights, &lights.mNumNegLights};
+        unsigned long* counts[2] = {
+            &lights.mNumPosLights, &lights.mNumNegLights};
         for (int list = 0; list < 2; ++list) {
             *counts[list] = 0;
             for (RndLightCom* light : mCullResults.mLights[type][list]) {
-                const unsigned int index = static_cast<unsigned int>(buffer.mStagingSize / buffer.mDesc.mElementSize);
+                const unsigned int index = static_cast<unsigned int>(
+                    buffer.mStagingSize / buffer.mDesc.mElementSize);
                 if (index >= buffer.mDesc.mNumElements) {
-                    static_cast<void>(RndLightUtl::GetLightTypeName(static_cast<RndLightType>(type)));
+                    static_cast<void>(RndLightUtl::GetLightTypeName(
+                        static_cast<RndLightType>(type)));
                     break;
                 }
                 light->mRuntime.mLightBufferIndex = static_cast<int>(index);
-                light->_AddToComputeBufferImpl(config.mQualityLevel, camera, buffer);
+                light->_AddToComputeBufferImpl(
+                    config.mQualityLevel, camera, buffer);
                 ++*counts[list];
             }
         }
@@ -956,8 +1008,14 @@ void RndLightMgrCom::_FillTiledLightBuffers(RndContext& ctx, const RndCameraCont
             break;
         }
         probe->mRuntime.mComputeBufferIndex = static_cast<int>(index);
-        probe->AddToComputeBuffer(camera, mCurProbeStateAIndex, mCurProbeStateBIndex, mCurStateBlend, probes);
-        index = static_cast<unsigned int>(probes.mStagingSize / probes.mDesc.mElementSize);
+        probe->AddToComputeBuffer(
+            camera,
+            mCurProbeStateAIndex,
+            mCurProbeStateBIndex,
+            mCurStateBlend,
+            probes);
+        index = static_cast<unsigned int>(
+            probes.mStagingSize / probes.mDesc.mElementSize);
     }
     probes._SyncDynamicImpl(ctx);
 }
@@ -968,7 +1026,8 @@ void RndLightMgrCom::_FillSliceZeroLightIds(RndContext& ctx) {
     RndComputeBuffer& buffer = *mSliceZeroLightIdBuffer;
     buffer.mStagingSize = 0;
     auto append = [&buffer](int id) {
-        *reinterpret_cast<int*>(static_cast<char*>(buffer.mStagingData) + buffer.mStagingSize) = id;
+        *reinterpret_cast<int*>(
+            static_cast<char*>(buffer.mStagingData) + buffer.mStagingSize) = id;
         buffer.mStagingSize += sizeof(int);
     };
     for (RndLightProbeCom* probe : mSliceZeroCullResults.mProbes) {
@@ -1081,7 +1140,8 @@ void RndLightMgrCom::_CullTiledLightsStereo(
     cull.mSliceZeroLightIds = mSliceZeroLightIdBuffer;
     for (int type = 0; type < 2; ++type) {
         for (int list = 0; list < 2; ++list) {
-            cull.mNumSliceZeroLights[type][list] = slice.mLights[type][list].size();
+            cull.mNumSliceZeroLights[type][list] =
+                slice.mLights[type][list].size();
         }
     }
     cull.mNumSliceZeroProbes = slice.mProbes.size();
@@ -1339,7 +1399,8 @@ void RndLightMgrCom::DrawShadowMaps(
 // Reconstructed from eboot.elf at 0x485FC0.
 long RndLightMgrCom::AcquireShadowContribution() {
     const std::uint64_t index = mNumShadowContributions;
-    if (index >= static_cast<std::uint64_t>(gRndDevice->mSettings->mMaxShadowContribBuffers)) {
+    if (index >= static_cast<std::uint64_t>(
+                     gRndDevice->mSettings->mMaxShadowContribBuffers)) {
         return -1;
     }
     mNumShadowContributions = index + 1;
@@ -1351,12 +1412,14 @@ long RndLightMgrCom::AcquireShadowContribution() {
 long RndLightMgrCom::AcquireSpotShadowDepthLayers(unsigned long count) {
     const std::uint64_t first = mNumSpotShadowDepthLayers;
     const std::uint64_t end = first + count;
-    if (end <= mQualitySettings[mSpotShadowConfigIndex].mMaxShadowCastingSpotlights) {
+    if (end <= mQualitySettings[mSpotShadowConfigIndex]
+                   .mMaxShadowCastingSpotlights) {
         mNumSpotShadowDepthLayers = end;
         return static_cast<long>(first);
     }
     static_cast<void>(mObject->MakeErrorName());
-    static_cast<void>(RndQualityLevelName(static_cast<RndQualityLevel>(mSpotShadowConfigIndex)));
+    static_cast<void>(RndQualityLevelName(
+        static_cast<RndQualityLevel>(mSpotShadowConfigIndex)));
     return -1;
 }
 
@@ -1397,8 +1460,10 @@ void RndLightMgrCom::SetFwdLightingConstants(
         return;
     }
     const int tileSize = static_cast<int>(config.mLightTileSize);
-    const int tilesX = size.x / tileSize + (size.x / tileSize * tileSize < size.x);
-    const int tilesY = size.y / tileSize + (size.y / tileSize * tileSize < size.y);
+    const int tilesX =
+        size.x / tileSize + (size.x / tileSize * tileSize < size.x);
+    const int tilesY =
+        size.y / tileSize + (size.y / tileSize * tileSize < size.y);
     float* constants = reinterpret_cast<float*>(
         static_cast<char*>(cbuffer.mData)
         + 16 * gRndDevice->mShaderMgr.mTiledLightingParams);
@@ -1514,7 +1579,8 @@ void RndLightMgrCom::_PreDestroy(DestroyType type) {
 // Reconstructed from eboot.elf at 0x48A1B0. The probes of an old scene
 // each held their state names; they are merged into "states".
 bool RndLightMgrCom::_OnResourcesLoaded() {
-    mSpotShadowConfigIndex = static_cast<std::int32_t>(gRndDevice->mSettings->mQualityLevel);
+    mSpotShadowConfigIndex =
+        static_cast<std::int32_t>(gRndDevice->mSettings->mQualityLevel);
     _InitBuffers();
     if (mUpgradeProbeStates) {
         mUpgradeProbeStates = false;
@@ -1530,7 +1596,8 @@ bool RndLightMgrCom::_OnResourcesLoaded() {
             }
             for (unsigned int i = 0; i < probe->mStateNames.size(); ++i) {
                 const Symbol name = probe->mStateNames[i];
-                if (Find(mProbeStates, name) == static_cast<unsigned long>(-1)) {
+                if (Find(mProbeStates, name) ==
+                    static_cast<unsigned long>(-1)) {
                     mProbeStates._Insert(mProbeStates.size(), &name);
                 }
             }
@@ -1610,7 +1677,8 @@ void RndLightMgrCom::_Poll() {
                     first = gNullObjectId;
                 }
                 if (mDefaultEnvironment.mId != first.mId) {
-                    const unsigned long index = Find(mEnvironments, mDefaultEnvironment);
+                    const unsigned long index =
+                        Find(mEnvironments, mDefaultEnvironment);
                     if (index != static_cast<unsigned long>(-1)) {
                         mEnvironments[0] = mDefaultEnvironment;
                         RemoveAt(mEnvironments, index);
@@ -1624,7 +1692,9 @@ void RndLightMgrCom::_Poll() {
 
     for (const RenamedProbeState& renamed : mRenamedProbeStates) {
         const Symbol newName = mProbeStates[renamed.mIndex];
-        if (renamed.mOldName != Symbol() && Find(mProbeStates, renamed.mOldName) == static_cast<unsigned long>(-1)) {
+        if (renamed.mOldName != Symbol() &&
+            Find(mProbeStates, renamed.mOldName) ==
+                static_cast<unsigned long>(-1)) {
             if (mCurStateA == renamed.mOldName) {
                 mCurStateA = newName;
             }
@@ -1646,14 +1716,18 @@ void RndLightMgrCom::_Poll() {
         _RebuildProbeTexArrays();
     }
 
-    const std::int32_t quality = static_cast<std::int32_t>(gRndDevice->mSettings->mQualityLevel);
+    const std::int32_t quality =
+        static_cast<std::int32_t>(gRndDevice->mSettings->mQualityLevel);
     if (quality != mSpotShadowConfigIndex) {
-        const QualitySettings& previous = mQualitySettings[mSpotShadowConfigIndex];
+        const QualitySettings& previous =
+            mQualitySettings[mSpotShadowConfigIndex];
         mSpotShadowConfigIndex = quality;
         const QualitySettings& current = mQualitySettings[quality];
-        if (previous.mMaxShadowCastingSpotlights != current.mMaxShadowCastingSpotlights ||
+        if (previous.mMaxShadowCastingSpotlights !=
+                current.mMaxShadowCastingSpotlights ||
             (previous.mMaxShadowCastingSpotlights != 0 &&
-             previous.mSpotlightShadowmapResolution != current.mSpotlightShadowmapResolution)) {
+             previous.mSpotlightShadowmapResolution !=
+                 current.mSpotlightShadowmapResolution)) {
             mSpotShadowDepthTexArrayDirty = true;
         }
     }
@@ -1674,8 +1748,10 @@ void RndLightMgrCom::_SyncSpotShadowDepthTexArray() {
     }
 
     const RndDataFormatInfo depthFormat{16, 12, 0, 1, -1};
-    const auto dataFormat = RndFindSupportedDataFormat(depthFormat, kPlatformPS4);
-    const auto resolution = config.mSpotlightShadowmapResolution < kSpotShadowResolutions.size()
+    const auto dataFormat =
+        RndFindSupportedDataFormat(depthFormat, kPlatformPS4);
+    const auto resolution =
+        config.mSpotlightShadowmapResolution < kSpotShadowResolutions.size()
         ? kSpotShadowResolutions[config.mSpotlightShadowmapResolution]
         : std::numeric_limits<std::uint32_t>::max();
 
@@ -1687,7 +1763,8 @@ void RndLightMgrCom::_SyncSpotShadowDepthTexArray() {
     desc.mRequestedFormat.mFlags = 2;
     desc.mName = "Spot Shadow Depth TexArray";
 
-    const auto numLayers = static_cast<unsigned long>(config.mMaxShadowCastingSpotlights);
+    const auto numLayers =
+        static_cast<unsigned long>(config.mMaxShadowCastingSpotlights);
     desc.mPixels.resize(numLayers);
     const auto size = static_cast<int>(resolution);
     for (unsigned long index = 0; index < numLayers; ++index) {
@@ -2018,7 +2095,8 @@ int RndLightMgrCom::CurrentRev() const {
 
 // Reconstructed from eboot.elf at 0x48CA90.
 bool RndLightMgrCom::IsA(Symbol type) const {
-    for (const ComMetaData* metadata = &sMetaData; metadata != nullptr; metadata = metadata->mSuperclass) {
+    for (const ComMetaData* metadata = &sMetaData; metadata != nullptr;
+         metadata = metadata->mSuperclass) {
         if (metadata->mId == type) {
             return true;
         }
@@ -2055,4 +2133,15 @@ PropRegistry& RndLightMgrCom::_GetPropRegistry() {
 // Reconstructed from eboot.elf at 0x48CCE0.
 ComMetaData& RndLightMgrCom::_GetMetaData() {
     return sMetaData;
+}
+
+// Reconstructed from eboot.elf at 0x6DB070.
+void RndLightMgrCom::CullResults::Reserve(
+    const unsigned long (&lightCounts)[3][2], unsigned long probeCount) {
+    for (int type = 0; type < 3; ++type) {
+        mLights[type][0].reserve(lightCounts[type][0]);
+        mLights[type][1].reserve(lightCounts[type][1]);
+    }
+    mProbes.reserve(probeCount);
+    mShadowLights.reserve(gRndDevice->mSettings->mMaxShadowContribBuffers);
 }

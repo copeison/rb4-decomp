@@ -47,6 +47,12 @@ public:
         unsigned int slot,
         unsigned int stages,
         unsigned long numBuffers);  // 0x63A0C0
+    // An unnamed layout with no slot and one buffer, for a caller to fill;
+    // its size starts at ~0. RndMaterialRuntimeData uses it.
+    RndShaderCBufferConfig();  // 0x63A070
+    // Stops recording constants, so only the layout's size grows; the
+    // material data checks a graph's buffer size with it.
+    void MarkForMaterialValidation();  // 0x63A1A0
 
     unsigned long AddConstant(RndShaderNumericType type, const char* name);  // 0x63A1B0
     unsigned long AddConstantArray(

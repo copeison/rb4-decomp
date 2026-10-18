@@ -97,7 +97,7 @@ public:
         // Cleared by the constructor; no reader was found.
         bool mReserved;
         // Set when an entity around the object polls only while on screen
-        // (InstanceCom "instance_polling_mode" 2): the entity root then
+        // (EntityHeaderCom "instance_polling_mode" 2): the entity root then
         // keeps a local sphere around its entity's draw nodes. Always set in
         // the edit mode.
         bool mNeedsEntityRootSphere;

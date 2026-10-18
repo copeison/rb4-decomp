@@ -57,6 +57,11 @@ BinStream::~BinStream() {
     }
 }
 
+// Reconstructed from eboot.elf at 0x21A710.
+void BinStream::SetLittleEndian(bool littleEndian) {
+    mLittleEndian = littleEndian;
+}
+
 void BinStream::Decrypt(void* data, unsigned long size) {
     if (mCrypto == nullptr || size == 0) {
         return;

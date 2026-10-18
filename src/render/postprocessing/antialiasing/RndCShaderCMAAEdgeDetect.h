@@ -8,22 +8,26 @@ class RndBufferCollection;
 class RndContext;
 struct RndSceneDrawTarget;
 
-// Detects the color edges that CMAA blends along.
+// Detects the color edges that CMAA blends along (render/
+// RndCShaderCMAAEdgeDetect.o, 0x450490-0x4508AF). The vtable is at
+// 0x1902A28.
 class RndCShaderCMAAEdgeDetect : public RndShaderCompute {
 public:
     RndCShaderCMAAEdgeDetect();  // 0x450490
-    ~RndCShaderCMAAEdgeDetect() override;
+    ~RndCShaderCMAAEdgeDetect() override;  // 0x4504D0, 0x4504E0
 
-    const char* _GetClassNameImpl() const override;
-    const char* _GetShaderFilePath() const override;
+    const char* _GetClassNameImpl() const override;  // slot 2 at 0x450840
+    const char* _GetShaderFilePath() const override; // slot 3 at 0x450770
     void _InitConfigImpl(
         RndShaderFixedDefines& fixedDefines,
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
-        RndShaderResourceConfig& resources) override;
+        RndShaderResourceConfig& resources) override;  // slot 4 at 0x450780
+    int _GetShaderStages() const override;           // slot 6 at 0x450860
 
     // Finds the edges of the target's source light accumulation with the
-    // threshold. Not reconstructed. Name not in the reference map.
+    // threshold, writing them compressed and seeding the color output. The
+    // map's signature is Dispatch(RndContext&, RndBufferCollection&, float).
     void Dispatch(
         RndContext& context,
         RndBufferCollection& buffers,

@@ -21,3 +21,9 @@ With a previous block, all textures reuse their matching old slots. During
 first-time creation, the depth-256 and depth-128 mono textures reuse their
 family's newly created depth-512 texture. Stereo textures receive no reuse
 input. The matching release loop virtually deletes and clears all nine slots.
+
+`RndCShaderVScatCalcDensityInscattering::Dispatch` (`0x6D2780`) fills the
+inscattering volumes, `RndCShaderVScatAccumScattering::Dispatch`
+(`0x6D1F20`) accumulates them along each view ray, and
+`RndCShaderVScatDeferred::Dispatch` (`0x6D3530`) applies the result to the
+light accumulation.

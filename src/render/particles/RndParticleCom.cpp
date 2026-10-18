@@ -34,22 +34,22 @@ Symbol RndParticleCom::sId("PSys");
 Symbol RndParticleCom::sClassName("PSys");
 PropRegistry RndParticleCom::sPropRegistry;
 ComMetaData RndParticleCom::sMetaData;
-ResourcePtr<Resource> RndParticleCom::sDefaultPitch;
-ResourcePtr<Resource> RndParticleCom::sDefaultYaw;
-ResourcePtr<Resource> RndParticleCom::sDefaultEmitRate;
-ResourcePtr<Resource> RndParticleCom::sDefaultSpeedMultiplierOverLife;
-ResourcePtr<Resource> RndParticleCom::sDefaultLifespan;
-ResourcePtr<Resource> RndParticleCom::sDefaultSpeed;
-ResourcePtr<Resource> RndParticleCom::sDefaultInitialSize;
-ResourcePtr<Resource> RndParticleCom::sDefaultPivot;
-ResourcePtr<Resource> RndParticleCom::sDefaultZPivot;
-ResourcePtr<Resource> RndParticleCom::sDefaultScaleOverLife;
-ResourcePtr<Resource> RndParticleCom::sDefaultColor;
-ResourcePtr<Resource> RndParticleCom::sDefaultAlpha;
-ResourcePtr<Resource> RndParticleCom::sDefaultXRotationAngle;
-ResourcePtr<Resource> RndParticleCom::sDefaultYRotationAngle;
-ResourcePtr<Resource> RndParticleCom::sDefaultRotationAngle;
-ResourcePtr<Resource> RndParticleCom::sDefaultExtraData;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultPitch;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultYaw;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultEmitRate;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultSpeedMultiplierOverLife;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultLifespan;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultSpeed;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultInitialSize;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultPivot;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultZPivot;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultScaleOverLife;
+ResourcePtr<WaveformResource<Hmx::Color>> RndParticleCom::sDefaultColor;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultAlpha;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultXRotationAngle;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultYRotationAngle;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultRotationAngle;
+ResourcePtr<WaveformResource<float>> RndParticleCom::sDefaultExtraData;
 RndMesh* RndParticleCom::sDefaultMesh;
 
 namespace {
@@ -111,6 +111,108 @@ RndParticleCom::RndParticleCom()
 // Reconstructed from eboot.elf at 0x601B90. The members release their
 // resources; the base leaves the scene drawer's list.
 RndParticleCom::~RndParticleCom() {}
+
+// Reconstructed from eboot.elf at 0x601FC0. The waveforms are built with
+// the waveform default and then take the class's.
+RndParticleCom::EmitterParams::EmitterParams()
+    : mDuration(30.0F),
+      mEmitCanKillOldest(false),
+      mNeverKill(false),
+      mMinBoxExtents(Vector3::sZero),
+      mMaxBoxExtents(Vector3::sZero),
+      mPitch(),
+      mYaw(),
+      mBirthMomentum(false),
+      mBirthMomentumAmount(1.0F),
+      mSubsamples(0),
+      mLocalSpace(false) {
+    mPitch.SetResource(sDefaultPitch.Get());
+    mYaw.SetResource(sDefaultYaw.Get());
+}
+
+// Inlined into ~RndParticleCom (0x601B90).
+RndParticleCom::EmitterParams::~EmitterParams() {}
+
+// Reconstructed from eboot.elf at 0x602200. The three scale waveforms share
+// sDefaultScaleOverLife, and the x and y pivots sDefaultPivot.
+RndParticleCom::ParticleParams::ParticleParams()
+    : mParticleType(kSprite),
+      mMeshResourcePath(),
+      mMaxCount(100),
+      mEmitRate(),
+      mEmitRateMultiplier(1.0F),
+      mEmitDistancePerParticle(0.0F),
+      mLifespan(),
+      mLifespanMultiplier(1.0F),
+      mSpeed(),
+      mSpeedMultiplierOverLife(),
+      mDrag(0.0F),
+      mInitialSize(),
+      mXScaleOverLife(),
+      mYScaleOverLife(),
+      mZScaleOverLife(),
+      mUniformScale(true),
+      mXPivotOverLife(),
+      mYPivotOverLife(),
+      mZPivotOverLife(),
+      mOffsetThenScale(true),
+      mForceDirection(Vector3::sZero) {
+    mEmitRate.SetResource(sDefaultEmitRate.Get());
+    mLifespan.SetResource(sDefaultLifespan.Get());
+    mSpeed.SetResource(sDefaultSpeed.Get());
+    mSpeedMultiplierOverLife.SetResource(sDefaultSpeedMultiplierOverLife.Get());
+    mInitialSize.SetResource(sDefaultInitialSize.Get());
+    mXScaleOverLife.SetResource(sDefaultScaleOverLife.Get());
+    mYScaleOverLife.SetResource(sDefaultScaleOverLife.Get());
+    mZScaleOverLife.SetResource(sDefaultScaleOverLife.Get());
+    mXPivotOverLife.SetResource(sDefaultPivot.Get());
+    mYPivotOverLife.SetResource(sDefaultPivot.Get());
+    mZPivotOverLife.SetResource(sDefaultZPivot.Get());
+}
+
+// Reconstructed from eboot.elf at 0x602D70.
+RndParticleCom::ColorParams::ColorParams()
+    : mColor(sDefaultColor.Get()), mAlpha(sDefaultAlpha.Get()) {}
+
+// Inlined into ~RndParticleCom (0x601B90).
+RndParticleCom::ColorParams::~ColorParams() {}
+
+// Reconstructed from eboot.elf at 0x602EC0.
+RndParticleCom::SpinParams::SpinParams()
+    : mInitialRotation(kUnrotated),
+      mInitialXRotationAngle(),
+      mInitialYRotationAngle(),
+      mInitialRotationAngle(),
+      mOrientation(Hmx::Matrix3::sID),
+      mXRpmOverLife(),
+      mYRpmOverLife(),
+      mRpmOverLife(),
+      mXRpmDrag(0.0F),
+      mYRpmDrag(0.0F),
+      mRpmDrag(0.0F) {
+    mInitialXRotationAngle.SetResource(sDefaultXRotationAngle.Get());
+    mInitialYRotationAngle.SetResource(sDefaultYRotationAngle.Get());
+    mInitialRotationAngle.SetResource(sDefaultRotationAngle.Get());
+}
+
+// Reconstructed from eboot.elf at 0x6033F0. The channels start disabled.
+RndParticleCom::ExtraDataParams::ExtraDataParams()
+    : mExtraDataType0(kExtraDataDisabled),
+      mExtraDataType1(kExtraDataDisabled),
+      mExtraDataType2(kExtraDataDisabled),
+      mExtraData0(),
+      mExtraData1(),
+      mExtraData2() {
+    mExtraData0.SetResource(sDefaultExtraData.Get());
+    mExtraData1.SetResource(sDefaultExtraData.Get());
+    mExtraData2.SetResource(sDefaultExtraData.Get());
+}
+
+// Inlined into RndParticleCom's copy constructor (0x619130).
+RndParticleCom::ExtraDataParams::ExtraDataParams(const ExtraDataParams& other) = default;
+
+// Inlined into ~RndParticleCom (0x601B90).
+RndParticleCom::ExtraDataParams::~ExtraDataParams() {}
 
 // Reconstructed from eboot.elf at 0x6036F0. The cached components and the
 // mesh are left for _OnResourcesLoaded to set.
@@ -710,6 +812,26 @@ PropRegistry& RndParticleCom::_GetPropRegistry() {
 ComMetaData& RndParticleCom::_GetMetaData() {
     return sMetaData;
 }
+
+// Reconstructed from eboot.elf at 0x6182F0. The waveforms release their
+// resources.
+RndParticleCom::SpinParams::~SpinParams() {}
+
+// Reconstructed from eboot.elf at 0x6183C0.
+RndParticleCom::ParticleParams::~ParticleParams() {}
+
+// Reconstructed from eboot.elf at 0x619580. Each waveform shares the
+// other's resources and draws a new evaluation state.
+RndParticleCom::EmitterParams::EmitterParams(const EmitterParams& other) = default;
+
+// Reconstructed from eboot.elf at 0x619720.
+RndParticleCom::ParticleParams::ParticleParams(const ParticleParams& other) = default;
+
+// Reconstructed from eboot.elf at 0x61A020.
+RndParticleCom::ColorParams::ColorParams(const ColorParams& other) = default;
+
+// Reconstructed from eboot.elf at 0x61A1A0.
+RndParticleCom::SpinParams::SpinParams(const SpinParams& other) = default;
 
 // Reconstructed from eboot.elf at 0x405B30. The binary emits the factory
 // with the class's Init (0x3FA5F0), before the renderer's components; the

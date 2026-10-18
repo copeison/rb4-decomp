@@ -61,6 +61,7 @@ public:
     void WriteEndian(const void* data, int size);
     void Write(const void* data, unsigned long size);  // 0x219DF0
     void Seek(long offset, SeekType origin);
+    void SetLittleEndian(bool littleEndian);  // 0x21A710
     BinStream& operator>>(Symbol& symbol);
     // Writes the symbol's length and characters, encrypted when the stream
     // has a cipher.

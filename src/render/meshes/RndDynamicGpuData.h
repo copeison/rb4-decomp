@@ -9,6 +9,7 @@
 class RndContext;
 
 class RndDynamicGpuData;
+class RndSceneDrawSyncJob;
 
 // Queue of objects whose GPU data must be refreshed (render/
 // RndDynamicGpuDataMgr.o). Each scene drawer owns one. Field names are not
@@ -27,6 +28,11 @@ public:
     // it. Inlined into RndMaterialCom's poll (0x4F44B2) and RndMeshCom::_Poll
     // (0x5C9E00). Name not in the reference map.
     void Enqueue(RndDynamicGpuData& data);
+    // Shares the queue out among the scene drawer's dynamic GPU data jobs
+    // (RndSceneDrawJobs::Start), each taking an equal run and the first
+    // ones one more, and empties it, under the queue's lock. Name not in
+    // the reference map.
+    void SplitQueue(eastl::vector<RndSceneDrawSyncJob*>& jobs);  // 0x6C9FE0
 
     CritSec mCritSec;
     eastl::vector<RndDynamicGpuData*> mQueue;

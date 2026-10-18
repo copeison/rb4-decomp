@@ -5,7 +5,13 @@ class Color;
 }
 
 class RndPixelCanvas;
+class RndTexture1DResource;
+class Vector2i;
+template <class T>
+class Waveform;
 enum RndDefaultTextureType : int;
+// The engine's texture wrap modes; the enumerators are not recovered.
+enum RndTexWrapMode : int;
 
 // Texture helpers shared by the renderer.
 class RndTextureUtl {
@@ -25,4 +31,12 @@ public:
         const Hmx::Color& primary,
         const Hmx::Color& secondary,
         int cellSize);
+
+    // Bakes the waveform into a new 1D texture resource of the size, with
+    // the wrap mode. The map passes the waveform by value. Not
+    // reconstructed.
+    static RndTexture1DResource* CreateWaveformFloatTextureResource(
+        const Waveform<float>& waveform,
+        RndTexWrapMode wrap,
+        Vector2i size);  // 0x6AF510
 };

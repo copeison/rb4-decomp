@@ -11,6 +11,7 @@
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
 #include "entity/core/TransCom.h"
+#include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/buffers/RndShaderCBuffer.h"
 #include "render/context/RndCameraCom.h"
@@ -22,6 +23,7 @@
 #include "render/lighting/lights/RndLightProbeCom.h"
 #include "render/lighting/shadows/RndShaderLightDirectionalShadowGen.h"
 #include "render/scene/RndDrawNodeCom.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShader.h"
 #include "render/system/RndDevice.h"
 #include "render/textures/RndTexture2D.h"
@@ -151,6 +153,36 @@ bool RndLightDirectionalCom::_OnResourcesLoaded() {
     }
     _SyncShadowResources();
     return true;
+}
+
+// Reconstructed from eboot.elf at 0x473B50. The entity is built in
+// temporary memory, copied into a lasting allocation that replaces the
+// resource's entity, and destroyed; the camera is then found in the copy.
+// The parent component id passed is constructed from the empty string.
+void RndLightDirectionalCom::_SyncShadowResources() {
+    if (!mCastsShadows) {
+        return;
+    }
+    if (mRuntimeData.mShadowCamera == nullptr) {
+        mRuntimeData.mShadowEntity = new RndSceneResource();
+        unsigned int temp;
+        MemPushTemp(temp, true, true);
+        Entity* const entity = mRuntimeData.mShadowEntity->CreateEntity();
+        GameObject* const object = entity->CreateObject(0, 0);
+        const GameObjectId id = object->mId;
+        object->CreateComponent(RndCameraCom::sClassName, false);
+        MemPopTemp(temp);
+        Entity* const copy = entity->Clone(nullptr, false, nullptr, Symbol(""));
+        mRuntimeData.mShadowEntity->SwapEntity(copy);
+        if (entity != nullptr) {
+            entity->_Destroy();
+        }
+        mRuntimeData.mShadowCamera = copy->GetObject(id)->GetCom<RndCameraCom>();
+    }
+    if (mRuntimeData.mShadowGenCBuffer == nullptr) {
+        mRuntimeData.mShadowGenCBuffer = RndShaderCBuffer::New(
+            *gRndDevice->mLighting.mDirectionalShadowGenShader->mCBufferConfig, 0);
+    }
 }
 
 // Reconstructed from eboot.elf at 0x473D30.

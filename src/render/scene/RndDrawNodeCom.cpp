@@ -10,6 +10,7 @@
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
+#include "entity/core/EntityHeaderCom.h"
 #include "entity/core/InstanceCom.h"
 #include "entity/core/TransCom.h"
 #include "entity/props/PropRegistry.h"
@@ -19,10 +20,6 @@
 #include "render/scene/RndSceneCom.h"
 #include "render/scene/RndSceneInstanceCom.h"
 
-// The class symbol of the instance component, "Instance" (sId 0x19E3278,
-// vtable 0x18E6D58), which EntityResource.o also uses. Name not in the
-// reference map.
-extern Symbol gEntityInstanceComId;  // 0x19E3280
 // The class symbols of the instance pool component, "InstancePool"
 // (vtable 0x18E7058). Names not in the reference map.
 extern Symbol gInstancePoolComId;     // 0x19E35A0
@@ -45,11 +42,11 @@ bool IsNull(GameObjectId id) {
 // GameObject::GetBaseCom does. Inlined into its users. Name not in the
 // reference map.
 Component* FindInstanceCom(const GameObject* object) {
-    if (gEntityInstanceComId == Symbol()) {
+    if (InstanceCom::sClassName == Symbol()) {
         return nullptr;
     }
     for (const GameObject::ComIndex& index : object->mComs) {
-        if (index.mBaseId == gEntityInstanceComId) {
+        if (index.mBaseId == InstanceCom::sClassName) {
             return index.mCom;
         }
     }
@@ -67,18 +64,16 @@ Component* FindInstancePoolCom(const GameObject* object) {
     return nullptr;
 }
 
-// The entity an instance component instances, at its offset 80. The class
-// is not modelled. Name not in the reference map.
+// The entity an instance component instances. Name not in the reference
+// map.
 Entity* GetInstancedEntity(const Component* instance) {
-    return *reinterpret_cast<Entity* const*>(
-        reinterpret_cast<const char*>(instance) + 80);
+    return static_cast<const InstanceCom*>(instance)->mRuntime.mEntity;
 }
 
-// The instance component's byte at 122, which the poll takes as a sign
-// that the instanced entity changed. The evidence for the meaning is weak.
-// Name not in the reference map.
+// Whether the instanced entity changed since the instance component last
+// polled. Name not in the reference map.
 bool InstancedEntityChanged(const Component* instance) {
-    return reinterpret_cast<const unsigned char*>(instance)[122] != 0;
+    return static_cast<const InstanceCom*>(instance)->mRuntime.mNeedsInstance;
 }
 
 // The resource an instance pool instances, at its offset 304 (the pool
@@ -106,11 +101,10 @@ PoolLink* GetPoolLinks(Component* pool) {
         reinterpret_cast<char*>(pool) + 384);
 }
 
-// The TransCom byte at 64 (TransCom::mReserved's first byte), which keeps
-// _CacheNodePointers from fixing the draw-node parent. Its writer is not
-// identified, so the meaning is weak. Name not in the reference map.
+// The TransCom's "parent_dynamic", which keeps _CacheNodePointers from
+// fixing the draw-node parent. Name not in the reference map.
 bool IsTransParentDynamic(const TransCom* trans) {
-    return *reinterpret_cast<const unsigned char*>(&trans->mReserved) != 0;
+    return trans->mParentDynamic;
 }
 
 // The draw node of the entity's root object, or null.
@@ -190,7 +184,7 @@ void RndDrawNodeCom::_GetComponentOrderDeps(
     eastl::vector<Symbol>& follows,
     eastl::vector<Symbol>& precedes) {
     follows.push_back(TransCom::sClassName);
-    precedes.push_back(gEntityInstanceComId);
+    precedes.push_back(InstanceCom::sClassName);
     precedes.push_back(gInstancePoolComClass);
     precedes.push_back(RndSceneInstanceCom::sClassName);
 }
@@ -201,7 +195,7 @@ void RndDrawNodeCom::_GetPollOrderDeps(
     eastl::vector<Symbol>& follows,
     eastl::vector<Symbol>& precedes) {
     static_cast<void>(precedes);
-    follows.push_back(gEntityInstanceComId);
+    follows.push_back(InstanceCom::sClassName);
     follows.push_back(gInstancePoolComClass);
     follows.push_back(RndSceneInstanceCom::sClassName);
 }
@@ -448,10 +442,10 @@ void RndDrawNodeCom::_Enter() {
     mRuntime.mNeedsEntityRootSphere = false;
     for (const Entity* entity = mObject->mEntity; entity != nullptr;
          entity = entity->GetParent()) {
-        const InstanceCom* instance =
-            entity->GetRoot()->GetCom<InstanceCom>();
-        if (instance != nullptr && !instance->mDrivesParent &&
-            instance->mInstancePollingMode == 2) {
+        const EntityHeaderCom* header =
+            entity->GetRoot()->GetCom<EntityHeaderCom>();
+        if (header != nullptr && !header->mDrivesParent &&
+            header->mInstancePollingMode == 2) {
             mRuntime.mNeedsEntityRootSphere = true;
             return;
         }

@@ -10,7 +10,8 @@ class RndContext;
 class RndTextureBase;
 
 // Generates screen-space ambient occlusion from linear depth and the
-// G-buffer normals.
+// G-buffer normals (render/RndCShaderSSAOGen.o, 0x6D7130-0x6D774F). The
+// vtable is at 0x1938FF8.
 class RndCShaderSSAOGen : public RndShaderCompute {
 public:
     // What RndSSAOCom::GenerateAO passes. Name and field names not in the
@@ -30,18 +31,19 @@ public:
     };
 
     RndCShaderSSAOGen();             // 0x6D7130
-    ~RndCShaderSSAOGen() override;
+    ~RndCShaderSSAOGen() override;  // 0x6D7180, 0x6D7190
 
-    const char* _GetClassNameImpl() const override;
-    const char* _GetShaderFilePath() const override;
+    const char* _GetClassNameImpl() const override;  // slot 2 at 0x6D7710
+    const char* _GetShaderFilePath() const override; // slot 3 at 0x6D7560
     void _InitConfigImpl(
         RndShaderFixedDefines& fixedDefines,
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
-        RndShaderResourceConfig& resources) override;
+        RndShaderResourceConfig& resources) override;  // slot 4 at 0x6D7570
+    int _GetShaderStages() const override;           // slot 6 at 0x6D7720
 
     // Writes the occlusion of the frame's linear depth and normals into
-    // its AO buffer. Not reconstructed. Name not in the reference map.
+    // its AO buffer, one thread per AO texel.
     void Dispatch(RndContext& context, Params& params);  // 0x6D71E0
 
     // Field names are not in the reference map.

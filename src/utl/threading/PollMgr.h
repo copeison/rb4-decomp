@@ -124,3 +124,11 @@ struct ThreadPollContext {
 // descriptor and offset are at 0x19B03C8. The name is kept until its users
 // move to the member. Name not in the reference map.
 extern thread_local ThreadPollContext gEntityThreadState;
+
+class Entity;
+
+// Polls the child entity through its resource under the parent entity's
+// poll manager, which the child borrows for the poll; InstanceCom polls a
+// child this way when the thread does not enter entities at once. Emitted
+// after the poll manager (0x2514C0). Name not in the reference map.
+void PollChildEntity(Entity* parent, Entity* child);  // 0x2514C0

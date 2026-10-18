@@ -4,6 +4,9 @@
 
 #include "render/shaders/RndShader.h"
 
+class RndComputeBuffer;
+class RndContext;
+
 // Draws the occlusion query proxies, writing each query's coverage. Not in
 // the reference map. The vtable is at 0x192B090.
 class RndShaderOcclusionQuery : public RndShader {
@@ -18,6 +21,10 @@ public:
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
         RndShaderResourceConfig& resources) override;  // 0x5F9080
+
+    // Binds the coverage buffer read-write to the pixel stage and selects
+    // the programs. Name not in the reference map.
+    void Select(RndContext& context, RndComputeBuffer& coverage);  // 0x5F8FC0
 
     // Field names are not in the reference map.
     unsigned long mCoverageId;   // Constant offset.

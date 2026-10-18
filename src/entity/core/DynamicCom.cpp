@@ -1,4 +1,5 @@
-// DynamicComBase, compiled in entity/InstanceCom.o (0x1D0B30 to 0x1D17BF).
+// DynamicComBase, compiled in an object the map does not name (0x1D0AA0 to
+// 0x1D1E8F).
 // The template members of DynamicCom<T> are in DynamicCom.h.
 #include "entity/core/DynamicCom.h"
 

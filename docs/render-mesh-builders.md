@@ -55,3 +55,15 @@ Two quirks are reproduced from the binary:
 These are declared only:
 - `RndMeshUtl::ComputeBoundingSphere`, which takes a transform in this build;
 - `Sine`, `Half::Set`, and the `TruncatedRoundedCone` constructor and setter.
+- `RndVertexInterpreter::CopyFrom` (`0x446C90`), which converts a vertex
+  between layouts.
+
+## Copies
+
+`RndMeshUtl::Copy` (`0x5D7030`) makes an unnamed mesh of the requested
+vertex type, or of the source's type for `kVertexInvalid`. The copy keeps
+the source's keep-mesh-data and usage flags, and gets the geometry from
+`CopyGeometry` (`0x5D9CC0`). `CopyGeometry` copies the vertices whole when
+the types match and through `RndVertexInterpreter::CopyFrom` otherwise.
+It also copies the faces (unless the mesh is copied onto itself), the
+bounding sphere and `mGeometryFrame`, and it can sync the mesh.

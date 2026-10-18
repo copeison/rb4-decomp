@@ -18,6 +18,10 @@ map puts all of this in its `entity` module.
 | `entity/GameObject.o` (part) | `0x115F60`-`0x117A40` | `src/entity/core/GameObject.cpp` |
 | `entity/TransCom.o` (part) | `0x127730`, `0x1B3A90` | `src/entity/core/TransCom.cpp` |
 | `entity/EntityConstants.o` | data only | `src/entity/core/EntityConstants.cpp` |
+| `entity/InstanceCom.o` (part) | `0x118DC0`-`0x11BF8F` | `src/entity/core/InstanceCom.cpp` |
+| entity header (not in the map) | `0x1D1E90`-`0x1D8D37` | `src/entity/core/EntityHeaderCom.cpp` |
+| `entity/PropRef.o` (part) | `0x17F4F0`-`0x17F60F` | `src/entity/props/PropRef.cpp` |
+| `entity/Waveform.o` | `0x1C8B70`-`0x1D0A9F` | `src/entity/waveform/Waveform.h` (declared) |
 | `utl/DataUtl.o` (part) | `0x23C2E0`, `0x23F780` | `src/utl/data/DataUtl.cpp` |
 | `utl/FileUtl.o` (part) | `0x244860`-`0x245866` | `src/utl/files/FileUtl.cpp` |
 | `utl/PollMgr.o` (part) | thread-local data | `src/utl/threading/PollMgr.cpp` |
@@ -153,6 +157,17 @@ event sinks, destroys every object and then the root, leaves the poll
 manager's resource-load queue and frees the entity unless it was built in
 place.
 
+`Entity::Copy` (`0xEE270`) and `Clone` (`0xEE330`, which keeps the copied
+parent when none is given) build a copy in a buffer or a new allocation
+through `_Imprint` (`0xEE3F0`): under the imprint lock (`0x19E2EE8`) the
+entity is copy-constructed with its arrays empty, its poll orders, layers
+and objects are placed after it, each aligned for its type
+(`PropArrayBase::_ImprintElements`), and every object
+(`GameObject::_Imprint`, `0x1171F0`) copies its components through their
+slot 10. A copy is marked built in place and parented with
+`SetParent` (`0xEE850`), whose symbol is the instancing component's class
+id (`mParentComId`).
+
 `Entity::_LoadResources` loads every object's components in poll order,
 restarting an object whose components a load added to, then waits up to
 ten passes for them to report ready. `_CreateAndInsertNewGameObject` gives
@@ -171,6 +186,38 @@ is declared. `DestroyComponent` exits the component in the entity's mode,
 lets the resource destroy its dependants, removes it and clears the
 entity's references to it.
 
+## Entity headers and instances
+
+`EntityHeaderCom` ("EntityHeader", alias "EntityDefinitionCom", 528 bytes,
+vtable `0x18EA8E8`) sits on every root object. It holds the instancing
+options (`copy_on_instance`, `drives_parent`, `static`,
+`instance_polling_mode`), the statistics, the icon camera and data,
+`show_entity` (a `PropRef`) and the per-layer editor state. Its slot 29
+moves `icon_data` into the resource's root data (`SetIconData`,
+`0x1024C0`) and applies `static` as the TransEntityResource's
+`mSuppressPoll`, asking for one poll (`mPollRequested`). The map's older
+build keeps these properties on `InstanceCom`.
+
+`InstanceCom` ("Instance", 128 bytes, vtable `0x18E6D58`, 49 slots) loads
+a TransEntityResource from "file" through `ResourceCom<T>` (a
+`DynamicCom<T>` without dynamic properties) and shares the resource's
+entity or, with `copy_on_instance`, copies it. It parents, enters, exits
+and polls the child with its object, sets up the poll dependencies when
+the thread enters entities at once, and copies the child root's transform
+when it drives the object. Its third base, `InterfaceSource` (`+64`,
+seven slots), is what an `InterfaceCom` views; `InterfaceSourceImpl<T>`
+supplies slot 1. Slots 41-43 are `_ReenterSharedChildren`,
+`_HasParentPollDep` and `_CanBeDrivenByChild`; 44-48 override
+`InterfaceSource`. The registry (`0x118E60`), the interface property copies
+and the interface sync (`0x12B720`, `0x12BC10`) are not reconstructed.
+`RndSceneInstanceCom` and `RndEntityInstanceCom` are described in
+[render-scene.md](render-scene.md).
+
+`Waveform<T>` (40 bytes) is a `WaveformResource<T>` with an evaluation
+state drawn from `gRand`, the generator and a modulating resource. Only the
+layout and the constructors are modelled; `WaveformInit`,
+`LoadWaveformResources` and `InlineWaveformResources` are declared.
+
 ## Weak evidence
 
 - `ResourcePathRecorder` (`0x1AEB20`-`0x1AEC26`), `ResourceFileIsLocal` and
@@ -182,14 +229,17 @@ entity's references to it.
 - Every load-progress name, and the enumerator names `kDestroyRoot`,
   `kDestroyEditorInstance` and `kDestroyInstance`, are inferred.
   `LoadProgressMessage`'s argument types rest on its register use alone.
-- `Entity::mPollWindowStart` and `mPollWindowEnd` (+296) and
-  `GameObject::mEarlyFreeDep` (+112) are named from their readers; their
-  writers are not identified.
+- `Entity::mPollWindowStart` and `mPollWindowEnd` (+296) are named from
+  their readers; their writers are not identified. `InstanceCom::_PollChild`
+  writes `GameObject::mEarlyFreeDep` (+112).
 - `GameObject::_EnterComponents` (`0xF4FF0`) and `_PollComponents`
   (`0xF6290`) are emitted in `Entity.o`; their names are inferred.
 - `GameObject::mImprinted` and `Debug::mDisabled` are named from their
   writers only.
-- The global `0x19E3280` is named `gEntityInstanceComId`. It is the class id
-  of the component registered at `0x118E60`, whose class name is not
-  recovered.
-- `InstanceCom::mPollRequested` (+520) has no identified writer.
+- `EntityHeaderCom`, `InterfaceSource`, `InterfaceSourceImpl`,
+  `ResourceCom`, the instance slot names 41-48 and the entity header's
+  layer-state names are inferred; the map has neither class.
+- `Entity::mParentComId` and `Entity::Clone` are inferred from the copies
+  and `InstanceCom`'s `SetParent` call.
+- `InstanceCom::_EditPoll` (`0x11B0D0`) has a trap instruction where the
+  template's reload would be; it is kept as `__builtin_trap`.

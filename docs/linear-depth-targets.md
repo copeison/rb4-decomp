@@ -14,3 +14,6 @@ The matching portion of `RndBufferCollection::Destroy` at `0x6AFFE0`
 invokes both targets' virtual deleting destructors and clears their slots.
 Target descriptor details remain behind a narrow adapter until the common
 render-target descriptor and resource-owner dispatch are reconstructed.
+
+The compute path fills the targets with `RndCShaderLinearizeDepth::Dispatch`
+(`0x637CA0`) and `RndCShaderCalcDepthRange::Dispatch` (`0x636E30`).

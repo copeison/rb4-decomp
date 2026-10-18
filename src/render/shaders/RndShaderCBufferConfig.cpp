@@ -85,6 +85,15 @@ void PrintHlslMembers(unsigned int& hash, const RndShaderCBufferConfig& config) 
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x63A070.
+RndShaderCBufferConfig::RndShaderCBufferConfig()
+    : mName(""),
+      mSlot(~0U),
+      mStages(0),
+      mNumBuffers(1),
+      mSize(~0UL),
+      mLocked(false) {}
+
 // Reconstructed from eboot.elf at 0x63A0C0.
 RndShaderCBufferConfig::RndShaderCBufferConfig(
     const char* name,
@@ -97,6 +106,11 @@ RndShaderCBufferConfig::RndShaderCBufferConfig(
       mNumBuffers(numBuffers),
       mSize(0),
       mLocked(false) {}
+
+// Reconstructed from eboot.elf at 0x63A1A0.
+void RndShaderCBufferConfig::MarkForMaterialValidation() {
+    mLocked = true;
+}
 
 unsigned long RndShaderCBufferConfig::_AddConstant(
     RndShaderNumericType type,

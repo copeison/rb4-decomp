@@ -6,6 +6,10 @@
 
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
+#include "math/matrix/Matrix3.h"
+#include "math/transform/Transform.h"
+#include "math/vector/Vector4.h"
+#include "os/profiling/PerfMgr.h"
 #include "render/atmosphere/RndAtmosphereCom.h"
 #include "render/atmosphere/RndFogCom.h"
 #include "render/atmosphere/RndSkyCom.h"
@@ -15,15 +19,26 @@
 #include "render/context/RndResourceBarrier.h"
 #include "render/debug/RndBufferInspection.h"
 #include "render/debug/RndShaderDisplayShadingMode.h"
+#include "render/depth/RndCShaderCalcDepthRange.h"
+#include "render/depth/RndCShaderLinearizeDepth.h"
+#include "render/depth/RndShaderLinearizeDepth.h"
+#include "render/distance_fields/RndCShaderSignedDistance.h"
+#include "render/distance_fields/RndCShaderSignedDistanceClassify.h"
 #include "render/drawing/RndBasicCuller.h"
 #include "render/drawing/RndDrawUtl.h"
 #include "render/drawing/RndDrawInstanceCom.h"
+#include "render/drawing/RndSceneDrawJobs.h"
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/lighting/volumetric/RndVolumetricScatteringCom.h"
+#include "render/masking/RndShaderRefineSceneMask.h"
+#include "render/masking/RndShaderStencilSceneMask.h"
 #include "render/materials/RndMaterialRuntimeData.h"
 #include "render/meshes/RndDynamicGpuData.h"
+#include "render/meshes/RndMesh.h"
 #include "render/postprocessing/antialiasing/RndCMAACom.h"
+#include "render/postprocessing/blur/RndShaderBlur.h"
 #include "render/postprocessing/chain/RndPostProcCom.h"
+#include "render/postprocessing/downsample/RndShaderDownsample.h"
 #include "render/postprocessing/output/RndShaderOutputConversion.h"
 #include "render/queries/RndOcclusionQueryMgr.h"
 #include "render/scene/RndEntityCom.h"
@@ -32,6 +47,7 @@
 #include "render/shaders/nodes/RndShaderNodeTime.h"
 #include "render/shaders/nodes/RndShaderNodeTransInfo.h"
 #include "render/scene/RndSceneCom.h"
+#include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/system/RndFactory.h"
@@ -2718,4 +2734,1461 @@ void RndSceneDrawer::_DrawShadingModeDisplay(
     target.mDstLightAccum = source;
     target.mResult = nullptr;
     context.SetShadingMode(kShadingModeStandard);
+}
+
+namespace {
+
+// A state of the passes below that RndResourceState does not name: a copy
+// source that shaders also read. Name not in the reference map.
+constexpr RndResourceState kStateCopySourceShaderResource = static_cast<RndResourceState>(0x880);
+
+// The state the light buffers are read in: by any shader with the tiled
+// lighting, by pixel shaders otherwise. Name not in the reference map.
+RndResourceState ShaderResourceState() {
+    return gRndDevice->mSettings->mUseTiledLighting ? kStateShaderResource
+                                                    : RndResourceState::kPixelShaderResource;
+}
+
+// A transition of every subresource. Name not in the reference map.
+RndResourceBarrier Transition(RndShaderResource* resource, RndResourceState before, RndResourceState after) {
+    RndResourceBarrier barrier;
+    barrier.mResource = resource;
+    barrier.mSubresource = ~0UL;
+    barrier.mBefore = before;
+    barrier.mAfter = after;
+    return barrier;
+}
+
+// One of the target's light buffers: the scene context's light
+// accumulation, or the interval's for a partial-framerate scene. Name not
+// in the reference map.
+RndTextureBase* AccumBuffer(RndBufferCollection& buffers, unsigned long index) {
+    return buffers.mActiveSceneContext != 0 ? buffers.mLightAccum[index] : ActiveFrame(buffers).mPartialLightAccum;
+}
+
+// Swaps the target's light buffers after a pass drew the scene from one
+// into the other. Name not in the reference map.
+void SwapLightAccum(RndSceneDrawTarget& target) {
+    const unsigned long source = target.mSrcLightAccum;
+    target.mSrcLightAccum = target.mDstLightAccum;
+    target.mDstLightAccum = source;
+    target.mResult = nullptr;
+}
+
+// Whether the color's red, green and blue are black's. Name not in the
+// reference map.
+bool IsBlack(const Hmx::Color& color) {
+    const Hmx::Color& black = Hmx::Color::GetBlack();
+    return std::fabs(color.red - black.red) < 1.0e-4F && std::fabs(color.green - black.green) < 1.0e-4F
+        && std::fabs(color.blue - black.blue) < 1.0e-4F;
+}
+
+// A full-screen quad drawn with the selected shader. Name not in the
+// reference map.
+void DrawShaderQuad(RndContext& context) {
+    RndDrawUtl::Quad2DParams quad;
+    quad.mBlendMode = static_cast<RndBlendMode>(5);
+    quad.mKeepShader = true;
+    RndDrawUtl::DrawQuad2D(context, quad);
+}
+
+// Binds the texture alone as the target, without clearing it, after the
+// pixel shaders' read-write textures are released. Name not in the
+// reference map.
+void SetBlurTarget(RndContext& context, RndContext::RenderTargetParams& targets, RndTextureBase* texture) {
+    context._DeselectAllReadWriteTexturesImpl(1U << kShaderProgramPixel);
+    context.mInputSlotLimits[kShaderProgramPixel] = 0;
+    targets.mTargets[0].mTexture = texture;
+    context.SetRenderTargets(targets);
+}
+
+// The blur radius of a horizontal pass over the texture: the vertical
+// radius scaled by its aspect. Name not in the reference map.
+float HorizontalRadius(const RndTextureBase& texture, float radius) {
+    return static_cast<float>(static_cast<int>(texture.mBaseDesc.mHeight))
+        / static_cast<float>(static_cast<int>(texture.mBaseDesc.mWidth)) * radius;
+}
+
+// Rounds half away from zero, saturating, as the binary's inlined
+// conversion does. Name not in the reference map.
+int RoundToInt(float value) {
+    if (value > 0.0F) {
+        value += 0.5F;
+        return value < 2147483648.0F ? static_cast<int>(value) : 0x7FFFFFFF;
+    }
+    value -= 0.5F;
+    return value > -2147483648.0F ? static_cast<int>(value) : static_cast<int>(0x80000000U);
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x426160. A cleared draw moves the light
+// accumulation to a render target and clears it, to the scene's clear
+// color when it has one. Unless that color is black, the deferred lit
+// geometry's pixels (stencil test 4) are then filled with a full-screen
+// quad when bucket 4 has instances.
+void RndSceneDrawer::_InitLightAccum(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target) const {
+    static Symbol sName;
+    RndScopedGpuStatBlock statBlock(context, PassName(sName, "Init Light Accum"));
+    const RndSceneDrawParams& p = internal.mParams;
+    const RndSceneInternalContext::CameraData& camera = internal.mCameras[target.mBuffersIndex];
+    RndBufferCollection& buffers = *p.mBuffers[target.mBuffersIndex];
+    if (p.mClear) {
+        FixedVector<RndResourceBarrier, 1> barriers;
+        barriers.push_back(
+            Transition(LightAccum(buffers, target), ShaderResourceState(), RndResourceState::kRenderTarget));
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    }
+    if (internal.mHasClearColor || p.mClear) {
+        RndContext::RenderTargetParams targets;
+        if (internal.mHasClearColor) {
+            targets.mClearColor = internal.mClearColor;
+        }
+        RndContext::RenderTargetParams::Target accum;
+        accum.mTexture = LightAccum(buffers, target);
+        accum.mClearMode = 1;
+        targets.mTargets.push_back(accum);
+        context.SetRenderTargets(targets);
+        if (IsBlack(internal.mClearColor)) {
+            return;
+        }
+    }
+    if (Buckets(camera.mSortableInstances)[4].empty()) {
+        return;
+    }
+    context.SetRenderTargets(LightAccum(buffers, target), ActiveFrame(buffers).mDepthStencil);
+    context._SetStencilModeImpl(4, 0, 1, 0);
+    RndDrawUtl::Quad2DParams quad;
+    quad.mBlendMode = static_cast<RndBlendMode>(5);
+    RndDrawUtl::DrawQuad2D(context, quad);
+    context._SetStencilModeImpl(0, 0, 0, 0);
+}
+
+// Reconstructed from eboot.elf at 0x4234C0. "Analyze Depth": converts the
+// collection's depth into the linear depth. With the tiled lighting it runs
+// on compute slot 0 after fence 5, signals fence 6 and computes the light
+// tiles' depth ranges; otherwise a full-screen quad writes it.
+void RndSceneDrawer::_GenerateLinearDepth(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    unsigned long target) const {
+    static Symbol sName;
+    RndScopedGpuStatBlock statBlock(context, PassName(sName, "Analyze Depth"));
+    RndBufferCollection::FrameIntervalBuffers& frame = ActiveFrame(*internal.mParams.mBuffers[target]);
+    RndTextureBase* depth = frame.mDepthStencil;
+    RndTextureBase* linearDepth = frame.mLinearDepth;
+    RndShaderMgr& shaders = gRndDevice->mShaderMgr;
+    if (gRndDevice->mSettings->mUseTiledLighting) {
+        context.SetRenderTargets(nullptr, nullptr);
+        if (mFences[5] != nullptr) {
+            context._SignalFenceImpl(*mFences[5]);
+        }
+        const RndPipeline pipeline = static_cast<RndPipeline>(context.mActivePipe);
+        const unsigned long slot = context.mActiveComputeSlot;
+        context.SetActivePipeline(kPipelineCompute, 0);
+        if (mFences[5] != nullptr) {
+            context._WaitFenceImpl(*mFences[5]);
+        }
+        FixedVector<RndResourceBarrier, 3> barriers;
+        barriers.push_back(Transition(
+            frame.mTiledDepthRange,
+            RndResourceState::kNonPixelShaderResource,
+            RndResourceState::kUnorderedAccess));
+        barriers[0].mPhase = RndResourceBarrierPhase::kBegin;
+        barriers.push_back(
+            Transition(depth, RndResourceState::kDepthWrite, RndResourceState::kNonPixelShaderResource));
+        barriers.push_back(Transition(linearDepth, kStateShaderResource, RndResourceState::kUnorderedAccess));
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        RndCShaderLinearizeDepth::Params linearize{depth, linearDepth};
+        shaders.mLinearizeDepthCShader->Dispatch(context, linearize);
+        context._DeselectAllSourceTexturesImpl(1U << kShaderProgramCompute);
+        context.mOutputSlotLimits[kShaderProgramCompute] = 0;
+        barriers[0].mPhase = RndResourceBarrierPhase::kEnd;
+        barriers[1].mPhase = RndResourceBarrierPhase::kBegin;
+        barriers[1].mBefore = RndResourceState::kNonPixelShaderResource;
+        barriers[1].mAfter = RndResourceState::kDepthWrite;
+        barriers[2].mBefore = RndResourceState::kUnorderedAccess;
+        barriers[2].mAfter = kStateShaderResource;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        if (mFences[6] != nullptr) {
+            context._SignalFenceImpl(*mFences[6]);
+        }
+        RndCShaderCalcDepthRange::Params range{linearDepth, frame.mTiledDepthRange};
+        shaders.mCalcDepthRangeCShader->Dispatch(context, range);
+        barriers.resize(2);
+        barriers[0].mPhase = RndResourceBarrierPhase::kImmediate;
+        barriers[0].mBefore = RndResourceState::kUnorderedAccess;
+        barriers[0].mAfter = RndResourceState::kNonPixelShaderResource;
+        barriers[1].mPhase = RndResourceBarrierPhase::kEnd;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        context.SetActivePipeline(pipeline, slot);
+    } else {
+        FixedVector<RndResourceBarrier, 2> barriers;
+        barriers.push_back(Transition(
+            linearDepth,
+            RndResourceState::kPixelShaderResource,
+            RndResourceState::kRenderTarget));
+        barriers.push_back(
+            Transition(depth, RndResourceState::kDepthWrite, RndResourceState::kPixelShaderResource));
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        context.SetShadingMode(kShadingModeStandard);
+        RndContext::RenderTargetParams targets;
+        RndContext::RenderTargetParams::Target linear;
+        linear.mTexture = linearDepth;
+        linear.mClearMode = 2;
+        targets.mTargets.push_back(linear);
+        context.SetRenderTargets(targets);
+        shaders.mLinearizeDepthShader->Select(context, *depth);
+        DrawShaderQuad(context);
+        context._DeselectAllReadWriteTexturesImpl(1U << kShaderProgramPixel);
+        context.mInputSlotLimits[kShaderProgramPixel] = 0;
+        barriers[0].mBefore = RndResourceState::kRenderTarget;
+        barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+        barriers[1].mBefore = RndResourceState::kPixelShaderResource;
+        barriers[1].mAfter = RndResourceState::kDepthWrite;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x420FF0. Captures the scene for the
+// materials that read it: the source light buffer is copied into the
+// destination one, which becomes the target's result (a material that
+// reads the scene depth at level 0 skips the copy). Materials that read a
+// blurred scene get it downsampled and blurred into the blurred light
+// accumulation, once or twice ("Blur SceneTex").
+void RndSceneDrawer::_CaptureSceneTex(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target) const {
+    static Symbol sName;
+    RndScopedGpuStatBlock statBlock(context, PassName(sName, "Capture SceneTex"));
+    const RndSceneInternalContext::CameraData& camera = internal.mCameras[target.mBuffersIndex];
+    RndBufferCollection& buffers = *internal.mParams.mBuffers[target.mBuffersIndex];
+    if (camera.mSceneTexUsage != 0) {
+        target.mResult = nullptr;
+    }
+    const RndResourceState shaderResource = ShaderResourceState();
+    FixedVector<RndResourceBarrier, 2> barriers;
+    barriers.push_back(Transition(
+        AccumBuffer(buffers, target.mSrcLightAccum),
+        RndResourceState::kRenderTarget,
+        kStateCopySourceShaderResource));
+    if (camera.mSceneDepthUsage == 0 && target.mResult == nullptr) {
+        barriers.push_back(Transition(
+            AccumBuffer(buffers, target.mDstLightAccum), shaderResource, RndResourceState::kCopyDestination));
+    }
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    barriers[0].mBefore = kStateCopySourceShaderResource;
+    barriers[0].mAfter = RndResourceState::kRenderTarget;
+    if (target.mResult == nullptr) {
+        if (camera.mSceneDepthUsage == 0) {
+            AccumBuffer(buffers, target.mDstLightAccum)
+                ->GpuCopyFrom(context, *AccumBuffer(buffers, target.mSrcLightAccum));
+            barriers[1].mBefore = RndResourceState::kCopyDestination;
+            barriers[1].mAfter = shaderResource;
+        }
+        target.mResult = AccumBuffer(buffers, target.mDstLightAccum);
+    }
+    if (camera.mSceneTexCaptureUsage > 0) {
+        static Symbol sBlurName;
+        RndScopedGpuStatBlock blurBlock(context, PassName(sBlurName, "Blur SceneTex"));
+        RndShaderMgr& shaders = gRndDevice->mShaderMgr;
+        RndTextureBase* source = AccumBuffer(buffers, target.mSrcLightAccum);
+        // The first level: downsample, then blur into the first blurred
+        // buffer, horizontally and vertically.
+        barriers[0].mResource = buffers.mDownsample[0][0];
+        barriers[0].mBefore = RndResourceState::kPixelShaderResource;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        RndContext::RenderTargetParams targets;
+        RndContext::RenderTargetParams::Target color;
+        color.mTexture = buffers.mDownsample[0][0];
+        color.mClearMode = 2;
+        targets.mTargets.push_back(color);
+        context.SetRenderTargets(targets);
+        RndShaderDownsample::Params downsample{};
+        downsample.mSource = source;
+        RndShaderDownsample* downsampleShader = shaders.mDownsampleShader;
+        downsampleShader->Select(context, downsample);
+        DrawShaderQuad(context);
+        barriers[0].mBefore = RndResourceState::kRenderTarget;
+        barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+        if (barriers.size() <= 1) {
+            barriers.resize(2);
+            barriers[1].mSubresource = ~0UL;
+        }
+        barriers[1].mResource = buffers.mDownsample[0][1];
+        barriers[1].mBefore = RndResourceState::kPixelShaderResource;
+        barriers[1].mAfter = RndResourceState::kRenderTarget;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        SetBlurTarget(context, targets, buffers.mDownsample[0][1]);
+        RndShaderBlur::Params blur{};
+        blur.mArraySlice = -1;
+        blur.mSource = buffers.mDownsample[0][0];
+        blur.mRadius = HorizontalRadius(*buffers.mDownsample[0][0], 0.0129629625F);
+        RndShaderBlur* blurShader = shaders.mBlurShader;
+        blurShader->Select(context, blur);
+        DrawShaderQuad(context);
+        barriers[0].mResource = buffers.mBlurredLightAccum[0];
+        barriers[0].mBefore = RndResourceState::kPixelShaderResource;
+        barriers[0].mAfter = RndResourceState::kRenderTarget;
+        barriers[1].mBefore = RndResourceState::kRenderTarget;
+        barriers[1].mAfter = RndResourceState::kPixelShaderResource;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        SetBlurTarget(context, targets, buffers.mBlurredLightAccum[0]);
+        blur.mDirection = 1;
+        blur.mSource = buffers.mDownsample[0][1];
+        blur.mRadius = 0.0129629625F;
+        blurShader->Select(context, blur);
+        DrawShaderQuad(context);
+        if (camera.mSceneTexCaptureUsage >= 2) {
+            // The second level downsamples the first blurred buffer and
+            // blurs it twice as wide into the second.
+            barriers[0].mBefore = RndResourceState::kRenderTarget;
+            barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+            barriers[1].mResource = buffers.mDownsample[1][0];
+            barriers[1].mBefore = RndResourceState::kPixelShaderResource;
+            barriers[1].mAfter = RndResourceState::kRenderTarget;
+            context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+            SetBlurTarget(context, targets, buffers.mDownsample[1][0]);
+            downsample.mSource = buffers.mBlurredLightAccum[0];
+            downsampleShader->Select(context, downsample);
+            DrawShaderQuad(context);
+            barriers[0].mResource = buffers.mDownsample[1][1];
+            barriers[0].mBefore = RndResourceState::kPixelShaderResource;
+            barriers[0].mAfter = RndResourceState::kRenderTarget;
+            barriers[1].mBefore = RndResourceState::kRenderTarget;
+            barriers[1].mAfter = RndResourceState::kPixelShaderResource;
+            context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+            SetBlurTarget(context, targets, buffers.mDownsample[1][1]);
+            blur.mDirection = 0;
+            blur.mSource = buffers.mDownsample[1][0];
+            blur.mRadius = HorizontalRadius(*buffers.mDownsample[1][0], 0.025925925F);
+            blurShader->Select(context, blur);
+            DrawShaderQuad(context);
+            barriers[0].mBefore = RndResourceState::kRenderTarget;
+            barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+            barriers[1].mResource = buffers.mBlurredLightAccum[1];
+            barriers[1].mBefore = RndResourceState::kPixelShaderResource;
+            barriers[1].mAfter = RndResourceState::kRenderTarget;
+            context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+            SetBlurTarget(context, targets, buffers.mBlurredLightAccum[1]);
+            blur.mDirection = 1;
+            blur.mSource = buffers.mDownsample[1][1];
+            blur.mRadius = 0.025925925F;
+            blurShader->Select(context, blur);
+            DrawShaderQuad(context);
+            barriers[0].mResource = buffers.mBlurredLightAccum[1];
+        }
+        barriers[0].mBefore = RndResourceState::kRenderTarget;
+        barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+        barriers[1].mResource = source;
+        barriers[1].mBefore = kStateCopySourceShaderResource;
+        barriers[1].mAfter = RndResourceState::kRenderTarget;
+    }
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+}
+
+// Reconstructed from eboot.elf at 0x421AE0 ("Process Scene Mask"). The
+// map's _RefineSceneMask is inlined: the depth-only draw's tiled scene
+// mask is refined into the second tiled mask ("Refine Scene Mask"), which
+// then sets stencil bit 0x20 of the depth target ("Stencil Scene Mask"),
+// through the tiled scene mask mesh while "scene_mask_stencil_mesh" is
+// set, or with a full-screen quad.
+void RndSceneDrawer::_DrawSceneMask(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    unsigned long target) const {
+    static Symbol sName;
+    RndScopedGpuStatBlock statBlock(context, PassName(sName, "Process Scene Mask"));
+    RndBufferCollection& buffers = *internal.mParams.mBuffers[target];
+    RndShaderMgr& shaders = gRndDevice->mShaderMgr;
+    RndTextureBase* unrefinedMask = buffers.mTiledSceneMask[0];
+    RndTextureBase* refinedMask = buffers.mTiledSceneMask[1];
+    {
+        static Symbol sRefineName;
+        RndScopedGpuStatBlock refineBlock(context, PassName(sRefineName, "Refine Scene Mask"));
+        FixedVector<RndResourceBarrier, 2> barriers;
+        barriers.push_back(Transition(refinedMask, kStateShaderResource, RndResourceState::kRenderTarget));
+        barriers.push_back(
+            Transition(unrefinedMask, RndResourceState::kRenderTarget, RndResourceState::kPixelShaderResource));
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+        RndContext::RenderTargetParams targets;
+        RndContext::RenderTargetParams::Target refined;
+        refined.mTexture = refinedMask;
+        refined.mClearMode = 2;
+        targets.mTargets.push_back(refined);
+        context.SetRenderTargets(targets);
+        shaders.mRefineSceneMaskShader->Select(context, *unrefinedMask);
+        DrawShaderQuad(context);
+        barriers[0].mBefore = RndResourceState::kRenderTarget;
+        barriers[0].mAfter = kStateShaderResource;
+        barriers[1].mBefore = RndResourceState::kPixelShaderResource;
+        barriers[1].mAfter = RndResourceState::kRenderTarget;
+        context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    }
+    static Symbol sStencilName;
+    RndScopedGpuStatBlock stencilBlock(context, PassName(sStencilName, "Stencil Scene Mask"));
+    context.SetRenderTargets(nullptr, ActiveFrame(buffers).mDepthStencil);
+    context._SetStencilModeImpl(1, 0x20, 0, 6);
+    static const unsigned long scene_mask_stencil_meshIndex =
+        DataVarIndex(Symbol("scene_mask_stencil_mesh"), DataNode(1));
+    const int useMesh = DataVariable(scene_mask_stencil_meshIndex).mValue.integer;
+    context.mBlendMode = static_cast<RndBlendMode>(5);
+    context._SetBlendModeImpl(static_cast<RndBlendMode>(5), Hmx::Color::GetWhite());
+    if (useMesh != 0) {
+        context._SetDepthModeImpl(3);
+        shaders.mStencilSceneMaskShader->Select(context, *refinedMask);
+        const bool identity = context.mUsingIdentityViewProjection;
+        context.SetUsingIdentityViewProjection(true);
+        // The identity transform, transposed into the instance layout.
+        const float* axes = &Transform::sID.m.x.x;
+        const float* position = &Transform::sID.v.x;
+        const float* normalAxes = &Hmx::Matrix3::sID.x.x;
+        RndInstanceData instance;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                instance.mXfm[i][j] = axes[j * 3 + i];
+                instance.mNormalXfm[i][j] = normalAxes[j * 3 + i];
+            }
+            instance.mXfm[i][3] = position[i];
+        }
+        instance.mPackedState = 0;
+        for (float* params : instance.mParams) {
+            std::memcpy(params, &Vector4::sZero, sizeof(Vector4));
+        }
+        const VectorAdapter<RndInstanceData> instances = {&instance, 1};
+        const RndDrawable::DrawRange range = {0, RndDrawable::DrawRange::kAllFaces};
+        buffers.mTiledSceneMaskMesh->_DrawBatchImpl(context, instances, range);
+        context.SetUsingIdentityViewProjection(identity);
+    } else {
+        context._SetDepthModeImpl(0);
+        shaders.mStencilSceneMaskShader->Select(context, *refinedMask);
+        RndDrawUtl::Quad2DParams quad;
+        quad.mBlendMode = static_cast<RndBlendMode>(5);
+        quad.mKeepShader = true;
+        quad.mKeepState = true;
+        RndDrawUtl::DrawQuad2D(context, quad);
+    }
+    context._SetStencilModeImpl(0, 0, 0, 0);
+}
+
+// Reconstructed from eboot.elf at 0x424E10. With the scene's mask buffer
+// enabled, the collection's scene mask is cleared and bucket 18 drawn into
+// it in solid white, testing the target's depth; with the signed distance
+// on, the mask's tiles are classified and its signed distance computed on
+// the compute pipe, out to the mask buffer's width scaled from 1080 lines
+// and at most a mask tile. The target is then marked as masked.
+void RndSceneDrawer::_DrawMaskBuffer(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target,
+    unsigned long bucketIndex,
+    PodVector<RndDrawInstance*>& bucket) const {
+    static_cast<void>(bucketIndex);
+    const RndSceneCom* scene = internal.mSceneCom;
+    if (scene == nullptr || !scene->mMaskBuffer.mEnabled) {
+        return;
+    }
+    static Symbol sName;
+    RndScopedGpuStatBlock statBlock(context, PassName(sName, "Mask Buffer"));
+    RndBufferCollection& buffers = *internal.mParams.mBuffers[target.mBuffersIndex];
+    FixedVector<RndResourceBarrier, 3> barriers;
+    barriers.push_back(Transition(
+        buffers.mSceneMask, RndResourceState::kPixelShaderResource, RndResourceState::kRenderTarget));
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    RndContext::RenderTargetParams targets;
+    RndContext::RenderTargetParams::Target mask;
+    mask.mTexture = buffers.mSceneMask;
+    mask.mClearMode = 1;
+    targets.mTargets.push_back(mask);
+    targets.mDepthTexture = ActiveFrame(buffers).mDepthStencil;
+    context.SetRenderTargets(targets);
+    if (!bucket.empty()) {
+        SortBucket(bucket, StateCompare{true});
+        context.SetShadingMode(kShadingModeSolidColor);
+        context.mBlendMode = static_cast<RndBlendMode>(5);
+        context._SetBlendModeImpl(static_cast<RndBlendMode>(5), Hmx::Color::GetWhite());
+        context._SetDepthModeImpl(3);
+        RndShaderCBuffer& state = *context.mCBuffers[3];
+        static_cast<Hmx::Color*>(state.mData)[gRndDevice->mShaderMgr.mSolidColor] = Hmx::Color::GetWhite();
+        state.mSyncPending = true;
+        state._SyncImpl(context, 0, state.mNumElements);
+        state.mSyncPending = false;
+        state._SelectImpl(context);
+        if (!bucket.empty()) {
+            _FlushBucket<kFlushBasic>(context, internal, target, bucket, 0, bucket.size());
+        }
+        context.SetShadingMode(kShadingModeStandard);
+        if (scene->mMaskBuffer.mCalcSignedDistance && scene->mMaskBuffer.mSignedDistanceWidth > 0) {
+            RndShaderMgr& shaders = gRndDevice->mShaderMgr;
+            const int tileSize = static_cast<int>(gRndDevice->mSettings->mMaskTileSize);
+            barriers.resize(3);
+            barriers[0].mBefore = RndResourceState::kRenderTarget;
+            barriers[0].mAfter = RndResourceState::kNonPixelShaderResource;
+            barriers[1] = Transition(
+                buffers.mSceneMaskScratch,
+                RndResourceState::kNonPixelShaderResource,
+                RndResourceState::kUnorderedAccess);
+            barriers[2] = Transition(
+                buffers.mSceneMaskTile,
+                RndResourceState::kNonPixelShaderResource,
+                RndResourceState::kUnorderedAccess);
+            context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+            RndCShaderSignedDistanceClassify::Params classify{
+                buffers.mSceneMask, buffers.mSceneMaskScratch, buffers.mSceneMaskTile, tileSize};
+            shaders.mSignedDistanceClassifyCShader->Dispatch(context, classify);
+            context._DeselectAllSourceTexturesImpl(1U << kShaderProgramCompute);
+            context.mOutputSlotLimits[kShaderProgramCompute] = 0;
+            barriers[0].mBefore = RndResourceState::kNonPixelShaderResource;
+            barriers[0].mAfter = RndResourceState::kUnorderedAccess;
+            for (unsigned long i = 1; i != 3; ++i) {
+                barriers[i].mBefore = RndResourceState::kUnorderedAccess;
+                barriers[i].mAfter = RndResourceState::kNonPixelShaderResource;
+            }
+            context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+            const float width = static_cast<float>(buffers.mSize.y) * (1.0F / 1080.0F)
+                * static_cast<float>(scene->mMaskBuffer.mSignedDistanceWidth);
+            int distance = RoundToInt(width);
+            distance = distance < 0 ? 0 : distance;
+            if (distance > tileSize) {
+                distance = tileSize;
+            }
+            RndCShaderSignedDistance::Params signedDistance{
+                buffers.mSceneMaskScratch, buffers.mSceneMaskTile, buffers.mSceneMask, distance, tileSize};
+            shaders.mSignedDistanceCShader->Dispatch(context, signedDistance);
+            barriers.resize(1);
+        }
+    }
+    barriers[0].mBefore = barriers[0].mAfter;
+    barriers[0].mAfter = RndResourceState::kPixelShaderResource;
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    target.mResolved = true;
+}
+
+// Reconstructed from eboot.elf at 0x41E420. The impostor maps: the
+// collection's camera culls with the drawer's first bucket set, and every
+// bucket but the depth, shadow, decal, transparent and overlay ones is
+// drawn in the impostor shading into the parameters' four target
+// textures, the third and fourth cleared to their own colors first.
+void RndSceneDrawer::_DrawToTextures(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target) const {
+    mDynamicGpuDataMgr->ProcessQueue(context);
+    const RndSceneDrawParams& p = internal.mParams;
+    VectorAdapter<PodVector<RndDrawInstance>> instances = Adapter(mDrawInstances[0]);
+    VectorAdapter<PodVector<RndDrawInstance*>> sortable = Adapter(mSortableInstances[0]);
+    RndCullerParams params;
+    PodVector<RndDrawInstance>* buckets = Buckets(instances);
+    for (unsigned long bucket = 0; bucket != kNumDrawBuckets; ++bucket) {
+        buckets[bucket].clear();
+    }
+    const RndCameraContext& camera = internal.mCameras[target.mBuffersIndex].mCamera;
+    for (const Vector4& plane : camera.mDerivedCache) {
+        params.mClipPlanes.push_back(plane);
+    }
+    mCuller->Cull(
+        context.mSceneDrawId,
+        *reinterpret_cast<unsigned int*>(context.mSceneDrawId),
+        camera,
+        p.mShowHide,
+        instances,
+        params);
+    _FillSortableBuckets(instances, sortable);
+    context.SetCamera(p.mCamera);
+
+    RndTextureBase* const* textures = p.mTargetTextures.mData;
+    FixedVector<RndResourceBarrier, 4> barriers;
+    for (unsigned long i : {2UL, 3UL, 0UL, 1UL}) {
+        barriers.push_back(
+            Transition(textures[i], RndResourceState::kPixelShaderResource, RndResourceState::kRenderTarget));
+    }
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    const Hmx::Color clearColors[2] = {Hmx::Color(0.25F, 0.0F, 0.0F, 0.0F), Hmx::Color(0.5F, 0.5F, 1.0F, 0.0F)};
+    for (unsigned long i = 0; i != 2; ++i) {
+        RndContext::RenderTargetParams targets;
+        targets.mClearColor = clearColors[i];
+        RndContext::RenderTargetParams::Target color;
+        color.mTexture = textures[i + 2];
+        color.mClearMode = 1;
+        targets.mTargets.push_back(color);
+        context.SetRenderTargets(targets);
+    }
+    // All four, clearing the first two and the depth.
+    RndContext::RenderTargetParams targets;
+    targets.mTargets.resize(4);
+    for (unsigned long i = 0; i != 4; ++i) {
+        targets.mTargets[i].mTexture = textures[i];
+        targets.mTargets[i].mClearMode = i < 2 ? 1 : 0;
+    }
+    targets.mDepthTexture = ActiveFrame(*p.mBuffers[target.mBuffersIndex]).mDepthStencil;
+    targets.mDepthClearMode = 1;
+    context.SetRenderTargets(targets);
+
+    const RndShadingMode shadingMode = context.mShadingMode;
+    context.SetShadingMode(kShadingModeImpostorMaps);
+    context._SetDepthModeImpl(1);
+    context.mBlendMode = static_cast<RndBlendMode>(5);
+    context._SetBlendModeImpl(static_cast<RndBlendMode>(5), Hmx::Color::GetWhite());
+    PodVector<RndDrawInstance*>* sorted = Buckets(sortable);
+    for (unsigned long bucket = 0; bucket != kNumDrawBuckets; ++bucket) {
+        if (((0x399C0FU >> bucket) & 1) != 0) {
+            continue;
+        }
+        SortBucket(sorted[bucket], StateCompare{true});
+        if (!sorted[bucket].empty()) {
+            _FlushBucket<kFlushBasic>(context, internal, target, sorted[bucket], 0, sorted[bucket].size());
+        }
+    }
+    for (RndResourceBarrier& barrier : barriers) {
+        barrier.mBefore = RndResourceState::kRenderTarget;
+        barrier.mAfter = RndResourceState::kPixelShaderResource;
+    }
+    context._ResourceBarrierImpl(barriers.size(), barriers.mData);
+    context.SetShadingMode(shadingMode);
+}
+
+// Reconstructed from eboot.elf at 0x41ECC0. The wireframe overlay: the
+// collection's camera culls with the drawer's first bucket set, and every
+// bucket but the depth, shadow and overlay ones is drawn in the
+// parameters' wireframe color into the back buffer over the target's
+// depth.
+void RndSceneDrawer::_DrawWireframe(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target) const {
+    const RndSceneDrawParams& p = internal.mParams;
+    RndBufferCollection& buffers = *p.mBuffers[target.mBuffersIndex];
+    VectorAdapter<PodVector<RndDrawInstance>> instances = Adapter(mDrawInstances[0]);
+    VectorAdapter<PodVector<RndDrawInstance*>> sortable = Adapter(mSortableInstances[0]);
+    RndCullerParams params;
+    params.mNoCulling = internal.mSceneCom != nullptr && internal.mSceneCom->mNeverCull;
+    PodVector<RndDrawInstance>* buckets = Buckets(instances);
+    for (unsigned long bucket = 0; bucket != kNumDrawBuckets; ++bucket) {
+        buckets[bucket].clear();
+    }
+    const RndCameraContext& camera = internal.mCameras[target.mBuffersIndex].mCamera;
+    if (!params.mNoCulling) {
+        for (const Vector4& plane : camera.mDerivedCache) {
+            params.mClipPlanes.push_back(plane);
+        }
+    }
+    mCuller->Cull(
+        context.mSceneDrawId,
+        *reinterpret_cast<unsigned int*>(context.mSceneDrawId),
+        camera,
+        p.mShowHide,
+        instances,
+        params);
+    _FillSortableBuckets(instances, sortable);
+    context.SetCamera(p.mCamera);
+    context.SetProjectionRect(p.mProjectionRect);
+    context.SetRenderTargets(buffers.mBackBuffer, ActiveFrame(buffers).mDepthStencil);
+    const RndShadingMode shadingMode = context.mShadingMode;
+    context.SetShadingMode(kShadingModeWireframe);
+    context.SetWireframeColor(p.mWireframeColor);
+    context._SetThickLinesImpl(false);
+    context.mBlendMode = static_cast<RndBlendMode>(5);
+    context._SetBlendModeImpl(static_cast<RndBlendMode>(5), Hmx::Color::GetWhite());
+    context._SetDepthModeImpl(1);
+    PodVector<RndDrawInstance*>* sorted = Buckets(sortable);
+    for (unsigned long bucket = 0; bucket != kNumDrawBuckets; ++bucket) {
+        if (((0x20000FU >> bucket) & 1) != 0) {
+            continue;
+        }
+        SortBucket(sorted[bucket], StateCompare{true});
+        if (!sorted[bucket].empty()) {
+            _FlushBucket<kFlushBasic>(context, internal, target, sorted[bucket], 0, sorted[bucket].size());
+        }
+    }
+    context.SetShadingMode(shadingMode);
+}
+
+// Reconstructed from eboot.elf at 0x41FC20: empty in this build. The job
+// graph's last collection job calls it before the output conversion.
+void RndSceneDrawer::_DrawDebugCallbacks(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    RndSceneDrawTarget& target) const {
+    static_cast<void>(context);
+    static_cast<void>(internal);
+    static_cast<void>(target);
+}
+
+// Reconstructed from eboot.elf at 0x420730: empty in this build. The job
+// graph's post-cull job calls it for a stereo pair drawn with the stereo
+// optimizations.
+void RndSceneDrawer::_DrawStereoPostCull(
+    RndContext& context,
+    RndSceneInternalContext& internal,
+    unsigned long target) const {
+    static_cast<void>(context);
+    static_cast<void>(internal);
+    static_cast<void>(target);
+}
+
+namespace {
+
+// The perf timer "<format><index>" of a collection job. Inlined into the
+// jobs' constructors. Name not in the reference map.
+unsigned long CollectionTimerIndex(const char* format, unsigned long index) {
+    const char* name = (FormatString(format) << index).Str();
+    return thePerfMgr.GetTimerIndex(Symbol(name));
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x4324C0. The binary also builds the
+// scene's file name for a report that is compiled out.
+void RndSceneDrawInitContextJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndContext& context = *ImmediateContext();
+    static_cast<void>(FileGetName(internal.mEntity->mResource->mPath.mPath.Str()));
+    context.BeginFrame(0);
+    mPollState = -1;
+    mDrawer->_UpdateShaderGraphGlobals(context, internal);
+    if (internal.mSceneCom != nullptr) {
+        internal.mSceneCom->UpdatePropHysteresisTexture(internal.mEntity, context);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4325B0: only begins the device's
+// pending frame.
+void RndSceneDrawEndJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    static_cast<void>(ImmediateContext());
+}
+
+// Reconstructed from eboot.elf at 0x432630. The parameters' target mode
+// goes where Draw passes the context's scene draw index.
+void RndSceneDrawCullJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndSceneInternalContext::CameraData& camera = internal.mCameras[mIndex];
+    RndCullerParams params;
+    params.mNoCulling = internal.mSceneCom != nullptr && internal.mSceneCom->mNeverCull;
+    mDrawer->_Cull(
+        mSceneDrawId,
+        static_cast<unsigned int>(internal.mParams.mTargetMode),
+        camera.mCamera,
+        internal.mParams.mShowHide,
+        camera.mDrawInstances,
+        camera.mSortableInstances,
+        params);
+    mDrawer->mOcclusionQueryMgr->Submit(camera.mCamera);
+}
+
+// Reconstructed from eboot.elf at 0x4327E0.
+void RndSceneDrawCullAnalysisJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    mDrawer->_AnalyzeCullResults(internal, mIndex);
+    mTarget = mJobs->_PropagateDrawTarget(internal, mIndex);
+}
+
+// Reconstructed from eboot.elf at 0x4328F0. The start of _DrawPostCull:
+// the scene texture capture of an uncleared scene, the depth clear and the
+// scene mask; the buckets have jobs of their own.
+void RndSceneDrawPostCullJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    const unsigned long index = mTarget.mBuffersIndex;
+    const RndSceneDrawParams& p = internal.mParams;
+    RndBufferCollection& buffers = *p.mBuffers[index];
+    const RndSceneInternalContext::CameraData& camera = internal.mCameras[index];
+    RndContext& context = *ImmediateContext();
+    if (internal.mStereoOptimized) {
+        mDrawer->_DrawStereoPostCull(context, internal, index);
+    }
+    if (!p.mClear && camera.mSceneTexUsage == 0) {
+        mDrawer->_CaptureSceneTex(context, internal, mTarget);
+    }
+    if (camera.mHasInstances) {
+        static Symbol sName;
+        RndScopedGpuStatBlock statBlock(context, PassName(sName, "Clear Depth/Stencil"));
+        RndContext::RenderTargetParams targets;
+        targets.mDepthTexture = ActiveFrame(buffers).mDepthStencil;
+        targets.mDepthClearMode = 1;
+        context.SetRenderTargets(targets);
+    }
+    if (p.mDrawSceneMask) {
+        mDrawer->_DrawSceneMask(context, internal, index);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x432C20. An empty bucket is skipped,
+// except bucket 4 (which initializes the light accumulation), 11 (whose
+// G-buffer barriers are always made) and 18 with the scene's mask buffer
+// enabled. The bucket's pass draws into the execute job's deferred
+// context; bucket 16 lays its depth down first. Buckets 1-3 only acquire
+// the context.
+void RndSceneDrawBucketJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    PodVector<RndDrawInstance*>& bucket =
+        Buckets(internal.mCameras[mTarget.mBuffersIndex].mSortableInstances)[mBucket];
+    if (bucket.empty() && mBucket != 4 && mBucket != 11
+        && !(mBucket == 18 && internal.mSceneCom != nullptr && internal.mSceneCom->mMaskBuffer.mEnabled)) {
+        return;
+    }
+    RndExecDeferredContextJob* execJob = mExecJob;
+    const unsigned long contextIndex = execJob->mContextIndex;
+    RndContext& context = *gRndDevice->AcquireDeferredContext(contextIndex);
+    mDrawer->mSceneCBuffer->_SelectImpl(context);
+    context.SetCamera(internal.mParams.mCamera);
+    context.SetProjectionRect(internal.mParams.mProjectionRect);
+    const unsigned long index = static_cast<unsigned int>(mBucket);
+    switch (mBucket) {
+    case 0:
+        mDrawer->_DrawZPrepass(context, internal, mTarget, index, bucket);
+        break;
+    case 4:
+    case 7:
+        mDrawer->_DrawOpaqueDeferredLit(context, internal, mTarget, index, bucket);
+        break;
+    case 5:
+    case 8:
+        mDrawer->_DrawOpaqueDeferredEmissive(context, internal, mTarget, index, bucket);
+        break;
+    case 6:
+    case 9:
+        mDrawer->_DrawOpaqueDeferredUnlit(context, internal, mTarget, index, bucket);
+        break;
+    case 10:
+        mDrawer->_DrawDecalsLitOpaque(context, internal, mTarget, index, bucket);
+        break;
+    case 11:
+        mDrawer->_DrawDecalsLitTransparent(context, internal, mTarget, index, bucket);
+        break;
+    case 12:
+        mDrawer->_DrawDecalsUnlit(context, internal, mTarget, index, bucket);
+        break;
+    case 13:
+        mDrawer->_DrawOpaqueFwdLit(context, internal, mTarget, index, bucket);
+        break;
+    case 14:
+        mDrawer->_DrawOpaqueFwdUnlit(context, internal, mTarget, index, bucket);
+        break;
+    case 15:
+    case 17:
+    case 19:
+    case 20:
+        mDrawer->_DrawTransparent(context, internal, mTarget, index, bucket);
+        break;
+    case 16:
+        mDrawer->_DrawZPrepass(context, internal, mTarget, index, bucket);
+        mDrawer->_DrawOpaqueTransparent(context, internal, mTarget, index, bucket);
+        break;
+    case 18:
+        mDrawer->_DrawMaskBuffer(context, internal, mTarget, index, bucket);
+        break;
+    default:
+        break;
+    }
+    gRndDevice->ReleaseDeferredContext(contextIndex);
+    execJob->mAcquired = true;
+}
+
+// Reconstructed from eboot.elf at 0x432F40. When some collection needs
+// lights they are culled with the shared camera, and shadow light i goes
+// to shadow map job i; the jobs left over get no lights and the least
+// weight.
+void RndSceneDrawLightCullingJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    bool needsLights = false;
+    for (const RndSceneInternalContext::CameraData& camera : internal.mCameras) {
+        if (camera.mNeedsLightCulling) {
+            needsLights = true;
+            break;
+        }
+    }
+    eastl::vector<RndSceneDrawJobs::DeferredJob<RndSceneDrawShadowMapJob>>& shadowJobs = mJobs->mShadowMapJobs;
+    unsigned long light = 0;
+    if (needsLights) {
+        RndLightMgrCom* lightMgr = internal.mLightMgr;
+        lightMgr->CullLights(
+            mSceneDrawId,
+            static_cast<unsigned int>(internal.mParams.mTargetMode),
+            internal.mCullCamera,
+            internal.mParams);
+        const unsigned long numShadowLights = lightMgr->mCullResults.mShadowLights.size();
+        for (; light != numShadowLights; ++light) {
+            RndSceneDrawShadowMapJob* job = shadowJobs[light].mJob;
+            job->mFirstLight = light;
+            job->mLastLight = light + 1;
+            job->SetPollWeight(0xFFFF, false);
+        }
+    }
+    for (; light < shadowJobs.size(); ++light) {
+        RndSceneDrawShadowMapJob* job = shadowJobs[light].mJob;
+        job->mFirstLight = ~0UL;
+        job->mLastLight = ~0UL;
+        job->SetPollWeight(1, false);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4330E0. Each collection that needs it
+// gets its linear depth, with its depth target bound alone; then, when
+// some collection needs lights, they are culled into tiles: for both eyes
+// with the shared camera, or for the first collection.
+void RndSceneDrawTiledLightCullingJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    const RndSceneDrawParams& p = internal.mParams;
+    RndContext& context = *ImmediateContext();
+    context.SetCamera(p.mCamera);
+    context.SetProjectionRect(p.mProjectionRect);
+    for (unsigned long i = 0; i < internal.mCameras.size(); ++i) {
+        if (!internal.mCameras[i].mNeedsLinearDepth) {
+            continue;
+        }
+        RndContext::RenderTargetParams targets;
+        targets.mDepthTexture = ActiveFrame(*p.mBuffers[i]).mDepthStencil;
+        context.SetRenderTargets(targets);
+        mDrawer->_GenerateLinearDepth(context, internal, i);
+    }
+    for (const RndSceneInternalContext::CameraData& camera : internal.mCameras) {
+        if (!camera.mNeedsLightCulling) {
+            continue;
+        }
+        if (internal.mStereoOptimized) {
+            internal.mLightMgr->_CullTiledLights(context, internal.mCullCamera, p, *p.mBuffers[0], p.mBuffers[1]);
+        } else {
+            internal.mLightMgr->_CullTiledLights(
+                context, internal.mCameras[0].mCamera, p, *p.mBuffers[0], nullptr);
+        }
+        return;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x433360.
+RndSceneDrawPostLightCullJob::RndSceneDrawPostLightCullJob(RndSceneDrawer* drawer, unsigned long index)
+    : mDrawer(drawer), mTimerIndex(~0UL) {
+    SetThreaded(false);
+    mTimerIndex = CollectionTimerIndex("draw_post_light_cull_job: %d", index);
+}
+
+// Reconstructed from eboot.elf at 0x433470. The stereo pair's tiled light
+// culling for this eye, the sky texture, the volumetric scattering's
+// update (with the shared camera for a stereo pair) and the ambient
+// occlusion, all on the immediate context without the fences of
+// _DrawPostLightCull.
+void RndSceneDrawPostLightCullJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    const unsigned long index = mTarget.mBuffersIndex;
+    const RndSceneDrawParams& p = internal.mParams;
+    RndSceneInternalContext::CameraData& camera = internal.mCameras[index];
+    RndBufferCollection& buffers = *p.mBuffers[index];
+    RndContext& context = *ImmediateContext();
+    if (camera.mNeedsLightCulling && internal.mStereoOptimized) {
+        internal.mLightMgr->_CullTiledLightsStereo(
+            context, p, internal.mCullCamera, camera.mCamera, *p.mBuffers[0], buffers);
+    }
+    RndTextureBase* skyTexture = nullptr;
+    if (internal.mSky != nullptr) {
+        mDrawer->mSceneCBuffer->_SelectImpl(context);
+        context.SetCamera(p.mCamera);
+        context.SetProjectionRect(p.mProjectionRect);
+        const RndSceneDrawer::BatchContext batch = mDrawer->_BuildBatchContext(internal, mTarget);
+        internal.mSky->UpdateTexture(context, batch);
+        skyTexture = internal.mSky->GetAtmosphereTexture(buffers);
+    }
+    if (internal.mVolumetricScattering != nullptr) {
+        const RndCameraContext* stereoCamera = nullptr;
+        RndBufferCollection* stereoBuffers = nullptr;
+        if (internal.mStereoOptimized) {
+            stereoCamera = &internal.mCullCamera;
+            stereoBuffers = p.mBuffers[0];
+        }
+        internal.mVolumetricScattering->BeginAsyncUpdate(
+            context,
+            camera.mCamera,
+            stereoCamera,
+            buffers,
+            stereoBuffers,
+            internal.mLightMgr,
+            skyTexture,
+            p.mDrawSceneMask);
+    }
+    if (camera.mNeedsLightCulling) {
+        internal.mLightMgr->GenerateAmbientOcclusion(context, buffers, camera.mCamera, p);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4336B0.
+RndSceneDrawDeferredLightJob::RndSceneDrawDeferredLightJob(RndSceneDrawer* drawer, unsigned long index)
+    : mDrawer(drawer), mTimerIndex(~0UL) {
+    SetThreaded(false);
+    mTimerIndex = CollectionTimerIndex("draw_deferred_light_job: %d", index);
+}
+
+// Reconstructed from eboot.elf at 0x4337C0. The deferred lighting outside
+// the debug views (without a fence), then the fog or the volumetric
+// scattering, and the scene texture capture for level 1.
+void RndSceneDrawDeferredLightJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    const unsigned long index = mTarget.mBuffersIndex;
+    const RndSceneDrawParams& p = internal.mParams;
+    RndSceneInternalContext::CameraData& camera = internal.mCameras[index];
+    RndBufferCollection& buffers = *p.mBuffers[index];
+    RndContext& context = *ImmediateContext();
+    context.SetCamera(p.mCamera);
+    context.SetProjectionRect(p.mProjectionRect);
+    context.SetRenderTargets(nullptr, ActiveFrame(buffers).mDepthStencil);
+    if (camera.mNeedsLightCulling && !IsDebugShadingMode(p.mShadingMode)) {
+        internal.mLightMgr->AccumDeferredLight(
+            context, camera.mCamera, p, buffers, mTarget, buffers.mLightAccum[mTarget.mSrcLightAccum], nullptr);
+    }
+    if (internal.mFog != nullptr) {
+        RndTextureBase* texture =
+            internal.mSky != nullptr ? internal.mSky->GetAtmosphereTexture(buffers) : nullptr;
+        internal.mFog->ApplyDeferred(context, buffers, mTarget, texture);
+    } else if (internal.mVolumetricScattering != nullptr) {
+        internal.mVolumetricScattering->EndAsyncUpdate(context, camera.mCamera, buffers, mTarget);
+        internal.mVolumetricScattering->ApplyDeferred(context, camera.mCamera, buffers, mTarget, p.mDrawSceneMask);
+    }
+    if (camera.mSceneTexUsage == 1) {
+        mDrawer->_CaptureSceneTex(context, internal, mTarget);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x433A10.
+void RndSceneDrawSubmitOccQueriesJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndBufferCollection& buffers = *internal.mParams.mBuffers[mIndex];
+    RndContext& context = *ImmediateContext();
+    context.SetCamera(internal.mParams.mCamera);
+    context.SetProjectionRect(internal.mParams.mProjectionRect);
+    mDrawer->mOcclusionQueryMgr->DrawQueries(context, *ActiveFrame(buffers).mDepthStencil);
+}
+
+// Reconstructed from eboot.elf at 0x433B40.
+void RndSceneDrawCaptureSceneTexJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndContext& context = *ImmediateContext();
+    if (internal.mCameras[mTarget.mBuffersIndex].mSceneTexUsage == mSceneTexUsage) {
+        mDrawer->_CaptureSceneTex(context, internal, mTarget);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x433C70.
+void RndSceneDrawPostProcJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndContext& context = *ImmediateContext();
+    mDrawer->mSceneCBuffer->_SelectImpl(context);
+    context.SetCamera(internal.mParams.mCamera);
+    context.SetProjectionRect(internal.mParams.mProjectionRect);
+    mDrawer->_DrawPostProc(context, internal, mTarget, mIndex);
+}
+
+// Reconstructed from eboot.elf at 0x433D80. The objects of the job's share
+// of the queue refresh their GPU data into the deferred context and leave
+// the queue.
+void RndSceneDrawSyncJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    if (mQueue.empty()) {
+        return;
+    }
+    RndExecDeferredContextJob* execJob = mExecJob;
+    const unsigned long contextIndex = execJob->mContextIndex;
+    RndContext& context = *gRndDevice->AcquireDeferredContext(contextIndex);
+    for (RndDynamicGpuData* data : mQueue) {
+        data->_SyncDynamicGpuDataImpl(context);
+        data->mMgr = nullptr;
+    }
+    mQueue.clear();
+    gRndDevice->ReleaseDeferredContext(contextIndex);
+    execJob->mAcquired = true;
+}
+
+// Reconstructed from eboot.elf at 0x433E50.
+RndSceneDrawShadowMapJob::RndSceneDrawShadowMapJob(RndExecDeferredContextJob* execJob, RndSceneDrawer* drawer)
+    : RndDeferredContextDrawJob(execJob), mDrawer(drawer), mFirstLight(~0UL), mLastLight(~0UL) {
+    mDrawInstances.resize(kNumDrawBuckets);
+    mSortableInstances.resize(kNumDrawBuckets);
+}
+
+// Reconstructed from eboot.elf at 0x434800 (the deleting destructor at
+// 0x4348B0). The bucket buffers are freed, the sortable ones first.
+RndSceneDrawShadowMapJob::~RndSceneDrawShadowMapJob() {
+    for (PodVector<RndDrawInstance*>& bucket : mSortableInstances) {
+        bucket.Free();
+    }
+    for (PodVector<RndDrawInstance>& bucket : mDrawInstances) {
+        bucket.Free();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x434000. Draws the shadow maps of the
+// job's lights with the shared camera into the deferred context.
+void RndSceneDrawShadowMapJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    if (mLastLight == mFirstLight) {
+        return;
+    }
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    RndExecDeferredContextJob* execJob = mExecJob;
+    const unsigned long contextIndex = execJob->mContextIndex;
+    RndContext& context = *gRndDevice->AcquireDeferredContext(contextIndex);
+    VectorAdapter<PodVector<RndDrawInstance>> instances = Adapter(mDrawInstances);
+    VectorAdapter<PodVector<RndDrawInstance*>> sortable = Adapter(mSortableInstances);
+    for (unsigned long light = mFirstLight; light < mLastLight; ++light) {
+        internal.mLightMgr->DrawShadowMaps(
+            context, *mDrawer, internal.mCullCamera, internal.mParams.mShowHide, instances, sortable, light);
+    }
+    gRndDevice->ReleaseDeferredContext(contextIndex);
+    execJob->mAcquired = true;
+}
+
+// Reconstructed from eboot.elf at 0x434130.
+const char* RndSceneDrawShadowMapJob::GetPollName() const {
+    return (FormatString("draw shadowmap (exec %d)") << mExecJob->mContextIndex).Str();
+}
+
+// Reconstructed from eboot.elf at 0x4341B0.
+RndSceneDrawEndCollectionJob::RndSceneDrawEndCollectionJob(RndSceneDrawer* drawer, unsigned long index)
+    : mDrawer(drawer), mTimerIndex(~0UL) {
+    SetThreaded(false);
+    mTimerIndex = CollectionTimerIndex("draw_end_collection_job: %d", index);
+}
+
+// Reconstructed from eboot.elf at 0x4342C0. The end of _DrawInterval1 and
+// _DrawFullFramerate, with neither the antialiasing's size limit nor the
+// back-buffer checks of the shading-mode display and the buffer
+// inspection.
+void RndSceneDrawEndCollectionJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    RndSceneInternalContext& internal = *mDrawer->mThreadedContext;
+    const unsigned long index = mTarget.mBuffersIndex;
+    RndContext& context = *ImmediateContext();
+    RndBufferCollection& buffers = *internal.mParams.mBuffers[index];
+    if (internal.mAntialiasing != nullptr) {
+        internal.mAntialiasing->Draw(context, buffers, mTarget);
+    }
+    mDrawer->_DrawShadingModeDisplay(context, internal, mTarget);
+    mDrawer->_DrawOverlays(context, internal, mTarget, 21, Buckets(internal.mCameras[index].mSortableInstances)[21]);
+    mDrawer->_DrawDebugCallbacks(context, internal, mTarget);
+    mDrawer->_DrawOutputConversion(context, internal, mTarget);
+    RndBufferInspection::Draw(context, buffers, internal.mEntity, mTarget);
+}
+
+// Reconstructed from eboot.elf at 0x430610. The graph: the start job, then
+// the culling and cull analysis of each collection and the dynamic GPU
+// data jobs (one per deferred context); the immediate context's init after
+// them. The light culling waits for every analysis, the tiled light
+// culling for it. Each collection's buckets execute in order after its
+// post-cull job, with its immediate-context jobs between them: the tiled
+// light culling after bucket 6, the post-light-cull job before bucket 9,
+// the deferred lighting between buckets 12 and 13, the occlusion queries
+// between 14 and 15, the scene texture capture between 15 and 17 and the
+// two post-processing chains around bucket 19; the collection's last job
+// ends it, and the graph's end job waits for every collection. The shadow
+// map jobs (RndConfig::mMaxShadowContribBuffers) wait for the light
+// culling, and every post-light-cull job for their execution. A second
+// collection's post-light-cull and occlusion query jobs wait for the
+// first collection's last bucket.
+RndSceneDrawJobs::RndSceneDrawJobs(RndSceneDrawer* drawer, unsigned long numCollections)
+    : mStartJob(nullptr),
+      mInitContextJob(nullptr),
+      mLightCullingJob(nullptr),
+      mTiledLightCullingJob(nullptr),
+      mEndJob(nullptr),
+      mDrawer(drawer),
+      mAfter(nullptr) {
+    const unsigned long numContexts = gRndDevice->mDeferredContexts.size();
+    mStartJob = new RndSceneDrawStartJob(drawer);
+    mInitContextJob = new RndSceneDrawInitContextJob(drawer);
+    mStartJob->mAfters.reserve(numCollections + numContexts + 1);
+    mInitContextJob->AddPollDep(mStartJob);
+    mEndJob = new RndSceneDrawEndJob(drawer, this);
+    mLightCullingJob = new RndSceneDrawLightCullingJob(drawer, this);
+    mTiledLightCullingJob = new RndSceneDrawTiledLightCullingJob(drawer);
+    mTiledLightCullingJob->AddPollDep(mLightCullingJob);
+
+    mSyncJobs.resize(numContexts);
+    mSyncExecJobs.resize(numContexts);
+    for (unsigned long i = 0; i != numContexts; ++i) {
+        RndExecDeferredContextJob* execJob = new RndExecDeferredContextJob();
+        RndSceneDrawSyncJob* job = new RndSceneDrawSyncJob(execJob, drawer);
+        mSyncJobs[i] = job;
+        mSyncExecJobs[i] = execJob;
+        job->AddPollDep(mStartJob);
+        mInitContextJob->AddPollDep(execJob);
+    }
+
+    mCollections.resize(numCollections);
+    for (unsigned long i = 0; i != numCollections; ++i) {
+        CollectionJobs& jobs = mCollections[i];
+        jobs.mCullJob = new RndSceneDrawCullJob(drawer, i);
+        jobs.mCullAnalysisJob = new RndSceneDrawCullAnalysisJob(drawer, this, i);
+        jobs.mPostCullJob = new RndSceneDrawPostCullJob(drawer);
+        jobs.mPostLightCullJob = new RndSceneDrawPostLightCullJob(drawer, i);
+        jobs.mDeferredLightJob = new RndSceneDrawDeferredLightJob(drawer, i);
+        jobs.mSubmitOccQueriesJob = new RndSceneDrawSubmitOccQueriesJob(drawer, i);
+        jobs.mCaptureSceneTexJob = new RndSceneDrawCaptureSceneTexJob(drawer, 2);
+        jobs.mEndCollectionJob = new RndSceneDrawEndCollectionJob(drawer, i);
+        jobs.mPostProcJobs.resize(2);
+        jobs.mPostProcJobs[0] = new RndSceneDrawPostProcJob(drawer, i, 0);
+        jobs.mPostProcJobs[1] = new RndSceneDrawPostProcJob(drawer, i, 1);
+        jobs.mCullJob->AddPollDep(mStartJob);
+        jobs.mCullAnalysisJob->AddPollDep(jobs.mCullJob);
+        mLightCullingJob->AddPollDep(jobs.mCullAnalysisJob);
+        jobs.mPostCullJob->AddPollDep(mInitContextJob);
+        jobs.mPostCullJob->AddPollDep(jobs.mCullAnalysisJob);
+
+        jobs.mBucketJobs.resize(kNumDrawBuckets);
+        DeferredJob<RndSceneDrawBucketJob>* buckets = jobs.mBucketJobs.mData;
+        int last = -1;
+        for (int bucket = 0; bucket != static_cast<int>(kNumDrawBuckets); ++bucket) {
+            if (bucket == 2 || bucket == 3 || bucket == 21) {
+                continue;
+            }
+            RndExecDeferredContextJob* execJob = new RndExecDeferredContextJob();
+            RndSceneDrawBucketJob* job = new RndSceneDrawBucketJob(execJob, drawer, bucket);
+            buckets[bucket].mExecJob = execJob;
+            buckets[bucket].mJob = job;
+            job->AddPollDep(jobs.mCullAnalysisJob);
+            execJob->AddPollDep(last == -1 ? static_cast<PollDepBase*>(jobs.mPostCullJob) : buckets[last].mExecJob);
+            last = bucket;
+        }
+        mTiledLightCullingJob->AddPollDep(buckets[6].mExecJob);
+        jobs.mPostLightCullJob->AddPollDep(mTiledLightCullingJob);
+        buckets[9].mExecJob->AddPollDep(jobs.mPostLightCullJob);
+        jobs.mDeferredLightJob->AddPollDep(buckets[12].mExecJob);
+        buckets[13].mExecJob->AddPollDep(jobs.mDeferredLightJob);
+        jobs.mSubmitOccQueriesJob->AddPollDep(buckets[14].mExecJob);
+        buckets[15].mExecJob->AddPollDep(jobs.mSubmitOccQueriesJob);
+        jobs.mCaptureSceneTexJob->AddPollDep(buckets[15].mExecJob);
+        buckets[17].mExecJob->AddPollDep(jobs.mCaptureSceneTexJob);
+        jobs.mPostProcJobs[0]->AddPollDep(buckets[18].mExecJob);
+        buckets[19].mExecJob->AddPollDep(jobs.mPostProcJobs[0]);
+        jobs.mPostProcJobs[1]->AddPollDep(buckets[19].mExecJob);
+        buckets[20].mExecJob->AddPollDep(jobs.mPostProcJobs[1]);
+        jobs.mEndCollectionJob->AddPollDep(buckets[last].mExecJob);
+        mEndJob->AddPollDep(jobs.mEndCollectionJob);
+        if (i != 0) {
+            RndExecDeferredContextJob* previous = mCollections[i - 1].mBucketJobs[last].mExecJob;
+            jobs.mPostLightCullJob->AddPollDep(previous);
+            jobs.mSubmitOccQueriesJob->AddPollDep(previous);
+        }
+    }
+
+    const unsigned long numShadowJobs = static_cast<unsigned long>(gRndDevice->mSettings->mMaxShadowContribBuffers);
+    mShadowMapJobs.resize(numShadowJobs);
+    for (unsigned long i = 0; i != numShadowJobs; ++i) {
+        RndExecDeferredContextJob* execJob = new RndExecDeferredContextJob();
+        mShadowMapJobs[i].mExecJob = execJob;
+        RndSceneDrawShadowMapJob* job = new RndSceneDrawShadowMapJob(execJob, drawer);
+        mShadowMapJobs[i].mJob = job;
+        job->AddPollDep(mLightCullingJob);
+        execJob->AddPollDep(mInitContextJob);
+        for (CollectionJobs& jobs : mCollections) {
+            jobs.mPostLightCullJob->AddPollDep(execJob);
+        }
+    }
+
+    mJobs.reserve(numShadowJobs + numContexts + kNumDrawBuckets * numCollections);
+    for (RndSceneDrawSyncJob* job : mSyncJobs) {
+        mJobs.push_back(job);
+    }
+    for (DeferredJob<RndSceneDrawShadowMapJob>& job : mShadowMapJobs) {
+        mJobs.push_back(job.mJob);
+    }
+    for (CollectionJobs& jobs : mCollections) {
+        for (DeferredJob<RndSceneDrawBucketJob>& job : jobs.mBucketJobs) {
+            if (job.mJob != nullptr) {
+                mJobs.push_back(job.mJob);
+            }
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x4314B0.
+RndSceneDrawJobs::~RndSceneDrawJobs() {
+    delete mStartJob;
+    mStartJob = nullptr;
+    delete mInitContextJob;
+    mInitContextJob = nullptr;
+    delete mLightCullingJob;
+    mLightCullingJob = nullptr;
+    delete mTiledLightCullingJob;
+    mTiledLightCullingJob = nullptr;
+    delete mEndJob;
+    mEndJob = nullptr;
+    for (CollectionJobs& jobs : mCollections) {
+        delete jobs.mCullJob;
+        jobs.mCullJob = nullptr;
+        delete jobs.mCullAnalysisJob;
+        jobs.mCullAnalysisJob = nullptr;
+        delete jobs.mPostCullJob;
+        jobs.mPostCullJob = nullptr;
+        delete jobs.mPostLightCullJob;
+        jobs.mPostLightCullJob = nullptr;
+        delete jobs.mDeferredLightJob;
+        jobs.mDeferredLightJob = nullptr;
+        delete jobs.mSubmitOccQueriesJob;
+        jobs.mSubmitOccQueriesJob = nullptr;
+        delete jobs.mCaptureSceneTexJob;
+        jobs.mCaptureSceneTexJob = nullptr;
+        delete jobs.mEndCollectionJob;
+        jobs.mEndCollectionJob = nullptr;
+        for (RndSceneDrawPostProcJob* job : jobs.mPostProcJobs) {
+            delete job;
+        }
+        for (DeferredJob<RndSceneDrawBucketJob>& job : jobs.mBucketJobs) {
+            delete job.mJob;
+            delete job.mExecJob;
+        }
+    }
+    mCollections.clear();
+    for (unsigned long i = 0; i < mSyncJobs.size(); ++i) {
+        delete mSyncJobs[i];
+        delete mSyncExecJobs[i];
+    }
+    mSyncJobs.clear();
+    mSyncExecJobs.clear();
+    for (DeferredJob<RndSceneDrawShadowMapJob>& job : mShadowMapJobs) {
+        delete job.mJob;
+        delete job.mExecJob;
+    }
+    mShadowMapJobs.clear();
+}
+
+// Reconstructed from eboot.elf at 0x4317E0. Each collection's cull
+// analysis waits for the previous graph's, so its target follows on; the
+// cull and light culling jobs read the immediate context's scene draw id,
+// and the drawer's dynamic GPU data queue is shared out among the sync
+// jobs. The binary appends the jobs with a range insert (0x432210).
+void RndSceneDrawJobs::Start(
+    RndSceneInternalContext& context,
+    RndSceneDrawJobs* after,
+    PollDepBase* startDep,
+    PollDepBase* contextDep,
+    PollDepBase* endAfter,
+    eastl::vector<PollDepBase*>& jobs) {
+    static_cast<void>(context);
+    mAfter = after;
+    if (after != nullptr) {
+        const unsigned long count = after->mCollections.size() < mCollections.size()
+            ? after->mCollections.size()
+            : mCollections.size();
+        for (unsigned long i = 0; i != count; ++i) {
+            mCollections[i].mCullAnalysisJob->AddPollDep(mAfter->mCollections[i].mCullAnalysisJob);
+        }
+    }
+    mStartJob->AddPollDep(startDep);
+    mInitContextJob->AddPollDep(contextDep);
+    endAfter->AddPollDep(mEndJob);
+    unsigned char* sceneDrawId = ImmediateContext()->mSceneDrawId;
+    mLightCullingJob->mSceneDrawId = sceneDrawId;
+    for (CollectionJobs& collection : mCollections) {
+        collection.mCullJob->mSceneDrawId = sceneDrawId;
+    }
+    mDrawer->mDynamicGpuDataMgr->SplitQueue(mSyncJobs);
+    for (PollDepBase* job : mJobs) {
+        jobs.push_back(job);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x431970. Only the end job's
+// dependencies are cleared.
+FixedVector<RndSceneDrawTarget, 2> RndSceneDrawJobs::Finish() {
+    mAfter = nullptr;
+    mEndJob->ClearAllDeps();
+    FixedVector<RndSceneDrawTarget, 2> targets;
+    for (CollectionJobs& collection : mCollections) {
+        targets.push_back(collection.mCullAnalysisJob->mTarget);
+    }
+    return targets;
+}
+
+// Reconstructed from eboot.elf at 0x431AB0. The target starts as the
+// previous graph's with its frame state reset, as Draw reuses previous
+// targets, and is handed down the collection's jobs in bucket order. The
+// changes follow the non-threaded passes: an uncleared scene's capture
+// (level 0), the tiled deferred lighting's swap and the volumetric
+// scattering (before bucket 13), the captures of levels 1 and 2, the mask
+// buffer, the tonemapping and post-processing chains (before buckets 19
+// and 20) and the shading-mode display.
+RndSceneDrawTarget RndSceneDrawJobs::_PropagateDrawTarget(
+    const RndSceneInternalContext& internal,
+    unsigned long index) {
+    CollectionJobs& jobs = mCollections[index];
+    const RndSceneInternalContext::CameraData& camera = internal.mCameras[index];
+    const RndSceneDrawParams& p = internal.mParams;
+    RndSceneDrawTarget target;
+    if (mAfter != nullptr) {
+        target = mAfter->mCollections[index].mCullAnalysisJob->mTarget;
+        target.mDepthTargetIndex = 0;
+        target.mScatteringResolution = -1;
+    } else {
+        target.mBuffersIndex = index;
+    }
+    jobs.mPostCullJob->mTarget = target;
+    RndBufferCollection& buffers = *p.mBuffers[index];
+    if (!p.mClear && camera.mSceneTexUsage == 0) {
+        target.mResult = AccumBuffer(buffers, target.mDstLightAccum);
+    }
+    const bool tiledLighting = gRndDevice->mSettings->mUseTiledLighting;
+    for (unsigned long bucket = 0; bucket != kNumDrawBuckets; ++bucket) {
+        switch (bucket) {
+        case 7:
+            jobs.mPostLightCullJob->mTarget = target;
+            break;
+        case 13:
+            jobs.mDeferredLightJob->mTarget = target;
+            if (tiledLighting && camera.mNeedsLightCulling && !IsDebugShadingMode(p.mShadingMode)) {
+                SwapLightAccum(target);
+            }
+            if (internal.mVolumetricScattering != nullptr) {
+                internal.mVolumetricScattering->SkipApplyDeferred(target);
+            }
+            if (camera.mSceneTexUsage == 1) {
+                target.mResult = AccumBuffer(buffers, target.mDstLightAccum);
+            }
+            break;
+        case 17:
+            jobs.mCaptureSceneTexJob->mTarget = target;
+            if (camera.mSceneTexUsage == 2) {
+                target.mResult = AccumBuffer(buffers, target.mDstLightAccum);
+            }
+            break;
+        case 19:
+        case 20: {
+            const unsigned long stage = bucket - 19;
+            if (stage == 0 && internal.mSceneCom != nullptr && internal.mSceneCom->mMaskBuffer.mEnabled) {
+                target.mResolved = true;
+            }
+            jobs.mPostProcJobs[stage]->mTarget = target;
+            if (internal.mLightMgr->mTonemapping == static_cast<int>(stage) + 1) {
+                internal.mLightMgr->UpdateDrawTarget(target);
+            }
+            if (internal.mPostProc[stage] != nullptr) {
+                internal.mPostProc[stage]->UpdateDrawTarget(target);
+            }
+            break;
+        }
+        default:
+            break;
+        }
+        if (RndSceneDrawBucketJob* job = jobs.mBucketJobs[bucket].mJob) {
+            job->mTarget = target;
+        }
+    }
+    jobs.mEndCollectionJob->mTarget = target;
+    const unsigned int mode = static_cast<unsigned int>(p.mShadingMode) - 3;
+    if (mode <= 14 && ((0x6001U >> mode) & 1) != 0) {
+        SwapLightAccum(target);
+    }
+    return target;
 }

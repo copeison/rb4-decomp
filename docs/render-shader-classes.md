@@ -105,3 +105,30 @@ built-in shaders.
 | program key arrays | `RndShaderKeyGroup` |
 | `FogDeferredShaderResource` | `RndShaderFogDeferred` |
 | `RenderResourceManager`, `render_resource_manager_*` | `RndShaderMgr` |
+
+## Shader graph queries
+
+`RndShaderGraph` (`src/render/shadergraph`) forwards its material queries to
+the root node: the component on the object `mRootNode` (+24) whose base id
+is `RndShaderNode::sClassName` (0x1A8C538), cast to `RndShaderNodeRoot`.
+
+| Root slot | Query | Address | Root default |
+| ---: | --- | ---: | --- |
+| 61 | `IsLit` | 0x4FD570 | false |
+| 62 | (`IsFwdLit`, 0x4FD7C0) | | false |
+| 63 | `UsesAlphaCut` | 0x4FDAB0 | false |
+| 64, 65 | `UsesSceneTex`, `UsesSceneDepth` | 0x4FDB20, 0x4FDB90 | false |
+| 66 | `IsEmissive` | 0x4FD990 | false |
+| 67 | `GetUsageHints` | 0x4FDC00 | 0 |
+| 68, 69 | `GetAllowedBlendModes`, `GetDefaultBlendMode` | 0x4FD750, 0x4FDC70 | 0x20, 5 |
+| 70, 71 | `HasBlendFactor`, `GetBlendFactor` | 0x4FDCE0, 0x4FDD50 | false, white |
+| 72-74 | `AllowsBucket`, `AllowsCullMode`, `AllowsDepthPrepass` | 0x4FDDC0-0x4FDEA0 | true |
+
+`RndShaderNode` (vtable 0x1912100, 61 slots) and `RndShaderNodeRoot`
+(0x191C8E0, 81 slots) are modelled as vtables only. Slots 75-80 are a
+shading-mode filter, the decal lighting type, and four source printers.
+`RndShaderGraphResource` derives from `EntityResource`; `GetShaderGraph`
+(0x50B110) and `DynamicPropRegistry<RndShaderGraphResource>::Get` (0x4F60C0)
+are reconstructed. The scene globals of `RndShaderNodeTime` (0x5A52D0) and
+`RndShaderNodeTransInfo` (0x5A6980) are too; the driven float and color
+globals (0x583220, 0x581370) are not.

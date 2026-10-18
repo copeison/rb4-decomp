@@ -50,7 +50,9 @@ public:
 // The base of the components whose properties are extended by a resource's
 // (DynamicCom<T>). The class is not in the reference map: the map's build
 // keeps these methods in the DynamicCom template; this build compiles them
-// once in entity/InstanceCom.o (0x1D0B30 to 0x1D17BF). Its vtable at
+// once in an object the map does not name (0x1D0AA0 to 0x1D1E8F, with the
+// static initializer of its class-registry map at 0x1D1DD0), which
+// entity/EntityHeaderCom follows. Its vtable at
 // 0x18EA760 has 47 slots: Component's 41 and six pure slots for the
 // template. The dynamic properties live in mPropStorage; while the resource
 // reloads they are kept in mSavedProps. Name not in the reference map.
@@ -59,6 +61,21 @@ public:
     // Inlined into the subclasses' constructors, for example RndMaterialCom's
     // at 0x4F3290. mSavedPropsRev is not initialized.
     DynamicComBase() : mPropStorage(), mPropCrc(0), mPropStorageLoaded(false), mSavedProps(false) {}
+    // Copies the properties for an imprint: "prop_storage" through
+    // PropArrayBase::_Copy, "prop_crc" and whether they came from the prop
+    // storage. The saved properties start empty with revision 0. Inlined
+    // into the subclasses' _Imprint, for example RndMaterialCom's at
+    // 0x4F4A80. Name not in the reference map, which has the members in
+    // DynamicCom(DynamicCom const&).
+    DynamicComBase(const DynamicComBase& other)
+        : Component(other),
+          mPropStorage(),
+          mPropCrc(other.mPropCrc),
+          mPropStorageLoaded(other.mPropStorageLoaded),
+          mSavedProps(false),
+          mSavedPropsRev(0) {
+        mPropStorage._Copy(other.mPropStorage);
+    }
     // Slots 0-1: 0x1D1650, 0x1D1700.
     ~DynamicComBase() override;
 
@@ -156,6 +173,13 @@ static_assert(sizeof(DynamicComBase) == 160);
 template <class T>
 class DynamicComResource {
 public:
+    DynamicComResource() {}
+    // A copy loads its own resource: both references start empty. Inlined
+    // into the subclasses' _Imprint.
+    DynamicComResource(const DynamicComResource& other) : mResource(), mInlineResource() {
+        static_cast<void>(other);
+    }
+
     // The only slot, 0x4F4EA0 for RndShaderGraphResource: false loads the
     // resource shared (GetOrLoad), true a private copy (LoadUnique).
     virtual bool _ShouldLoadUniqueResource() const {
@@ -178,6 +202,16 @@ class DynamicCom : public DynamicComBase, public DynamicComResource<T> {
 public:
     // Inlined into the subclasses' constructors.
     DynamicCom() : mFile(), mComOrderCrc(-1), mReloadsSelf(true) {}
+    // The map's DynamicCom(DynamicCom const&): the base's properties, the
+    // file, "com_order_crc" and "reloads_self"; the resources start empty.
+    // Inlined into the subclasses' _Imprint (0x4F4A80 for
+    // RndShaderGraphResource).
+    DynamicCom(const DynamicCom& other)
+        : DynamicComBase(other),
+          DynamicComResource<T>(other),
+          mFile(other.mFile),
+          mComOrderCrc(other.mComOrderCrc),
+          mReloadsSelf(other.mReloadsSelf) {}
     // Slots 0-1: 0x4F4EB0 and 0x4F4EC0, around the body at 0x4F3610.
     ~DynamicCom() override;
 
@@ -320,4 +354,83 @@ bool DynamicCom<T>::_LoadResource() {
     _StoreDynamicProps();
     this->mResource = resource.Get();
     return _InitializeDynamicProps();
+}
+
+// A component that loads one T resource from mFile, with DynamicCom<T>'s
+// members but without the dynamic properties: Component, the
+// DynamicComResource at +24 and the file, "com_order_crc" and
+// "reloads_self" after it (64 bytes). InstanceCom derives from
+// ResourceCom<TransEntityResource>; its overrides of slots 14, 39 and 40
+// are this template's. Name not in the reference map, whose build derives
+// InstanceCom from DynamicCom<TransEntityResource>; the evidence is weak.
+template <class T>
+class ResourceCom : public Component, public DynamicComResource<T> {
+public:
+    // Inlined into the subclasses' constructors.
+    ResourceCom() : mFile(), mComOrderCrc(-1), mReloadsSelf(true) {}
+    // The file, "com_order_crc" and "reloads_self"; the resources start
+    // empty. Inlined into the subclasses' _Imprint (0x11B630 for
+    // InstanceCom).
+    ResourceCom(const ResourceCom& other)
+        : Component(other),
+          DynamicComResource<T>(other),
+          mFile(other.mFile),
+          mComOrderCrc(other.mComOrderCrc),
+          mReloadsSelf(other.mReloadsSelf) {}
+
+    // Slot 14 at 0x11B7C0 for TransEntityResource.
+    void _ResetEntered() override {
+        mComOrderCrc = -1;
+    }
+    // Slots 39-40 at 0x11B7F0 and 0x11B800: post-polls, with an empty
+    // post-poll.
+    bool _HasPostPoll() const override {
+        return true;
+    }
+    void _PostPoll() override {}
+
+    // Loads the resource from mFile, or takes mInlineResource, and reports
+    // a missing or failed one against the component. Always true. The
+    // map's DynamicCom<T>::_LoadResources(ObjPtr const&); this build
+    // compiles it against the DynamicComResource base (0x11BF90 for
+    // TransEntityResource). Name not in the reference map.
+    bool _LoadResource();
+    // Registers mFile under the given property name, "reloads_self" and
+    // "com_order_crc" (0x11B8E0 for TransEntityResource). Not
+    // reconstructed: the property metadata's attributes are written
+    // through helpers that are not modelled.
+    static void _Init(PropRegistry& registry, const char* fileProp);
+
+    // Field names are not in the reference map.
+    // The resource file; the subclass names the property.
+    ResourcePath mFile;
+    // "com_order_crc"; -1 until set, and again when the entity resets.
+    int mComOrderCrc;
+    // "reloads_self": the edit poll reloads a changed resource.
+    bool mReloadsSelf;
+};
+
+// Reconstructed from eboot.elf at 0x11BF90. A unique load goes through an
+// out-of-line copy of the load (0x11C0D0).
+template <class T>
+bool ResourceCom<T>::_LoadResource() {
+    if (mFile == ResourcePath() && this->mInlineResource == nullptr) {
+        this->mResource = nullptr;
+        return true;
+    }
+    ResourcePtr<T> resource;
+    if (this->mInlineResource != nullptr) {
+        resource = this->mInlineResource.Get();
+    } else if (this->_ShouldLoadUniqueResource()) {
+        resource = static_cast<T*>(Resource::LoadUnique(mFile, T::Id(), false).Get());
+    } else {
+        resource = Resource::GetOrLoad<T>(mFile, false);
+    }
+    if (!(mFile == ResourcePath()) && (resource == nullptr || resource->Fail())) {
+        MakeErrorName();
+    }
+    if (resource.Get() != this->mResource.Get()) {
+        this->mResource = resource.Get();
+    }
+    return true;
 }

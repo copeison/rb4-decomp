@@ -39,9 +39,13 @@ class's identity, which the component macros generate.
 | 10-13 | `_Imprint`, `_ImprintProps`, `_SaveStorage`, `_LoadStorage` |
 | 14-18 | `_ResetEntered`, `_PostLoad`, `_Save`, `_GetPollOrderDeps`, `_GetComponentOrderDeps` |
 | 19-23 | `_PostCreate`, `_PreDestroy`, `_LoadResources`, `_GetPropRegistry`, `_GetMetaData` |
-| 24-30 | `_PostLoadStorage`, `_PreLoadResources`, `_PostLoadResources`, `_GetPollDeps`, `_CanHaveParentPollDep`, `_OnResourcesLoaded`, `_AreResourcesReady` |
+| 24-30 | `_PostLoadStorage`, `_PreLoadResources`, `_PostLoadResources`, `_GetPollDeps`, `_CanHaveParentPollDep`, `_OnResourcesLoaded`, `_AreResourcesReady(pass)` |
 | 31-35 | game mode `_Enter`, `_Exit`, `_Poll`; `_OnDeactivate`, `_OnActivate` |
 | 36-40 | edit mode `_EditEnter`, `_EditExit`, `_EditPoll`; `_HasPostPoll`, `_PostPoll` |
+
+Slot 30 receives the load pass (0 to 9) that `Entity::_LoadResources`
+passes through `GameObject::AreResourcesReady` and
+`Component::AreResourcesReady`; the light manager is ready only on pass 1.
 
 An entity enters in the game mode (its flags' bits 1-2 are 1) or the edit
 mode (2). The game mode polls through the poll window; the edit mode polls
@@ -93,7 +97,8 @@ are virtual. `Resize` and `_Insert` work through slots 5-7; `_Insert`
 takes an element from the array itself before the storage moves.
 
 A component's `_Imprint` (slot 10) copies it into an imprint buffer inside a
-`ScopedImprint` (`0xB4D0`). The scope sets the thread's
+`ScopedImprint` (`0xB4D0`). Entities imprint the same way
+(`Entity::_Imprint`, see [entity-resources.md](entity-resources.md)). The scope sets the thread's
 `PropArrayBase::sImprinting`, which the binary reaches through the
 thread-local descriptor at `0x19B0310` and the source models as
 `thread_local`; `PropArrayBase::_Copy` (`0xBA70`) skips its copy while it is
@@ -103,8 +108,11 @@ set. The class copies are reconstructed for the render components.
 
 - The slot names 3, 5, 6, 9, 12-14, 17, 18, 24-26 and 28-30 rest on their
   bodies and callers. `_CanHaveParentPollDep` and the resource-load pair are
-  map names of `InstanceCom` methods.
+  map names of `InstanceCom` methods; this build's `InstanceCom` keeps its
+  own parent poll dependency in slot 42 (`_HasParentPollDep`).
 - `ComMetaData::mLightweight`, `mEditorRestrictions` and `mClassName`, and
   `Component::mPropsSynced`, are named from their few readers.
-- `GroupMetadata` as the struct metadata class, and `LoadPropResources`
-  (`0x1C9A90`), are inferred.
+- `GroupMetadata` as the struct metadata class is inferred.
+  `LoadWaveformResources` (`0x1C9A90`), which `LoadResources` calls, takes
+  the map's name: it lies in `entity/Waveform.o`'s range and visits the
+  waveform property types 18 and 19.

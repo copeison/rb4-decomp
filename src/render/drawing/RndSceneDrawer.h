@@ -29,43 +29,11 @@ class RndFence;
 class RndOcclusionQueryMgr;
 class RndPostProcCom;
 class RndSceneCom;
-class RndSceneDrawer;
+class RndSceneDrawJobs;
 class RndShaderCBuffer;
 class RndTexture2D;
 class RndTextureBase;
 struct RndInstanceData;
-
-// The scene's draw job graph for the multithreaded draw: a 1168-byte
-// object of PollDepBase jobs ("draw start", "draw init immed context",
-// "draw cull", "draw cull analysis", "draw post-cull", "draw bucket", "draw
-// light culling", "draw tiled light culling", "draw post-light-cull", "draw
-// deferred light", "draw submit occ queries", "draw capture scenetex",
-// "draw postproc", "draw sync dynamic gpu data", "draw end" and the
-// per-shadowmap and per-collection jobs) that runs the passes of
-// _DrawFullFramerate on worker threads. It is emitted in
-// render/RndSceneDrawer.o (0x430610-0x4349DF) but is not reconstructed:
-// only the entry points the drawer calls are declared. Name not in the
-// reference map.
-class RndSceneDrawJobs {
-public:
-    // Builds the graph for the drawer; the drawer passes 1.
-    RndSceneDrawJobs(RndSceneDrawer* drawer, unsigned long numCollections);  // 0x430610
-    ~RndSceneDrawJobs();  // 0x4314B0
-
-    // Hooks the graph after `after`'s graph, after `startDep` and
-    // `contextDep`, before `endAfter`, and appends its jobs to `jobs`.
-    // Name not in the reference map.
-    void Start(
-        RndSceneInternalContext& context,
-        RndSceneDrawJobs* after,
-        PollDepBase* startDep,
-        PollDepBase* contextDep,
-        PollDepBase* endAfter,
-        eastl::vector<PollDepBase*>& jobs);  // 0x4317E0
-    // Unhooks the graph and returns the draw targets of its collection
-    // jobs. Name not in the reference map.
-    FixedVector<RndSceneDrawTarget, 2> Finish();  // 0x431970
-};
 
 // The buckets and culled lights a partial-framerate scene keeps from the
 // first frame of an interval (808 bytes; RndSceneDrawer::
@@ -363,6 +331,15 @@ public:
         RndContext& context,
         RndSceneInternalContext& internal,
         RndSceneDrawTarget& target);  // 0x41F590
+    // Empty in this build; the job graph's last collection job calls it
+    // before the output conversion. The map's
+    // _DrawDebugCallbacks(RndContext&, RndSceneDrawParams&,
+    // RndSceneInternalContext&) const is the likeliest original; the
+    // evidence is weak.
+    void _DrawDebugCallbacks(
+        RndContext& context,
+        RndSceneInternalContext& internal,
+        RndSceneDrawTarget& target) const;  // 0x41FC20
     // The map's signature is
     // _DrawOutputConversion(RndContext&, RndSceneDrawParams&).
     void _DrawOutputConversion(
@@ -390,6 +367,13 @@ public:
     // (the sky, the lit deferred passes, the decals, the deferred lighting
     // and the volumetric scattering, on the async-compute fences). Names
     // not in the reference map.
+    // Empty in this build; the job graph's post-cull job calls it for a
+    // stereo pair drawn with the stereo optimizations. Name not in the
+    // reference map; the evidence is weak.
+    void _DrawStereoPostCull(
+        RndContext& context,
+        RndSceneInternalContext& internal,
+        unsigned long target) const;  // 0x420730
     void _DrawPostCull(
         RndContext& context,
         RndSceneInternalContext& internal,

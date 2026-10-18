@@ -4,9 +4,22 @@
 
 #include "render/shaders/RndShader.h"
 
+class RndContext;
+class RndTextureBase;
+
 // Compute pass that classifies blur tiles. The vtable is at 0x192E168.
 class RndCShaderBlurClassify : public RndShaderCompute {
 public:
+    // What the point light's shadow softening passes. Name and field names
+    // not in the reference map.
+    struct Params {
+        RndTextureBase* mSrc;
+        RndTextureBase* mSrcClassification;
+        RndTextureBase* mDstClassification;
+        // The settings' shadow soften tile size, in pixels.
+        int mTileSize;
+    };
+
     RndCShaderBlurClassify();             // 0x62E1C0
     ~RndCShaderBlurClassify() override;   // 0x62E200, 0x62E210
 
@@ -18,6 +31,11 @@ public:
         RndShaderCBufferConfig& cbuffer,
         RndShaderResourceConfig& resources) override;  // 0x62E540
 
+    // Classifies each tile of the source into the destination, one thread
+    // per destination texel, with every compute input unbound before and
+    // after. Name not in the reference map.
+    void Dispatch(RndContext& context, const Params& params);  // 0x62E230
+
     // Field names are not in the reference map.
     unsigned long mSrcBuffer;            // Resource indices.
     unsigned long mSrcClassificationBuffer;
@@ -27,6 +45,7 @@ public:
     unsigned long mTileParams;
 };
 
+static_assert(offsetof(RndCShaderBlurClassify::Params, mTileSize) == 24);
 static_assert(offsetof(RndCShaderBlurClassify, mSrcBuffer) == 288);
 static_assert(offsetof(RndCShaderBlurClassify, mCBufferSize) == 312);
 static_assert(sizeof(RndCShaderBlurClassify) == 336);

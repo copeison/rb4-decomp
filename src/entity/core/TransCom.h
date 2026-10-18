@@ -61,8 +61,10 @@ public:
     // TransCom::SetTransParent(GameObjectId, bool); the poll (0x1B4140)
     // reads it.
     GameObjectId mTransParent;
-    // Zeroed by the prototype; no TransCom method reads it.
-    unsigned int mReserved;
+    // "parent_dynamic": the parent may change from frame to frame (for
+    // example when a state graph animates it). A bool property at 64
+    // (registry 0x1AFFB0); the three bytes after it are padding.
+    bool mParentDynamic;
     // Which parent attributes are inherited: 0 the entire transform, 1 scale
     // and rotation, 2 translation. Registered as "inherit_type".
     int mInheritType;
@@ -79,6 +81,7 @@ public:
 static_assert(offsetof(TransCom, mLocalXfm) == 24);
 static_assert(offsetof(TransCom::LocalXfm, mPos) == 24);
 static_assert(offsetof(TransCom, mTransParent) == 60);
+static_assert(offsetof(TransCom, mParentDynamic) == 64);
 static_assert(offsetof(TransCom, mInheritType) == 68);
 static_assert(offsetof(TransCom, mDirtyFlags) == 72);
 static_assert(offsetof(TransCom, mUseEntityParent) == 76);

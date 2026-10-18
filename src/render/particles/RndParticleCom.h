@@ -8,6 +8,7 @@
 #include "entity/props/PropArray.h"
 #include "entity/props/PropRegistry.h"
 #include "entity/resources/Resource.h"
+#include "entity/waveform/Waveform.h"
 #include "math/matrix/Matrix3.h"
 #include "math/transform/Transform.h"
 #include "math/vector/Vector3.h"
@@ -36,11 +37,8 @@ class TransCom;
 // vtable at 0x192BD08 has 46 slots. The object is 3440 bytes.
 //
 // The waveform properties are Waveform<float> and Waveform<Hmx::Color>
-// (entity/Waveform.o, not modelled): 40 bytes each, a reference to the
-// WaveformResource, the property's own WaveformEvalData, the Rand it draws
-// from (+16) and an animation override. They are kept as opaque storage
-// here, so the functions that build, copy or evaluate them are declared
-// only. Field names are not in the reference map; the properties are named
+// (entity/waveform/Waveform.h); the functions that evaluate them are not
+// reconstructed. Field names are not in the reference map; the properties are named
 // after the registry (_Init, 0x603850).
 class RndParticleCom : public RndDrawInstanceCom {
 public:
@@ -61,15 +59,12 @@ public:
         kMesh = 1,    // One mesh instance per particle.
     };
 
-    // The size of an opaque Waveform<T> property. Name not in the reference
-    // map.
-    static constexpr unsigned long kWaveformSize = 40;
-
     // The "emitter" properties (+192). The map names the type.
     struct EmitterParams {
-        // Not reconstructed: it builds the waveforms from the class's
-        // defaults (sDefaultPitch, sDefaultYaw).
+        // The waveforms take the class's defaults (sDefaultPitch,
+        // sDefaultYaw).
         EmitterParams();  // 0x601FC0
+        // The waveforms draw new evaluation states.
         EmitterParams(const EmitterParams& other);  // 0x619580
         // Inlined into ~RndParticleCom (0x601B90); releases the waveforms.
         ~EmitterParams();
@@ -86,8 +81,8 @@ public:
         Vector3 mMaxBoxExtents;
         // "pitch" and "yaw": the emission direction over the duration, in
         // degrees (Waveform<float>).
-        alignas(8) unsigned char mPitch[kWaveformSize];
-        alignas(8) unsigned char mYaw[kWaveformSize];
+        Waveform<float> mPitch;
+        Waveform<float> mYaw;
         // "birth_momentum" and "birth_momentum_amount": new particles
         // inherit this much of the emitter's speed.
         bool mBirthMomentum;
@@ -100,8 +95,7 @@ public:
 
     // The "particle" properties (+320). The map names the type.
     struct ParticleParams {
-        // Not reconstructed: it builds the waveforms from the class's
-        // defaults.
+        // The waveforms take the class's defaults.
         ParticleParams();  // 0x602200
         ParticleParams(const ParticleParams& other);  // 0x619720
         ~ParticleParams();  // 0x6183C0
@@ -113,23 +107,23 @@ public:
         // "max_count": the most particles alive at once, 100 by default.
         int mMaxCount;
         // The Waveform<float> properties and their multipliers.
-        alignas(8) unsigned char mEmitRate[kWaveformSize];  // "emit_rate"
+        Waveform<float> mEmitRate;  // "emit_rate"
         float mEmitRateMultiplier;       // "emit_rate_multiplier", 1
         float mEmitDistancePerParticle;  // "emit_distance_per_particle", 0
-        alignas(8) unsigned char mLifespan[kWaveformSize];  // "lifespan"
+        Waveform<float> mLifespan;  // "lifespan"
         float mLifespanMultiplier;  // "lifespan_multiplier", 1
-        alignas(8) unsigned char mSpeed[kWaveformSize];  // "speed"
+        Waveform<float> mSpeed;  // "speed"
         // "speed_multiplier_over_life".
-        alignas(8) unsigned char mSpeedMultiplierOverLife[kWaveformSize];
+        Waveform<float> mSpeedMultiplierOverLife;
         float mDrag;  // "drag", 0
-        alignas(8) unsigned char mInitialSize[kWaveformSize];      // "initial_size"
-        alignas(8) unsigned char mXScaleOverLife[kWaveformSize];   // "x_scale_over_life"
-        alignas(8) unsigned char mYScaleOverLife[kWaveformSize];   // "y_scale_over_life"
-        alignas(8) unsigned char mZScaleOverLife[kWaveformSize];   // "z_scale_over_life"
+        Waveform<float> mInitialSize;      // "initial_size"
+        Waveform<float> mXScaleOverLife;   // "x_scale_over_life"
+        Waveform<float> mYScaleOverLife;   // "y_scale_over_life"
+        Waveform<float> mZScaleOverLife;   // "z_scale_over_life"
         bool mUniformScale;  // "uniform_scale", true
-        alignas(8) unsigned char mXPivotOverLife[kWaveformSize];   // "x_pivot_over_life"
-        alignas(8) unsigned char mYPivotOverLife[kWaveformSize];   // "y_pivot_over_life"
-        alignas(8) unsigned char mZPivotOverLife[kWaveformSize];   // "z_pivot_over_life"
+        Waveform<float> mXPivotOverLife;   // "x_pivot_over_life"
+        Waveform<float> mYPivotOverLife;   // "y_pivot_over_life"
+        Waveform<float> mZPivotOverLife;   // "z_pivot_over_life"
         bool mOffsetThenScale;  // "offset_then_scale", true
         // "force_direction": the constant acceleration, zero by default.
         Vector3 mForceDirection;
@@ -137,16 +131,15 @@ public:
 
     // The "color" properties (+832). The map names the type.
     struct ColorParams {
-        // Not reconstructed: it builds the waveforms from sDefaultColor and
-        // sDefaultAlpha.
+        // The waveforms start from sDefaultColor and sDefaultAlpha.
         ColorParams();  // 0x602D70
         ColorParams(const ColorParams& other);  // 0x61A020
         // Inlined into ~RndParticleCom (0x601B90).
         ~ColorParams();
 
         // "color" (Waveform<Hmx::Color>) and "alpha" (Waveform<float>).
-        alignas(8) unsigned char mColor[kWaveformSize];
-        alignas(8) unsigned char mAlpha[kWaveformSize];
+        Waveform<Hmx::Color> mColor;
+        Waveform<float> mAlpha;
     };
 
     // "initial_rotation". Enumerator names are not in the reference map;
@@ -159,8 +152,8 @@ public:
 
     // The "spin" properties (+912). The map names the type.
     struct SpinParams {
-        // Not reconstructed: it builds the waveforms from the class's
-        // defaults.
+        // The rotation angles take the class's defaults; the RPMs keep the
+        // waveform default.
         SpinParams();  // 0x602EC0
         SpinParams(const SpinParams& other);  // 0x61A1A0
         ~SpinParams();  // 0x6182F0
@@ -170,17 +163,17 @@ public:
         // "initial_x_rotation_angle", "initial_y_rotation_angle" and
         // "initial_rotation_angle" (also "initial_z_rotation_angle"), in
         // degrees.
-        alignas(8) unsigned char mInitialXRotationAngle[kWaveformSize];
-        alignas(8) unsigned char mInitialYRotationAngle[kWaveformSize];
-        alignas(8) unsigned char mInitialRotationAngle[kWaveformSize];
+        Waveform<float> mInitialXRotationAngle;
+        Waveform<float> mInitialYRotationAngle;
+        Waveform<float> mInitialRotationAngle;
         // A mesh's orientation, edited as "x_orientation", "y_orientation"
         // and "z_orientation" in degrees; the identity by default.
         Hmx::Matrix3 mOrientation;
         // "x_rpm_over_life", "y_rpm_over_life" and "rpm_over_life" (also
         // "z_rpm_over_life").
-        alignas(8) unsigned char mXRpmOverLife[kWaveformSize];
-        alignas(8) unsigned char mYRpmOverLife[kWaveformSize];
-        alignas(8) unsigned char mRpmOverLife[kWaveformSize];
+        Waveform<float> mXRpmOverLife;
+        Waveform<float> mYRpmOverLife;
+        Waveform<float> mRpmOverLife;
         // "x_rpm_drag", "y_rpm_drag" and "rpm_drag" (also "z_rpm_drag").
         float mXRpmDrag;
         float mYRpmDrag;
@@ -199,8 +192,7 @@ public:
     // copied into the particles' vertices or instances. Name not in the
     // reference map.
     struct ExtraDataParams {
-        // Not reconstructed: it builds the waveforms from
-        // sDefaultExtraData.
+        // The waveforms take sDefaultExtraData.
         ExtraDataParams();  // 0x6033F0
         // Inlined into RndParticleCom's copy constructor (0x619130).
         ExtraDataParams(const ExtraDataParams& other);
@@ -211,9 +203,9 @@ public:
         int mExtraDataType1;
         int mExtraDataType2;
         // "extra_data_0" to "extra_data_2" (Waveform<float>).
-        alignas(8) unsigned char mExtraData0[kWaveformSize];
-        alignas(8) unsigned char mExtraData1[kWaveformSize];
-        alignas(8) unsigned char mExtraData2[kWaveformSize];
+        Waveform<float> mExtraData0;
+        Waveform<float> mExtraData1;
+        Waveform<float> mExtraData2;
     };
 
     // The "render" properties (+1352). The map names the type.
@@ -455,27 +447,24 @@ public:
     static PropRegistry sPropRegistry;  // 0x1AA8B80
     static ComMetaData sMetaData;       // 0x1AA8C20
     // The default waveforms _Init builds, which the parameter constructors
-    // copy. In the binary they are ResourcePtr<WaveformResource<float>>
-    // (ResourcePtr<WaveformResource<Hmx::Color>> for sDefaultColor), whose
-    // destructors the initializer registers; WaveformResource is not
-    // modelled, so they are typed by the base. Names not in the reference
-    // map.
-    static ResourcePtr<Resource> sDefaultPitch;                  // 0x1AA8DC8
-    static ResourcePtr<Resource> sDefaultYaw;                    // 0x1AA8DD0
-    static ResourcePtr<Resource> sDefaultEmitRate;               // 0x1AA8DD8
-    static ResourcePtr<Resource> sDefaultSpeedMultiplierOverLife;  // 0x1AA8DE0
-    static ResourcePtr<Resource> sDefaultLifespan;               // 0x1AA8DE8
-    static ResourcePtr<Resource> sDefaultSpeed;                  // 0x1AA8DF0
-    static ResourcePtr<Resource> sDefaultInitialSize;            // 0x1AA8DF8
-    static ResourcePtr<Resource> sDefaultPivot;                  // 0x1AA8E00
-    static ResourcePtr<Resource> sDefaultZPivot;                 // 0x1AA8E08
-    static ResourcePtr<Resource> sDefaultScaleOverLife;          // 0x1AA8E10
-    static ResourcePtr<Resource> sDefaultColor;                  // 0x1AA8E18
-    static ResourcePtr<Resource> sDefaultAlpha;                  // 0x1AA8E20
-    static ResourcePtr<Resource> sDefaultXRotationAngle;         // 0x1AA8E28
-    static ResourcePtr<Resource> sDefaultYRotationAngle;         // 0x1AA8E30
-    static ResourcePtr<Resource> sDefaultRotationAngle;          // 0x1AA8E38
-    static ResourcePtr<Resource> sDefaultExtraData;              // 0x1AA8E40
+    // take; the initializer registers their destructors. Names not in the
+    // reference map.
+    static ResourcePtr<WaveformResource<float>> sDefaultPitch;                  // 0x1AA8DC8
+    static ResourcePtr<WaveformResource<float>> sDefaultYaw;                    // 0x1AA8DD0
+    static ResourcePtr<WaveformResource<float>> sDefaultEmitRate;               // 0x1AA8DD8
+    static ResourcePtr<WaveformResource<float>> sDefaultSpeedMultiplierOverLife;  // 0x1AA8DE0
+    static ResourcePtr<WaveformResource<float>> sDefaultLifespan;               // 0x1AA8DE8
+    static ResourcePtr<WaveformResource<float>> sDefaultSpeed;                  // 0x1AA8DF0
+    static ResourcePtr<WaveformResource<float>> sDefaultInitialSize;            // 0x1AA8DF8
+    static ResourcePtr<WaveformResource<float>> sDefaultPivot;                  // 0x1AA8E00
+    static ResourcePtr<WaveformResource<float>> sDefaultZPivot;                 // 0x1AA8E08
+    static ResourcePtr<WaveformResource<float>> sDefaultScaleOverLife;          // 0x1AA8E10
+    static ResourcePtr<WaveformResource<Hmx::Color>> sDefaultColor;                  // 0x1AA8E18
+    static ResourcePtr<WaveformResource<float>> sDefaultAlpha;                  // 0x1AA8E20
+    static ResourcePtr<WaveformResource<float>> sDefaultXRotationAngle;         // 0x1AA8E28
+    static ResourcePtr<WaveformResource<float>> sDefaultYRotationAngle;         // 0x1AA8E30
+    static ResourcePtr<WaveformResource<float>> sDefaultRotationAngle;          // 0x1AA8E38
+    static ResourcePtr<WaveformResource<float>> sDefaultExtraData;              // 0x1AA8E40
     // The unit box StaticInit creates, drawn by a kMesh system without a
     // mesh path. Name not in the reference map.
     static RndMesh* sDefaultMesh;  // 0x1AA8E48

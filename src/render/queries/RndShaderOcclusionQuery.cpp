@@ -1,5 +1,6 @@
 #include "render/queries/RndShaderOcclusionQuery.h"
 
+#include "render/buffers/RndComputeBuffer.h"
 #include "render/shaders/RndShaderCBufferConfig.h"
 #include "render/shaders/RndShaderResourceConfig.h"
 
@@ -9,6 +10,20 @@ RndShaderOcclusionQuery::RndShaderOcclusionQuery()
 
 // Reconstructed from eboot.elf at 0x5F8F90.
 RndShaderOcclusionQuery::~RndShaderOcclusionQuery() {}
+
+// Reconstructed from eboot.elf at 0x5F8FC0.
+void RndShaderOcclusionQuery::Select(
+    RndContext& context,
+    RndComputeBuffer& coverage) {
+    coverage.Select(
+        context,
+        kShaderProgramPixel,
+        mCoverage,
+        RndShaderResource::kSelectReadWrite,
+        0);
+    RndShaderKeyGroup keys{};
+    _SelectShaderCollection(context, keys);
+}
 
 // Reconstructed from eboot.elf at 0x5F90F0.
 const char* RndShaderOcclusionQuery::_GetClassNameImpl() const {

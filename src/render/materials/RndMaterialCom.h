@@ -78,13 +78,11 @@ public:
     int CurrentRev() const override;           // slot 7: 0x4F4A20
     bool IsA(Symbol type) const override;      // slot 8: 0x4F4A40
     Component* AsComponent() override;         // slot 9: 0x4F4A70
-    // Slot 10. The map's _Imprint(char*, Component*&, bool). Not
-    // reconstructed: the copy inlines DynamicCom<RndShaderGraphResource>'s
-    // copy constructor (the map's DynamicCom(DynamicCom const&), which
-    // copies "prop_storage" through PropArrayBase::_Copy, "prop_crc" and the
-    // file, and starts the saved properties and the resources afresh),
-    // which src/entity does not model; the copy's properties go through
-    // DynamicComBase::_ImprintProps (0x1D1540).
+    // Copies the properties for an imprint; the runtime data, the dirty
+    // flags and the subscriptions start afresh. Inlined into _Imprint
+    // (0x4F4A80). Not in the reference map.
+    RndMaterialCom(const RndMaterialCom& other);
+    // Slot 10. The map's _Imprint(char*, Component*&, bool).
     char* _Imprint(char* buffer, Component** imprint) override;  // 0x4F4A80
     // Slot 19 at 0x4F3A20: takes the shader graph and blend mode of the
     // object's draw instance's default material.

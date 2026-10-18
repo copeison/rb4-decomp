@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 
 #include "math/color/Color.h"
 #include "math/geometry/Geo.h"
@@ -115,6 +116,20 @@ void SetFace(RndMesh::Face& face, unsigned int a, unsigned int b, unsigned int c
 
 }  // namespace
 
+// Reconstructed from eboot.elf at 0x5D7030. The binary calls the mesh's
+// accessors through the vtable on the const mesh.
+RndMesh* RndMeshUtl::Copy(const RndMesh& mesh, RndVertexType type, bool sync) {
+    if (type == kVertexInvalid) {
+        type = const_cast<RndMesh&>(mesh)._GetVertexTypeImpl();
+    }
+    RndMesh* copy = RndMesh::New(type, nullptr);
+    copy->SetKeepMeshData(mesh.mKeepMeshData);
+    copy->SetVertexUsageFlags(mesh.mVertexUsageFlags);
+    copy->SetFaceUsageFlags(mesh.mFaceUsageFlags);
+    CopyGeometry(*copy, mesh, sync);
+    return copy;
+}
+
 // Reconstructed from eboot.elf at 0x5D86E0. The binary calls the mesh's
 // vertex accessors through the vtable on the const mesh.
 Sphere RndMeshUtl::ComputeBoundingSphere(const RndMesh& mesh, const Transform& xfm) {
@@ -132,6 +147,41 @@ Sphere RndMeshUtl::ComputeBoundingSphere(const RndMesh& mesh, const Transform& x
     Sphere sphere = {};
     hull.GenerateSphere(sphere);
     return sphere;
+}
+
+// Reconstructed from eboot.elf at 0x5D9CC0. Vertices of the same type are
+// copied whole; a mesh copied onto itself keeps its faces.
+void RndMeshUtl::CopyGeometry(RndMesh& mesh, const RndMesh& source, bool sync) {
+    auto& vertices = const_cast<RndMesh&>(source);
+    const unsigned long numVertices = vertices._GetNumVerticesImpl();
+    mesh._SetNumVerticesImpl(numVertices);
+    if (numVertices != 0) {
+        const RndVertexInterpreter* sourceInterp =
+            RndVertexInterpreter::GetInstance(vertices._GetVertexTypeImpl());
+        if (mesh._GetVertexTypeImpl() == vertices._GetVertexTypeImpl()) {
+            std::memcpy(
+                mesh._GetVertexVoidImpl(0),
+                vertices._GetVertexVoidImpl(0),
+                sourceInterp->mStride * numVertices);
+        } else {
+            const RndVertexInterpreter* interp =
+                RndVertexInterpreter::GetInstance(mesh._GetVertexTypeImpl());
+            for (unsigned long i = 0; i < numVertices; ++i) {
+                interp->CopyFrom(
+                    mesh._GetVertexVoidImpl(i),
+                    *sourceInterp,
+                    vertices._GetVertexVoidImpl(i));
+            }
+        }
+    }
+    if (&mesh != &source) {
+        mesh.mFaces = source.mFaces;
+    }
+    mesh.mBoundingSphere = source.mBoundingSphere;
+    mesh.mGeometryFrame = source.mGeometryFrame;
+    if (sync) {
+        mesh.SyncStatic();
+    }
 }
 
 // Reconstructed from eboot.elf at 0x5DB660.

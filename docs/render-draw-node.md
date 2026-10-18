@@ -53,7 +53,7 @@ node and the parent object's instance pool.
   facing its z axis, or is the parent's; `environ_index` comes from the
   `RndLightEnvironCom` in a scene, or from the environment parent.
 - `_Enter` marks the root to keep its sphere when an entity above polls
-  only on screen (`InstanceCom` polling mode 2); the edit mode always does.
+  only on screen (`EntityHeaderCom` polling mode 2); the edit mode always does.
 - `_Exit` and `_EditExit` dirty the root's sphere for instance-level exits.
 - `_EditPoll` re-registers nested lights (`_SyncNestedLightEnvirons`,
   `0x6C82F0`) after `nested_light_environments` changed.
@@ -72,7 +72,29 @@ The math helpers `Sphere::GrowToContain` (`0x117D500`) and
 
 ## RndDrawNodeEditCom
 
-The editor companion (`"DrawNodeEditorData"`, vtable `0x1938068`, 59
-slots, `0x6C9450`-`0x6C9C80`) is not reconstructed: it derives from
-`RndEditorDrawCom` (vtable `0x1903D98`), whose slots 41-58 are not
-modelled yet.
+`render/RndDrawNodeEditCom.o` (`0x6C9450`-`0x6C9B9A`, static initializer
+`0x6C9AD0`) is reconstructed in `src/render/scene/RndDrawNodeEditCom.{h,cpp}`.
+The class id is `"DrawNodeEditorData"` (sId `0x1AB0848`, sClassName
+`0x1AB0850`, sPropRegistry `0x1AB0860`, sMetaData `0x1AB0900`); the vtable
+at `0x1938068` has 59 slots and matches slot for slot. Its capability bits
+are `0x42`; it shows only for a selected object while the selection
+options' "show_bounding_spheres" is set, and draws the draw node's world
+sphere as a yellow mesh at 0.3 alpha (`RndDrawUtl::DrawSphereMesh`,
+`0x3E7D90`, declared). `_Init` makes it a TransEntityResource class that
+requires and accompanies `RndDrawNodeCom`; `_Create` is `0x406050`.
+
+### RndEditorDrawCom
+
+The base of the editor companions (`render/RndEditorDrawCom.o`,
+`0x461330`-`0x4616BE`, vtable `0x1903D98`, 48 bytes) is in
+`src/render/editor/RndEditorDrawCom.{h,cpp}`. Its `RuntimeData`
+(`0x461370`) holds capability bits and the link in the root's
+`RndEditorDrawSetCom` list. `GetWorldSphere` (`0x461400`) combines the
+class's own sphere (bit `0x20`, slot 45) with the draw node's (bit `0x40`).
+`_Init` (`0x4614C0`) makes the class a debug class of drawable entities
+that requires `RndEditorDrawSetCom`. Slots 41-58 are declared in vtable
+order with the defaults the binary shares (`0x44C780`, `0x43D6D0`,
+`0x3BC540`-`0x3BC620`). The map names slots 41, 42 and 45-58 except 51
+and 52; the names of slots 43, 44, 51 and 52 rest only on their default
+bodies (weak evidence), and `RndSubEditableId::sNone` (`0x1A86EB0`) is
+declared but not defined.

@@ -70,6 +70,28 @@ public:
     // calling thread is imprinting. Not reconstructed.
     void _Copy(const PropArrayBase& other);  // 0xBA70
 
+    // Places a byte copy of the elements at the buffer, aligned for the
+    // element type, and points the imprint's array at it without owning
+    // it; the imprint may be null to size the copy. Returns the end of the
+    // elements. Inlined into the imprints of entities, layers and objects
+    // (0xEE3F0, 0xF68C0, 0x1171F0). Name not in the reference map.
+    char* _ImprintElements(char* buffer, PropArrayBase* imprint) const {
+        const unsigned long alignment = Alignment();
+        char* const data = reinterpret_cast<char*>(
+            (reinterpret_cast<unsigned long>(buffer) + alignment - 1) & (0 - alignment));
+        const unsigned int bytes = mSize * mElemSize;
+        if (imprint != nullptr) {
+            imprint->mStatic = 1;
+            imprint->mSize = mSize;
+            imprint->mCapacity = mSize;
+            imprint->mData = bytes != 0 ? data : nullptr;
+            if (imprint->mData != nullptr) {
+                __builtin_memcpy(imprint->mData, mData, bytes);
+            }
+        }
+        return data + bytes;
+    }
+
     // Set on the calling thread while components copy themselves into an
     // imprint (ScopedImprint). The binary reaches it through the
     // thread-local descriptor at 0x19B0310, the map's TLSValue, which is

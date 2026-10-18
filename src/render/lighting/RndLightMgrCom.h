@@ -98,6 +98,12 @@ public:
         // Reserves each list for the other's size. Name not in the
         // reference map.
         void ReserveFor(const CullResults& other);  // 0x48B080
+        // Reserves each light list for its count, the probes for
+        // `probeCount` and the shadow lights for the configuration's
+        // mMaxShadowContribBuffers. Name not in the reference map; it is
+        // emitted among the deferred light shaders.
+        void Reserve(const unsigned long (&lightCounts)[3][2],
+                     unsigned long probeCount);  // 0x6DB070
 
         eastl::vector<RndLightCom*> mLights[3][2];
         eastl::vector<RndLightProbeCom*> mProbes;
@@ -132,15 +138,12 @@ public:
     // of an old scene from its probes into "states". The map's
     // _LoadResources(ObjPtr const&).
     bool _OnResourcesLoaded() override;
-    // Slot 30 at 0x480D80. This build passes the load pass (0 to 9) that
-    // Entity::_LoadResources (0xEEA60) gives Component::AreResourcesReady
-    // (0xE8250), which forwards it in esi; Component's declaration lacks
-    // it. The light manager reports not ready on pass 0; on pass 1 it
-    // counts the lights per type and illumination, reserves both light
-    // lists for them and the probes (0x6DB070), syncs the cookie texture
-    // arrays, rebuilds the probe texture arrays with tiled lighting, and
-    // reports ready. Not reconstructed until the parameter is declared.
-    bool _AreResourcesReady() override;
+    // Slot 30 at 0x480D80: not ready on any pass but 1 (the first pass is
+    // 0, so every light has registered by then). On pass 1 it counts the
+    // lights per type and illumination, reserves both light lists for them
+    // and the probes, syncs the cookie texture arrays, rebuilds the probe
+    // texture arrays with tiled lighting, and reports ready.
+    bool _AreResourcesReady(int pass) override;
     // Slot 32 at 0x48A640: forgets the environments, lights and probes;
     // an exit of instanced entities (types 2-4) also unregisters the
     // environments.
@@ -212,7 +215,9 @@ public:
     // probes into the probe buffer, giving each its index, and uploads the
     // buffers. A full buffer drops the remaining lights of its type with a
     // warning naming the type (compiled out).
-    void _FillTiledLightBuffers(RndContext& ctx, const RndCameraContext& camera);  // 0x484160
+    void _FillTiledLightBuffers(
+        RndContext& ctx,
+        const RndCameraContext& camera);  // 0x484160
     // Writes the buffer indices of the first depth slice's probes and
     // lights into the slice-zero id buffer and uploads it. Name not in the
     // reference map.
@@ -422,7 +427,9 @@ public:
 
     // Not reconstructed: the property metadata, and the std::function
     // handlers it binds, are not modelled.
-    static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x486830
+    static void _Init(
+        PropRegistry& registry,
+        ComMetaData& metadata);  // 0x486830
 
     // The class symbol, "LightMgr", constructed by the static initializer
     // at 0x48ECC0.
@@ -534,7 +541,8 @@ public:
 };
 
 static_assert(sizeof(RndLightMgrCom::QualitySettings) == 16);
-static_assert(offsetof(RndLightMgrCom::QualitySettings, mTonemappingEnabled) == 12);
+static_assert(
+    offsetof(RndLightMgrCom::QualitySettings, mTonemappingEnabled) == 12);
 static_assert(sizeof(RndLightMgrCom::RenamedProbeState) == 16);
 static_assert(sizeof(RndLightMgrCom::CullResults) == 256);
 static_assert(offsetof(RndLightMgrCom, mDefaultEnvironment) == 24);

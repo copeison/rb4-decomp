@@ -85,6 +85,12 @@ public:
     // Starts without subscriptions. Inlined into Entity's constructor
     // (0xEBB70).
     MsgSource();  // 0x248AB0
+    // A copy starts without subscriptions too; Entity's copy constructor
+    // inlined into Entity::_Imprint (0xEE3F0) calls the default
+    // constructor's body, which the linker folded with it.
+    MsgSource(const MsgSource& other) : MsgSource() {
+        static_cast<void>(other);
+    }
     // Slots 0-1: 0x248AD0, 0x248C40. Unlinks every subscription and frees
     // the events.
     ~MsgSource() override;

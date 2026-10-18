@@ -13,3 +13,6 @@ deleting destructor and clears the slot.
 The exact format-28 descriptor assembly and owner factory dispatch remain
 behind a narrow adapter until the common render-target descriptor is
 reconstructed.
+
+`RndCShaderSSAOGen::Dispatch` (`0x6D71E0`) writes the target from the
+frame's linear depth and G-buffer pixel normals.

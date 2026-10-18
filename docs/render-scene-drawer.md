@@ -148,20 +148,97 @@ and poll groups, the scene drawer and whether the component owns it.
 or creates an owned one; the destructor deletes an owned drawer.
 `_Init` and `_Imprint` stay declared.
 
+## The other passes
+
+- `_InitLightAccum` (`0x426160`, "Init Light Accum") clears the light
+  accumulation of a cleared draw, to the scene's clear color when it
+  has one, and unless that color is black fills the pixels of the
+  deferred lit geometry (stencil test 4) with a quad when bucket 4 has
+  instances.
+- `_GenerateLinearDepth` (`0x4234C0`, "Analyze Depth") linearizes the
+  depth: with the tiled lighting on compute slot 0 between fences 5
+  and 6, followed by the light tiles' depth ranges
+  (`RndCShaderLinearizeDepth`, `RndCShaderCalcDepthRange`); otherwise
+  with a quad (`RndShaderLinearizeDepth`).
+- `_CaptureSceneTex` (`0x420FF0`, "Capture SceneTex") copies the source
+  light buffer into the destination one, which becomes the target's
+  result, and for blurred scene reads downsamples and blurs it into
+  `mBlurredLightAccum` once or twice ("Blur SceneTex").
+- `_DrawSceneMask` (`0x421AE0`, "Process Scene Mask") inlines the map's
+  `_RefineSceneMask` ("Refine Scene Mask") and writes stencil bit 0x20
+  from the refined tiled mask ("Stencil Scene Mask"), through the tiled
+  mask mesh while `scene_mask_stencil_mesh` is set.
+- `_DrawMaskBuffer` (`0x424E10`, "Mask Buffer") draws bucket 18 in solid
+  white into the scene mask when the scene's mask buffer is enabled,
+  optionally followed by the signed-distance classification and
+  distance passes, and sets `RndSceneDrawTarget::mResolved`.
+- `_DrawToTextures` (`0x41E420`) draws the impostor maps into the four
+  target textures; `_DrawWireframe` (`0x41ECC0`) draws the wireframe
+  overlay into the back buffer.
+- `_DrawDebugCallbacks` (`0x41FC20`) and `_DrawStereoPostCull`
+  (`0x420730`) are empty; only the job graph calls them.
+
+## RndSceneDrawJobs
+
+The multithreaded draw's job graph (1168 bytes, `0x430610`-`0x4343DF`
+and the jobs' members up to `0x4349DF`), built once by the drawer and
+hooked into the caller's graph by `Start` (`0x4317E0`); `Finish`
+(`0x431970`) returns each collection's final target. The cull analysis
+job works the target out for the collection's jobs with
+`_PropagateDrawTarget` (`0x431AB0`), mirroring the changes of the
+non-threaded passes. Every job is a `PollDepBase` with ten slots; the
+bucket, dynamic GPU data and shadow map jobs derive from
+`RndDeferredContextDrawJob` (`render/context/RndDeferredContextJobs.h`)
+and draw into a deferred context that an `RndExecDeferredContextJob`
+executes after them.
+
+| Job | Report name | Vtable | Size | Constructor | Slot 3 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `RndSceneDrawStartJob` | draw start | `0x1900878` | 152 | `0x432440` | `0x432470` |
+| `RndSceneDrawInitContextJob` | draw init immed context | `0x19008D8` | 160 | `0x432480` | `0x4324C0` |
+| `RndSceneDrawEndJob` | (default) | `0x1900938` | 160 | `0x432560` | `0x4325B0` |
+| `RndSceneDrawCullJob` | draw cull | `0x1900998` | 168 | `0x4325D0` | `0x432630` |
+| `RndSceneDrawCullAnalysisJob` | draw cull analysis | `0x19009F8` | 216 | `0x432740` | `0x4327E0` |
+| `RndSceneDrawPostCullJob` | draw post-cull | `0x1900A58` | 200 | `0x432870` | `0x4328F0` |
+| `RndSceneDrawBucketJob` | draw bucket | `0x1900AB8` | 216 | `0x432B90` | `0x432C20` |
+| `RndSceneDrawLightCullingJob` | draw light culling | `0x1900B18` | 168 | `0x432EE0` | `0x432F40` |
+| `RndSceneDrawTiledLightCullingJob` | draw tiled light culling | `0x1900B78` | 152 | `0x4330A0` | `0x4330E0` |
+| `RndSceneDrawPostLightCullJob` | draw post-light-cull | `0x1900BD8` | 208 | `0x433360` | `0x433470` |
+| `RndSceneDrawDeferredLightJob` | draw deferred light | `0x1900C38` | 208 | `0x4336B0` | `0x4337C0` |
+| `RndSceneDrawSubmitOccQueriesJob` | draw submit occ queries | `0x1900C98` | 160 | `0x4339C0` | `0x433A10` |
+| `RndSceneDrawCaptureSceneTexJob` | draw capture scenetex | `0x1900CF8` | 208 | `0x433AB0` | `0x433B40` |
+| `RndSceneDrawPostProcJob` | draw postproc | `0x1900D58` | 208 | `0x433BE0` | `0x433C70` |
+| `RndSceneDrawSyncJob` | draw sync dynamic gpu data | `0x1900DB8` | 192 | `0x433D10` | `0x433D80` |
+| `RndSceneDrawShadowMapJob` | draw shadowmap (exec N) | `0x1900E18` | 1280 | `0x433E50` | `0x434000` |
+| `RndSceneDrawEndCollectionJob` | draw end | `0x1900E78` | 208 | `0x4341B0` | `0x4342C0` |
+
+The graph: the start job, then each collection's cull and cull
+analysis and one dynamic GPU data job per deferred context; the
+immediate context's init after those. The light culling waits for
+every analysis and hands shadow light *i* to shadow map job *i*
+(`RndConfig::mMaxShadowContribBuffers` jobs). Each collection's bucket
+jobs (none for buckets 2, 3 and 21) execute in bucket order after its
+post-cull job, with the immediate-context jobs between them: the tiled
+light culling (linear depth and tiled lights) after bucket 6, the
+post-light-cull job before bucket 9, the deferred lighting between 12
+and 13, the occlusion queries between 14 and 15, the level 2 scene
+texture capture between 15 and 17 and the two post-processing chains
+around bucket 19; the end collection job and the graph's end job
+close it. The jobs that draw on deferred contexts are handed to the
+caller (`mJobs`).
+
 ## Not reconstructed
 
-- The job graph (`RndSceneDrawJobs`, `0x430610`-`0x4349DF`): only the
-  constructor, destructor, `Start` and `Finish` the drawer calls are
-  declared.
-- `_InitLightAccum` (`0x426160`), `_GenerateLinearDepth` (`0x4234C0`),
-  `_DrawMaskBuffer` (`0x424E10`), `_CaptureSceneTex` (`0x420FF0`),
-  `_DrawSceneMask` (`0x421AE0`), `_DrawToTextures` (`0x41E420`) and
-  `_DrawWireframe` (`0x41ECC0`) are declared only.
 - Compiler-generated code in the object: the implicit
   `RndSceneInternalContext` and `RndCameraContext` copies (`0x41D710`,
   `0x41DA90`, `0x4275F0`, `0x427AF0`), the light-list destructor
-  (`0x4274E0`) and the EASTL sort instantiations (`0x428A90`,
-  `0x42B310`, `0x42FF90` and their helpers).
+  (`0x4274E0`), the EASTL sort instantiations (`0x428A90`,
+  `0x42B310`, `0x42FF90` and their helpers) and the job graph's EASTL
+  vector growth and range insert (`0x431F00`, `0x432000`, `0x432100`,
+  `0x432210`).
+- `RndDynamicGpuDataMgr::SplitQueue` (`0x6C9FE0`, in
+  `render/RndDynamicGpuDataMgr.o`) and `RndContext::SetWireframeColor`
+  (`0x6BD6F0`) are declared only.
 
 ## Weak evidence
 
@@ -170,6 +247,10 @@ or creates an owned one; the destructor deletes an owned drawer.
   `_DrawPostCull`, `_DrawPostLightCull`, `_DrawDepthOnly`,
   `_DrawToTextures`, `_SetDepthOnlyTargets`, `_BuildBatchContext` and the
   `FlushType` names.
-- `RndSceneDrawParams::mDrawScene`, `mTargetMode`, `mDrawSceneMask`;
+- Every job class name, `_PropagateDrawTarget`, `_DrawStereoPostCull`
+  and `_DrawDebugCallbacks` (the map's empty-in-release candidate), and
+  `RndDynamicGpuDataMgr::SplitQueue`.
+- `RndSceneDrawParams::mDrawScene`, `mTargetMode` (the job graph passes
+  it where `Draw` passes the context's scene draw index), `mDrawSceneMask`;
   `RndSceneDrawTarget::mDepthTargetIndex` and `mResolved`;
   `RndDrawInstance::mUsesSceneTex` and `mUsesSceneDepth`.

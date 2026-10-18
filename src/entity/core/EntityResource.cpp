@@ -2,10 +2,13 @@
 
 #include <kernel.h>
 
+#include <cstring>
+
 #include "entity/core/ComMetaData.h"
 #include "entity/core/EditorCom.h"
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
+#include "entity/core/EntityHeaderCom.h"
 #include "entity/core/InstanceCom.h"
 #include "entity/progress/LoadProgress.h"
 #include "os/files/File.h"
@@ -58,12 +61,6 @@ void ReleaseInlineResources(eastl::vector<EntityResource::LayerInfo>& layers) {
 
 }  // namespace
 
-// The class symbol of the component that instances an entity resource,
-// whose registration at 0x118E60 describes it as "Used to load an entity
-// resource". Its class name is not recovered. Name not in the reference
-// map.
-extern Symbol gEntityInstanceComId;  // 0x19E3280
-
 // Reconstructed from eboot.elf at 0xFD5D0.
 void EntityResource::SetProfileLoadPath(ResourcePath path) {
     static_cast<void>(scePthreadSelf());
@@ -94,7 +91,7 @@ Entity* EntityResource::CreateEntity() {
     _NewEntity();
     GameObject* const root = mEntity->CreateObject(0, 0);
     root->SetName(Symbol("root"));
-    root->CreateComponent(InstanceCom::sClassName, false);
+    root->CreateComponent(EntityHeaderCom::sClassName, false);
     for (const GameObject::ComIndex& entry : root->mComs) {
         if (entry.mId == EditorCom::sId) {
             EditorCom* const editor = static_cast<EditorCom*>(entry.mCom);
@@ -276,7 +273,7 @@ bool EntityResource::IsProfilingLoad() const {
 // Reconstructed from eboot.elf at 0xFEC20. Revisions 12 to 18 start with
 // the layer files and, from 16, the root data; older streams are read
 // from the entity on, unless cached. Source files before revision 17 get
-// the root's EditorCom (before 13) and InstanceCom when they lack them;
+// the root's EditorCom (before 13) and EntityHeaderCom when they lack them;
 // the root's id is compared with the null id first. A cached file fails
 // when a layer file is missing or not older than the resource.
 bool EntityResource::_LoadEntity(BinStream& stream, bool cached) {
@@ -355,8 +352,8 @@ bool EntityResource::_LoadEntity(BinStream& stream, bool cached) {
             if (rev < 13 && root->GetCom<EditorCom>() == nullptr) {
                 InitObject(root);
             }
-            if (root->GetCom<InstanceCom>() == nullptr) {
-                root->CreateComponent(InstanceCom::sClassName, false);
+            if (root->GetCom<EntityHeaderCom>() == nullptr) {
+                root->CreateComponent(EntityHeaderCom::sClassName, false);
             }
         }
         gEntityLoadDir = ".";
@@ -518,7 +515,7 @@ bool EntityResource::IsAllowedComponent(const ComMetaData& metaData) const {
 
 // Reconstructed from eboot.elf at 0x101BD0.
 Symbol EntityResource::GetInstanceComId() const {
-    return gEntityInstanceComId;
+    return InstanceCom::sClassName;
 }
 
 // Reconstructed from eboot.elf at 0x101BE0.
@@ -538,6 +535,17 @@ ResourcePath EntityResource::GetLayerPath(unsigned long layer) const {
         return mLayers[layer].mPath;
     }
     return ResourcePath();
+}
+
+// Reconstructed from eboot.elf at 0x1024C0. Null data or no bytes clear the
+// root data.
+void EntityResource::SetIconData(const void* data, unsigned long size) {
+    if (data == nullptr || size == 0) {
+        mRootData.clear();
+        return;
+    }
+    mRootData.resize(size);
+    std::memcpy(mRootData.begin(), data, size);
 }
 
 // Reconstructed from eboot.elf at 0x102620.

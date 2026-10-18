@@ -328,14 +328,12 @@ The pass after `AccumDeferredLight`'s collection is the scene draw's
 `RndLightEnvironCom::DrawDeferredLightNoCompute` also take. `+0x690` is
 `mAmbientOcclusionGenerated`.
 
-These are not reconstructed:
+Slot 30 (`0x480D80`) receives the load pass (0-9) of
+`Entity::_LoadResources`: the manager is ready only on pass 1, when it
+counts the lights, reserves both cull lists (`CullResults::Reserve`,
+`0x6DB070`), syncs the cookie arrays and rebuilds the probe arrays.
 
-- slot 30 (`0x480D80`): `Component::AreResourcesReady` (`0xE8250`)
-  forwards the load pass (0-9) of `Entity::_LoadResources` in `esi`, so
-  slot 30 is `_AreResourcesReady(int pass)`; the light manager answers
-  false on pass 0 and does its work on pass 1. `Component.h` must declare
-  the parameter first;
-- `_Init` and its handler `0x489DC0`.
+Not reconstructed: `_Init` and its handler `0x489DC0`.
 
 ### RndLightGlobals
 
@@ -441,11 +439,22 @@ nested `SubflareDrawable` vtable (`0x1906080`, 3 slots) and the
   `GetViewIndex` (`0x5F8590`, an inferred name). `sample_function_table`
   (`0x645F20`) has moved out of RndShaderMgr.cpp's anonymous namespace and
   is now declared in RndShaderMgr.h.
-- `RndOcclusionQuery::mResults` holds the query's world sphere, and
-  `mFrame` holds its manager index. The fields keep their names.
+- The query fields the flare uses are `mEnabled`, `mCulled[view]`,
+  `mSphere` (the world sphere) and `mIndex` (the manager index). See
+  [orbis-occlusion-query.md](orbis-occlusion-query.md).
 
-`RndLightFlareEditCom` (`0x47E7B0`-`0x47EEDF`, vtable `0x1906298` with 59
-slots, "LightFlareEditorData") is not reconstructed.
+`RndLightFlareEditCom` (`render/RndLightFlareEditCom.o`,
+`0x47E780`-`0x47EEDF`, vtable `0x1906298` with 59 slots,
+"LightFlareEditorData"; sId `0x1A88068`, sClassName `0x1A88070`,
+sPropRegistry `0x1A88080`, sMetaData `0x1A88120`) is reconstructed in
+`src/render/lighting/flares/RndLightFlareEditCom.{h,cpp}` as an
+`RndEditorDrawCom` (see [render-draw-node.md](render-draw-node.md)). Its
+capability bits are `0x42`; it shows only for a selected flare while the
+light options' "show_selected_flare_light_sources" is set, and draws the
+draw node's world sphere as a white wireframe through
+`RndOcclusionQueryMgr::DrawOcclusionSphere`. `_Init` (`0x47E7E0`) makes it
+require and accompany `RndLightFlareCom`. The registration `Init`
+(`0x3FE980`) stays declared.
 
 `RndLightHairUtl` and `RndLightSkinUtl` are not in this build. In the
 older map they come after `RndLightGlobals.o` and

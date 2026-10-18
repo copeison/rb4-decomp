@@ -95,6 +95,13 @@ public:
     static unsigned int GetAttributeStream(unsigned int attribute);  // 0x442A80
     bool UsesStream(unsigned int stream) const;                      // 0x443720
     StreamLayout GetStreamLayout(unsigned int stream) const;         // 0x443880
+    // Converts a vertex of the source layout into this layout; a matching
+    // layout is copied whole. Missing normals and tangent frames take
+    // defaults. RndMeshUtl::CopyGeometry calls it. Not reconstructed.
+    void CopyFrom(
+        void* vertex,
+        const RndVertexInterpreter& source,
+        const void* sourceVertex) const;  // 0x446C90
 
     // The number of UV sets. The binary's interpreter caches it at +0x118
     // when it is initialized (the map's _CountUVs); this build's interpreter

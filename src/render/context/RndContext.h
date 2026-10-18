@@ -223,6 +223,9 @@ public:
     // (RndShaderMgr::mBatchInfo) for the batch-visualization shading mode.
     // Name not in the reference map.
     void SetBatchInfo(unsigned int index, unsigned long count);  // 0x6BD770
+    // Writes the wireframe shading's color into the debug constants
+    // (RndShaderMgr::mDebugColor), then syncs and selects them.
+    void SetWireframeColor(const Hmx::Color& color);  // 0x6BD6F0
     // Binds the color and depth targets, clearing those that ask, and sets
     // the viewport and the cameras' target info.
     void SetRenderTargets(const RenderTargetParams& params);  // 0x6BC730

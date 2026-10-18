@@ -460,6 +460,113 @@ void RndDrawUtl::DrawQuad2D(RndContext& context, Quad2DParams& params) {
     context.SetUsingIdentityViewProjection(identity);
 }
 
+// Reconstructed from eboot.elf at 0x3E1180. The corners are placed in
+// pixels by mode, turned about the quad's center, and only then converted
+// to clip space; the quad is never drawn as one oversized triangle.
+void RndDrawUtl::DrawRotatedQuad2D(
+    RndContext& context,
+    RotatedQuad2DParams& params) {
+    const bool identity = context.mUsingIdentityViewProjection;
+    context.SetUsingIdentityViewProjection(true);
+
+    const float width = context.mViewportSize.x;
+    const float height = context.mViewportSize.y;
+    const auto& rect = params.mRect;
+    float left = rect.x;
+    float top = rect.y;
+    float right = rect.x + rect.w;
+    float bottom = rect.y + rect.h;
+    switch (params.mCoordinateMode) {
+    case kCoordinatePixels:
+        break;
+    case kCoordinateNormalized:
+        left *= width;
+        top *= height;
+        right *= width;
+        bottom *= height;
+        break;
+    case kCoordinateAspectCorrected: {
+        const float offset = (width - height) * 0.5F;
+        left = offset + left * height;
+        right = right * height + offset;
+        top *= height;
+        bottom *= height;
+        break;
+    }
+    case kCoordinateClip:
+        left = width * 0.5F * (left + 1.0F);
+        top = height * 0.5F * (top + 1.0F);
+        right = width * 0.5F * (right + 1.0F);
+        bottom = height * 0.5F * (bottom + 1.0F);
+        break;
+    default:
+        left = 0.0F;
+        top = 0.0F;
+        right = 0.0F;
+        bottom = 0.0F;
+        break;
+    }
+    const float quadWidth = right - left;
+    const float quadHeight = bottom - top;
+
+    const float z = params.mZ;
+    RndVertexColorTex vertices[4];
+    const float corners[4][4] = {
+        {left, top, 0.0F, 1.0F},
+        {right, top, 1.0F, 1.0F},
+        {left, bottom, 0.0F, 0.0F},
+        {right, bottom, 1.0F, 0.0F},
+    };
+    for (int index = 0; index < 4; ++index) {
+        vertices[index].mPos[0] = corners[index][0];
+        vertices[index].mPos[1] = corners[index][1];
+        vertices[index].mPos[2] = z;
+        vertices[index].mColor[0] = params.mColor.red;
+        vertices[index].mColor[1] = params.mColor.green;
+        vertices[index].mColor[2] = params.mColor.blue;
+        vertices[index].mColor[3] = params.mColor.alpha;
+        vertices[index].mTex[0] = corners[index][2];
+        vertices[index].mTex[1] = corners[index][3];
+    }
+
+    // The binary takes the cosine as the sine a quarter turn on, and turns
+    // each offset (x, y) to (x sin - y cos, x cos + y sin).
+    const float cosine = Sine(params.mRotation + kHalfPi);
+    const float sine = Sine(params.mRotation);
+    const float centerX = quadWidth * 0.5F + left;
+    const float centerY = quadHeight * 0.5F + top;
+    const float scaleX = 1.0F / width + 1.0F / width;
+    const float scaleY = 1.0F / height + 1.0F / height;
+    for (RndVertexColorTex& vertex : vertices) {
+        const float x = vertex.mPos[0] - centerX;
+        const float y = vertex.mPos[1] - centerY;
+        const float turnedX = x * sine + centerX - y * cosine;
+        const float turnedY = x * cosine + centerY + y * sine;
+        vertex.mPos[0] = turnedX * scaleX + -1.0F;
+        vertex.mPos[1] = turnedY * scaleY + -1.0F;
+    }
+
+    if (!params.mKeepState) {
+        context.mBlendMode = params.mBlendMode;
+        context._SetBlendModeImpl(params.mBlendMode, Hmx::Color::GetWhite());
+        context._SetDepthModeImpl(params.mDepthMode);
+        context._SetCullModeImpl(kCullNone);
+    }
+    if (!params.mKeepShader) {
+        const auto shadingMode = context.mShadingMode;
+        context.SetShadingMode(kShadingModeStandard);
+        RndShaderBasic::Params basic;
+        basic.mAlphaCut = params.mAlphaCut;
+        basic.mTexture = params.mTexture;
+        basic.mRTSlicedTexture = params.mRTSlicedTexture;
+        TheRndDevice()->mShaderMgr.mBasicShader->Select(context, basic);
+        context.SetShadingMode(shadingMode);
+    }
+    context._DrawPrimitivesImpl(
+        RndPrimitive::kTriangleStrip, RndVertexColorTex::kType, vertices, 4);
+    context.SetUsingIdentityViewProjection(identity);
+}
+
 // Reconstructed from eboot.elf at 0x3E16B0. The outline is one closed
 // line strip; the corners alternate between the direct conversion to clip
 // space and the one through pixels.

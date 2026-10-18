@@ -40,7 +40,7 @@ public:
     ~TransEntityResource() override;                 // slots 10-11: 0x1BB8C0, 0x1BB950
     // Slot 14. Reads the revision, the root data of revisions 12-13 and the
     // instance component's class from revision 15, loads the entity, and
-    // resets the root's TransCom unless the instance component drives the
+    // resets the root's TransCom unless its EntityHeaderCom drives the
     // parent. The map's TransEntityResource::Load(BinStream&, bool).
     bool _LoadEntity(BinStream& stream, bool cached) override;  // 0x1BAF10
     // Slot 15. For revisions before 15, takes the instance component's
@@ -51,7 +51,7 @@ public:
     // EnterEntity(EntityPtr).
     void _EnterEntity(Entity* entity, unsigned int flags) override;  // 0x1BB580
     // Slot 18. A suppressed, entered entity is polled only when its root's
-    // instance component asks for it, once, with the immediate flag
+    // EntityHeaderCom asks for it, once, with the immediate flag
     // cleared. The map's PollEntity(EntityPtr).
     void _PollEntity(Entity* entity) override;  // 0x1BB660
     // Slots 20-21: skipped while polling is suppressed.
@@ -64,8 +64,8 @@ public:
     // Slot 27: adds a TransCom to every new object, parented to the root
     // when the TransCom parent option is set. The map's InitObject(ObjPtr&).
     void InitObject(GameObject* object) override;  // 0x1BB520
-    // Slot 32: reads the root, taking the root data from the instance
-    // component's icon data for revisions before 12. The map's
+    // Slot 32: reads the root, taking the root data from the root's
+    // EntityHeaderCom's icon data for revisions before 12. The map's
     // _LoadRoot(BinStream&, EntityPtr, vector<unsigned char>&,
     // vector<ResourcePath>&).
     void _LoadRoot(

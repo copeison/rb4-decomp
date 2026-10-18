@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <cstring>
 #include <limits>
 #include <new>
 
@@ -168,7 +167,7 @@ bool RndLightFlareCom::_OnResourcesLoaded() {
 // the manager gives it an index.
 void RndLightFlareCom::_Enter() {
     _SyncSubflares();
-    if (mRuntime.mOcclusionQuery->mFrame == -1) {
+    if (mRuntime.mOcclusionQuery->mIndex == ~0U) {
         _RegisterOcclusionQuery();
     }
     mObject->GetExistingCom<RndDrawNodeCom>()->SetLocalSphere(
@@ -240,12 +239,10 @@ void RndLightFlareCom::_Poll() {
     }
     mRuntime.mVisible = visible;
     RndOcclusionQuery* query = mRuntime.mOcclusionQuery;
-    query->mState[0] = visible;
+    query->mEnabled = visible;
     if (visible) {
         drawNode->SetLocalSphere(Sphere{Vector3::sZero, mLightSourceRadius});
-        // The four words after mState hold the query's world sphere.
-        std::memcpy(
-            query->mResults, &drawNode->mRuntime.mWorldSphere, sizeof(Sphere));
+        query->mSphere = drawNode->mRuntime.mWorldSphere;
     }
     RndDrawInstanceCom::_Poll();
 }
@@ -384,7 +381,7 @@ void RndLightFlareCom::_DrawSubflare(
     }
     const long view = RndOcclusionQueryMgr::GetViewIndex(context.mTargetMode);
     RndOcclusionQuery* query = mRuntime.mOcclusionQuery;
-    if (query->mState[1 + view] != 0) {
+    if (query->mCulled[view]) {
         return;
     }
 

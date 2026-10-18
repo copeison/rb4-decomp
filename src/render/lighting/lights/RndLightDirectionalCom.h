@@ -194,8 +194,7 @@ public:
     // Creates the shadow camera's entity and the shadow-map constants when
     // the light casts shadows: a new RndSceneResource's entity gets an
     // object with a RndCameraCom, built in temporary memory and copied out
-    // with Entity::Copy (0xEE330), which Entity.h does not declare yet. Name
-    // not in the reference map. Not reconstructed.
+    // with Entity::Clone. Name not in the reference map.
     void _SyncShadowResources();  // 0x473B50
     // Fits the cascade's orthographic frustum around the camera's slice of
     // the view and the occluders before it. Name not in the reference map.

@@ -9,17 +9,13 @@
 
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Entity.h"
+#include "entity/core/InstanceCom.h"
 #include "entity/core/TransCom.h"
 #include "entity/props/PropRegistry.h"
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/lighting/lights/RndLightEnvironCom.h"
 #include "render/scene/RndDrawNodeCom.h"
 #include "render/scene/RndSceneCom.h"
-
-// The class symbol of the instance component, "Instance" (sId 0x19E3278,
-// vtable 0x18E6D58), which EntityResource.o also uses. Name not in the
-// reference map.
-extern Symbol gEntityInstanceComId;  // 0x19E3280
 
 namespace {
 
@@ -37,21 +33,21 @@ constexpr float kColorEpsilon = 0.0001F;
 // GameObject::GetBaseCom does. Inlined into its users. Name not in the
 // reference map.
 Component* FindInstanceCom(const GameObject* object) {
-    if (gEntityInstanceComId == Symbol()) {
+    if (InstanceCom::sClassName == Symbol()) {
         return nullptr;
     }
     for (const GameObject::ComIndex& index : object->mComs) {
-        if (index.mBaseId == gEntityInstanceComId) {
+        if (index.mBaseId == InstanceCom::sClassName) {
             return index.mCom;
         }
     }
     return nullptr;
 }
 
-// The entity an instance component instances, at its offset 80. The class
-// is not modelled. Name not in the reference map.
+// The entity an instance component instances. Name not in the reference
+// map.
 Entity* GetInstancedEntity(const Component* instance) {
-    return *reinterpret_cast<Entity* const*>(reinterpret_cast<const char*>(instance) + 80);
+    return static_cast<const InstanceCom*>(instance)->mRuntime.mEntity;
 }
 
 // The scene object above the object: the first object, from the object up
@@ -275,7 +271,8 @@ void RndLightCom::_SyncClipPlaneTrans() {
 }
 
 // Reconstructed from eboot.elf at 0x46EB30.
-bool RndLightCom::_AreResourcesReady() {
+bool RndLightCom::_AreResourcesReady(int pass) {
+    static_cast<void>(pass);
     _InitBookkeeping();
     return true;
 }

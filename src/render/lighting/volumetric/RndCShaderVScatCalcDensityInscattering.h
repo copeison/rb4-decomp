@@ -13,7 +13,9 @@ class RndTextureBase;
 struct RndTiledLightsComputeBuffer;
 
 // Computes the fog density and in-scattered light of each froxel of the
-// volumetric scattering volume.
+// volumetric scattering volume (render/
+// RndCShaderVScatCalcDensityInscattering.o, 0x6D26D0-0x6D348F). The vtable
+// is at 0x19389E0.
 class RndCShaderVScatCalcDensityInscattering : public RndShaderCompute {
 public:
     // What RndVolumetricScatteringCom::BeginAsyncUpdate passes. Name and
@@ -42,18 +44,18 @@ public:
     };
 
     RndCShaderVScatCalcDensityInscattering();             // 0x6D26D0
-    ~RndCShaderVScatCalcDensityInscattering() override;
+    ~RndCShaderVScatCalcDensityInscattering() override;  // 0x6D2750, 0x6D2760
 
-    const char* _GetClassNameImpl() const override;
-    const char* _GetShaderFilePath() const override;
+    const char* _GetClassNameImpl() const override;  // slot 2 at 0x6D3410
+    const char* _GetShaderFilePath() const override; // slot 3 at 0x6D2FF0
     void _InitConfigImpl(
         RndShaderFixedDefines& fixedDefines,
         RndShaderDefinesGroup& defines,
         RndShaderCBufferConfig& cbuffer,
-        RndShaderResourceConfig& resources) override;
+        RndShaderResourceConfig& resources) override;  // slot 4 at 0x6D3000
 
     // Fills the volume with each froxel's density and in-scattered light.
-    // Not reconstructed. Name not in the reference map.
+    // The map's signature takes const Params&.
     void Dispatch(RndContext& context, Params& params);  // 0x6D2780
 
     // Field names are not in the reference map.

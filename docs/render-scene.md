@@ -156,11 +156,45 @@ entering wraps `TransEntityResource::_EnterEntity` in the drawer's
 first ready entity unhooks the scene's poll groups and split jobs. It is
 instanced by `RndSceneInstanceCom` and counts as an editor entity.
 
-Not reconstructed: `CreateEntity` (the default scene with "main_camera",
-"light_mgr" and "default_env"), `_LoadEntity` (the scene revision upgrades
-of seven older layouts), `_PostLoad`, `_PollEntity`, `_EnterImmediately`,
-`_DestroyLayerEntity`, `_OnComponentCreated` and the required-component
-slots, which use classes and property writes not modelled yet.
+`CreateEntity` builds the default scene ("main_camera" 20 units back,
+"light_mgr" and "default_env") and clears the root EntityHeaderCom's
+"copy_on_instance" through the inlined property write (`_SetProp`,
+`0x18A440`). `_LoadEntity` reads the scene revision and runs the upgrades
+of the seven older layouts; `_PostLoad` resolves the material sharing
+(`0x50E4D0`) after a non-cached load. An instance or instance pool
+requires a draw node, and destroying a draw node destroys them. The
+classes the upgrades name without a model (`RndEntityInstanceCom`, the
+audio-emitter and transform editor data, the instance pool) are reached through `extern Symbol`s; `AnimDriverCom` and
+`StateGraphDriverCom` have symbol-only headers under `src/anim` and
+`src/stategraph`.
+
+Not reconstructed: `_PollEntity` (`0x43A130`), `_EnterImmediately`
+(`0x438670`; its two callbacks are the `std::function` thunks at
+`0x43AC70`-`0x43AEA0`), slot 22 (`0x439AE0`, run at the end of the
+entity's poll, which rebuilds the split poll jobs) and
+`_OnComponentCreated` (`0x43A6D0`). They need `PollMgr` and `PollGroup`
+entry points (`0x24CF10`, `0x24F900`, `0x250160`, `0x24D4D0`), the poll
+context's third member and `RndLightCom::AddToEnviron` (`0x46CCD0`),
+none of which are declared yet.
+
+## RndTexRendererMgr
+
+`src/render/textures/RndTexRendererMgr.{h,cpp}` reconstructs the texture
+renderer manager (`0x6A8150`-`0x6A8B6C`, static initializer `0x6A8B70`,
+360 bytes; the name is inferred from its "Tex Renderers" statistic). It
+keeps the entity's `RndTexture2DRendererCom`s ("Texture2DRenderer", not
+reconstructed) in `RndTexRendererGroup`s (352 bytes, constructor
+`0x6948B0` and destructor `0x694930` declared) of renderers that share an
+`RndBufferCollection2D`. `AddRenderer` (`0x6A8360`) and `RemoveRenderer`
+(`0x6A84F0`) join and leave groups under the lock; `DrawImmediate`
+(`0x6A85C0`) draws each pending group's first renderer inside the
+statistic block; `AddDrawJobs` (`0x6A8740`) hangs each pending group's
+draw and execute jobs between a begin job (vtable `0x1936328`) and an
+end job (`0x1936388`) that open and close the statistic block, and
+`ClearDrawJobs` (`0x6A8900`) unhooks them. The deferred-context job pair
+(`RndExecDeferredContextJob`, vtable `0x1937850`, "draw exec deferred
+context %d", and the `RndDeferredContextDrawJob` base, vtable
+`0x19377F0`) is in `src/render/context/RndDeferredContextJobs.h`.
 
 ## RndLookAtCameraCom
 

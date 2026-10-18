@@ -17,3 +17,11 @@ The capability test is direct: feature bit `0x10` in fixed platform slot seven
 enables the pass. The color, edge, and compressed-edge descriptors are also
 constructed directly; only the shared data-format resolver and texture factory
 remain common renderer boundaries.
+
+The four CMAA compute stages read and write these targets (see
+[render-builtin-shaders.md](render-builtin-shaders.md)): edge detection
+writes the compressed edges and seeds the color target (or the destination
+light accumulation when there is none), pruning writes `mCMAAEdges[parity]`,
+shape fitting writes the source light accumulation and the other parity's
+edges, and the final pass blends into the source light accumulation. All
+four dispatch over the compressed-edge target in 8x8 groups.

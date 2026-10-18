@@ -64,8 +64,7 @@ constructor no longer registers it). The shader lives in
 
 The properties are `quality_settings` (`enabled`, `resolution` of 128, 256
 or 512 slices), `fog_density`, `use_camera_end_dist`, `height_density` (a
-`Waveform<float>`, modelled as `HeightDensity` only as far as the class
-touches it), `height_range_begin`, `height_range_end` and
+`Waveform<float>`), `height_range_begin`, `height_range_end` and
 `volumetric_light_intensity`. `RuntimeData` (`+0x88`) holds the scaled
 density, the dirty flag and the baked height texture.
 
@@ -75,8 +74,11 @@ for the right eye of a shared stereo volume) and
 `RndCShaderVScatDeferred` and swaps the target's light accumulation;
 `EndAsyncUpdate` and `SkipApplyDeferred` record the resolution in the
 target. The fog range is the atmosphere's clamped to the camera.
-`_OnResourcesLoaded` and `_CreateTexture` stay declared: they need
-`Waveform<float>` and the inlined-resource path helper (`0x1CFEE0`).
+`_CreateTexture` bakes the height density into a 128 by 8 texture
+(`RndTextureUtl::CreateWaveformFloatTextureResource`, declared) unless the
+waveform's resource blends two baked curves (type 3).
+`_OnResourcesLoaded` stays declared: it needs the inlined-resource path
+helper of `entity/Waveform.o` (`0x1CFEE0`).
 
 ## Ambient occlusion and antialiasing
 

@@ -6,6 +6,7 @@
 #include "entity/props/PropArray.h"
 #include "entity/resources/Resource.h"
 #include "math/color/Color.h"
+#include "render/materials/RndMaterialRuntimeDataResource.h"
 #include "utl/containers/Vector.h"
 
 class Component;
@@ -19,12 +20,9 @@ struct RndSceneBatchContext;
 enum RndShaderGeoType : int;
 
 // Per-material GPU data: the shader graph it was built from, its constant
-// buffer and the textures it holds (render/RndMaterialRuntimeData.o). Released
-// at a frame boundary once the GPU is done with it. The layout follows the
-// constructor (0x4F72A0), the constant-buffer setup (0x4F7470), the texture
-// loader (0x4F82D0) and the usage hints (0x4F8D90); field names are not in
-// the reference map. The lifetime, the material-parameter sync and
-// SelectShader are reconstructed.
+// buffer and the textures it holds (render/RndMaterialRuntimeData.o,
+// 0x4F71E0 to 0x4F998F). Released at a frame boundary once the GPU is done
+// with it. Field names are not in the reference map.
 class RndMaterialRuntimeData {
 public:
     // Bits of mSyncFlags. Names not in the reference map.
@@ -45,13 +43,13 @@ public:
     // it was used in the device's current frame.
     static void Delete(RndMaterialRuntimeData* data);  // 0x4F7210
     // Whether the data was built from the graph and still matches its
-    // constant-buffer layout and samplers.
+    // constant-buffer size and exposed textures.
     bool IsValid(const RndShaderGraphResource* graph) const;  // 0x4F7720
     // The graph's scene-texture, scene-texture-capture and scene-depth
-    // levels (its +0xE8, +0xEC and +0xF0), -1 without a graph, and its
-    // linear-depth flag (+0xF4). The scene drawer's cull analysis reads
-    // them. The map has bool UsesSceneTex, NeedsSceneTexCapture and
-    // UsesSceneDepth in this order; names not in the reference map.
+    // levels, -1 without a graph, and its linear-depth flag. The scene
+    // drawer's cull analysis reads them. The map has bool UsesSceneTex,
+    // NeedsSceneTexCapture and UsesSceneDepth in this order; names not in
+    // the reference map.
     int GetSceneTexUsage() const;         // 0x4F7800
     int GetSceneTexCaptureUsage() const;  // 0x4F7820
     int GetSceneDepthUsage() const;       // 0x4F7840
@@ -60,7 +58,8 @@ public:
     // constant buffer. The map's signature takes a RndContext&.
     void SyncCBufferMaterialParams();  // 0x4F7880
     // Copies the exposed properties out of the material's dynamic
-    // properties. The map's signature starts with a RndContext&.
+    // properties, transposing the matrices. The map's signature starts
+    // with a RndContext&.
     void SyncCBufferExposedProps(const PropArray<unsigned char>& props);  // 0x4F78F0
     // Rebuilds a dirty constant buffer (its slot 2). Name not in the
     // reference map.
@@ -71,7 +70,11 @@ public:
     void SyncCBufferGlobals(RndContext& context);  // 0x4F7C30
     // Loads the textures of the material's exposed texture properties. The
     // map's signature is LoadExposedTextures(Component&, ObjPtr const&).
+    // Not reconstructed: the property read (0x18B390, entity/PropUtl.o) is
+    // not declared.
     void LoadExposedTextures(Component& material);  // 0x4F7C60
+    // Releases the exposed textures.
+    void _ClearExposedTextures();  // 0x4F8770
     // Builds mUsageHints from the graph and the render state.
     void InitUsageHints();  // 0x4F8D90
     // Selects the graph's programs and binds the material's textures for
@@ -83,9 +86,7 @@ public:
         const RndSceneBatchContext& batch,
         RndShaderGeoType geoType);  // 0x4F8D10
     // Lays out the "Material" constant buffer from the graph's exposed
-    // properties and creates it. Not reconstructed: the graph's
-    // FillCBufferConfig and the config's constructor at 0x63A070 are not
-    // modelled.
+    // properties and creates it, when it has any constants.
     void _CreateCBuffer();  // 0x4F7470
     // Caches the graph's IsLit, UsesSceneTex and UsesSceneDepth in
     // mRootFlags; inlined into the constructor. Name not in the reference
@@ -118,14 +119,15 @@ public:
     // then the first exposed property.
     unsigned long mVolumetricBlendParams;
     unsigned long mExposedProps;
-    // Exposed textures by RndTextureBase::Type: 1D, 2D, cube and 2D array.
+    // The loaded exposed textures by RndTextureBase::Type: 1D, 2D, cube and
+    // 2D array.
     eastl::vector<ResourcePtr<Resource>> mExposedTextures1D;
     eastl::vector<ResourcePtr<Resource>> mExposedTextures2D;
     eastl::vector<ResourcePtr<Resource>> mExposedTexturesCube;
     eastl::vector<ResourcePtr<Resource>> mExposedTexturesArray2D;
-    // The texture bound to each of the graph's samplers, falling back to a
-    // default texture.
-    eastl::vector<RndTextureBase*> mSamplerTextures;
+    // The texture of each of the graph's exposed textures, in its order,
+    // falling back to a default texture.
+    eastl::vector<RndTextureBase*> mTextures;
     // SyncFlags.
     std::atomic<unsigned int> mSyncFlags;
 };
@@ -143,30 +145,6 @@ static_assert(offsetof(RndMaterialRuntimeData, mCBuffer) == 72);
 static_assert(offsetof(RndMaterialRuntimeData, mVolumetricBlendParams) == 80);
 static_assert(offsetof(RndMaterialRuntimeData, mExposedTextures1D) == 96);
 static_assert(offsetof(RndMaterialRuntimeData, mExposedTexturesArray2D) == 192);
-static_assert(offsetof(RndMaterialRuntimeData, mSamplerTextures) == 224);
+static_assert(offsetof(RndMaterialRuntimeData, mTextures) == 224);
 static_assert(offsetof(RndMaterialRuntimeData, mSyncFlags) == 256);
 static_assert(sizeof(RndMaterialRuntimeData) == 264);
-
-// The resource that holds a material's runtime data in its entity, at the
-// path "mat_rt:<shader graph>:<layer>_<serial>" (render/
-// RndMaterialRuntimeDataResource.o). Only the constructor the material uses
-// is declared. Its vtable is at 0x19113B0. The methods are not
-// reconstructed. Field names are not in the reference map.
-class RndMaterialRuntimeDataResource : public Resource {
-public:
-    explicit RndMaterialRuntimeDataResource(RndMaterialRuntimeData* data);  // 0x4F9A00
-
-    ResourceMetaData* GetMetaData() const override;  // slot 0: 0x4F9C20
-    Symbol GetId() const override;                   // slot 1: 0x4F9C30
-    bool IsA(Symbol type) const override;            // slot 2: 0x4F9CD0
-    bool Load(BinStream& stream, bool cached) override;  // slot 4: 0x4F9BF0
-    void Save(BinStream& stream, bool cached) override;  // slot 5: 0x4F9C00
-    bool Fail() const override;                      // slot 6: 0x4F9C10
-    ~RndMaterialRuntimeDataResource() override;      // slots 10-11: 0x4F9A70, 0x4F9AA0
-
-    // The held data; null when the resource failed.
-    RndMaterialRuntimeData* mData;
-};
-
-static_assert(offsetof(RndMaterialRuntimeDataResource, mData) == 48);
-static_assert(sizeof(RndMaterialRuntimeDataResource) == 56);

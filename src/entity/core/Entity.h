@@ -32,11 +32,21 @@ public:
         // The steps loading the layer takes: its objects and the resources
         // inlined into it. Name not in the reference map.
         unsigned int GetLoadStepCount(unsigned long layer, const Entity* entity) const;  // 0xF7550
+        // Places the layer's object pointers at the buffer for the imprint,
+        // which may be null to size the copy, then imprints each object for
+        // the entity's copy. Returns the end of the copies. The map has
+        // Imprint(Entity::Layer*, char*) and ImprintSize(); this build
+        // sizes with a null imprint and passes the entity's copy.
+        char* Imprint(char* buffer, Entity* entity, Layer* imprint) const;  // 0xF68C0
     };
 
     // Builds an active entity with the given number of empty layers. The
     // map's signature is Entity(); this build passes the layer count.
     explicit Entity(unsigned long numLayers);  // 0xEBB70
+    // Copies the entity for an imprint: the arrays stay empty, since the
+    // thread is imprinting, and the resource, parent, flags and tag are
+    // copied. Inlined into _Imprint (0xEE3F0).
+    Entity(const Entity& other);
     // Slots 0-1: 0xEBCC0, 0xEBED0 (thunks 0xEBEC0, 0xEBEF0).
     ~Entity() override;
     // Slot 2: the entity's script messages ("set_active", "save_file",
@@ -59,6 +69,26 @@ public:
     void _OnAddPollDep() override;     // 0xF7930
     void _OnRemovePollDep() override;  // 0xF7960
 
+    // Copies the entity into the buffer, or into a new allocation when it
+    // is null; a copy built in place gains flag 0x200. The copy is then
+    // parented (SetParent), and `loadResources` loads its resources
+    // quietly. The map's signature is Copy(EntityPtr const&, void*, bool,
+    // ObjPtr const&, Symbol, DestroyType); this build copies `this` and
+    // passes no destroy type. InstanceCom instances its child with it.
+    Entity* Copy(void* buffer, bool loadResources, GameObject* parent, Symbol parentComId) const;  // 0xEE270
+    // Copy, but a null parent keeps the copied one. Name not in the
+    // reference map.
+    Entity* Clone(void* buffer, bool loadResources, GameObject* parent, Symbol parentComId) const;  // 0xEE330
+    // Makes the object, whose component of the class instances the entity,
+    // the parent; a change sets flag 0x4000. The map's signature is
+    // SetParent(ObjPtr const&, Symbol, DestroyType).
+    void SetParent(GameObject* parent, Symbol parentComId);  // 0xEE850
+    // Builds the copy in the buffer: the entity, its poll orders, its
+    // layers and every object with its components, each part aligned for
+    // its type. A null buffer only sizes the copy. Returns the end of the
+    // copy rounded to 16 bytes. The imprint lock is held throughout. The
+    // map's _Imprint(char*).
+    char* _Imprint(char* buffer) const;  // 0xEE3F0
     // Creates an object in the layer with room for the given number of
     // components, and lets the resource initialize it. The map's signature
     // is CreateObject(unsigned long); this build adds the component
@@ -82,8 +112,14 @@ public:
     // A description for error messages: the resource's id and path, and
     // the resource it is inlined in.
     const char* MakeErrorName() const;  // 0xF0DD0
+    // Forgets the parent object; a change sets flag 0x4000. Name not in
+    // the reference map.
+    void ClearParent();  // 0xF0740
     // The entity whose instance object holds this one, or null.
     Entity* GetParent() const;  // 0xF0780
+    // The outermost entity: the one whose ancestors hold this one, or this
+    // entity when it has no parent. Name not in the reference map.
+    Entity* GetTopEntity();  // 0xF09E0
     // Whether the entity resource has the layer; the main layer always
     // exists. Forwards to the resource. The map's LayerExists(unsigned
     // long) const.
@@ -91,6 +127,18 @@ public:
     // The layer's file. Forwards to the resource. The map's
     // GetLayerPath(unsigned long) const.
     ResourcePath GetLayerPath(unsigned long layer) const;  // 0xF3050
+    // Activates or deactivates the entity (flag 0x100) and tells the
+    // components (Component slots 34-35); InstanceCom's "active" and
+    // "set_active" set it. Name not in the reference map. Not
+    // reconstructed.
+    void SetActive(bool active);  // 0xF3140
+    // Enables or disables polling (flag 0x40); enabling marks the root's
+    // TransCom dirty. InstanceCom's "poll_enabled" sets it. Name not in the
+    // reference map.
+    void SetPollEnabled(bool enabled);  // 0xF3630
+    // Whether every object's components are ready on the load pass, asking
+    // each object even after one is not. Name not in the reference map.
+    bool AreResourcesReady(int pass);  // 0xF39C0
 
     // Assigns the next id in the layer and stores the object there,
     // allocating a new one when `object` is null. Returns the id.
@@ -150,6 +198,11 @@ public:
     // reconstructed.
     void _EnterImmediately();  // 0xF53A0
     void _PollImmediately();   // 0xF5580
+    // When the entity is entered in the game mode and the thread enters
+    // at once, rebuilds the poll order, leaves the post-poll queue, calls
+    // every component's _PreLoadResources and resets the poll job. Name not
+    // in the reference map.
+    void _PreLoadResources();  // 0xF5470
 
     // The object with the id, which must exist. Inlined into
     // RndDefaults::_SyncEnabledLights at 0x6BFAA4; the map only has
@@ -186,17 +239,20 @@ public:
     // 0x100 while it is active, 0x400 marks changed components, 0x800 comes
     // from the resource (EntityResource slot 30), 0x1000 marks an entity
     // entered at once and 0x10000 is set while the root object's components
-    // load their resources. The constructor sets 0x40, 0x80 (cleared by
-    // 0xF57E0 when an object is not lightweight) and 0x100. Enter sets 0x8
-    // while it runs and 0x8000 when the root's InstanceCom drives the
-    // parent; 0x4000 is cleared after a poll and 0x2000 keeps the entity
-    // from polling.
+    // load their resources. The constructor sets 0x40 (polling enabled,
+    // SetPollEnabled), 0x80 (cleared by 0xF57E0 when an object is not
+    // lightweight) and 0x100. Enter sets 0x8 while it runs and 0x8000 when
+    // the root's EntityHeaderCom drives the parent; 0x4000, which SetParent
+    // sets, is cleared after a poll and 0x2000 keeps the entity from
+    // polling.
     unsigned int mFlags;
     // The object in the parent entity that instances this one, or null.
     GameObject* mParentObject;
-    // An empty symbol set by the constructor; its readers are not
+    // The class id of the parent object's component that instances the
+    // entity (InstanceCom passes its GetId), set with mParentObject by
+    // SetParent; the constructor leaves it empty. Its readers are not
     // identified.
-    Symbol mTag;
+    Symbol mParentComId;
 };
 
 // Opens a frame of the object-id fixup table while an entity loads

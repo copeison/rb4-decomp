@@ -8,10 +8,10 @@
 #include "entity/props/PropRegistry.h"
 #include "entity/resources/Resource.h"
 #include "render/atmosphere/RndAtmosphereCom.h"
+#include "entity/waveform/Waveform.h"
 #include "render/textures/RndTexture1DResource.h"
 #include "utl/text/Symbol.h"
 
-class Rand;
 class RndBufferCollection;
 class RndCameraContext;
 class RndContext;
@@ -45,20 +45,6 @@ public:
         bool mEnabled;  // "enabled"
         // Selects the volume textures: 128, 256 or 512 slices in depth.
         int mResolution;  // "resolution"
-    };
-
-    // The "height_density" property, the map's Waveform<float>
-    // (entity/Waveform.o, not modelled): its resource, its own evaluation
-    // state, the generator it draws from and an override. Modelled only as
-    // far as this class touches it. Name and field names not in the
-    // reference map; the evidence for the last three is weak.
-    struct HeightDensity {
-        ResourcePtr<Resource> mResource;
-        // Random phases drawn when the waveform is constructed.
-        float mEvalData[2];
-        Rand* mRand;
-        ResourcePtr<Resource> mOverride;
-        int mOverrideData[2];
     };
 
     // The derived state, which imprints do not copy; the map's
@@ -95,8 +81,8 @@ public:
     // Slot 29: scales the fog density; a height density left at the empty
     // waveform takes the entity's inlined resource for the property, and
     // the texture is baked. The map has _LoadResources(ObjPtr const&). Not
-    // reconstructed: Waveform<float> and the inlined-resource path helper
-    // (0x1CFEE0) are not modelled.
+    // reconstructed: the inlined-resource path helper of entity/Waveform.o
+    // (0x1CFEE0) is not modelled.
     bool _OnResourcesLoaded() override;  // 0x456220
     // Slot 38: rebakes a changed height density.
     void _EditPoll() override;  // 0x4564C0
@@ -149,7 +135,7 @@ public:
     static void SetNoAtmosphereFwdShadingConstants(
         RndShaderCBuffer& cbuffer);  // 0x454A10
     // Bakes the height density into a 128 by 8 texture unless the waveform
-    // is constant. Not reconstructed: Waveform<float> is not modelled.
+    // blends two baked curves (type 3).
     void _CreateTexture();  // 0x456460
 
     // Describes the class and registers "quality_settings",
@@ -177,13 +163,12 @@ public:
     // The heights the density waveform spans.
     float mHeightRangeBegin;  // "height_range_begin"
     float mHeightRangeEnd;    // "height_range_end"
-    HeightDensity mHeightDensity;      // "height_density"
+    Waveform<float> mHeightDensity;    // "height_density"
     float mVolumetricLightIntensity;  // "volumetric_light_intensity"
     RuntimeData mRuntimeData;
 };
 
 static_assert(sizeof(RndVolumetricScatteringCom::QualitySettings) == 8);
-static_assert(sizeof(RndVolumetricScatteringCom::HeightDensity) == 40);
 static_assert(offsetof(RndVolumetricScatteringCom, mQualitySettings) == 0x20);
 static_assert(offsetof(RndVolumetricScatteringCom, mFogDensity) == 0x48);
 static_assert(offsetof(RndVolumetricScatteringCom, mUseCameraEndDist) == 0x4C);

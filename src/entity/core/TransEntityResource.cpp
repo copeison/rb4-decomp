@@ -5,7 +5,7 @@
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
-#include "entity/core/InstanceCom.h"
+#include "entity/core/EntityHeaderCom.h"
 #include "entity/core/TransCom.h"
 #include "math/transform/Transform.h"
 #include "utl/streams/BinStream.h"
@@ -40,8 +40,8 @@ void TransEntityResource::_Init(ResourceMetaData& metaData) {
 
 // Reconstructed from eboot.elf at 0x1BAC60. Revisions 12 and 13 carry the
 // root data, which is skipped when it is not wanted; revisions before 12
-// have no header, and their root data is the root's instance component's
-// icon data.
+// have no header, and their root data is the root's EntityHeaderCom's icon
+// data.
 void TransEntityResource::_LoadRoot(
     BinStream& stream,
     Entity* entity,
@@ -70,17 +70,17 @@ void TransEntityResource::_LoadRoot(
     if (mRev > 11) {
         return;
     }
-    InstanceCom* const instance = entity->GetRoot()->GetCom<InstanceCom>();
+    EntityHeaderCom* const header = entity->GetRoot()->GetCom<EntityHeaderCom>();
     if (rootData != nullptr) {
-        const unsigned int size = instance->mIconData.mSize;
+        const unsigned int size = header->mIconData.mSize;
         if (size != 0) {
             rootData->resize(size);
-            std::memcpy(rootData->data(), instance->mIconData.mData, size);
+            std::memcpy(rootData->data(), header->mIconData.mData, size);
         }
     }
 }
 
-// Reconstructed from eboot.elf at 0x1BAF10. The root's instance component
+// Reconstructed from eboot.elf at 0x1BAF10. The root's EntityHeaderCom
 // must exist; its search is unbounded.
 bool TransEntityResource::_LoadEntity(BinStream& stream, bool cached) {
     stream.ReadEndian(&mRev, sizeof(mRev));
@@ -101,8 +101,8 @@ bool TransEntityResource::_LoadEntity(BinStream& stream, bool cached) {
         return false;
     }
     GameObject* const root = mEntity->GetRoot();
-    const InstanceCom* const instance = root->GetExistingCom<InstanceCom>();
-    if (!instance->mDrivesParent) {
+    const EntityHeaderCom* const header = root->GetExistingCom<EntityHeaderCom>();
+    if (!header->mDrivesParent) {
         Transform identity;
         identity.m.x = {1.0F, 0.0F, 0.0F};
         identity.m.y = {0.0F, 1.0F, 0.0F};
@@ -173,15 +173,15 @@ void TransEntityResource::_PollEntity(Entity* entity) {
         EntityResource::_PollEntity(entity);
         return;
     }
-    InstanceCom* const instance = entity->GetRoot()->GetCom<InstanceCom>();
-    if (instance == nullptr || !instance->mPollRequested) {
+    EntityHeaderCom* const header = entity->GetRoot()->GetCom<EntityHeaderCom>();
+    if (header == nullptr || !header->mRuntime.mPollRequested) {
         return;
     }
     ThreadPollContext& context = gEntityThreadState;
     const bool enterImmediately = context.mEnterImmediately;
     context.mEnterImmediately = false;
     EntityResource::_PollEntity(entity);
-    instance->mPollRequested = false;
+    header->mRuntime.mPollRequested = false;
     context.mEnterImmediately = enterImmediately;
 }
 

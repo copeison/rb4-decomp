@@ -11,6 +11,7 @@
 #include "entity/props/PropRegistry.h"
 #include "entity/props/PropUtl.h"
 #include "entity/resources/Resource.h"
+#include "entity/waveform/Waveform.h"
 #include "os/memory/MemMgr.h"
 #include "utl/data/DataArray.h"
 #include "utl/streams/BinStream.h"
@@ -238,12 +239,12 @@ bool Component::LoadResources(bool quiet) {
 
     const bool loaded = _LoadResources();
     if (!loaded && !quiet) {
-        LoadPropResources(this);
+        LoadWaveformResources(this);
     }
     bool reentered;
     if (_OnResourcesLoaded()) {
         if (!quiet && loaded) {
-            LoadPropResources(this);
+            LoadWaveformResources(this);
         }
         reentered = true;
         if (mode == 2) {
@@ -261,11 +262,11 @@ bool Component::LoadResources(bool quiet) {
 }
 
 // Reconstructed from eboot.elf at 0xE8250.
-bool Component::AreResourcesReady() {
+bool Component::AreResourcesReady(int pass) {
     if (mResourcesReady) {
         return true;
     }
-    mResourcesReady = _AreResourcesReady();
+    mResourcesReady = _AreResourcesReady(pass);
     return mResourcesReady;
 }
 

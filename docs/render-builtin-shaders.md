@@ -75,5 +75,27 @@ Bloom's `Select` (`0x6346E0`) set the pattern; these draws now follow it:
 | `RndCShaderDOFDiscBlur::Dispatch` | `0x6F2BC0` | One group per light tile; radius scaled by height / 1080 |
 | `RndContext::SetShaderNodeTexture` | `0x6BD390` | Binds a shader-graph texture source in every stage that declared it |
 | `RndMaterialRuntimeData::SelectShader` | `0x4F8D10` | Graph select (`RndShaderGraph::Select`, `0x4FE630`) or the error shader |
+| `RndShaderDisplayShadingMode::Select` | `0x63DD10` | Geometry, lighting and light-probe overdraw limits; source light buffer |
+| `RndShaderDisplayTextureCube::Select` | `0x63E080` | Cube, two blended cubes, or a cube array's slices; error cube fallback |
+| `RndShaderStencilSceneMask::Select` | `0x645030` | Unrefined mask for the vertex program; viewport light-tile counts |
+| `RndCShaderLinearizeDepth::Dispatch` | `0x637CA0` | `HX_IS_ORTHO` from the main camera; 2x2 texels per thread |
+| `RndCShaderCalcDepthRange::Dispatch` | `0x636E30` | One group per light tile |
+| `RndCShaderSSAOGen::Dispatch` | `0x6D71E0` | Camera constants from the parameters' camera for the dispatch |
+| `RndCShaderCMAAEdgeDetect`/`EdgePrune`/`ShapeFit`/`FinalProcess::Dispatch` | `0x450500`, `0x450930`, `0x4510A0`, `0x450C60` | Groups of 8x8 compressed-edge texels; the parity picks the edge buffer |
+| `RndCShaderVScatCalcDensityInscattering::Dispatch` | `0x6D2780` | One thread per froxel (3D width 4) |
+| `RndCShaderVScatAccumScattering::Dispatch` | `0x6D1F20` | Stereo eyes add the near/far top-edge widths |
+| `RndCShaderVScatDeferred::Dispatch` | `0x6D3530` | Main camera projection; fog range scale (10000 when empty) |
+| `RndCShaderBlurClassify::Dispatch` | `0x62E230` | Unbinds all source textures before and after |
+| `RndCShaderSignedDistance`/`Classify::Dispatch` | `0x62E6D0`, `0x62EB60` | Scene-mask distance field and its tile classification |
+| `RndCShaderRenderTestCompute::Dispatch` | `0x6F3E80` | A buffer is drawn as a square of its elements |
+| `RndCShaderFilterLightProbe::Dispatch` | `0x6D6D30` | New class (`lighting/probes`); select flag 8 on every bind |
+
+Every caller of `RndShader::_SelectShaderCollection` in the binary now has a
+source definition except `RndShaderGraph::Select` (`0x4FE630`), which needs
+the graph's resource binding (`0x4FE850`) and layout past `+336`.
+
+Each shader object's static initializer also sets the shared header's
+`-1, 8, 4` thread-group widths; compute dispatches read the 2D (or, for
+volumetric density, 3D) width from their own copy.
 
 `RndShaderResource::Select` also has an out-of-line copy at `0x505C20`.

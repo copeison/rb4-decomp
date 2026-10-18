@@ -50,10 +50,11 @@ creates and the parameter constructors copy.
 | `0x588` | | affectors |
 | `0x5B0` | `RuntimeData` | burst_count (min/max), num_active |
 
-Waveform properties are `Waveform<float>` / `Waveform<Hmx::Color>` of
-`entity/Waveform.o` (40 bytes: resource, eval data, `Rand*` at +16,
-animation override). They are not modelled, so they are opaque storage
-and the parameter constructors, copies and destructors are declared only.
+Waveform properties are `Waveform<float>` / `Waveform<Hmx::Color>`
+(`src/entity/waveform/Waveform.h`; 40 bytes: resource, eval data, `Rand*`
+at +16, modulating resource). The parameter constructors build each
+waveform with the waveform default and give it the class's default
+resource; the copies share the resources and draw new evaluation states.
 
 `RuntimeData` holds the extension list (`RndParticleExtCom*`), the mesh
 resource and mesh, the clock, `TransCom` and `RndDrawNodeCom`, the system
@@ -87,13 +88,12 @@ queued birth transforms.
 `_Imprint` (`0x6181C0`) is reconstructed; it places a copy made by the copy
 constructor (`0x619130`) and imprints the properties past it.
 
-Not reconstructed: `_Init`, the copy constructor, the parameter
-constructors and destructors, `_InstallRand`, `_UpdatePositions`,
-`_UpdateRateEmission`, `_UpdateBirth`, `_UpdateSpin`, `_UpdatePivot`,
-`_UpdateColorSize`, `_UpdateExtraData`, `_InitParticles` and
-`_SyncDrawInstancesImpl`. They build, copy or evaluate the opaque
-waveforms (`Waveform<float>::Evaluate` at `0x2D7C60`, `ValueRange` at
-`0x6178D0`).
+Not reconstructed: `_Init`, the copy constructor, `_InstallRand`,
+`_UpdatePositions`, `_UpdateRateEmission`, `_UpdateBirth`, `_UpdateSpin`,
+`_UpdatePivot`, `_UpdateColorSize`, `_UpdateExtraData`, `_InitParticles`
+and `_SyncDrawInstancesImpl`. They evaluate the waveforms
+(`Waveform<float>::Evaluate` at `0x2D7C60`, `ValueRange` at `0x6178D0`),
+which are not reconstructed.
 
 ## Related components
 
@@ -130,11 +130,18 @@ collection holds 41 `RndParticleAttr<T>` members. Each one is an
 `eastl::vector<T*>` of 16-element chunks plus its pool. The attribute types
 are int, `Hmx::Color`, float, `unsigned long` (the live-list links) and 15
 `WaveformEvalData` attributes. The chunks come from the free-list pools of
-`theParticleSystemMgr` (`RndParticleSystemMgr.h`, layout only), and every
+`theParticleSystemMgr`, and every
 pool operation locks `sParticleSystemCritSec`. The attribute names are
 inferred from their readers. `mInitialSizes` (attribute 14) rests on weak
 evidence. `ReorderParticle` from the map does not appear in this build.
-`RndParticleSystemMgr.o` itself (constructor `0x628ED0`, destructor
-`0x6292E0`, `Init` `0x628E60`, `Terminate` `0x628E90`,
-`sParticleSystemCritSec` `0x1AAA460`, `theParticleSystemMgr` `0x1AAA470`)
-is not reconstructed.
+`RndParticleSystemMgr.o` (`0x628E60`-`0x62949A`) is reconstructed in
+`src/render/particles/RndParticleSystemMgr.cpp`: `Init` (`0x628E60`),
+`Terminate` (`0x628E90`), the constructor (`0x628ED0`), the destructor
+(`0x6292E0`) and the globals `sParticleSystemCritSec` (`0x1AAA460`) and
+`theParticleSystemMgr` (`0x1AAA470`). The constructor reads "rnd
+particlesys global_limit", rounds it to whole chunk sets of 16 particles
+and carves the pools (1 int and 18 float chunks of 64 bytes, 2 unsigned
+long and 11 `WaveformEvalData` chunks of 128 bytes, 1 color chunk of 256
+bytes per set, and an empty pool); its `eastl::set<RndParticleSystem*>`
+(subtree release `0x6293A0`) is never filled in this build. The map's
+empty `CollectIntersectingParticleSystems` is not in this binary.

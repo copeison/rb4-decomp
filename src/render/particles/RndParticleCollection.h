@@ -3,17 +3,10 @@
 #include <atomic>
 #include <cstddef>
 
+#include "entity/waveform/Waveform.h"
 #include "math/color/Color.h"
 #include "render/particles/RndParticleSystemMgr.h"
 #include "utl/containers/Vector.h"
-
-// A particle's evaluation state for one of the system's waveforms
-// (entity/Waveform.o, not modelled): 8 bytes, copied whole.
-struct WaveformEvalData {
-    unsigned long mData;  // Name not in the reference map.
-};
-
-static_assert(sizeof(WaveformEvalData) == 8);
 
 // One per-particle attribute: a vector of 16-element chunks taken from one
 // of theParticleSystemMgr's pools. Only the destructor is in the reference

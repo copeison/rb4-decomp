@@ -263,8 +263,12 @@ Sphere ComputeBoundingSphere(const RndMesh& mesh, const Transform& xfm);  // 0x5
 
 // A new mesh with the mesh's geometry, converted to the vertex type unless
 // it is kVertexInvalid. RndMeshCom's unique usage calls it with
-// kVertexInvalid and true. Not reconstructed.
+// kVertexInvalid and true. The copy is unnamed and keeps the mesh's usage
+// flags.
 RndMesh* Copy(const RndMesh& mesh, RndVertexType type, bool sync);  // 0x5D7030
+// Gives the mesh the source's vertices (converted to its own vertex type),
+// faces, bounding sphere and geometry frame, then syncs it when asked.
+void CopyGeometry(RndMesh& mesh, const RndMesh& source, bool sync);  // 0x5D9CC0
 
 // The binary keeps out-of-line copies of these two; the builders inline them.
 RndMesh* _CreateMeshPrelude(const CreateMeshParams& params, const char* defaultName);  // 0x5DB660

@@ -1,5 +1,7 @@
 #include "entity/core/GameObject.h"
 
+#include <new>
+
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Component.h"
 #include "entity/core/Entity.h"
@@ -8,12 +10,20 @@
 #include "os/memory/MemMgr.h"
 #include "utl/text/MakeString.h"
 
+// Reconstructed from eboot.elf at 0x115B40. The entity's caller passes
+// itself in the second argument register, which is not read.
+void GameObject::_PreLoadResources() {
+    for (int index = 0; index < static_cast<int>(mComs.mSize); ++index) {
+        mComs[index].mCom->_PreLoadResources();
+    }
+}
+
 // Reconstructed from eboot.elf at 0x115F60. Every component is asked, even
 // after one is not ready.
-bool GameObject::AreResourcesReady() {
+bool GameObject::AreResourcesReady(int pass) {
     bool ready = true;
     for (const ComIndex& index : mComs) {
-        ready = index.mCom->AreResourcesReady() && ready;
+        ready = index.mCom->AreResourcesReady(pass) && ready;
     }
     return ready;
 }
@@ -232,6 +242,33 @@ Component* GameObject::_CreateComponent(Symbol className, bool deferSort) {
 void GameObject::_UpdatePollOrder() {
     mPollOrder.Reserve(mComs.mSize);
     _BuildComponentOrder(&mPollOrder, true);
+}
+
+// Reconstructed from eboot.elf at 0x1171F0. The poll order and the
+// component table follow the object; each component's copy is told its
+// new object.
+char* GameObject::_Imprint(char* buffer, Entity* entity, GameObject** imprint) const {
+    ScopedImprint scope;
+    auto* copy = reinterpret_cast<GameObject*>((reinterpret_cast<unsigned long>(buffer) + 7) & ~7UL);
+    GameObject* result = nullptr;
+    if (imprint != nullptr) {
+        new (copy) GameObject(*this, entity);
+        copy->mImprinted = true;
+        *imprint = copy;
+        result = copy;
+    }
+    char* end = mPollOrder._ImprintElements(
+        reinterpret_cast<char*>(copy + 1), result != nullptr ? &result->mPollOrder : nullptr);
+    end = mComs._ImprintElements(end, result != nullptr ? &result->mComs : nullptr);
+    for (int index = 0; index < static_cast<int>(mComs.mSize); ++index) {
+        if (result != nullptr) {
+            end = mComs[index].mCom->_Imprint(end, &result->mComs[index].mCom);
+            result->mComs[index].mCom->mObject = result;
+        } else {
+            end = mComs[index].mCom->_Imprint(end, nullptr);
+        }
+    }
+    return end;
 }
 
 // Reconstructed from eboot.elf at 0x1174D0.

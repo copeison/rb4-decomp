@@ -2,22 +2,18 @@
 
 #include <cstddef>
 
+#include "math/geometry/ConvexHull.h"
 #include "math/geometry/Plane.h"
 #include "math/vector/Vector3.h"
 #include "utl/containers/FixedVector.h"
 
 // View volume: its eight corners, its edges and its six bounding planes. The
 // constructor is inlined into every owner; it leaves the corner and edge
-// lists empty and stores six default planes. Field names are not in the
+// lists empty and stores six default planes. The edges are the hull base's
+// Edge pairs, which the binary copies whole. Field names are not in the
 // reference map.
-class Frustum {
+class Frustum : public ConvexHullBase {
 public:
-    // A pair of corner indices. The binary copies the eight-byte entries
-    // whole; the name and fields are not in the reference map.
-    struct Edge {
-        int mCorner0;
-        int mCorner1;
-    };
 
     // Half-angles of a perspective frustum's sides, in radians. The camera
     // context builds them as a vertical and a horizontal pair. Name and
@@ -45,6 +41,15 @@ public:
     // Intersects the planes into the eight corners and, the first time,
     // fills the twelve edges.
     void _DoUpdateHull();  // 0x11730B0
+
+    // The hull template's sphere test, inlined into its callers such as
+    // RndOcclusionQueryMgr::Submit. Name not in the reference map.
+    Classification ClassifySphere(const Sphere& sphere) const {
+        const ConvexHullInfo info = {
+            mCorners.mData, mCorners.mSize, mEdges.mData, mEdges.mSize,
+            mPlanes.mData, mPlanes.mSize};
+        return _ClassifySphereImpl(sphere, info);
+    }
 
     FixedVector<Vector3, 8> mCorners;
     FixedVector<Edge, 12> mEdges;

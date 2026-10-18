@@ -224,6 +224,10 @@ public:
     void AddMissingComponent(Symbol className);  // 0x101BE0
     // The layer's file, or the empty path past the last layer.
     ResourcePath GetLayerPath(unsigned long layer) const;  // 0x101CF0
+    // Replaces the root data with the icon bytes; EntityHeaderCom moves its
+    // "icon_data" here. The map has TransEntityResource::SetIconData(void
+    // const*, unsigned long); this build keeps the bytes in EntityResource.
+    void SetIconData(const void* data, unsigned long size);  // 0x1024C0
 
     static ResourceMetaData sMetaData;  // 0x19E3008
     // The path whose loads are reported (SetProfileLoadPath). Name not in
@@ -233,8 +237,9 @@ public:
     // Field names are not in the reference map.
     Entity* mEntity;
     eastl::vector<LayerInfo> mLayers;
-    // Data read with the entity's root (_LoadRoot); TransEntityResource
-    // reads it from revisions 12 and 13. The meaning is not recovered.
+    // Data read with the entity's root (_LoadRoot), the entity's icon
+    // (SetIconData); TransEntityResource reads it from revisions 12 and
+    // 13.
     eastl::vector<unsigned char> mRootData;
     // The entity resource this one is inlined in; Entity::MakeErrorName
     // (0xF0DD0) names it.

@@ -166,7 +166,7 @@ public:
     bool _OnResourcesLoaded() override;
     // Slot 30 at 0x46EB30: registers the light. Name not in the reference
     // map for this slot; the map's _InitBookkeeping is the body.
-    bool _AreResourcesReady() override;
+    bool _AreResourcesReady(int pass) override;
     // Slot 33 at 0x46EC50: follows the clip plane, updates the visibility
     // and registers the light again when its environments changed.
     void _Poll() override;

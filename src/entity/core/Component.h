@@ -162,10 +162,11 @@ public:
     virtual bool _OnResourcesLoaded() {
         return true;
     }
-    // Slot 30 at 0xB2F0: whether the resources finished loading;
-    // GameObject asks until every component is ready. True here. Name not
-    // in the reference map.
-    virtual bool _AreResourcesReady() {
+    // Slot 30 at 0xB2F0: whether the resources finished loading on the
+    // load pass (0 to 9) Entity::_LoadResources gives; GameObject asks until
+    // every component is ready. True here. Name not in the reference map.
+    virtual bool _AreResourcesReady(int pass) {
+        static_cast<void>(pass);
         return true;
     }
     // Slots 31-33 at 0x401C0, 0x39E30 and 0x401D0: enter, exit and poll in
@@ -224,9 +225,9 @@ public:
     // map's signature is LoadResources(ObjPtr const&, bool); the return
     // value is whether the component may re-enter.
     bool LoadResources(bool quiet);  // 0xE80F0
-    // Whether the component's resources are ready, asking slot 30 until
-    // they are. Name not in the reference map.
-    bool AreResourcesReady();  // 0xE8250
+    // Whether the component's resources are ready, asking slot 30 with the
+    // load pass until they are. Name not in the reference map.
+    bool AreResourcesReady(int pass);  // 0xE8250
     // A description for error messages, "%s component in %s" from the class
     // id and the object's MakeErrorName. The map's MakeErrorName(ObjPtr
     // const&) const; this build uses the owning object.
@@ -293,9 +294,3 @@ static_assert(offsetof(Component, mImprinted) == 16);
 static_assert(offsetof(Component, mEntered) == 20);
 static_assert(offsetof(Component, mReserved) == 21);
 static_assert(sizeof(Component) == 24);
-
-// Visits the component's saved resource-path and property-reference
-// properties (types 18 and 19), recursing into arrays and structs; called by
-// Component::LoadResources unless it is quiet. Name not in the reference
-// map; the evidence is weak. Not reconstructed.
-void LoadPropResources(Component* component);  // 0x1C9A90

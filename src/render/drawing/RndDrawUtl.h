@@ -11,6 +11,7 @@
 #include "utl/containers/VectorAdapter.h"
 
 class RndContext;
+class Sphere;
 class RndFont;
 class RndTextureBase;
 
@@ -45,7 +46,7 @@ public:
     // A 2D quad rotated about its center. RndLightFlareCom::_DrawSubflare
     // (0x47CE60) builds one. Field names are not in the reference map.
     struct RotatedQuad2DParams : Quad2DParams {
-        float mRotation = 0.0F;  // Counterclockwise, in radians.
+        float mRotation = 0.0F;  // In radians; see DrawRotatedQuad2D.
     };
 
     // A 2D line: its space, color and blend mode. Field names are not in
@@ -87,6 +88,19 @@ public:
         RndFontStyleSize mStyleSize = kFontStyleSizeRegular;  // The first size tried.
     };
 
+    // A debug mesh: its color, and the state and shader to draw it with
+    // (the mesh draw at 0x3E2A00 reads them). Field names are not in the
+    // reference map.
+    struct MeshParams {
+        Hmx::Color mColor = Hmx::Color::GetWhite();
+        RndBlendMode mBlendMode = RndBlendMode::kSource;
+        unsigned int mDepthMode = 0;
+        // Set by callers; no drawing function reads it.
+        bool mUnread = false;
+        bool mKeepShader = false;  // Draws with the selected shader.
+        bool mKeepState = false;   // Keeps the blend and depth state.
+    };
+
     // Builds the shared sphere, box and other meshes the drawing helpers use.
     static void Init();  // 0x3DF170
     static void Terminate();  // 0x3DF820
@@ -94,7 +108,8 @@ public:
     // Draws the quad with an identity view-projection. A quad covering the
     // whole target is drawn as one oversized triangle.
     static void DrawQuad2D(RndContext& context, Quad2DParams& params);  // 0x3E0C50
-    // Draws the quad rotated by mRotation about its center.
+    // Draws the quad turned about its center by mRotation; a rotation of
+    // zero already turns it a quarter turn.
     static void DrawRotatedQuad2D(
         RndContext& context,
         RotatedQuad2DParams& params);  // 0x3E1180
@@ -149,6 +164,12 @@ public:
         Text2DParams& params,
         Hmx::Rect* bounds,
         Vector2* end);  // 0x3E5F60
+    // Draws the shared sphere mesh scaled and moved to the sphere. Not
+    // reconstructed.
+    static void DrawSphereMesh(
+        RndContext& context,
+        const Sphere& sphere,
+        const MeshParams& params);  // 0x3E7D90
 };
 
 static_assert(offsetof(RndDrawUtl::Line2DParams, mBlendMode) == 20);
@@ -169,3 +190,6 @@ static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapWidth) == 92);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mWrapHeight) == 96);
 static_assert(offsetof(RndDrawUtl::Text2DParams, mStyleSize) == 100);
 static_assert(sizeof(RndDrawUtl::Text2DParams) == 104);
+static_assert(offsetof(RndDrawUtl::MeshParams, mBlendMode) == 16);
+static_assert(offsetof(RndDrawUtl::MeshParams, mUnread) == 24);
+static_assert(offsetof(RndDrawUtl::MeshParams, mKeepState) == 26);

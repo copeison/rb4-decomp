@@ -3,6 +3,8 @@
 // and its static initializer at 0x4F6560.
 #include "render/materials/RndMaterialCom.h"
 
+#include <new>
+
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
 #include "entity/core/GameObject.h"
@@ -430,6 +432,53 @@ bool RndMaterialCom::IsA(Symbol type) const {
 // Reconstructed from eboot.elf at 0x4F4A70.
 Component* RndMaterialCom::AsComponent() {
     return this;
+}
+
+// Inlined into _Imprint at 0x4F4AC2. The base copies the properties,
+// starts the saved properties and the resources empty, and keeps the GPU
+// data's queue.
+RndMaterialCom::RndMaterialCom(const RndMaterialCom& other)
+    : DynamicCom<RndShaderGraphResource>(other),
+      RndDynamicGpuData(other),
+      mSharing(other.mSharing),
+      mBucket(other.mBucket),
+      mBlendMode(other.mBlendMode),
+      mBlendFactor(other.mBlendFactor),
+      mCullMode(other.mCullMode),
+      mReceiveAtmosphere(other.mReceiveAtmosphere),
+      mReceiveDecals(other.mReceiveDecals),
+      mDepthPrepass(other.mDepthPrepass),
+      mForceOpaque(other.mForceOpaque),
+      mSceneMask(other.mSceneMask),
+      mUnique(other.mUnique),
+      mSharingDirty(false),
+      mRenderStateDirty(false),
+      mFirstRuntimeData(true),
+      mIsPuppet(false),
+      mRuntimeDataResource(),
+      mRuntimeData(nullptr),
+      mRuntimeDataDirty(false),
+      mKeepBlendMode(false) {
+    mPlaymodeSink.mSink = nullptr;
+    mPlaymodeSink.mSource = nullptr;
+    mRecordModeSink.mSink = nullptr;
+    mRecordModeSink.mSource = nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x4F4A80. The copy goes at the buffer's
+// next 8-byte boundary, and its properties, with the dynamic ones, follow
+// it.
+char* RndMaterialCom::_Imprint(char* buffer, Component** imprint) {
+    ScopedImprint scope;
+    auto* copy = reinterpret_cast<RndMaterialCom*>((reinterpret_cast<unsigned long>(buffer) + 7) & ~7UL);
+    Component* result = nullptr;
+    if (imprint != nullptr) {
+        new (copy) RndMaterialCom(*this);
+        copy->mImprinted = true;
+        *imprint = copy;
+        result = copy;
+    }
+    return DynamicComBase::_ImprintProps(reinterpret_cast<char*>(copy + 1), result);
 }
 
 // Reconstructed from eboot.elf at 0x4F4D40.

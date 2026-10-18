@@ -122,3 +122,34 @@ the destructor (`0x6C9DE0`, which detaches the objects still queued) and
 `ProcessQueue` calls each queued object's `_SyncDynamicGpuDataImpl`,
 detaches the object and empties the queue. The manager consists of a
 `CritSec` and an `eastl::vector<RndDynamicGpuData*>` (48 bytes).
+
+## RndMeshResource
+
+`RndMeshResource` (`render/RndMeshResource.o`, `0x5D1A00`-`0x5D4800`,
+vtable `0x1929C08`, 64 bytes, `sMetaData` at `0x1AA6910`) is in
+`src/render/meshes/RndMeshResource.{h,cpp}`. The reconstructed parts are:
+
+- both constructors, `0x5D1A00` and `0x5D1A80` (the second wraps an
+  inline mesh);
+- the destructor, which deletes the mesh;
+- `_Init` (`0x5D1B80`), with extension "mesh" and category "Meshes";
+- `Fail` and `SupportsCompanionFile` (`!mInlined`);
+- `GetMetaData`, `GetId` and `IsA`;
+- the getters `IsKeepMeshData`, `GetVertexUsageFlags` and
+  `GetFaceUsageFlags`.
+
+The registration (`0x3EB400`) and the factory (`0x403F50`) are inline in
+the header. The build options (`+56`-`+59`) are "compress_vertices" (on by
+default), "smooth_tangents", "calc_uv_scale" and "calc_curvature". The
+companion-file reader (`0x5D4180`) reads them, along with "keep_mesh_data",
+"vertex_usage_flags" and "face_usage_flags".
+
+Not reconstructed:
+
+- `Load` (`0x5D1CC0`), with its "HXMESH" reader (`0x5D1D50`), and `Save`
+  (`0x5D2430`). They need the vertex layouts' stream readers and writers
+  (`0x443600`-`0x444899`).
+- The mesh rebuild (`0x5D27F0`).
+- `AreVerticesCompressed` (`0x5D2770`).
+- The option setters (`0x5D2790`-`0x5D4150`).
+- The companion-file reader (`0x5D4180`).

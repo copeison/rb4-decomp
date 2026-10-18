@@ -28,6 +28,7 @@
 #include "render/targets/RndBufferCollection.h"
 #include "render/textures/RndTexture1D.h"
 #include "render/textures/RndTexture2D.h"
+#include "render/textures/RndTextureUtl.h"
 #include "render/textures/RndTexture3D.h"
 #include "utl/containers/FixedVector.h"
 
@@ -45,8 +46,8 @@ namespace {
 // density is baked at (read by _CreateTexture, 0x456460), and the empty
 // waveform resource a new height density starts from. Names not in the
 // reference map.
-[[maybe_unused]] const Vector2i gWaveformTextureSize = {128, 8};  // 0x1A76018
-ResourcePtr<Resource> gEmptyWaveformResource;  // 0x1A76020
+const Vector2i gWaveformTextureSize = {128, 8};  // 0x1A76018
+ResourcePtr<WaveformResource<float>> gEmptyWaveformResource;  // 0x1A76020
 
 // The fog range is kept at least this long.
 constexpr float kMinFogRange = 0.0001F;
@@ -127,14 +128,6 @@ void DeselectComputeTextures(RndContext& context) {
     context.mOutputSlotLimits[kShaderProgramCompute] = 0;
 }
 
-// The waveform's random phases, drawn when it is constructed.
-void DrawPhases(RndVolumetricScatteringCom::HeightDensity& waveform) {
-    const float first = gRand.Float();
-    waveform.mEvalData[0] = first;
-    waveform.mEvalData[1] = gRand.Float() - first;
-    waveform.mRand = &gRand;
-}
-
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x453C00.
@@ -143,16 +136,9 @@ RndVolumetricScatteringCom::RndVolumetricScatteringCom()
       mUseCameraEndDist(false),
       mHeightRangeBegin(0.0F),
       mHeightRangeEnd(5.0F),
-      mHeightDensity{
-          ResourcePtr<Resource>(gEmptyWaveformResource.Get()),
-          {0.0F, 0.0F},
-          nullptr,
-          ResourcePtr<Resource>(),
-          {0, 0}},
+      mHeightDensity(gEmptyWaveformResource.Get()),
       mVolumetricLightIntensity(1.0F),
-      mRuntimeData{0.0F, false, ResourcePtr<RndTexture1DResource>()} {
-    DrawPhases(mHeightDensity);
-}
+      mRuntimeData{0.0F, false, ResourcePtr<RndTexture1DResource>()} {}
 
 // Reconstructed from eboot.elf at 0x453D40. The deleting destructor is at
 // 0x453E40.
@@ -401,6 +387,15 @@ void RndVolumetricScatteringCom::_PostCreate() {
     mQualitySettings.Resize(3);
 }
 
+// Reconstructed from eboot.elf at 0x456460.
+void RndVolumetricScatteringCom::_CreateTexture() {
+    if (mHeightDensity.mResource->mType == 3) {
+        return;
+    }
+    mRuntimeData.mHeightDensityTexture = RndTextureUtl::CreateWaveformFloatTextureResource(
+        mHeightDensity, static_cast<RndTexWrapMode>(1), gWaveformTextureSize);
+}
+
 // Reconstructed from eboot.elf at 0x4564C0. _CreateTexture is inlined.
 void RndVolumetricScatteringCom::_EditPoll() {
     if (mRuntimeData.mHeightDensityDirty) {
@@ -478,15 +473,8 @@ RndVolumetricScatteringCom::RndVolumetricScatteringCom(
       mUseCameraEndDist(other.mUseCameraEndDist),
       mHeightRangeBegin(other.mHeightRangeBegin),
       mHeightRangeEnd(other.mHeightRangeEnd),
-      mHeightDensity{
-          ResourcePtr<Resource>(other.mHeightDensity.mResource.Get()),
-          {0.0F, 0.0F},
-          nullptr,
-          ResourcePtr<Resource>(other.mHeightDensity.mOverride.Get()),
-          {other.mHeightDensity.mOverrideData[0],
-           other.mHeightDensity.mOverrideData[1]}},
+      mHeightDensity(other.mHeightDensity),
       mVolumetricLightIntensity(other.mVolumetricLightIntensity),
       mRuntimeData{0.0F, false, ResourcePtr<RndTexture1DResource>()} {
     mQualitySettings._Copy(other.mQualitySettings);
-    DrawPhases(mHeightDensity);
 }

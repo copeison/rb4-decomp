@@ -71,6 +71,35 @@ public:
           mEarlyFreeDep(nullptr),
           mAllComsFlagged(false) {}
 
+    // Copies the object for an imprint into the entity's copy: the id, the
+    // name, the active flag and the stale poll order. The arrays stay
+    // empty, since the thread is imprinting, and the object starts neither
+    // entered nor imprinted. Inlined into _Imprint (0x1171F0). Name not in
+    // the reference map.
+    GameObject(const GameObject& other, Entity* entity)
+        : mEntity(entity),
+          mPollOrder(),
+          mComs(),
+          mId(other.mId),
+          mName(other.mName),
+          mImprinted(false),
+          mActive(other.mActive),
+          mEntered(false),
+          mPollOrderDirty(other.mPollOrderDirty),
+          mComsAdded(false),
+          mEarlyFreeDep(nullptr),
+          mAllComsFlagged(false) {
+        mPollOrder._Copy(other.mPollOrder);
+        mComs._Copy(other.mComs);
+    }
+
+    // Copies the object at the buffer's next 8-byte boundary for the
+    // entity's copy and stores it in `imprint`, or only sizes the copy when
+    // that is null: the object, its poll order and component table, and
+    // each component through its _Imprint, which then belongs to the copy.
+    // Returns the end of the copies. The map's signature is
+    // _Imprint(char*, GameObject*&, bool).
+    char* _Imprint(char* buffer, Entity* entity, GameObject** imprint) const;  // 0x1171F0
     // Reads the object's name and components, and its poll order from
     // revision 3. The map's ObjPtr::Load(BinStream&). Not reconstructed.
     void Load(BinStream& stream);  // 0x116590
@@ -128,9 +157,12 @@ public:
     // Calls _PreDestroy on every component. The map's
     // ObjPtr::_PreDestroy(DestroyType).
     void _PreDestroy(DestroyType type);  // 0x1174D0
-    // Whether every component's resources are ready. Name not in the
-    // reference map.
-    bool AreResourcesReady();  // 0x115F60
+    // Calls _PreLoadResources on every component (Entity::_PreLoadResources).
+    // Name not in the reference map.
+    void _PreLoadResources();  // 0x115B40
+    // Whether every component's resources are ready on the load pass. Name
+    // not in the reference map.
+    bool AreResourcesReady(int pass);  // 0x115F60
     // Enters every component in the edit mode. Name not in the reference
     // map.
     void _EditEnterComponents();  // 0x1160A0
@@ -244,7 +276,7 @@ public:
     unsigned char mPadding2[3];  // Never read or written.
     // A job the entity releases early once the object's components polled
     // in the game mode (PollDepBase::EarlyFreeToPoll); _PollComponents
-    // clears it. Its writer is not identified.
+    // clears it. InstanceCom::_PollChild sets it to its child entity.
     PollDepBase* mEarlyFreeDep;
     // Set by _SortComponents when every component's metadata has the flag
     // at +82 set; cleared when a component is added. The flag's meaning is

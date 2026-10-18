@@ -18,6 +18,13 @@ public:
         Key mValue;
     };
 
+    // An empty set, for example RndParticleSystemMgr's (0x628ED0).
+    set() : mCompare(), mnSize(0), mAllocator("EASTL set") {
+        mAnchor.mpNodeRight = &mAnchor;
+        mAnchor.mpNodeLeft = &mAnchor;
+        mAnchor.mpNodeParent = nullptr;
+        mAnchor.mColor = 0;
+    }
     template <typename InputIterator>
     set(InputIterator first, InputIterator last) : mCompare(), mnSize(0), mAllocator("EASTL set") {
         mAnchor.mpNodeRight = &mAnchor;

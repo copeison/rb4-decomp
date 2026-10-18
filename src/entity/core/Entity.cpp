@@ -2,12 +2,16 @@
 
 #include <kernel.h>
 
+#include <new>
+
 #include "entity/core/Component.h"
 #include "entity/core/EntityConstants.h"
 #include "entity/core/EntityResource.h"
-#include "entity/core/InstanceCom.h"
+#include "entity/core/TransCom.h"
+#include "entity/core/EntityHeaderCom.h"
 #include "os/files/File.h"
 #include "os/memory/MemMgr.h"
+#include "os/threading/CritSec.h"
 #include "utl/data/DataUtl.h"
 #include "utl/streams/BinStream.h"
 #include "utl/text/MakeString.h"
@@ -28,6 +32,19 @@ GameObjectId gRootObjectId = {0};
 // initializer starts at kDestroyUnset; its descriptor and offset are at
 // 0x19B02B8. Name not in the reference map.
 thread_local DestroyType gDestroyType = kDestroyUnset;
+
+// Held while an entity is imprinted (Entity::_Imprint); Entity.o's
+// initializer (0xFD0B0) constructs it at 0x19E2EE8. Name not in the
+// reference map, whose Entity.o has Entity::sExportToParentCritSec
+// instead.
+CritSec gImprintCritSec;
+
+// The address rounded up to the alignment, a power of two. Name not in the
+// reference map.
+char* AlignAddress(char* address, unsigned long alignment) {
+    return reinterpret_cast<char*>(
+        (reinterpret_cast<unsigned long>(address) + alignment - 1) & (0 - alignment));
+}
 
 // Sets the thread's destroy type for the entity's objects and returns the
 // previous one: the entity's instance type, or the enclosing entities'
@@ -57,12 +74,103 @@ Entity::Entity(unsigned long numLayers)
       mPollWindowEnd(0),
       mFlags(0x1C0),
       mParentObject(nullptr),
-      mTag() {
+      mParentComId() {
     mLayers.Resize(numLayers);
 }
 
 // Reconstructed from eboot.elf at 0xEBCC0.
 Entity::~Entity() {}
+
+// Inlined into _Imprint at 0xEE439. The arrays copy nothing while the
+// thread imprints (PropArrayBase::_Copy, 0xBA70).
+Entity::Entity(const Entity& other)
+    : MsgSource(other),
+      PollDepBase(other),
+      mResource(other.mResource),
+      mPollWindowStart(other.mPollWindowStart),
+      mPollWindowEnd(other.mPollWindowEnd),
+      mFlags(other.mFlags),
+      mParentObject(other.mParentObject),
+      mParentComId(other.mParentComId) {
+    mLayers._Copy(other.mLayers);
+    mPollOrder._Copy(other.mPollOrder);
+    mPostPollOrder._Copy(other.mPostPollOrder);
+}
+
+// Reconstructed from eboot.elf at 0xEE270. The allocation's size is
+// truncated to an int.
+Entity* Entity::Copy(void* buffer, bool loadResources, GameObject* parent, Symbol parentComId) const {
+    Entity* copy = static_cast<Entity*>(buffer);
+    if (copy != nullptr) {
+        _Imprint(static_cast<char*>(buffer));
+        copy->mFlags |= 0x200;
+    } else {
+        const int size = static_cast<int>(reinterpret_cast<unsigned long>(_Imprint(nullptr)));
+        copy = static_cast<Entity*>(MemAlloc(size, "Entity", 16));
+        _Imprint(reinterpret_cast<char*>(copy));
+    }
+    copy->SetParent(parent, parentComId);
+    if (loadResources) {
+        copy->_LoadResources(true);
+    }
+    return copy;
+}
+
+// Reconstructed from eboot.elf at 0xEE330.
+Entity* Entity::Clone(void* buffer, bool loadResources, GameObject* parent, Symbol parentComId) const {
+    Entity* copy = static_cast<Entity*>(buffer);
+    if (copy != nullptr) {
+        _Imprint(static_cast<char*>(buffer));
+        copy->mFlags |= 0x200;
+    } else {
+        const int size = static_cast<int>(reinterpret_cast<unsigned long>(_Imprint(nullptr)));
+        copy = static_cast<Entity*>(MemAlloc(size, "Entity", 16));
+        _Imprint(reinterpret_cast<char*>(copy));
+    }
+    if (parent != nullptr) {
+        copy->SetParent(parent, parentComId);
+    }
+    if (loadResources) {
+        copy->_LoadResources(true);
+    }
+    return copy;
+}
+
+// Reconstructed from eboot.elf at 0xEE3F0. The copy keeps the flags above
+// bit 5 and is marked built in place (bit 0). The poll orders follow the
+// entity, then the layers, then each layer's objects from the next 8-byte
+// boundary.
+char* Entity::_Imprint(char* buffer) const {
+    gImprintCritSec.Enter();
+    char* end;
+    {
+        ScopedImprint scope;
+        Entity* copy = nullptr;
+        if (buffer != nullptr) {
+            copy = new (buffer) Entity(*this);
+            copy->mFlags = (copy->mFlags & ~0x3FU) | 1;
+        }
+        end = mPollOrder._ImprintElements(
+            buffer + sizeof(Entity), copy != nullptr ? &copy->mPollOrder : nullptr);
+        end = mPostPollOrder._ImprintElements(end, copy != nullptr ? &copy->mPostPollOrder : nullptr);
+        end = mLayers._ImprintElements(end, copy != nullptr ? &copy->mLayers : nullptr);
+        for (int layer = 0; layer < static_cast<int>(mLayers.mSize); ++layer) {
+            end = mLayers[layer].Imprint(
+                AlignAddress(end, 8), copy, copy != nullptr ? &copy->mLayers[layer] : nullptr);
+        }
+    }
+    gImprintCritSec.Exit();
+    return AlignAddress(end, 16);
+}
+
+// Reconstructed from eboot.elf at 0xEE850.
+void Entity::SetParent(GameObject* parent, Symbol parentComId) {
+    if (mParentObject != parent || mParentComId != parentComId) {
+        mParentObject = parent;
+        mParentComId = parentComId;
+        mFlags |= 0x4000;
+    }
+}
 
 // Reconstructed from eboot.elf at 0xEE880. Components that a load adds to
 // an object restart its pass with the object's poll order rebuilt. A
@@ -119,15 +227,15 @@ bool Entity::_LoadResources(bool quiet) {
     }
     _UpdatePollOrder();
     if (mParentObject == nullptr || (mParentObject->mEntity->mFlags & 0x20) != 0) {
-        for (int attempt = 0; mPollOrder.mSize != 0;) {
+        for (int pass = 0; mPollOrder.mSize != 0;) {
             bool ready = true;
             for (const GameObjectId& id : mPollOrder) {
-                ready = GetObject(id)->AreResourcesReady() && ready;
+                ready = GetObject(id)->AreResourcesReady(pass) && ready;
             }
             if (ready) {
                 break;
             }
-            if (++attempt == 10) {
+            if (++pass == 10) {
                 MakeErrorName();
                 break;
             }
@@ -270,9 +378,27 @@ void Entity::_LoadRoot(
     gEntityRev = savedRev;
 }
 
+// Reconstructed from eboot.elf at 0xF0740.
+void Entity::ClearParent() {
+    if (mParentObject != nullptr) {
+        mParentObject = nullptr;
+        mParentComId = Symbol();
+        mFlags |= 0x4000;
+    }
+}
+
 // Reconstructed from eboot.elf at 0xF0780.
 Entity* Entity::GetParent() const {
     return mParentObject != nullptr ? mParentObject->mEntity : nullptr;
+}
+
+// Reconstructed from eboot.elf at 0xF09E0.
+Entity* Entity::GetTopEntity() {
+    Entity* entity = this;
+    while (entity->mParentObject != nullptr) {
+        entity = entity->mParentObject->mEntity;
+    }
+    return entity;
 }
 
 // Reconstructed from eboot.elf at 0xF0A10.
@@ -389,6 +515,29 @@ ResourcePath Entity::GetLayerPath(unsigned long layer) const {
     return mResource->GetLayerPath(layer);
 }
 
+// Reconstructed from eboot.elf at 0xF3630.
+void Entity::SetPollEnabled(bool enabled) {
+    if (((mFlags & 0x40) != 0) == enabled) {
+        return;
+    }
+    mFlags = (mFlags & ~0x40U) | (static_cast<unsigned int>(enabled) << 6);
+    if (enabled) {
+        TransCom* const trans = GetRoot()->GetCom<TransCom>();
+        if (trans != nullptr) {
+            trans->mDirtyFlags |= 1;
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0xF39C0.
+bool Entity::AreResourcesReady(int pass) {
+    bool ready = true;
+    for (const GameObjectId& id : mPollOrder) {
+        ready = GetObject(id)->AreResourcesReady(pass) && ready;
+    }
+    return ready;
+}
+
 // Reconstructed from eboot.elf at 0xF4D10. The default entity is this one
 // while the objects enter. In the game mode the entity's poll weight is a
 // tenth of its component count.
@@ -416,7 +565,7 @@ void Entity::Enter(unsigned int flags) {
     if (mode == 2) {
         bool drivesParent = false;
         if (mParentObject != nullptr) {
-            drivesParent = GetRoot()->GetExistingCom<InstanceCom>()->mDrivesParent;
+            drivesParent = GetRoot()->GetExistingCom<EntityHeaderCom>()->mDrivesParent;
         }
         mFlags |= static_cast<unsigned int>(drivesParent) << 15;
         SetPollWeight(static_cast<unsigned int>(GetNumComs(false) / 10), false);
@@ -485,6 +634,24 @@ void Entity::Exit(unsigned int flags) {
     }
     mFlags &= ~0x16u;
     gDestroyType = previous;
+}
+
+// Reconstructed from eboot.elf at 0xF5470.
+void Entity::_PreLoadResources() {
+    if ((mFlags & 6) != 2) {
+        return;
+    }
+    const ThreadPollContext& context = gEntityThreadState;
+    if (context.mPollMgr == nullptr || !context.mEnterImmediately) {
+        return;
+    }
+    _UpdatePollOrder();
+    _RemovePostPoll();
+    for (GameObject* object = NextObject(nullptr, Symbol()); object != nullptr;
+         object = NextObject(object, Symbol())) {
+        object->_PreLoadResources();
+    }
+    _Reset();
 }
 
 // Reconstructed from eboot.elf at 0xF57C0. An entity that drives its parent
@@ -602,6 +769,19 @@ void Entity::_Destroy() {
         delete this;
     }
     gDestroyType = previous;
+}
+
+// Reconstructed from eboot.elf at 0xF68C0. The imprint's array starts as a
+// byte copy of this one's, whose object pointers the imprints replace.
+char* Entity::Layer::Imprint(char* buffer, Entity* entity, Layer* imprint) const {
+    char* end = mObjects._ImprintElements(buffer, imprint != nullptr ? &imprint->mObjects : nullptr);
+    for (int index = 0; index < static_cast<int>(mObjects.mSize); ++index) {
+        const GameObject* object = mObjects[index];
+        if (object != nullptr) {
+            end = object->_Imprint(end, entity, imprint != nullptr ? &imprint->mObjects[index] : nullptr);
+        }
+    }
+    return end;
 }
 
 // Reconstructed from eboot.elf at 0xF7550.
