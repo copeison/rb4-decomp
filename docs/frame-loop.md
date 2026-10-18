@@ -17,19 +17,20 @@ the loop in `main`.
 | 7-9 | `0xF2CE50`, `0xAE3880`, `0xD1E2C0` | partially classified | Updates readiness, platform state, and SOMP UI state. |
 | 10 | `0x8F3220` | `song_loading_update` | Advances song loading and reports missing song data. |
 | 11 | `0xD5C230` | `RBProfileMgr::Poll` | Updates profile state against current UI state. |
-| 12 | `0xADE120` | UI event queue update | Dispatches pending UI work. |
+| 12 | `0xADE120` | `DialogMgrCom::Poll` | Shows the first queued dialog once none shows and the UI is not in a transition ([ui-system.md](ui-system.md)). |
 | 13 | `0x92F4A0` | `resource_manager_update` | Resolves pending resources when their load state changes. |
 | 14 | `0xB0A070` | player-state update | Updates player/UI state; class identity is still unknown. |
 | 15 | `0x8C8900` | `UIMgr::Poll` | Advances layout transitions and emits transition events. |
 | 16 | `0xA47EC0` | optional voting update | Applies pending state on an optional object in the voting/UI region. |
-| 17 | `0xBB58C0` | `ui_layout_controller_update` | Updates the active layout and shell audio resources. |
+| 17 | `0xBB58C0` | `RBMetaState::Poll` | Starts the shell music, follows the SFX and crowd volumes, and counts the joined players ([ui-system.md](ui-system.md)). |
 | 18-20 | `0x3AE960`, `0xC60720`, `0xB0CE80` | partially classified | Processes deferred system/game work and overshell state. |
 | 21 | `0xBD9430` | `network_connection_monitor_update` | Raises the lost-connection UI error when online service drops. |
 | 22 | `0x928FC0` | resource request queue update | Final resource-related work before rendering. |
 
-`SystemPoll`, `SoundManager::Poll`, `RBProfileMgr::Poll` and `UIMgr::Poll`
-are the reference map's names, matched by behaviour, strings and the map's
-globals (`theSoundManager`, `theRBProfileMgr`, `theUI`). The other names are
+`SystemPoll`, `SoundManager::Poll`, `RBProfileMgr::Poll`, `DialogMgrCom::Poll`,
+`UIMgr::Poll` and `RBMetaState::Poll` are the reference map's names, matched by
+behaviour, strings and the map's globals (`theSoundManager`, `theRBProfileMgr`,
+`theUI`, `theRBMetaState`). The other names are
 descriptive placeholders. Their call order and behavior are confirmed, while the owning
 class names are still unknown.
 

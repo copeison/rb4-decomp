@@ -174,6 +174,10 @@ public:
     // _UpdateAllComsFlagged. Emitted in entity/Entity.o after
     // Entity::Enter. Name not in the reference map.
     bool _EnterComponents();  // 0xF4FF0
+    // Exits the entered components, loads their resources (asking up to
+    // ten passes for them to be ready) and enters them again in the
+    // entity's mode. Name not in the reference map. Not reconstructed.
+    void _ReenterComponents();  // 0x115DA0
     // Polls every component in the game mode, then releases the early-free
     // job. Emitted in entity/Entity.o. Name not in the reference map.
     void _PollComponents();  // 0xF6290

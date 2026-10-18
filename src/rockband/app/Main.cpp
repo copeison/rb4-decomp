@@ -6,13 +6,15 @@
 #include "os/system/Core.h"
 #include "os/system/System.h"
 #include "rb_game/stagepresence/RBStagePresenceEnum.h"
+#include "rb_meta/dialog/DialogMgrCom.h"
 #include "rb_meta/profiles/RBProfileMgr.h"
 #include "rb_meta/state/RBMetaStateCom.h"
 #include "render/debug/screenshot_capture.h"
 #include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
 #include "render/system/RndInit.h"
-#include "ui/layout/UILayoutId.h"
+#include "ui/core/UI.h"
+#include "ui/layout/UILayoutResource.h"
 #include "ui/manager/UIMgr.h"
 #include "utl/options/Option.h"
 
@@ -20,23 +22,16 @@
 // and member calls on global subsystem objects whose classes have not been
 // reconstructed. Names not in the reference map.
 struct DingoService;
-struct UILayoutController;
 
 void engine_register_types();
 void animation_register_types();
 void physics_register_types();
 void game_audio_register_types();
-void ui_register_types();
 void dingo_initialize(DingoService& service);
 void audio_configure_time_stretch();
 void input_refresh_player_assignments();
-void ui_load_layout_by_id(
-    UILayoutController& controller,
-    UILayoutId id,
-    bool force_reload);
 
 extern DingoService g_dingo_service;
-extern UILayoutController g_ui_layout_controller;
 
 void optional_service_update();               // 0x8ECAC0
 void dingo_update();                          // 0x33B510
@@ -46,18 +41,15 @@ void song_readiness_update();                 // 0xF2CE50
 void platform_state_update();                 // 0xAE3880
 void somp_ui_state_update();                  // 0xD1E2C0
 void song_loading_update();                   // 0x8F3220
-void ui_event_queue_update();                 // 0xADE120
 void resource_manager_update();               // 0x92F4A0
 void player_state_update();                   // 0xB0A070
 void optional_voting_update();                // 0xA47EC0
-void ui_layout_controller_update();           // 0xBB58C0
 void deferred_system_update();                // 0x3AE960
 void deferred_game_action_update();           // 0xC60720
 void overshell_update();                      // 0xB0CE80
 void network_connection_monitor_update();     // 0xBD9430
 void resource_request_queue_update();         // 0x928FC0
 
-bool ui_layout_consume_skip_frame(UILayout& layout);  // 0x8B1840
 bool exit_requested();
 
 namespace {
@@ -75,12 +67,12 @@ void UpdateFrameSubsystems() {
     somp_ui_state_update();
     song_loading_update();
     theRBProfileMgr->Poll();
-    ui_event_queue_update();
+    DialogMgrCom::Poll();
     resource_manager_update();
     player_state_update();
     theUI->Poll();
     optional_voting_update();
-    ui_layout_controller_update();
+    theRBMetaState.Poll();
     deferred_system_update();
     deferred_game_action_update();
     overshell_update();
@@ -113,7 +105,7 @@ bool App::Initialize(int argc, char** argv) {
     options.mInitOptionalShaders = true;
     Rnd::Init(options);
 
-    ui_register_types();
+    UI::Init();
     dingo_initialize(g_dingo_service);
     audio_configure_time_stretch();
     input_refresh_player_assignments();
@@ -122,7 +114,7 @@ bool App::Initialize(int argc, char** argv) {
         HmxExit(0);
     }
 
-    ui_load_layout_by_id(g_ui_layout_controller, kLayoutGameStartup, false);
+    theRBMetaState.Goto(kLayoutGameStartup, false);
     OptionCheck(gOptionArgs);
     return true;
 }
@@ -138,8 +130,8 @@ bool App::RunOneFrame() {
         return false;
     }
 
-    UILayout* layout = theUI->GetCurrentLayout();
-    if (layout != nullptr && ui_layout_consume_skip_frame(*layout)) {
+    UILayoutResource* layout = theUI->GetCurrentLayout();
+    if (layout != nullptr && layout->UpdateSkipDrawState()) {
         TheRndDevice()->ForceIncrementFrameCount();
     } else {
         if (screenshot_capture_pending()) {

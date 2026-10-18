@@ -101,6 +101,8 @@ public:
     // failure report that `fail` asks for is compiled out; only the
     // entity's description is made.
     GameObject* SafeGetObject(GameObjectId id, bool fail) const;  // 0xF11C0
+    // Destroys the object, through the list form at 0xF1580.
+    void DestroyObject(GameObjectId id);  // 0xF1530
     // The first object of any layer. The map's signature is
     // BeginObject() const; this build forwards to NextObject.
     GameObject* BeginObject() const;  // 0xEF180

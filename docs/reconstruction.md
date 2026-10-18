@@ -11,7 +11,7 @@ the source tree.
 | `0x3C0` | `main` | `src/rockband/app/Main.cpp` | Control flow recovered; dependent functions are still being reconstructed. |
 | `0x402C30`, `0x402D30` | game-system renderer lifecycle | `src/render/system/RndInit.cpp` | Orbis renderer creation, platform warmup, shared and default resource initialization, nine dependent initializers, cleanup registration, guarded shutdown, virtual deletion, and singleton clearing recovered. |
 | `0x997590` | `StagePresence::_ToSymbol` | `src/rb_game/stagepresence/RBStagePresenceEnum.cpp` | All 22 enum values and their interned symbol strings recovered. |
-| `0xBB06A0`, `0xBB5D40` | `UILayoutIdToSymbol`, layout asset map | `src/ui/layout/UILayoutId.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |
+| `0xBB06A0`, `0xBB5D40` | `RBUILayoutToSym`, `RBMetaState::Goto`'s layout paths | `src/rb_meta/state/RBMetaStateCom.cpp` | All 108 ordered IDs and their 92 direct layout paths recovered. |
 | `0x252660`, `0x252BC0` | command-line switch lookup and final handling | `src/utl/options/Option.cpp` | `OptionStr`/`OptionCheck`: exact 16-byte argument record, case-sensitive dash-prefixed lookup, following-value return, handled-bit publication, and remaining-switch sweep reconstructed. |
 | `0x258E50`, `0x2590B0`-`0x2593C6`, `0x25C3A0`-`0x25C55F` | shared engine thread affinity, wrapper, and runtime | `src/utl/threading/Thread.cpp`, `src/utl/threading/Thread_PS4.cpp` | `ThreadMap::BuildAffinityMask`, `NamedThread`, and `Thread`: default CPU mask over the six counted processors, thread names and task settings (see [foundation-runtime.md](foundation-runtime.md)), 136-byte wrapper and embedded 96-byte runtime layouts, default priority/name initialization, worker registration, user-callback result capture, 128-KiB minimum stack, joinable SCE pthread attributes, round-robin priority, naming, launch, join, and cancellation recovered. |
 | `0x8D28A0`, `0x8D2EA0`, `0x8D3000`, `0x8D3060` | special pad reader and calibration sample path | `src/os/joypads/PembrokeGuitar_PS4.cpp` | Hardware probing, sensor-mode report, rolling sample collection, and transfer recovered. |
@@ -232,15 +232,16 @@ initialization without reproducing compiler guard internals.
 
 ## UI layout IDs
 
-The function at `0xBB06A0` contains a guarded table for IDs 0 through 107 and a
-separate `kLayoutInvalid` result for ID -1. The ordered list lives in
-`src/ui/layout/ui_layout_list.inc` so the enum and symbol table share one readable
-source of truth. ID `0x2C` is `kLayoutGameStartup`, matching the startup layout
-loaded by `App::Initialize`.
+The function at `0xBB06A0` (the map's `RBUILayoutToSym(RBUILayout)` in
+`rb_meta/RBMetaStateCom.o`) contains a guarded table for IDs 0 through 107 and
+a separate `kLayoutInvalid` result for ID -1. The ordered list lives in
+`src/rb_meta/state/RBUILayout.inc` so the enum and symbol table share one
+readable source of truth. ID `0x2C` is `kLayoutGameStartup`, matching the
+startup layout loaded by `App::Initialize`.
 
-The loader at `0xBB5D40` supplies direct `.layout` paths for 92 of those IDs.
-The same include now drives `ui_layout_primary_path`, keeping every recovered
-path aligned with its enum value. Sixteen deprecated, fallback, or unsupported
-IDs have no direct path. SOMP IDs 101 and 102 also fall through in the original
-switch to preload the subsequent session layouts; the helper reports the first
-path associated with each requested ID.
+`RBMetaState::Goto` at `0xBB5D40` supplies direct `.layout` paths for 92 of
+those IDs. The same include records each path beside its enum value.
+Sixteen deprecated, fallback, or unsupported IDs have no direct path. SOMP IDs
+101 and 102 also fall through in the original switch to preload the
+subsequent session layouts; the include records the first path associated
+with each ID.

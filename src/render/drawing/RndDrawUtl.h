@@ -10,6 +10,7 @@
 #include "render/materials/RndMaterialCom.h"
 #include "utl/containers/VectorAdapter.h"
 
+class RndBufferCollection;
 class RndContext;
 class Sphere;
 class RndFont;
@@ -104,6 +105,13 @@ public:
     // Builds the shared sphere, box and other meshes the drawing helpers use.
     static void Init();  // 0x3DF170
     static void Terminate();  // 0x3DF820
+    // Binds the color targets of the buffer collections and clears them to
+    // the color; UIMgr::Draw uses it when no layout draws. Name not in the
+    // reference map; not reconstructed.
+    static void ClearBuffers(
+        RndContext& context,
+        VectorAdapter<RndBufferCollection*> buffers,
+        Hmx::Color color);  // 0x3DF9C0
 
     // Draws the quad with an identity view-projection. A quad covering the
     // whole target is drawn as one oversized triangle.

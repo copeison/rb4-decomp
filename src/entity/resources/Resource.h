@@ -312,6 +312,16 @@ ResourcePtr<T> Resource::GetOrLoad(ResourcePath path, bool ignoreExt) {
     return resource;
 }
 
+// The resource as class T, or null when it is null, failed, or is not a T.
+// Instantiated where it is used: UILayoutResource's at 0x8C97F0.
+template <class T, class P>
+ResourcePtr<T> resource_ptr_cast(P resource) {
+    if (resource != nullptr && !resource->Fail() && resource->IsA(T::Id())) {
+        return ResourcePtr<T>(static_cast<T*>(resource.Get()));
+    }
+    return ResourcePtr<T>();
+}
+
 // Records every path GetOrLoad and SetFile see while it exists. Nothing in
 // this build creates one, so the names are weakly supported. Names not in
 // the reference map.
