@@ -32,8 +32,7 @@ public:
     bool _OnResourcesLoaded() override;  // 0x67C570
 
     // Describes the class and registers its properties after
-    // RndOptionsCom::_InitAsSuperclass. Not reconstructed: the property
-    // metadata it fills is not modelled.
+    // RndOptionsCom::_InitAsSuperclass.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x67C640
 
     static Symbol sId;                  // 0x1AAE018, "TextOptions"

@@ -28,8 +28,10 @@ and `"LightSpot"`), `sPropRegistry` and `sMetaData`:
 `Init` and `_Create` are emitted together before the renderer's components
 (`0x3F0000`-`0x405000`), as `SoundManager.o` emits the audio ones. The
 identity slots, the factories, the constructors and destructors are
-reconstructed; `Init` and `_Init` stay declared for the reasons given in
-[audio-components.md](audio-components.md).
+reconstructed, and so are every `Init` (`InitComponentClass`) and
+`RndLightEnvironCom::_Init`. The lights' `_Init` builders stay declared:
+their tag functions and accessors (`0x46F7E0`-`0x4704B0` for
+`RndLightCom`) are not reconstructed.
 
 `_Imprint` (slot 10) is reconstructed for every light: `RndLightCom`
 (`0x46F490`), `RndLightDirectionalCom` (`0x4757B0`), `RndLightPointCom`

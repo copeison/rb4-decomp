@@ -15,6 +15,7 @@
 
 class BinStream;
 class ComMetaData;
+class RndBufferCollection;
 class Component;
 class DataArray;
 class Entity;
@@ -45,6 +46,32 @@ public:
 
         // The parameters of the draw the job clears for.
         RndSceneDrawParams mParams;
+    };
+
+    // Draws one showing scene's masking scenes before the scene's own draw
+    // jobs, when the layout draws through jobs (_StartDrawJobs). The
+    // layout keeps one per scene in mSceneDrawJobs. Its constructor is
+    // inlined into _StartDrawJobs. The vtable is at 0x195D368. Name not in
+    // the reference map.
+    class SceneDrawJob : public PollDepBase {
+    public:
+        explicit SceneDrawJob(UILayoutResource* layout) : mLayout(layout), mEntity(nullptr) {
+            SetThreaded(false);
+        }
+        ~SceneDrawJob() override {}  // slots 0-1: 0x8B1B10, 0x8B1B60
+        // Slot 3: draws the masking scenes.
+        void ThreadPoll(const int& thread) override;  // 0x8B1980
+
+        // Field names are not in the reference map.
+        UILayoutResource* mLayout;
+        // The layout's entity.
+        Entity* mEntity;
+        // The scene's draw parameters.
+        RndSceneDrawParams mParams;
+        // The scene resource's path; the draw does not read it.
+        ResourcePath mScenePath;
+        // The scene's showing masking scenes (_GetMaskingScenes).
+        eastl::vector<GameObjectId> mMaskingScenes;
     };
 
     // Where a queued scene goes in the layout's poll and draw orders
@@ -131,8 +158,13 @@ public:
     bool _LoadEntity(BinStream& stream, bool cached) override;  // 0x8ABB50
     // Slot 15: checks the scenes after the base class's post-load.
     bool _PostLoad(BinStream& stream, bool cached) override;  // 0x8ABF60
-    // Slots 16-18. The poll is not reconstructed; exit releases the
-    // scenes' poll range and the layout's poll managers first.
+    // Slots 16-18. Exit releases the scenes' poll range and the layout's
+    // poll groups first. The poll applies the scene queues; an active
+    // game-mode layout then polls its poll groups under its manager, with
+    // the audio lock that "use_pollmgr_audio_lock" asks for, and runs the
+    // post-polls of the scene groups (the scene's, the threaded scenes'
+    // and the drawers'); last, the partial-framerate scenes get distinct
+    // intervals.
     void _EnterEntity(Entity* entity, unsigned int flags) override;  // 0x8AC810
     void _ExitEntity(Entity* entity, unsigned int flags) override;   // 0x8ACBC0
     void _PollEntity(Entity* entity) override;                        // 0x8ACC60
@@ -154,8 +186,11 @@ public:
     // Slot 26 at 0x8B1B00: false, as for an entity resource.
     bool IsTransient() const override;
     // Slots 33-38: draw the showing scenes in the layout's draw order, at
-    // once or through jobs, and their texture renderers. The draws (slots
-    // 33-35) are not reconstructed.
+    // once or through jobs, and their texture renderers. Each scene draws
+    // its masking scenes first, clears only as the first scene and outputs
+    // to the back buffer only as the last; without scenes the buffers are
+    // cleared. RndConfig's first and last drawn scene limit the immediate
+    // draw.
     FixedVector<RndSceneDrawTarget, 2> _Draw(
         Entity* entity,
         RndSceneDrawParams& params,
@@ -236,14 +271,47 @@ public:
     // orders, and destroy the objects of the queued removals.
     void _AddQueuedScenes();     // 0x8AAC60
     void _RemoveQueuedScenes();  // 0x8AB2D0
-    // Releases the scenes' threaded poll range: marks it released and
-    // detaches the scenes' poll jobs from the layout's poll managers. Name
-    // not in the reference map; the evidence is weak. Not reconstructed.
+    // Releases the scenes' threaded poll range: marks it released and,
+    // when a scene group has jobs, clears the layout's groups and unlinks
+    // the threaded scenes' groups from the layout's group and from each
+    // other. Name not in the reference map; the evidence is weak.
     void _ClearThreadedPollRange(Entity* entity);  // 0x8AB6E0
-    // Links the scenes that can poll threaded into the layout's poll
-    // managers. The map's _SyncThreadedPollRange(EntityPtr const&); the
-    // match rests on the callees. Not reconstructed.
+    // Rebuilds the poll range: the instanced scenes poll in order, a scene
+    // that can poll threaded alongside the threaded ones before it and
+    // after the last serial scene, a serial one after all of them; the
+    // layout's entity polls in the layout's group after every scene. The
+    // map's _SyncThreadedPollRange(EntityPtr const&); the match rests on
+    // the callees.
     void _SyncThreadedPollRange(Entity* entity);  // 0x8AC1E0
+    // Gives the partial-framerate scenes of the poll order distinct
+    // RndSceneCom::mPartialFramerateScene values, through a bit vector
+    // (vtable 0x195D3C8) that is not modelled. Name not in the reference
+    // map. Not reconstructed.
+    static void _AssignPartialFramerateScenes(Entity* entity);  // 0x8AD420
+    // Draws the showing HMD mirror overlays into the buffer collection
+    // through the immediate path, without clearing. No caller is found.
+    // Name not in the reference map.
+    void DrawHmdMirrorOverlays(RndBufferCollection* buffers);  // 0x8AF240
+    // The scene instance's masking scenes that are showing, when the
+    // renderer enables scene masks. Names not in the reference map.
+    void _GetMaskingScenes(
+        Entity* entity,
+        const RndSceneInstanceCom* instance,
+        SceneIdList& scenes) const;  // 0x8AF6D0
+    void _GetMaskingScenes(
+        Entity* entity,
+        const RndSceneInstanceCom* instance,
+        eastl::vector<GameObjectId>& scenes) const;  // 0x8B0E90
+    // Sets the projection of the scene's draw parameters, and whether it
+    // clears (the first scene), outputs to the back buffer (the last) and
+    // is masked. No caller is found; the draws inline it. Name not in the
+    // reference map.
+    void _SetSceneDrawParams(
+        RndSceneDrawParams& params,
+        const RndSceneInstanceCom* instance,
+        unsigned long index,
+        unsigned long count,
+        unsigned long numMaskingScenes) const;  // 0x8AFB90
     // Reads each scene's light manager; the checks around the reads are
     // compiled out. The map's _ValidateSceneData(EntityPtr const&); the
     // match rests on the size and the place of its call.
@@ -260,7 +328,7 @@ public:
     bool mEntering;
     bool mExiting;
     ClearJob mClearJob;
-    // The scenes' draw jobs, deleted by the destructor.
+    // The scenes' draw jobs (SceneDrawJob), deleted by the destructor.
     eastl::vector<PollDepBase*> mSceneDrawJobs;
     // Frames whose draw is skipped (UpdateSkipDrawState).
     int mFramesToSkipDraw;
@@ -272,6 +340,11 @@ public:
 
 static_assert(sizeof(UILayoutResource::ClearJob) == 352);
 static_assert(offsetof(UILayoutResource::ClearJob, mParams) == 144);
+static_assert(offsetof(UILayoutResource::SceneDrawJob, mLayout) == 144);
+static_assert(offsetof(UILayoutResource::SceneDrawJob, mParams) == 160);
+static_assert(offsetof(UILayoutResource::SceneDrawJob, mScenePath) == 368);
+static_assert(offsetof(UILayoutResource::SceneDrawJob, mMaskingScenes) == 376);
+static_assert(sizeof(UILayoutResource::SceneDrawJob) == 408);
 static_assert(sizeof(UILayoutResource::QueuedScene) == 24);
 static_assert(offsetof(UILayoutResource, mQueuedScenes) == 784);
 static_assert(offsetof(UILayoutResource, mQueuedRemovals) == 816);

@@ -261,6 +261,10 @@ public:
     // The class factories by class id; GameObject::_CreateComponent creates
     // through them.
     static eastl::map<Symbol, Component* (*)()> sFactory;  // 0x19E2900
+    // The class constructors by class id, each building a component in
+    // storage the caller provides. Every class's Init fills it after
+    // sFactory.
+    static eastl::map<Symbol, Component* (*)(void* storage)> sVtables;  // 0x19E2938
     // Lets a class registered for the root object only be created on any
     // object (GameObject::_CreateComponent).
     static bool sRegressionTesting;  // 0x19E2970
@@ -280,10 +284,11 @@ public:
     bool mResourcesReady;
     // Set while the component is entered, in either mode.
     bool mEntered;
-    // Cleared by the constructor; no reader is identified.
-    bool mReserved;
+    // Set while the component's resource load is queued on the poll
+    // manager (PollMgr::QueueForLoadResources); cleared before the load.
+    bool mLoadResourcesQueued;
     // The constructor stores the four bytes from mResourcesRequested to
-    // mReserved together. Subclasses place their first member in the tail
+    // mLoadResourcesQueued together. Subclasses place their first member in the tail
     // padding at 22: AudioEmitterCom's "is_named_emitter", the "Options"
     // base of RndOverlayOptionsCom (0x46A870), and the flag RndDefaults
     // writes on RndLightCom and RndLightProbeCom (0x6BEF40, 0x6BFA60).
@@ -292,5 +297,5 @@ public:
 static_assert(offsetof(Component, mObject) == 8);
 static_assert(offsetof(Component, mImprinted) == 16);
 static_assert(offsetof(Component, mEntered) == 20);
-static_assert(offsetof(Component, mReserved) == 21);
+static_assert(offsetof(Component, mLoadResourcesQueued) == 21);
 static_assert(sizeof(Component) == 24);

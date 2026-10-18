@@ -30,9 +30,12 @@ registrations; each factory is followed by a placement factory. Every
 object's static initializer first sets three shared-header ints (-1, the
 invalid `GameObjectId`, then 8 and 4), which are not modelled. The
 constructors, destructors, identity slots, `_Imprint` and factories are
-reconstructed. `Init` and `_Init` stay declared: the registration helpers,
-`ComMetaData`'s strings and the property metadata (bloom's property
-callbacks at `0x631630`-`0x631850`) are not modelled.
+reconstructed, and so are every class's `Init` and `_Init` and
+`RndPostProcStageCom::_InitAsSuperclass` (`0x6304F0`, inferred name). The
+bloom stage's revision 3 handler fills defaults older files lack; the
+depth of field keeps its near distance below the far one and offers the
+falloff functions (`ToString`/`ToDescription(RndFalloffFunction)`,
+`0x645EE0`, `0x645F00`).
 
 ## RndPostProcCom
 

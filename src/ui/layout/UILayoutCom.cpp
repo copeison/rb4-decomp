@@ -1,21 +1,14 @@
 // The "UILayout" component's object (0x8A9340 to 0x8AAA3F). Only the poll
-// manager functions are reconstructed.
+// manager and group functions are reconstructed.
 #include "ui/layout/UILayoutCom.h"
-
-#include <new>
 
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
-#include "os/memory/PoolAlloc.h"
 #include "utl/files/FileUtl.h"
 #include "utl/text/Str.h"
 #include "utl/threading/PollMgr.h"
 
 namespace {
-
-// The size of the small-pool block a nested poll manager lives in. Name not
-// in the reference map.
-constexpr unsigned long kPollMgrBlockSize = 544;
 
 // Removes the first element equal to the id, as the binary's inlined
 // PropArray erase does: destroys it and moves the later elements down
@@ -41,37 +34,32 @@ Symbol UILayoutCom::sId("UILayout");
 Symbol UILayoutCom::sClassName("UILayout");
 
 // Reconstructed from eboot.elf at 0x8A9830.
-void UILayoutCom::_DestroyPollMgrs() {
+void UILayoutCom::_DestroyPollGroups() {
     if (mScenePollGroups != nullptr) {
         mScenePollGroups->Reset();
     }
-    if (mPollMgr != nullptr) {
-        mPollMgr->Reset();
+    if (mPollGroup != nullptr) {
+        mPollGroup->Reset();
     }
     delete mScenePollGroups;
     mScenePollGroups = nullptr;
-    if (mPollMgr != nullptr) {
-        mPollMgr->~PollMgr();
-        PoolFree(kPollMgrBlockSize, mPollMgr);
-    }
-    mPollMgr = nullptr;
+    delete mPollGroup;
+    mPollGroup = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x8A98D0.
-void UILayoutCom::_ObtainPollGroup() {
+void UILayoutCom::_ObtainPollMgr() {
     const String name(FileGetName(mObject->mEntity->mResource->mPath.Str()));
-    if (mPollGroup == nullptr) {
-        mPollGroup = new PollGroup(name.c_str());
+    if (mPollMgr == nullptr) {
+        mPollMgr = new PollMgr(name.c_str());
     }
 }
 
 // Reconstructed from eboot.elf at 0x8A9960.
-void UILayoutCom::_CreatePollMgrs() {
+void UILayoutCom::_CreatePollGroups() {
     const String name(FileGetName(mObject->mEntity->mResource->mPath.Str()));
     mScenePollGroups = new RndSceneCom::PollGroups(name.c_str());
-    PollMgr* const pollMgr = static_cast<PollMgr*>(PoolAlloc(kPollMgrBlockSize, nullptr));
-    new (pollMgr) PollMgr(name.c_str());
-    mPollMgr = pollMgr;
+    mPollGroup = new PollGroup(name.c_str());
 }
 
 // Reconstructed from eboot.elf at 0x8A9B00.

@@ -13,12 +13,11 @@
 #include "utl/containers/Map.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
+#include "utl/threading/PollMgr.h"
 #include "utl/threading/ThreadedJob.h"
 
 class Entity;
 class EntityResource;
-class PollGroup;
-class PollMgr;
 class RndAtmosphereCom;
 class RndCMAACom;
 class RndCameraCom;
@@ -128,7 +127,7 @@ public:
     };
 
     // A job that polls one window of the scene entity's poll order on a
-    // worker, under a nested poll manager (AddPollSplitJob). Name not in
+    // worker, in a poll group of its own (AddPollSplitJob). Name not in
     // the reference map. The vtable is at 0x18FFBC8.
     class PollSplitJob : public ThreadedJob {
     public:
@@ -172,26 +171,26 @@ public:
         unsigned long mTimerIndex;
     };
 
-    // A split job and the nested manager it polls under. Name and field
-    // names not in the reference map.
+    // A split job and the poll group it polls in. Name and field names
+    // not in the reference map.
     struct PollSplitJobEntry {
         PollSplitJob* mJob;
-        PollMgr* mPollMgr;
+        PollGroup* mPollGroup;
     };
 
-    // The scene's two nested poll managers, "<file> SceneDrawer PG" (key
-    // 0) and "<file> Scene PG" (key 1); the scene's polls wait for the
-    // drawer's. The vtable is at 0x18FFC38, over a base at 0x18FFC60 that
-    // holds the map. Not reconstructed. Name not in the reference map.
-    class PollGroups {
+    // The scene's two poll groups, "<file> SceneDrawer PG" (key 0) and
+    // "<file> Scene PG" (key 1); the scene's polls wait for the drawer's.
+    // The vtable is at 0x18FFC38, over PollGroupMap's at 0x18FFC60. Name
+    // not in the reference map.
+    class PollGroups : public PollGroupMap {
     public:
         explicit PollGroups(const char* path);  // 0x4121A0
-        // Slot 0: resets each manager and links the scene's after the
+        // Slot 0: resets each group and makes the scene's poll after the
         // drawer's again.
-        virtual void Reset();  // 0x412450
-        virtual ~PollGroups();  // slots 1-2: 0x412540, 0x412550
-
-        eastl::map<int, PollMgr*> mPollMgrs;
+        void Reset() override;  // 0x412450
+        // Slots 1-2: 0x412540 (a thunk to 0x412750), 0x412550. Unlinks the
+        // groups first.
+        virtual ~PollGroups();
     };
 
     RndSceneCom();  // 0x4080E0
@@ -226,7 +225,7 @@ public:
           mEnableLod(other.mEnableLod),
           mNumDrawEntries(other.mNumDrawEntries),
           mNeverCull(other.mNeverCull),
-          mPollGroup(nullptr),
+          mPollMgr(nullptr),
           mPollGroups(nullptr),
           mSceneDrawer(nullptr),
           mFrameInterval(static_cast<unsigned long>(-1)),
@@ -306,19 +305,19 @@ public:
     // half) and returns 1 when it wrapped, starting a new interval.
     unsigned long StepFrameInterval();  // 0x408CD0
 
-    // Adds a split job for the poll window, under a new nested manager
-    // ("<name> PG") that shares the releasing job's manager. Called by the
-    // scene resource's poll. Name not in the reference map.
+    // Adds a split job for the poll window, in a new poll group ("<name>
+    // PG") that takes the releasing job's group. Called by the scene
+    // resource's immediate poll. Name not in the reference map.
     void AddPollSplitJob(
         const char* name,
         int pollWindowStart,
         int pollWindowEnd,
         unsigned int weight);  // 0x408810
-    // Queues each split job on its manager, each manager after the
-    // previous. Name not in the reference map.
+    // Adds each split job to its group, each group after the previous.
+    // Name not in the reference map.
     void LinkPollSplitJobs();  // 0x408A80
-    // Destroys the split jobs and their managers. Name not in the
-    // reference map.
+    // Destroys the split jobs and their groups. Name not in the reference
+    // map.
     void ClearPollSplitJobs();  // 0x408600
     // Creates the poll groups; a scene below another stops its polls from
     // waiting for its drawer's. Name not in the reference map.
@@ -338,9 +337,8 @@ public:
     // _CreatePropHysteresisTexture() and _ClearPropHysteresisTexture().
     void _CreatePropHysteresisTexture();  // 0x411880
 
-    // Registers the class. Inline in the map (render/RndInit.o's
-    // RndSceneCom::Init); not reconstructed.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F1F60
     // The class factory. Emitted in render/RndInit.o at 0x4048E0.
     static Component* _Create();
     // Describes the class and registers its properties: draw_order,
@@ -391,8 +389,8 @@ public:
     bool mEnableLod;               // "enable_lod"
     unsigned long mNumDrawEntries;  // "num_draw_entries"
     bool mNeverCull;               // "never_cull"
-    // The scene entity's poll group, created when the resources load.
-    PollGroup* mPollGroup;
+    // The scene entity's poll manager, created when the resources load.
+    PollMgr* mPollMgr;
     eastl::vector<PollSplitJobEntry> mPollSplitJobs;
     // Created by the resource's first immediate enter.
     PollGroups* mPollGroups;
@@ -450,7 +448,7 @@ static_assert(offsetof(RndSceneCom, mHighLodDistance) == 0x100);
 static_assert(offsetof(RndSceneCom, mEnableLod) == 0x10C);
 static_assert(offsetof(RndSceneCom, mNumDrawEntries) == 0x110);
 static_assert(offsetof(RndSceneCom, mNeverCull) == 0x118);
-static_assert(offsetof(RndSceneCom, mPollGroup) == 0x120);
+static_assert(offsetof(RndSceneCom, mPollMgr) == 0x120);
 static_assert(offsetof(RndSceneCom, mPollSplitJobs) == 0x128);
 static_assert(offsetof(RndSceneCom, mPollGroups) == 0x148);
 static_assert(offsetof(RndSceneCom, mSceneDrawer) == 0x150);

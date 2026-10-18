@@ -30,13 +30,16 @@ identity slots (`GetId` through `AsComponent`, `_GetPropRegistry`,
 `_GetMetaData`) and the factories are reconstructed. `IsA` walks
 `sMetaData` and its superclasses.
 
-The inline `Init` pushes the "metadata" heap, sets the metadata's
-`mCreatable` and `mSuperclassRoot`, runs `_Init`, records the class size in
-a shared size map, fills `Component::sFactory` and the placement map after
-it (`0x19E2938`, the map's `Component::sVtables`) and calls
-`ComMetaData::Init` with a temporary component's `_HasPostPoll`. `Init`,
-`_Init` and `_Imprint` stay declared: the size map, the property metadata's
-attributes and the thread's imprint state are not modelled.
+The inline `Init` is `InitComponentClass` (see
+[entity-components.md](entity-components.md)); both classes' `Init` and
+`_Init` are reconstructed. The emitter registers its properties with their
+accessors (`0x37D70`-`0x37E50`), `emitter_name`'s game-wide names
+(`GetGameWideEmitterNameValues`, `0x358E0`, declared) and the
+`tempo_aware_buses` struct, whose bus fields hide each other through
+`use_preloaded_bank`; it is lightweight and also found as
+"AudioEmitterCom". `_Imprint` stays declared: the thread's imprint state
+is not modelled. `FusionPatchCom`'s registration is not reconstructed: the
+class itself is not.
 `SoundManager::_InitComponents` calls `AudioEmitterCom::Init` and
 `FusionPatchCom::Init` in the binary's order.
 

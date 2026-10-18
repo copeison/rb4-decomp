@@ -15,15 +15,19 @@
 #include "render/context/RndCameraCom.h"
 #include "render/drawing/RndSceneDrawer.h"
 #include "render/lighting/RndLightMgrCom.h"
+#include "render/lighting/lights/RndLightCom.h"
 #include "render/lighting/lights/RndLightEnvironCom.h"
 #include "render/scene/RndDrawNodeCom.h"
 #include "render/scene/RndEntityInstanceCom.h"
 #include "render/scene/RndSceneCom.h"
 #include "render/scene/RndSceneInstanceCom.h"
+#include "render/system/RndDevice.h"
 #include "render/textures/RndTexRendererMgr.h"
 #include "stategraph/drivers/StateGraphDriverCom.h"
 #include "utl/streams/BinStream.h"
+#include "utl/text/MakeString.h"
 #include "utl/threading/PollMgr.h"
+#include "utl/time/TimelinesCom.h"
 
 // The class symbols of the instance pool component, "InstancePool".
 // Names not in the reference map.
@@ -36,6 +40,10 @@ extern Symbol gAudioEmitterEditorDataComId;      // 0x1A76098
 extern Symbol gAudioEmitterEditorDataClassName;  // 0x1A760A0
 extern Symbol gTransformEditorDrawComId;         // 0x1A86ED0
 extern Symbol gTransformEditorDrawClassName;     // 0x1A86ED8
+// The class symbol of the "ScenePollSplit" component (vtable 0x18FF610),
+// which marks the object a new split poll job starts at. The class is not
+// modelled. Name not in the reference map.
+extern Symbol gScenePollSplitComId;  // 0x1A72D58
 
 // Sets the property at the path from the value of the type. Emitted in
 // entity/PropUtl.o; declared here until PropUtl.h declares it. The map's
@@ -132,6 +140,34 @@ RndSceneResource::RndSceneResource() {}
 // Reconstructed from eboot.elf at 0x4384D0. The deleting destructor is at
 // 0x4384E0.
 RndSceneResource::~RndSceneResource() {}
+
+// Reconstructed from eboot.elf at 0x438670. The callbacks' std::function
+// members are at 0x43AC70-0x43AEA0.
+void RndSceneResource::_EnterImmediately(Entity* entity) {
+    RndSceneCom* const scene = entity->GetRoot()->GetCom<RndSceneCom>();
+    PollMgr* const pollMgr = scene->mPollMgr;
+    if (scene->mPollGroups == nullptr) {
+        scene->CreatePollGroups(entity, entity->mParentObject == nullptr);
+        const std::function<void()> onPollStart = [scene, entity] {
+            scene->StepFrameInterval();
+            if (scene->mFrameInterval != 0) {
+                entity->mFlags |= 0x2000;
+            } else {
+                scene->mIntervalStartFrame = static_cast<long>(TheRndDevice()->mFrameCount);
+            }
+        };
+        const std::function<void()> onPollEnd = [entity] { entity->mFlags &= ~0x2000U; };
+        scene->mPollGroups->mPollGroups.find(1)->second->SetCallbacks(onPollStart, onPollEnd);
+    }
+    PollGroup* const sceneGroup = scene->mPollGroups->mPollGroups.find(1)->second;
+    PollGroup* const drawerGroup = scene->mPollGroups->mPollGroups.find(0)->second;
+    sceneGroup->ClearJobs();
+    drawerGroup->ClearJobs();
+    pollMgr->Select(scene->mPollGroups);
+    TransEntityResource::_EnterImmediately(entity);
+    scene->mEntered = false;
+    PollMgr::Deselect();
+}
 
 // Reconstructed from eboot.elf at 0x4389E0.
 void RndSceneResource::_Init(ResourceMetaData& metaData) {
@@ -301,7 +337,7 @@ void RndSceneResource::_ExitEntity(Entity* entity, unsigned int flags) {
     TransEntityResource::_ExitEntity(entity, flags);
 }
 
-// Reconstructed from eboot.elf at 0x439950. The managers are looked up by
+// Reconstructed from eboot.elf at 0x439950. The groups are looked up by
 // key: 1 is the scene's, 0 the drawer's.
 void RndSceneResource::_OnEntityReady(Entity* root, Entity* entity) {
     static_cast<void>(entity);
@@ -311,15 +347,141 @@ void RndSceneResource::_OnEntityReady(Entity* root, Entity* entity) {
     }
     RndSceneCom::PollGroups* groups = scene->mPollGroups;
     if (groups != nullptr) {
-        groups->mPollMgrs.find(1)->second->ClearJobs();
-        groups->mPollMgrs.find(0)->second->ClearJobs();
+        groups->mPollGroups.find(1)->second->ClearJobs();
+        groups->mPollGroups.find(0)->second->ClearJobs();
         for (RndSceneCom::PollSplitJobEntry& entry : scene->mPollSplitJobs) {
-            entry.mPollMgr->ClearJobs();
+            entry.mPollGroup->ClearJobs();
             entry.mJob->ClearAllDeps();
         }
         scene->ClearPollSplitJobs();
     }
     scene->mEntered = true;
+}
+
+// Reconstructed from eboot.elf at 0x439AE0. The marked objects strictly
+// inside the poll order close a window at their index, which the next one
+// starts from; a last window runs to the end once one was closed. An
+// object missing from its layer is read through anyway, as in the binary.
+// The objects' components are given the job of the window their index
+// falls in, compared with the next job's window end.
+void RndSceneResource::_OnPolledImmediately(Entity* entity) {
+    ThreadPollContext& context = gEntityThreadState;
+    if (context.mPollMgr == nullptr || !context.mEnterImmediately) {
+        return;
+    }
+    RndSceneCom* const scene = entity->GetRoot()->GetCom<RndSceneCom>();
+    context.mPollGroups->mPollGroups.find(0)->second->AddJob(scene->mSceneDrawer);
+    if (scene->mPollGroups == nullptr) {
+        return;
+    }
+    PollGroup* const sceneGroup = scene->mPollGroups->mPollGroups.find(1)->second;
+    scene->ClearPollSplitJobs();
+    entity->_UpdatePollOrder();
+    const unsigned int count = entity->mPollOrder.mSize;
+    if (count == 0) {
+        return;
+    }
+    unsigned int weight = 0;
+    if (count > 2) {
+        unsigned int start = 0;
+        for (unsigned int i = 0; i != count - 2; ++i) {
+            GameObject* const object = entity->GetObject(entity->mPollOrder.data()[i + 1]);
+            const Component* const marker = object->FindCom(gScenePollSplitComId);
+            if (marker == nullptr) {
+                weight += object->mComs.mSize;
+                continue;
+            }
+            const char* const name =
+                (FormatString("SplitPoll %d") << scene->mPollSplitJobs.size()).Str();
+            scene->AddPollSplitJob(name, static_cast<int>(start), static_cast<int>(i), weight / 10);
+            weight = 0;
+            start = i;
+        }
+    }
+    if (!scene->mPollSplitJobs.empty()) {
+        const RndSceneCom::PollSplitJob* const last = scene->mPollSplitJobs.back().mJob;
+        const char* const name = (FormatString("SplitPoll %d") << scene->mPollSplitJobs.size()).Str();
+        scene->AddPollSplitJob(name, last->mPollWindowEnd, static_cast<int>(count), weight / 10);
+    }
+    if (scene->mPollSplitJobs.empty()) {
+        return;
+    }
+    sceneGroup->ClearJobs();
+    entity->ClearAllDeps();
+    unsigned int split = 0;
+    for (unsigned int i = 0; i < entity->mPollOrder.mSize; ++i) {
+        GameObject* const object = entity->GetObject(entity->mPollOrder.data()[i]);
+        if (object == nullptr) {
+            continue;
+        }
+        if (i == static_cast<unsigned int>(scene->mPollSplitJobs[split + 1].mJob->mPollWindowEnd)) {
+            split = split + 1;
+        }
+        RndSceneCom::PollSplitJob* job = scene->mPollSplitJobs[split].mJob;
+        if (i >= static_cast<unsigned int>(job->mPollWindowEnd)) {
+            job = scene->mPollSplitJobs[split + 1].mJob;
+        }
+        const int coms = static_cast<int>(object->mComs.mSize);
+        for (int c = 0; c < coms; ++c) {
+            object->mComs.data()[c].mCom->_PostLoadResources(job, false);
+        }
+    }
+    scene->LinkPollSplitJobs();
+    sceneGroup->AddPollGroup(scene->mPollSplitJobs.front().mPollGroup);
+}
+
+// Reconstructed from eboot.elf at 0x43A130. A thread that is polling runs
+// the game-mode poll through the base class only.
+void RndSceneResource::_PollEntity(Entity* entity) {
+    RndSceneCom* const scene = entity->GetRoot()->GetCom<RndSceneCom>();
+    const ThreadPollContext& context = gEntityThreadState;
+    const unsigned int mode = (entity->mFlags & 0x10) != 0 ? (entity->mFlags >> 1) & 3 : 0;
+    if (context.mPollMgr != nullptr) {
+        if (mode == 1) {
+            _SyncTimelines(scene);
+        }
+        TransEntityResource::_PollEntity(entity);
+        return;
+    }
+    if (mode == 2) {
+        scene->StepFrameInterval();
+        if (scene->mFrameInterval != 0) {
+            return;
+        }
+        scene->mIntervalStartFrame = static_cast<long>(TheRndDevice()->mFrameCount);
+        _SyncTimelines(scene);
+        RndSceneDrawer* const drawer = scene->mSceneDrawer;
+        drawer->_DoPoll();
+        TransEntityResource::_PollEntity(entity);
+        drawer->_DoPostPoll();
+        return;
+    }
+    if (mode != 1) {
+        return;
+    }
+    if (scene->mEntered) {
+        RndSceneResource::_EnterImmediately(entity);
+    }
+    PollMgr* const pollMgr = scene->mPollMgr;
+    RndSceneCom::PollGroups* const groups = scene->mPollGroups;
+    pollMgr->Select();
+    pollMgr->StartPollGroup(groups->mPollGroups.find(0)->second);
+    pollMgr->Sync(groups->mPollGroups.find(1)->second);
+    pollMgr->Sync(nullptr);
+    groups->mPollGroups.find(1)->second->_PostPoll();
+    groups->mPollGroups.find(0)->second->_PostPoll();
+    PollMgr::Deselect();
+}
+
+// Reconstructed from eboot.elf at 0x43A580.
+void RndSceneResource::_SyncTimelines(RndSceneCom* scene) {
+    TimelinesCom* const timelines = scene->mObject->GetBaseCom<TimelinesCom>();
+    if (timelines == nullptr) {
+        return;
+    }
+    timelines->mClockSynced = true;
+    timelines->_UpdateParentClock();
+    timelines->_SyncClock();
 }
 
 // Reconstructed from eboot.elf at 0x43A600. The map's
@@ -346,6 +508,37 @@ void RndSceneResource::DestroyDependentComponents(
         object->DestroyComponent(gInstancePoolComId, true);
     }
     RndDrawableEntityResource::DestroyDependentComponents(object, metaData);
+}
+
+// Reconstructed from eboot.elf at 0x43A6D0. A new instance's object must
+// hold a draw node.
+void RndSceneResource::_OnComponentCreated(Component* component) {
+    if (component->GetInterfaceId() != RndLightCom::sClassName &&
+        component->GetInterfaceId() != RndDrawNodeCom::sClassName &&
+        component->GetInterfaceId() != InstanceCom::sClassName) {
+        return;
+    }
+    RndSceneCom* const scene = component->mObject->mEntity->GetRoot()->GetCom<RndSceneCom>();
+    RndLightMgrCom* const lightMgr = scene->GetLightMgr();
+    RndLightEnvironCom* const environ = lightMgr != nullptr ? lightMgr->GetDefaultEnviron() : nullptr;
+    const Symbol id = component->GetInterfaceId();
+    if (id == RndLightCom::sClassName) {
+        if (environ != nullptr) {
+            component->mObject->GetBaseCom<RndLightCom>()->AddToEnviron(environ);
+        }
+    } else if (id == RndDrawNodeCom::sClassName) {
+        if (environ != nullptr) {
+            component->mObject->GetExistingCom<RndDrawNodeCom>()->mEnvironment = environ->mObject->mId;
+        }
+    } else if (id == InstanceCom::sClassName) {
+        component->mObject->CreateComponent(RndEntityInstanceCom::sClassName, false);
+        if (environ != nullptr) {
+            RndDrawNodeCom* const node = component->mObject->GetCom<RndDrawNodeCom>();
+            const GameObjectId environId = environ->mObject->mId;
+            node->mNestedLightEnvironments._Insert(node->mNestedLightEnvironments.mSize, &environId);
+            node->_SyncNestedLightEnvirons();
+        }
+    }
 }
 
 // Reconstructed from eboot.elf at 0x43A950.

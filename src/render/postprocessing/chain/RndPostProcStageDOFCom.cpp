@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <new>
 
+#include "entity/props/PropMetadata.h"
+#include "os/memory/MemMgr.h"
 #include "render/buffers/RndComputeBuffer.h"
 #include "render/context/RndCameraContext.h"
 #include "render/context/RndContext.h"
@@ -11,10 +13,20 @@
 #include "render/drawing/RndSceneDrawer.h"
 #include "render/lighting/RndLightMgrCom.h"
 #include "render/postprocessing/depth_of_field/RndCShaderDOFDiscBlur.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndDevice.h"
 #include "utl/containers/FixedVector.h"
+
+namespace {
+
+// The blur distances' change callbacks _Init installs (0x6330A0,
+// 0x6330C0). Names not in the reference map.
+void OnNearBlurDistanceChanged(const PropAccessorArgs& args);
+void OnFarBlurDistanceChanged(const PropAccessorArgs& args);
+
+}  // namespace
 
 namespace {
 
@@ -71,6 +83,100 @@ bool RndPostProcStageDOFCom::_OnResourcesLoaded() {
     desc.mFlags = 8;
     mRuntimeData.mSpriteDrawArgs = RndComputeBuffer::New(desc);
     return true;
+}
+
+// Reconstructed from eboot.elf at 0x6320F0. The blur distances keep the
+// near one at or below the far one; the falloff function's choices are
+// built in the temporary heap.
+void RndPostProcStageDOFCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    _InitAsSuperclass(registry, metadata);
+    RndPostProcStageDOFCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+    metadata.mDescription =
+        "Applies a depth of field effect to the scene. NOTE: this component is for next-gen platforms only!";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryPostProc;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mAliases.push_back(Symbol("PostProcStageDepthOfField"));
+
+    FloatMetadata& nearDistance = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "near_blur_distance", offsetof(RndPostProcStageDOFCom, mNearBlurDistance), kPropertyFloat, 4),
+        prototype.mNearBlurDistance);
+    nearDistance.mDefault = prototype.mNearBlurDistance;
+    static_cast<void>(Symbol("prop"));
+    nearDistance.mHelp = String("Distance at which objects begin to blur");
+    nearDistance.mMin = 0.1F;
+    nearDistance.mMax = 1000.0F;
+    nearDistance.mSlider = true;
+    nearDistance.mOnChanged = OnNearBlurDistanceChanged;
+
+    FloatMetadata& farDistance = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "far_blur_distance", offsetof(RndPostProcStageDOFCom, mFarBlurDistance), kPropertyFloat, 4),
+        prototype.mFarBlurDistance);
+    farDistance.mDefault = prototype.mFarBlurDistance;
+    static_cast<void>(Symbol("prop"));
+    farDistance.mHelp = String("Distance at which objects are at full blurriness");
+    farDistance.mMin = 0.1F;
+    farDistance.mMax = 1000.0F;
+    farDistance.mSlider = true;
+    farDistance.mOnChanged = OnFarBlurDistanceChanged;
+
+    PropInfo& falloffInfo = registry.RegisterProp(
+        "blur_falloff_function", offsetof(RndPostProcStageDOFCom, mBlurFalloffFunction), kPropertyInt, 4);
+    IntMetadata<int>& falloff = static_cast<IntMetadata<int>&>(*falloffInfo.mMetadata.Get());
+    falloff.mDefault = prototype.mBlurFalloffFunction;
+    static_cast<void>(Symbol("prop"));
+    falloff.mHelp = String("Controls how the blur increases between near and far blur distances");
+    {
+        eastl::vector<AllowedValue<int>> functions;
+        unsigned int savedTemp;
+        MemPushTemp(savedTemp, true, true);
+        for (int index = 0; index < kNumFalloffFunctions; ++index) {
+            const RndFalloffFunction function = static_cast<RndFalloffFunction>(index);
+            functions.push_back(
+                AllowedValue<int>{index, String(ToString(function)), String(ToDescription(function))});
+        }
+        MemPopTemp(savedTemp);
+        falloff.mAllowedValues = functions;
+    }
+
+    FloatMetadata& radius = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "blur_radius", offsetof(RndPostProcStageDOFCom, mBlurRadius), kPropertyFloat, 4),
+        prototype.mBlurRadius);
+    radius.mDefault = prototype.mBlurRadius;
+    static_cast<void>(Symbol("prop"));
+    radius.mHelp = String("Blur radius at full blurriness");
+    radius.mMin = 0.1F;
+    radius.mMax = 30.0F;
+    radius.mSlider = true;
+
+    FloatMetadata& bokehScale = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "bokeh_overbright_scale",
+            offsetof(RndPostProcStageDOFCom, mBokehOverbrightScale),
+            kPropertyFloat,
+            4),
+        prototype.mBokehOverbrightScale);
+    bokehScale.mDefault = prototype.mBokehOverbrightScale;
+    static_cast<void>(Symbol("prop"));
+    bokehScale.mHelp = String("Amount by which bokeh sprites are scaled by overbright amount");
+    bokehScale.mMin = 0.001F;
+    bokehScale.mMax = 10.0F;
+    bokehScale.mSlider = true;
+
+    ResourcePathMetadata& bokehTex = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "bokeh_tex", offsetof(RndPostProcStageDOFCom, mBokehTex), kPropertyResourcePath, 8),
+        prototype.mBokehTex);
+    bokehTex.mDefault = prototype.mBokehTex;
+    static_cast<void>(Symbol("prop"));
+    bokehTex.mHelp = String("Texture to apply for bokeh highlights");
+    bokehTex.mResourceId = RndTexture2DResource::Id();
 }
 
 // Reconstructed from eboot.elf at 0x632BB0. The blur distances are
@@ -193,3 +299,29 @@ ComMetaData& RndPostProcStageDOFCom::_GetMetaData() {
 Component* RndPostProcStageDOFCom::_Create() {
     return new RndPostProcStageDOFCom();
 }
+
+// Reconstructed from eboot.elf at 0x3F9AD0. The binary emits the registration
+// in render/RndInit.o.
+void RndPostProcStageDOFCom::Init() {
+    InitComponentClass<RndPostProcStageDOFCom>();
+}
+
+namespace {
+
+// Reconstructed from eboot.elf at 0x6330A0. Raises the far distance to the
+// near one.
+void OnNearBlurDistanceChanged(const PropAccessorArgs& args) {
+    RndPostProcStageDOFCom* const dof = static_cast<RndPostProcStageDOFCom*>(args.mComponent);
+    dof->mFarBlurDistance = dof->mNearBlurDistance > dof->mFarBlurDistance ? dof->mNearBlurDistance
+                                                                         : dof->mFarBlurDistance;
+}
+
+// Reconstructed from eboot.elf at 0x6330C0. Lowers the near distance to the
+// far one.
+void OnFarBlurDistanceChanged(const PropAccessorArgs& args) {
+    RndPostProcStageDOFCom* const dof = static_cast<RndPostProcStageDOFCom*>(args.mComponent);
+    dof->mNearBlurDistance = dof->mFarBlurDistance < dof->mNearBlurDistance ? dof->mFarBlurDistance
+                                                                          : dof->mNearBlurDistance;
+}
+
+}  // namespace

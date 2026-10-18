@@ -13,7 +13,9 @@
 #include "render/scene/RndSceneCom.h"
 #include "render/scene/RndSceneInstanceCom.h"
 #include "render/scene/RndSceneResource.h"
+#include "render/system/RndConfig.h"
 #include "render/system/RndDevice.h"
+#include "render/targets/RndBufferCollection.h"
 #include "stategraph/drivers/StateGraphDriverCom.h"
 #include "ui/input/UIInputCom.h"
 #include "ui/layout/UILayoutCom.h"
@@ -71,6 +73,40 @@ Entity* SceneEntityOf(const GameObject* object) {
 // not in the reference map.
 Entity* ShowingSceneEntity(const Entity* entity, GameObjectId id) {
     return entity->GetObject(id)->GetExistingCom<RndSceneInstanceCom>()->mRuntime.mEntity;
+}
+
+// Reconstructed from eboot.elf at 0x8AF870. Draws the masking scenes'
+// depth with the scene's parameters, each clearing only as the first; the
+// results are dropped. The binary leaves the unused layout argument unset.
+// Name not in the reference map.
+void DrawMaskingScenes(
+    const UILayoutResource* layout,
+    Entity* entity,
+    const RndSceneDrawParams& params,
+    ResourcePath scenePath,
+    const VectorAdapter<GameObjectId>& scenes) {
+    static_cast<void>(layout);
+    static_cast<void>(scenePath);
+    if (scenes.mSize == 0) {
+        return;
+    }
+    RndDevice* const device = gRndDevice;
+    if (device->mBeginFramePending) {
+        device->_FlushPendingBeginFrame();
+    }
+    RndSceneDrawParams maskParams(params);
+    maskParams.mDepthOnly = true;
+    const Vector2i size = maskParams.mBuffers[0]->mSize;
+    for (unsigned long i = 0; i < scenes.mSize; ++i) {
+        const RndSceneInstanceCom* const instance =
+            entity->GetObject(scenes.mData[i])->GetExistingCom<RndSceneInstanceCom>();
+        Entity* const scene = instance->mRuntime.mEntity;
+        RndDrawableEntityResource* const resource =
+            static_cast<RndDrawableEntityResource*>(scene->mResource);
+        maskParams.mProjectionRect = instance->CalcProjectionRect(size);
+        maskParams.mClear = i == 0;
+        resource->Draw(scene, maskParams);
+    }
 }
 
 }  // namespace
@@ -214,6 +250,40 @@ void UILayoutResource::_RemoveQueuedScenes() {
     }
 }
 
+// Reconstructed from eboot.elf at 0x8AB6E0. Without jobs in the scene
+// groups only the layout group's job count is read, and the range stays
+// linked. The layout component is read without a check.
+void UILayoutResource::_ClearThreadedPollRange(Entity* entity) {
+    UILayoutCom* const layout = entity->GetRoot()->GetCom<UILayoutCom>();
+    layout->mPollRangeReleased = true;
+    RndSceneCom::PollGroups* const groups = layout->mScenePollGroups;
+    bool idle = groups == nullptr;
+    if (!idle) {
+        PollGroup* const sceneGroup = groups->mPollGroups.find(1)->second;
+        PollGroup* const drawerGroup = groups->mPollGroups.find(0)->second;
+        idle = sceneGroup->GetNumJobs() == 0 && drawerGroup->GetNumJobs() == 0;
+    }
+    if (idle) {
+        if (layout->mPollGroup != nullptr) {
+            static_cast<void>(layout->mPollGroup->GetNumJobs());
+        }
+        return;
+    }
+    layout->mScenePollGroups->mPollGroups.find(1)->second->ClearJobs();
+    layout->mScenePollGroups->mPollGroups.find(0)->second->ClearJobs();
+    layout->mPollGroup->ClearJobs();
+    for (RndSceneInstanceCom* const scene : layout->mThreadedScenes) {
+        scene->GetScenePollGroup()->TryRemovePollAfter(layout->mPollGroup);
+    }
+    for (auto it = layout->mThreadedScenes.begin(); it != layout->mThreadedScenes.end(); ++it) {
+        PollGroup* const group = (*it)->GetScenePollGroup();
+        for (auto before = layout->mThreadedScenes.begin(); before != it; ++before) {
+            group->TryRemovePollAfter((*before)->GetScenePollGroup());
+        }
+    }
+    layout->mThreadedScenes.clear();
+}
+
 // Reconstructed from eboot.elf at 0x8ABA50.
 void UILayoutResource::_Init(ResourceMetaData& metaData) {
     metaData.mExtensions.push_back(Symbol("layout"));
@@ -329,6 +399,59 @@ Entity* UILayoutResource::CreateEntity() {
     return entity;
 }
 
+// Reconstructed from eboot.elf at 0x8AC1E0. A run of threaded scenes
+// polls after the groups the last serial scene left; the serial scene that
+// ends the run polls after the whole run. An object without a scene
+// instance has its InstanceCom looked up, a check that is compiled out.
+// The layout component is read without a check.
+void UILayoutResource::_SyncThreadedPollRange(Entity* entity) {
+    UILayoutCom* const layout = entity->GetRoot()->GetCom<UILayoutCom>();
+    _ClearThreadedPollRange(entity);
+    eastl::list<PollGroup*> after;
+    eastl::list<PollGroup*> threadedRun;
+    for (unsigned long i = 0; i < entity->mPollOrder.mSize; ++i) {
+        const GameObject* const object = entity->GetObject(entity->mPollOrder.data()[i]);
+        RndSceneInstanceCom* const instance = object->GetCom<RndSceneInstanceCom>();
+        if (instance == nullptr) {
+            static_cast<void>(object->GetBaseCom<InstanceCom>());
+        } else if (instance->mRuntime.mEntity != nullptr) {
+            layout->mThreadedScenes.push_back(instance);
+        }
+    }
+    // -1 before the first scene, then whether the last scene was threaded.
+    int lastThreaded = -1;
+    for (RndSceneInstanceCom* const instance : layout->mThreadedScenes) {
+        PollGroup* const group = instance->GetScenePollGroup();
+        if (instance->CanUseThreadedPoll()) {
+            for (PollGroup* const before : after) {
+                group->PollAfter(before);
+            }
+            threadedRun.push_back(instance->GetScenePollGroup());
+            lastThreaded = 1;
+        } else {
+            if (lastThreaded != 0) {
+                after.clear();
+                after.swap(threadedRun);
+            }
+            lastThreaded = 0;
+            for (PollGroup* const before : after) {
+                group->PollAfter(before);
+            }
+            after.clear();
+            after.push_back(group);
+        }
+    }
+    layout->mPollGroup->AddJob(entity);
+    for (RndSceneInstanceCom* const instance : layout->mThreadedScenes) {
+        instance->GetScenePollGroup()->PollAfter(layout->mPollGroup);
+    }
+    layout->mScenePollGroups->mPollGroups.find(1)->second->AddPollGroup(layout->mPollGroup);
+    for (RndSceneInstanceCom* const instance : layout->mThreadedScenes) {
+        layout->mScenePollGroups->mPollGroups.find(0)->second->AddPollGroup(
+            instance->GetSceneDrawerPollGroup());
+    }
+}
+
 // Reconstructed from eboot.elf at 0x8AC810. An enter with bit 0 of the
 // flags goes to the base class. Otherwise the layout enters its objects in
 // the game mode itself, with the entity as the default entity: it creates
@@ -345,8 +468,8 @@ void UILayoutResource::_EnterEntity(Entity* entity, unsigned int flags) {
     entity->_UpdatePollOrder();
     Entity* const defaultEntity = gDataThread.mDefaultEntity;
     DataSetDefaultEntity(entity);
-    layout->_ObtainPollGroup();
-    layout->_CreatePollMgrs();
+    layout->_ObtainPollMgr();
+    layout->_CreatePollGroups();
     layout->mReadyScenes.clear();
     for (unsigned long index = 0; index < entity->mPollOrder.mSize; ++index) {
         GameObject* const object = entity->GetObject(entity->mPollOrder[index]);
@@ -371,8 +494,77 @@ void UILayoutResource::_EnterEntity(Entity* entity, unsigned int flags) {
 void UILayoutResource::_ExitEntity(Entity* entity, unsigned int flags) {
     UILayoutCom* const layout = entity->GetRoot()->GetCom<UILayoutCom>();
     _ClearThreadedPollRange(entity);
-    layout->_DestroyPollMgrs();
+    layout->_DestroyPollGroups();
     RndDrawableEntityResource::_ExitEntity(entity, flags);
+}
+
+// Reconstructed from eboot.elf at 0x8ACC60. A thread that is polling
+// polls the entity through the base class only. While mSerialPollFrames
+// counts down, the audio lock is left as it is. The layout component is
+// read without a check.
+void UILayoutResource::_PollEntity(Entity* entity) {
+    if (gEntityThreadState.mPollMgr != nullptr) {
+        TransEntityResource::_PollEntity(entity);
+        return;
+    }
+    _AddQueuedScenes();
+    _RemoveQueuedScenes();
+    if ((entity->mFlags & 0x16) == 0x14) {
+        TransEntityResource::_PollEntity(entity);
+    } else if ((entity->mFlags & 0x100) != 0) {
+        Entity* const defaultEntity = gDataThread.mDefaultEntity;
+        DataSetDefaultEntity(entity);
+        UILayoutCom* const layout = entity->GetRoot()->GetCom<UILayoutCom>();
+        if ((entity->mFlags & 0x400) != 0) {
+            entity->_UpdatePollOrder();
+            layout->mPollRangeReleased = true;
+            UILayoutResource::_EnterImmediately(entity);
+        } else if (layout->mPollRangeReleased) {
+            UILayoutResource::_EnterImmediately(entity);
+        }
+        PollMgr* const pollMgr = layout->mPollMgr;
+        pollMgr->Select();
+        static const unsigned long sAudioLock =
+            DataVarIndex(Symbol("use_pollmgr_audio_lock"), DataNode(1));
+        const DataNode& audioLock = DataVariable(sAudioLock);
+        if (mSerialPollFrames == 0) {
+            PollMgr::BlockAudioThread(audioLock.mValue.integer != 0);
+        }
+        for (PollGroup* const group : layout->mStartPollGroups) {
+            layout->mPollMgr->StartPollGroup(group);
+        }
+        layout->mPollMgr->StartPollGroup(layout->mScenePollGroups->mPollGroups.find(0)->second);
+        layout->mPollMgr->Sync(layout->mScenePollGroups->mPollGroups.find(1)->second);
+        if (mSerialPollFrames != 0) {
+            const int frames = mSerialPollFrames - 1;
+            mSerialPollFrames = frames < 0 ? 0 : frames;
+        } else {
+            PollMgr::BlockAudioThread(false);
+        }
+        layout->mPollMgr->Sync(nullptr);
+        PollMgr::Deselect();
+        {
+            eastl::list<RndSceneInstanceCom*> scenes(layout->mThreadedScenes);
+            layout->mScenePollGroups->mPollGroups.find(1)->second->_PostPoll();
+            for (RndSceneInstanceCom* const scene : scenes) {
+                PollMgr* const scenePollMgr = scene->GetScenePollMgr();
+                scenePollMgr->Select(nullptr);
+                scene->GetScenePollGroup()->_PostPoll();
+                PollMgr::Deselect();
+            }
+            for (RndSceneInstanceCom* const scene : scenes) {
+                PollMgr* const scenePollMgr = scene->GetScenePollMgr();
+                scenePollMgr->Select(nullptr);
+                scene->GetSceneDrawerPollGroup()->_PostPoll();
+                PollMgr::Deselect();
+            }
+            layout->mScenePollGroups->mPollGroups.find(0)->second->_PostPoll();
+        }
+        gDataThread.mThisObject = nullptr;
+        DataSetDefaultEntity(defaultEntity);
+    }
+    _AssignPartialFramerateScenes(entity);
+    entity->GetRoot()->GetCom<UILayoutCom>()->mStartPollGroups.clear();
 }
 
 // Reconstructed from eboot.elf at 0x8AD8F0. The layout component is read
@@ -675,6 +867,82 @@ void UILayoutResource::_GetShowingScenes(
     }
 }
 
+// Reconstructed from eboot.elf at 0x8AF240. Each overlay draws over the
+// last, without clearing; the results are dropped.
+void UILayoutResource::DrawHmdMirrorOverlays(RndBufferCollection* buffers) {
+    RndSceneDrawParams params;
+    params.mBuffers.push_back(buffers);
+    RndDevice* const device = gRndDevice;
+    if (device->mBeginFramePending) {
+        device->_FlushPendingBeginFrame();
+    }
+    Entity* const entity = mEntity;
+    const UILayoutCom* const layout = entity->GetRoot()->GetExistingCom<UILayoutCom>();
+    SceneIdList scenes;
+    scenes.mCapacity = layout->mHmdMirrorOverlays.mSize;
+    scenes.mData = scenes.mCapacity != 0
+        ? static_cast<GameObjectId*>(__builtin_alloca(scenes.mCapacity * sizeof(GameObjectId)))
+        : nullptr;
+    scenes.mSize = 0;
+    _GetShowingScenes(entity, scenes, true);
+    FixedVector<RndSceneDrawTarget, 2> targets;
+    targets.resize(params.mBuffers.size());
+    for (unsigned long i = 0; i < targets.size(); ++i) {
+        targets[i].mBuffersIndex = i;
+    }
+    for (unsigned long i = 0; i < scenes.mSize; ++i) {
+        const RndSceneInstanceCom* const instance =
+            entity->GetObject(scenes.mData[i])->GetCom<RndSceneInstanceCom>();
+        Entity* const scene = instance->mRuntime.mEntity;
+        RndDrawableEntityResource* const resource =
+            static_cast<RndDrawableEntityResource*>(scene->mResource);
+        SceneIdList masks;
+        masks.mCapacity = instance->mRuntimeData.mMaskingScenes.mSize;
+        masks.mData = masks.mCapacity != 0
+            ? static_cast<GameObjectId*>(__builtin_alloca(masks.mCapacity * sizeof(GameObjectId)))
+            : nullptr;
+        masks.mSize = 0;
+        _GetMaskingScenes(entity, instance, masks);
+        DrawMaskingScenes(this, entity, params, resource->mPath, {masks.mData, masks.mSize});
+        params.mProjectionRect = instance->CalcProjectionRect(params.mBuffers[0]->mSize);
+        params.mOutputToBackBuffer = i == scenes.mSize - 1;
+        params.mDrawSceneMask = masks.mSize != 0;
+        params.mClear = false;
+        targets = resource->DrawImmediate(scene, params, &targets);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8AF6D0.
+void UILayoutResource::_GetMaskingScenes(
+    Entity* entity,
+    const RndSceneInstanceCom* instance,
+    SceneIdList& scenes) const {
+    scenes.mSize = 0;
+    if (!gRndDevice->mSettings->mSceneMaskEnabled) {
+        return;
+    }
+    const PropArray<GameObjectId>& masking = instance->mRuntimeData.mMaskingScenes;
+    for (unsigned long i = 0; i < masking.mSize; ++i) {
+        const GameObjectId id = masking.data()[i];
+        if (_IsSceneInstanceShowing(entity, id)) {
+            scenes.mData[scenes.mSize++] = id;
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8AFB90.
+void UILayoutResource::_SetSceneDrawParams(
+    RndSceneDrawParams& params,
+    const RndSceneInstanceCom* instance,
+    unsigned long index,
+    unsigned long count,
+    unsigned long numMaskingScenes) const {
+    params.mProjectionRect = instance->CalcProjectionRect(params.mBuffers[0]->mSize);
+    params.mClear = index == 0;
+    params.mOutputToBackBuffer = count - 1 == index;
+    params.mDrawSceneMask = numMaskingScenes != 0;
+}
+
 // Reconstructed from eboot.elf at 0x8AFC20.
 bool UILayoutResource::CreateRequiredComponents(GameObject* object, const ComMetaData& metaData) {
     if (!RndDrawableEntityResource::CreateRequiredComponents(object, metaData)) {
@@ -705,6 +973,166 @@ void UILayoutResource::_OnComponentCreated(Component* component) {
     layout->mPollOrder._Insert(layout->mPollOrder.mSize, &id);
     id = object->mId;
     layout->mDrawOrder._Insert(layout->mDrawOrder.mSize, &id);
+}
+
+// Reconstructed from eboot.elf at 0x8AFDC0. The scenes before
+// RndConfig::mFirstDrawnScene and from mLastDrawnScene on are left out;
+// without scenes the buffers are cleared.
+FixedVector<RndSceneDrawTarget, 2> UILayoutResource::_Draw(
+    Entity* entity,
+    RndSceneDrawParams& params,
+    const FixedVector<RndSceneDrawTarget, 2>* previous) {
+    static_cast<void>(previous);
+    RndSceneDrawParams drawParams(params);
+    RndDevice* const device = gRndDevice;
+    if (device->mBeginFramePending) {
+        device->_FlushPendingBeginFrame();
+    }
+    RndContext* const context = device->mImmediateContext;
+    const RndConfig* const settings = gRndDevice->mSettings;
+    const UILayoutCom* const layout = entity->GetRoot()->GetExistingCom<UILayoutCom>();
+    SceneIdList scenes;
+    scenes.mCapacity = layout->mDrawOrder.mSize;
+    scenes.mData = scenes.mCapacity != 0
+        ? static_cast<GameObjectId*>(__builtin_alloca(scenes.mCapacity * sizeof(GameObjectId)))
+        : nullptr;
+    scenes.mSize = 0;
+    _GetShowingScenes(entity, scenes, false);
+    const unsigned long last = static_cast<unsigned long>(settings->mLastDrawnScene);
+    if (last < scenes.mSize) {
+        scenes.mSize = last;
+    }
+    const unsigned long first = static_cast<unsigned long>(settings->mFirstDrawnScene);
+    if (first != 0) {
+        const unsigned long skip = first < scenes.mSize ? first : scenes.mSize;
+        for (unsigned long i = skip; i < scenes.mSize; ++i) {
+            scenes.mData[i - skip] = scenes.mData[i];
+        }
+        scenes.mSize -= skip;
+    }
+    FixedVector<RndSceneDrawTarget, 2> targets;
+    targets.resize(drawParams.mBuffers.size());
+    for (unsigned long i = 0; i < targets.size(); ++i) {
+        targets[i].mBuffersIndex = i;
+    }
+    if (scenes.mSize == 0) {
+        const VectorAdapter<RndBufferCollection*> buffers = {
+            drawParams.mBuffers.mData, drawParams.mBuffers.mSize};
+        RndDrawUtl::ClearBuffers(*context, buffers, drawParams.mClearColor);
+        return targets;
+    }
+    for (unsigned long i = 0; i < scenes.mSize; ++i) {
+        const RndSceneInstanceCom* const instance =
+            entity->GetObject(scenes.mData[i])->GetCom<RndSceneInstanceCom>();
+        Entity* const scene = instance->mRuntime.mEntity;
+        RndDrawableEntityResource* const resource =
+            static_cast<RndDrawableEntityResource*>(scene->mResource);
+        SceneIdList masks;
+        masks.mCapacity = instance->mRuntimeData.mMaskingScenes.mSize;
+        masks.mData = masks.mCapacity != 0
+            ? static_cast<GameObjectId*>(__builtin_alloca(masks.mCapacity * sizeof(GameObjectId)))
+            : nullptr;
+        masks.mSize = 0;
+        _GetMaskingScenes(entity, instance, masks);
+        DrawMaskingScenes(this, entity, drawParams, resource->mPath, {masks.mData, masks.mSize});
+        _SetSceneDrawParams(drawParams, instance, i, scenes.mSize, masks.mSize);
+        targets = resource->DrawImmediate(scene, drawParams, &targets);
+    }
+    return targets;
+}
+
+// Reconstructed from eboot.elf at 0x8B05E0. Each scene's draw jobs run
+// after its job, which waits for the previous scene's draw, and before the
+// next scene's job; without scenes the clear job runs between the context
+// job and the end. The scene jobs are created as needed and kept.
+void UILayoutResource::_StartDrawJobs(
+    Entity* entity,
+    const RndSceneDrawParams& params,
+    Entity* after,
+    PollDepBase* startDep,
+    PollDepBase* contextDep,
+    PollDepBase* endAfter,
+    eastl::vector<PollDepBase*>& jobs) {
+    static_cast<void>(after);
+    RndSceneDrawParams drawParams(params);
+    const UILayoutCom* const layout = entity->GetRoot()->GetExistingCom<UILayoutCom>();
+    SceneIdList scenes;
+    scenes.mCapacity = layout->mDrawOrder.mSize;
+    scenes.mData = scenes.mCapacity != 0
+        ? static_cast<GameObjectId*>(__builtin_alloca(scenes.mCapacity * sizeof(GameObjectId)))
+        : nullptr;
+    scenes.mSize = 0;
+    _GetShowingScenes(entity, scenes, false);
+    const unsigned long count = scenes.mSize;
+    if (count == 0) {
+        mClearJob.mParams = drawParams;
+        mClearJob.AddPollDep(contextDep);
+        endAfter->AddPollDep(&mClearJob);
+        return;
+    }
+    while (mSceneDrawJobs.size() < count) {
+        mSceneDrawJobs.push_back(new SceneDrawJob(this));
+    }
+    mSceneDrawJobs[0]->AddPollDep(contextDep);
+    Entity* previous = nullptr;
+    for (unsigned long i = 0; i < count; ++i) {
+        const RndSceneInstanceCom* const instance =
+            entity->GetObject(scenes.mData[i])->GetExistingCom<RndSceneInstanceCom>();
+        Entity* const scene = instance->mRuntime.mEntity;
+        RndDrawableEntityResource* const resource =
+            static_cast<RndDrawableEntityResource*>(scene->mResource);
+        SceneDrawJob* const job = static_cast<SceneDrawJob*>(mSceneDrawJobs[i]);
+        job->mEntity = entity;
+        job->mParams = drawParams;
+        job->mScenePath = resource->mPath;
+        _GetMaskingScenes(entity, instance, job->mMaskingScenes);
+        _SetSceneDrawParams(drawParams, instance, i, count, job->mMaskingScenes.size());
+        PollDepBase* const next = i + 1 < count ? mSceneDrawJobs[i + 1] : endAfter;
+        resource->StartDrawJobs(scene, drawParams, previous, startDep, job, next, jobs);
+        previous = scene;
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8B0E90.
+void UILayoutResource::_GetMaskingScenes(
+    Entity* entity,
+    const RndSceneInstanceCom* instance,
+    eastl::vector<GameObjectId>& scenes) const {
+    scenes.clear();
+    if (!gRndDevice->mSettings->mSceneMaskEnabled) {
+        return;
+    }
+    const PropArray<GameObjectId>& masking = instance->mRuntimeData.mMaskingScenes;
+    for (unsigned long i = 0; i < masking.mSize; ++i) {
+        const GameObjectId id = masking.data()[i];
+        if (_IsSceneInstanceShowing(entity, id)) {
+            scenes.push_back(id);
+        }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x8B1100. Each scene's jobs are
+// unhooked; the last scene's result is returned.
+FixedVector<RndSceneDrawTarget, 2> UILayoutResource::_FinishDrawJobs(Entity* entity) {
+    const UILayoutCom* const layout = entity->GetRoot()->GetExistingCom<UILayoutCom>();
+    SceneIdList scenes;
+    scenes.mCapacity = layout->mDrawOrder.mSize;
+    scenes.mData = scenes.mCapacity != 0
+        ? static_cast<GameObjectId*>(__builtin_alloca(scenes.mCapacity * sizeof(GameObjectId)))
+        : nullptr;
+    scenes.mSize = 0;
+    _GetShowingScenes(entity, scenes, false);
+    FixedVector<RndSceneDrawTarget, 2> targets;
+    if (scenes.mSize == 0) {
+        mClearJob.ClearAllDeps();
+        return targets;
+    }
+    for (unsigned long i = 0; i < scenes.mSize; ++i) {
+        mSceneDrawJobs[i]->ClearAllDeps();
+        Entity* const scene = ShowingSceneEntity(entity, scenes.mData[i]);
+        targets = static_cast<RndDrawableEntityResource*>(scene->mResource)->FinishDrawJobs(scene);
+    }
+    return targets;
 }
 
 // Reconstructed from eboot.elf at 0x8B1350. The layout component is
@@ -802,6 +1230,13 @@ void UILayoutResource::ClearJob::ThreadPoll(const int& thread) {
     const VectorAdapter<RndBufferCollection*> buffers = {
         mParams.mBuffers.mData, mParams.mBuffers.mSize};
     RndDrawUtl::ClearBuffers(*device->mImmediateContext, buffers, mParams.mClearColor);
+}
+
+// Reconstructed from eboot.elf at 0x8B1980.
+void UILayoutResource::SceneDrawJob::ThreadPoll(const int& thread) {
+    static_cast<void>(thread);
+    const VectorAdapter<GameObjectId> scenes = {mMaskingScenes.begin(), mMaskingScenes.size()};
+    DrawMaskingScenes(mLayout, mEntity, mParams, mScenePath, scenes);
 }
 
 // Reconstructed from eboot.elf at 0x8B1A20.

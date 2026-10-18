@@ -245,9 +245,8 @@ public:
         Transform& xfm,
         Vector3& position) const;  // 0x4A6A10
 
-    // Registers the class (0x3F08C0). Not reconstructed: the registration
-    // helpers it inlines are not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F08C0
     // The class factory.
     static Component* _Create();
     // Not reconstructed: the property metadata and the std::function

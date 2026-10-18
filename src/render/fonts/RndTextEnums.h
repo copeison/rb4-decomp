@@ -42,6 +42,9 @@ enum RndFontStyleSize : int {
     kFontStyleSizeMiniscule = 4,
 };
 
+// Name not in the reference map.
+constexpr int kNumFontStyleSizes = 5;
+
 // The "capitalization_mode" text option. Name not in the reference map.
 enum RndTextCapitalization : int {
     kTextCapitalizationMixed = 0,

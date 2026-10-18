@@ -9,6 +9,7 @@
 #include "render/drawing/RndSceneDrawer.h"
 #include "render/materials/RndMaterialCom.h"
 #include "render/materials/RndMaterialRuntimeData.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "utl/containers/FixedVector.h"
 
@@ -33,6 +34,18 @@ RndPostProcStageShaderGraphCom::RndPostProcStageShaderGraphCom() {}
 // Reconstructed from eboot.elf at 0x633B70. The deleting destructor is at
 // 0x633B80.
 RndPostProcStageShaderGraphCom::~RndPostProcStageShaderGraphCom() {}
+
+// Reconstructed from eboot.elf at 0x633BA0. The effect comes from the
+// object's RndMaterialCom; the class has no properties of its own.
+void RndPostProcStageShaderGraphCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    _InitAsSuperclass(registry, metadata);
+    metadata.mDescription = "Post proc stage which applies the post proc effect specified in a shadergraph.";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryPostProc;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mRequiredComponents.push_back(RndMaterialCom::sClassName);
+    metadata.mAliases.push_back(Symbol("PostProcStageShaderGraph"));
+}
 
 // Reconstructed from eboot.elf at 0x633E80. The object must hold a
 // material component: the lookup's result is used unchecked.
@@ -155,4 +168,10 @@ ComMetaData& RndPostProcStageShaderGraphCom::_GetMetaData() {
 // constructs in given storage.
 Component* RndPostProcStageShaderGraphCom::_Create() {
     return new RndPostProcStageShaderGraphCom();
+}
+
+// Reconstructed from eboot.elf at 0x3FA240. The binary emits the registration
+// in render/RndInit.o.
+void RndPostProcStageShaderGraphCom::Init() {
+    InitComponentClass<RndPostProcStageShaderGraphCom>();
 }

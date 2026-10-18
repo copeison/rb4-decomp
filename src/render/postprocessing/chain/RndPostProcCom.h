@@ -69,16 +69,12 @@ public:
     // the reference map.
     bool HasBloomStage() const;  // 0x62F660
 
-    // Registers the class. Emitted with the renderer's components at
-    // 0x3F17F0. Not reconstructed: the registration helpers it inlines are
-    // not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F17F0
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x404840
     // Registers the class description and "stages", an array of object
-    // references to RndPostProcStageCom objects. Not reconstructed:
-    // ComMetaData's string and list members and the array item's metadata
-    // are written inline through helpers that are not modelled.
+    // references to RndPostProcStageCom objects.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x62F260
 
     // The object's statics, in the order of its static initializer

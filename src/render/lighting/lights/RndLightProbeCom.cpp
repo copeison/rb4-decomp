@@ -356,3 +356,9 @@ ComMetaData& RndLightProbeCom::_GetMetaData() {
 Component* RndLightProbeCom::_Create() {
     return new RndLightProbeCom();
 }
+
+// Reconstructed from eboot.elf at 0x3F04E0. The binary emits the registration
+// in render/RndInit.o.
+void RndLightProbeCom::Init() {
+    InitComponentClass<RndLightProbeCom>();
+}

@@ -40,6 +40,21 @@ const char* const kUserShadingModeNames[kNumUserShadingModes] = {
     "Material Emissive",
 };
 
+// Names and descriptions of the falloff functions (0x192F9C0, 0x192F9E0).
+// Names not in the reference map.
+const char* const kFalloffFunctionNames[kNumFalloffFunctions] = {
+    "Linear Falloff",
+    "Inverse-Square Falloff",
+    "Exponential Falloff",
+    "Sigmoid Falloff",
+};
+const char* const kFalloffFunctionDescriptions[kNumFalloffFunctions] = {
+    "Linear falloff function",
+    "Inverse-square falloff approximation which goes to zero",
+    "Inverse-exponential falloff approximation which goes to zero",
+    "Sigmoid falloff function",
+};
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x645E40.
@@ -60,4 +75,18 @@ RndUserShadingMode UserShadingModeFromString(const char* name) {
         }
     }
     return static_cast<RndUserShadingMode>(-1);
+}
+
+// Reconstructed from eboot.elf at 0x645EE0.
+const char* ToString(RndFalloffFunction function) {
+    return static_cast<unsigned int>(function) < static_cast<unsigned int>(kNumFalloffFunctions)
+        ? kFalloffFunctionNames[function]
+        : "";
+}
+
+// Reconstructed from eboot.elf at 0x645F00.
+const char* ToDescription(RndFalloffFunction function) {
+    return static_cast<unsigned int>(function) < static_cast<unsigned int>(kNumFalloffFunctions)
+        ? kFalloffFunctionDescriptions[function]
+        : "";
 }

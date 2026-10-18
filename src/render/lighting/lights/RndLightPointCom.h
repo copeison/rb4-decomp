@@ -189,9 +189,8 @@ public:
     // reconstructed.
     void _SyncShadowGenConstants(RndContext& ctx);  // 0x495100
 
-    // Registers the class (0x3F0120). Not reconstructed: the registration
-    // helpers it inlines are not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F0120
     // The class factory.
     static Component* _Create();
     // Not reconstructed: the property metadata and the std::function

@@ -4,12 +4,12 @@
 #include <functional>
 
 #include "entity/props/PropInfo.h"
+#include "entity/props/PropPath.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
 
 class BinStream;
 class Component;
-class PropPath;
 
 // The properties of a component type (entity/PropRegistry.o): each property's
 // name and PropInfo, the registries it inherits, and the layout of its
@@ -33,8 +33,17 @@ public:
         const PropRegistry* mRegistry;
     };
 
-    // What the revision callback receives; not modelled.
-    struct RevisionArgs;
+    // What the revision callback receives when a component loads
+    // properties saved under an older revision of its class (0x1822A0).
+    // Name and field names not in the reference map.
+    struct RevisionArgs {
+        // The component being loaded.
+        Component* mComponent;
+        // Passed through from the load; not identified.
+        const void* mContext[3];
+        // The revision the properties were saved under.
+        int mSavedRev;
+    };
 
     PropRegistry();   // 0x1804C0
     // The copy constructor is the implicit one; the binary emits it with
@@ -94,6 +103,55 @@ public:
     // Removes the property. Name not in the reference map.
     void RemoveProp(Symbol name);  // 0x1810C0
     void AddInheritedRegistry(Symbol name, const PropRegistry& registry);  // 0x181180
+    // Hashes the saved properties' layout into the class CRC: the
+    // registry's revision, then each saved property's offsets, type and
+    // count and its struct's revision, visited through VisitPropInfo. Not
+    // reconstructed; the flag's meaning is not identified.
+    void UpdateCRC(unsigned int& crc, bool flag) const;  // 0x180D20
+
+    // Visits every property depth first with the path to it: the visitor
+    // sees a property and, when it returns true, the element of an array
+    // (under index 0) or the members of a struct. `depth` points at the
+    // visitor's count of the nested properties it marks, which every visit
+    // leaves one lower. The map's VisitPropInfo; its users inline it, and
+    // the binary emits _VisitPropInfo for each visitor (0xE69F0 for
+    // ComMetaData::Init, 0x184550 for UpdateCRC).
+    template <class Visitor>
+    void VisitPropInfo(Visitor& visitor, unsigned long* const& depth) const {
+        PropPath path;
+        for (const PropEntry* entry = mProps.begin(); entry != mProps.end(); ++entry) {
+            PropPath::Node node;
+            path.PushNode(node = entry->mName);
+            _VisitPropInfo(entry->mInfo, path, visitor, depth);
+            path.PopNode();
+        }
+    }
+    template <class Visitor>
+    static void _VisitPropInfo(
+        const PropInfo& info,
+        PropPath& path,
+        Visitor& visitor,
+        unsigned long* const& depth) {
+        if (visitor(info, static_cast<const PropPath&>(path))) {
+            if ((info.mType & kPropertyArray) != 0) {
+                PropPath::Node node;
+                path.PushNode(node = 0UL);
+                _VisitPropInfo(info.PropArrayItemInfo(), path, visitor, depth);
+                path.PopNode();
+            } else if (const PropRegistry* const registry = info.GetStructRegistry()) {
+                const PropEntry* const end = registry->mProps.end();
+                for (const PropEntry* entry = registry->mProps.begin(); entry != end; ++entry) {
+                    PropPath::Node node;
+                    path.PushNode(node = entry->mName);
+                    _VisitPropInfo(entry->mInfo, path, visitor, depth);
+                    path.PopNode();
+                }
+            }
+        }
+        if (*depth != 0) {
+            --*depth;
+        }
+    }
     // Writes the property infos, then the component's values.
     void Save(const Component& component, BinStream& stream);  // 0x1813D0
     // Not reconstructed.
@@ -118,6 +176,7 @@ public:
 
 static_assert(sizeof(PropRegistry::PropEntry) == 40);
 static_assert(sizeof(PropRegistry::InheritedRegistry) == 24);
+static_assert(offsetof(PropRegistry::RevisionArgs, mSavedRev) == 32);
 static_assert(offsetof(PropRegistry, mDynamic) == 32);
 static_assert(offsetof(PropRegistry, mDynamicStructSize) == 40);
 static_assert(offsetof(PropRegistry, mDynamicStructAlign) == 48);

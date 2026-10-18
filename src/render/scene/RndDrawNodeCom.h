@@ -231,12 +231,10 @@ public:
     // the copy has no caller. Name not in the reference map.
     RndDrawNodeCom* _FindInstancedRoot() const;  // 0x6C6A50
 
-    // Registers the class. Emitted in render/RndInit.o at 0x3EE650. Not
-    // reconstructed: the registration helpers it inlines are not
-    // modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3EE650
     // The class factory, emitted with the other render factories. The
-    // placement factory beside it (0x404460) is not modelled.
+    // placement factory beside it (0x404460) is InitComponentClass's.
     static Component* _Create();  // 0x404430
     // Registers the class description and the properties, with the
     // callbacks of "showing", "environment" and

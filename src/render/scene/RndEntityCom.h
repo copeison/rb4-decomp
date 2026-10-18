@@ -9,13 +9,13 @@
 #include "render/scene/RndSceneCom.h"
 #include "utl/text/Symbol.h"
 
-class PollGroup;
+class PollMgr;
 class RndSceneDrawer;
 
 // The entity-wide rendering settings on the root object of an entity that
 // RndEntityInstanceCom instances (render/RndEntityCom.o, 0x6CA2D0-0x6CAE7B).
 // Its class id is "RndEntity". It holds the entity's preview LOD and, at run
-// time, the entity's poll groups and scene drawer, which the instance
+// time, the entity's poll manager, poll groups and scene drawer, which the instance
 // component selects and draws through. The vtable at 0x1938278 has 41
 // slots. The object is 72 bytes.
 class RndEntityCom : public RndDrawableEntityCom {
@@ -26,7 +26,7 @@ public:
         RuntimeData();  // 0x6CA310
 
         // Created on demand by ObtainPollMgr and owned.
-        PollGroup* mPollGroup;
+        PollMgr* mPollMgr;
         // Created on demand by ObtainPollGroups and owned.
         RndSceneCom::PollGroups* mPollGroups;
         // The drawer the entity draws through: an ancestor's, or one the
@@ -60,11 +60,10 @@ public:
     void _Exit(DestroyType type) override;      // 0x6CAB20
     void _EditExit(DestroyType type) override;  // 0x6CAB70
 
-    // The entity's poll group ("<file>"), created on first use. The map's
-    // ObtainPollMgr() returns a PollMgr; this build's returns the group.
-    PollGroup* ObtainPollMgr();  // 0x6CA430
-    // The entity's two nested poll managers, created on first use. Name
-    // not in the reference map.
+    // The entity's poll manager ("<file>"), created on first use.
+    PollMgr* ObtainPollMgr();  // 0x6CA430
+    // The entity's two poll groups, created on first use. Name not in the
+    // reference map.
     RndSceneCom::PollGroups* ObtainPollGroups();  // 0x6CA480
     // Uses the scene drawer of the nearest entity up the tree, without
     // owning it. The map's signature is FindAncestorSceneDrawer(ObjPtr
@@ -77,10 +76,8 @@ public:
     // The scene drawer, creating an owned one when there is none.
     RndSceneDrawer* ObtainOwnedSceneDrawer();  // 0x6CA560
 
-    // Registers the class. Inline in the map (render/RndInit.o's
-    // RndEntityCom::Init); this build emits it at 0x3ED3A0. Not
-    // reconstructed.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3ED3A0
     // The class factory. Emitted in render/RndInit.o at 0x4042A0; the
     // in-place construction beside it (0x4042D0) is not modelled.
     static Component* _Create();
@@ -89,8 +86,7 @@ public:
     // mLightweight and allowed in RndEntityResources, under
     // RndDrawableEntityCom (_InitAsSuperclass). Registers "preview_lod" at
     // +0x20 with its help text and the three LOD names (0x4423A0) as its
-    // values. Not reconstructed: the int property metadata it fills is not
-    // modelled.
+    // values.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x6CA5A0
 
     static Symbol sId;  // 0x1AB0AE0, "RndEntity"

@@ -86,5 +86,7 @@ Not reconstructed:
 - `RndOverlayOptionsCom::_RebuildRegistry`, its lambdas and the
   `std::function` plumbing (`0x5FA4E0`-`0x5FA5D0`).
 - `RndOptions::Init`, `gEntityRes` and the nine `*OptionsCom::Init`
-  registrations with their factories, which need the registration helpers
-  that the audio components also leave declared.
+  registrations with their factories, which are not declared. The seven
+  option classes' `_Init` builders are reconstructed, with
+  `RndEditorDrawUtl::GetDrawWhenAllowedValues` (`0x461F90`) and
+  `RndTextUtl`'s choice lists (`0x67D470`-`0x67D8D0`).

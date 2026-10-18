@@ -127,8 +127,7 @@ public:
     // factories.
     static Component* _Create();
 
-    // Registers "environ_index", "sibling_lights" and "nested_lights". Not
-    // reconstructed: the property metadata it fills is not modelled.
+    // Registers "environ_index", "sibling_lights" and "nested_lights".
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x479650
 
     static Symbol sId;                  // 0x1A87B60, "LightEnviron"

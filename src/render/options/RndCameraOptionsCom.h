@@ -31,8 +31,7 @@ public:
     bool _OnResourcesLoaded() override;  // 0x6B9280
 
     // Describes the class and registers its properties after
-    // RndOptionsCom::_InitAsSuperclass. Not reconstructed: the property
-    // metadata it fills is not modelled.
+    // RndOptionsCom::_InitAsSuperclass.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x6B9300
 
     static Symbol sId;                  // 0x1AAFDC8, "CameraOptions"

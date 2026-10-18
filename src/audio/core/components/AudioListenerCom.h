@@ -69,15 +69,12 @@ public:
     // 0x39AD0, inlined into Handle. Name not in the reference map.
     DataNode _OnEntityActiveChanged(bool active);
 
-    // Registers the class. Inline in the map; this build emits it in
-    // audio/SoundManager.o at 0x4B70. Not reconstructed: the registration
-    // helpers it inlines are not modelled.
+    // Registers the class (InitComponentClass). Inline in the map; this
+    // build emits it in audio/SoundManager.o at 0x4B70.
     static void Init();
     // The class factory. Emitted in audio/SoundManager.o at 0xD280.
     static Component* _Create();
-    // Registers the class description; the class has no properties. Not
-    // reconstructed: ComMetaData's string and list members are written
-    // inline through helpers that are not modelled.
+    // Registers the class description; the class has no properties.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x39420
 
     static Symbol sId;          // 0x19C7C80, "AudioListener"

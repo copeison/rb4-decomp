@@ -694,3 +694,9 @@ ComMetaData& RndDrawNodeCom::_GetMetaData() {
 Component* RndDrawNodeCom::_Create() {
     return new RndDrawNodeCom();
 }
+
+// Reconstructed from eboot.elf at 0x3EE650. The binary emits the registration
+// in render/RndInit.o.
+void RndDrawNodeCom::Init() {
+    InitComponentClass<RndDrawNodeCom>();
+}

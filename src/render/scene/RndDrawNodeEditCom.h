@@ -40,10 +40,8 @@ public:
         bool selected,
         const VectorAdapter<unsigned long>& subEditables) override;  // 0x6C94F0
 
-    // Registers the class. Emitted in render/RndInit.o at 0x3FE220. Not
-    // reconstructed: the registration helpers it inlines are not
-    // modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3FE220
     // The class factory, emitted with the other render factories. The
     // placement factory beside it (0x406080) is not modelled.
     static Component* _Create();  // 0x406050

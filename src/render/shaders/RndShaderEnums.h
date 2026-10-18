@@ -58,3 +58,21 @@ const char* ToString(RndUserShadingMode mode);  // 0x645E40
 // Returns the mode whose name matches exactly, or -1. Name not in the
 // reference map.
 RndUserShadingMode UserShadingModeFromString(const char* name);  // 0x645E80
+
+// How a blur or a fade grows between two distances, as
+// RndPostProcStageDOFCom's "blur_falloff_function" offers them. Name and
+// enumerator names not in the reference map; they follow the names below.
+enum RndFalloffFunction : int {
+    kFalloffLinear = 0,
+    kFalloffInverseSquare = 1,
+    kFalloffExponential = 2,
+    kFalloffSigmoid = 3,
+};
+
+// Name not in the reference map.
+constexpr int kNumFalloffFunctions = 4;
+
+// The function's name, such as "Linear Falloff", and its description; ""
+// for any other value. The description's name is not in the reference map.
+const char* ToString(RndFalloffFunction function);       // 0x645EE0
+const char* ToDescription(RndFalloffFunction function);  // 0x645F00

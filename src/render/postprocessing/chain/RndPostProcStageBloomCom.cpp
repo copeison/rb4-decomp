@@ -3,6 +3,7 @@
 
 #include <new>
 
+#include "entity/props/PropMetadata.h"
 #include "render/context/RndContext.h"
 #include "render/context/RndResourceBarrier.h"
 #include "render/drawing/RndDrawUtl.h"
@@ -10,6 +11,7 @@
 #include "render/postprocessing/bloom/RndShaderBloom.h"
 #include "render/postprocessing/blur/RndShaderBlur.h"
 #include "render/postprocessing/downsample/RndShaderDownsample.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndDevice.h"
@@ -90,6 +92,150 @@ RndPostProcStageBloomCom::RndPostProcStageBloomCom()
 // Reconstructed from eboot.elf at 0x62FA60. The deleting destructor is at
 // 0x62FA70.
 RndPostProcStageBloomCom::~RndPostProcStageBloomCom() {}
+
+// Reconstructed from eboot.elf at 0x62FA90. The class's revision 3
+// handler gives properties saved under older revisions the defaults they
+// lacked. The shape only matters with the half-size buffer; the buffer, the
+// value-based threshold and the whitening settings are read-only debug
+// properties.
+void RndPostProcStageBloomCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    _InitAsSuperclass(registry, metadata);
+    RndPostProcStageBloomCom prototype;
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            RndPostProcStageBloomCom* const bloom = static_cast<RndPostProcStageBloomCom*>(args.mComponent);
+            if (args.mSavedRev <= 0) {
+                bloom->mPower = 1.0F;
+            }
+            if (args.mSavedRev <= 1) {
+                bloom->mShape = 0.25F;
+                bloom->mValueBased = false;
+                bloom->mOverbrightHuePreservation = false;
+            }
+            if (args.mSavedRev <= 2) {
+                bloom->mUseHalfSizeBuffer = true;
+            }
+        };
+    if (&registry == &sPropRegistry) {
+        sPropRegistry.SetCurrentRev(3);
+        sPropRegistry.mRevisionFunc = onRevision;
+    } else {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+
+    FloatMetadata& intensity = TypeSpecificMetadata(
+        registry.RegisterProp("intensity", offsetof(RndPostProcStageBloomCom, mIntensity), kPropertyFloat, 4),
+        prototype.mIntensity);
+    intensity.mDefault = prototype.mIntensity;
+    static_cast<void>(Symbol("prop"));
+    intensity.mHelp = String("Intensity of the bloom effect");
+    intensity.mMin = 0.0F;
+    intensity.mMax = 8.0F;
+    intensity.mSlider = true;
+
+    FloatMetadata& power = TypeSpecificMetadata(
+        registry.RegisterProp("power", offsetof(RndPostProcStageBloomCom, mPower), kPropertyFloat, 4),
+        prototype.mPower);
+    power.mDefault = prototype.mPower;
+    static_cast<void>(Symbol("prop"));
+    power.mHelp = String(
+        "Exponent applied to the overbright values to be bloomed; less than one to soften, greater than "
+        "one to "
+        "sharpen");
+    power.mMin = 0.25F;
+    power.mMax = 2.0F;
+    power.mSlider = true;
+
+    FloatMetadata& shape = TypeSpecificMetadata(
+        registry.RegisterProp("shape", offsetof(RndPostProcStageBloomCom, mShape), kPropertyFloat, 4),
+        prototype.mShape);
+    shape.mDefault = prototype.mShape;
+    static_cast<void>(Symbol("prop"));
+    shape.mHelp = String("Determines the mix between 1/2-res bloom and 1/4-res bloom");
+    shape.mMin = 0.0F;
+    shape.mMax = 1.0F;
+    shape.mSlider = true;
+    shape.mReadOnly._Set([](const TagArgs& args) {
+        return !static_cast<const RndPostProcStageBloomCom&>(args.mComponent).mUseHalfSizeBuffer;
+    });
+
+    BoolMetadata& halfSize = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "use_half_size_buffer", offsetof(RndPostProcStageBloomCom, mUseHalfSizeBuffer), kPropertyBool, 1),
+        prototype.mUseHalfSizeBuffer);
+    halfSize.mDefault = prototype.mUseHalfSizeBuffer;
+    static_cast<void>(Symbol("prop"));
+    halfSize.mHelp = String("Determines whether to use the half size buffer");
+    halfSize.mReadOnly = true;
+    halfSize.mDebug = true;
+
+    BoolMetadata& valueBased = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "value_based", offsetof(RndPostProcStageBloomCom, mValueBased), kPropertyBool, 1),
+        prototype.mValueBased);
+    valueBased.mDefault = prototype.mValueBased;
+    static_cast<void>(Symbol("prop"));
+    valueBased.mHelp = String(
+        "Determines to what degree bloom thresholding is based on luminance (arguably more physically "
+        "correct) vs. "
+        "value (decouples hue from bloom amount, so arguably more intuitive to work with)");
+    valueBased.mReadOnly = true;
+    valueBased.mDebug = true;
+
+    BoolMetadata& huePreservation = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "overbright_hue_preservation",
+            offsetof(RndPostProcStageBloomCom, mOverbrightHuePreservation),
+            kPropertyBool,
+            1),
+        prototype.mOverbrightHuePreservation);
+    huePreservation.mDefault = prototype.mOverbrightHuePreservation;
+    static_cast<void>(Symbol("prop"));
+    huePreservation.mHelp = String(
+        "Determines to what degree final bloom compositing attempts to preserve the original hue of "
+        "overbright "
+        "colors instead of just driving toward white");
+    huePreservation.mReadOnly = true;
+    huePreservation.mDebug = true;
+
+    FloatMetadata& whitening = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "overbright_whitening_strength",
+            offsetof(RndPostProcStageBloomCom, mOverbrightWhiteningStrength),
+            kPropertyFloat,
+            4),
+        prototype.mOverbrightWhiteningStrength);
+    whitening.mDefault = prototype.mOverbrightWhiteningStrength;
+    static_cast<void>(Symbol("prop"));
+    whitening.mHelp = String("How quickly overbright pixels drive toward white");
+    whitening.mMin = 0.0F;
+    whitening.mMax = 2.0F;
+    whitening.mSlider = true;
+    whitening.mReadOnly = true;
+    whitening.mDebug = true;
+
+    FloatMetadata& maxWhitening = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "max_overbright_whitening",
+            offsetof(RndPostProcStageBloomCom, mMaxOverbrightWhitening),
+            kPropertyFloat,
+            4),
+        prototype.mMaxOverbrightWhitening);
+    maxWhitening.mDefault = prototype.mMaxOverbrightWhitening;
+    static_cast<void>(Symbol("prop"));
+    maxWhitening.mHelp = String("The max amount of overbright whitening to apply");
+    maxWhitening.mMin = 0.0F;
+    maxWhitening.mMax = 1.0F;
+    maxWhitening.mSlider = true;
+    maxWhitening.mReadOnly = true;
+    maxWhitening.mDebug = true;
+
+    metadata.mDescription = "Applies a bloom effect to the scene";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryPostProc;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mAliases.push_back(Symbol("PostProcStageBloom"));
+}
 
 // Reconstructed from eboot.elf at 0x6305A0. Thresholds the source into the
 // first downsample buffer, blurs it horizontally into the second and back
@@ -375,4 +521,10 @@ ComMetaData& RndPostProcStageBloomCom::_GetMetaData() {
 // constructs in given storage.
 Component* RndPostProcStageBloomCom::_Create() {
     return new RndPostProcStageBloomCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F9720. The binary emits the registration
+// in render/RndInit.o.
+void RndPostProcStageBloomCom::Init() {
+    InitComponentClass<RndPostProcStageBloomCom>();
 }

@@ -59,7 +59,7 @@ public:
     void ThreadPoll(const int& thread) override;  // 0xF5960
     // Slot 8 (PollDepBase slot 4, thunk 0xF7990): post-polls an active
     // entity.
-    void PostPoll() override;  // 0xF7920
+    void PostPoll(const int& thread) override;  // 0xF7920
     // Slot 9 (PollDepBase slot 2, thunk 0xF59A0): whether the entity is
     // active and entered without a pending exit, and, when it drives its
     // parent (flag 0x8000), whether its parent may poll.

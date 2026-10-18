@@ -9,15 +9,17 @@ the entity objects that hold the components are in
 
 | Object | Range | Source |
 | --- | --- | --- |
-| `entity/ComMetaData.o` (part) | `0xE56C0`-`0xE6870` | `src/entity/core/ComMetaData.cpp` |
+| `entity/ComMetaData.o` (part) | `0xE56C0`-`0xE6870`, `0xE69F0` | `src/entity/core/ComMetaData.cpp` |
 | `entity/Component.o` (part) | `0xE7190`-`0xE9060`, `0xAEA0`, `0xAED0` | `src/entity/core/Component.cpp` |
 | `entity/EditorCom.o` (part) | `0xEABC0`-`0xEABD0` | `src/entity/core/EditorCom.cpp` |
 | `entity/PropInfo.o` | `0x12DBE0`-`0x12DD00` | `src/entity/props/PropInfo.cpp` |
 | `entity/PropRegistry.o` (part) | `0x1804C0`-`0x1813D0` | `src/entity/props/PropRegistry.cpp` |
 | `PropArrayBase` | `0xA660`, `0x2ABE0` | `src/entity/props/PropUtl.cpp` |
+| `entity/PropMetadata.o` (part) | `0x12DD40`-`0x12E610`, `0x140A20`-`0x143C20` | `src/entity/props/PropMetadata.cpp` |
+| `entity/InstanceCom.o` (registry) | `0x118E60`, `0x11B8A0`-`0x11B8E0` | `src/entity/core/InstanceCom.cpp` |
 
-`PropPath`, `PropMetadata` and the `PropUtl.o` helpers are declared in
-`src/entity/props`; their bodies are not reconstructed.
+`PropPath` and the `PropUtl.o` helpers are declared in `src/entity/props`;
+their bodies are not reconstructed.
 
 ## Component
 
@@ -62,8 +64,13 @@ object.
 its interface (the `mBaseId` of `GameObject::ComIndex`), category, the
 entity resource classes it may live in, its aliases, required, default and
 dependent classes, exported events and property registry. `Init`
-(`0xE5B80`, not reconstructed) fills the dependency lists of the classes it
-names and adds the class to `sComMetaDataList` (`0x19E28B8`).
+(`0xE5B80`) fills the dependency lists of the classes it names, hashes
+the class CRC (the class and interface names, the post-poll flag, the
+order-dependency CRC and `PropRegistry::UpdateCRC`, `0x180D20`, declared),
+sets `mHasFlaggedProps` when a property has an instance access, through
+`PropRegistry::VisitPropInfo` (its visitor copy is `0xE69F0`), and adds
+the class to `sComMetaDataList` (`0x19E28B8`). The release build keeps the
+loops of its stripped duplicate-id checks; the source leaves them out.
 `AddExportedEvent` reserves room for 32 events and returns the new event's
 parameter registry.
 
@@ -104,6 +111,57 @@ thread-local descriptor at `0x19B0310` and the source models as
 `thread_local`; `PropArrayBase::_Copy` (`0xBA70`) skips its copy while it is
 set. The class copies are reconstructed for the render components.
 
+## Property metadata
+
+`PropMetadata` (vtable `0x18E7960`, 8 slots: the destructors,
+`ValueToString`, `IsValueAllowed`, `Dump`, `GetAllowedValuesHelp`,
+`DumpAllowedValuesHelp` and `GetStructRegistry`) is a list of attributes,
+each a `TagBase<T>`: a mode (unset, constant, `TagArgs` function, script
+`DataNode`, optional function, static function), the constant, the two
+`std::function`s, the static function pointer, the script and the function
+that aggregates the values of several selected components (the map's
+`Agg*` functions). `Tag<T>` starts constant and `OptionalTag<T>` unset.
+`TagArgs` holds the component and the property's path; `StaticTagArgs` the
+entity and the path. The attributes are named by the keys `Dump`
+(`0x133860`) and the data-driven registries (`0x202760`, `0x202F80`) use:
+`display_name`, `group`, `is_hidden`, `read_only`, `debug`, `animatable`,
+`no_test`, `saves`, `history`, `help`, an owned inline action and the
+instance access (`set_on_instance`/`view_on_instance`). The object is 1528
+bytes; subclasses start in its 16-byte tail padding.
+
+The typed classes add five accessor pointers (setter, change callback,
+getter and two unread ones) and a `mDefault`; `NumberMetadata<T>` adds
+`allowed_values`, `min`, `max`, `slider`, `slider_log_resolution`,
+`prefix`, `units` and `increment`, `IntMetadata<T>` a bitfield flag and
+`FloatMetadata` the decimal places. `SymbolMetadata`,
+`GameObjectIdMetadata`, `ResourcePathMetadata` (`resource_id`,
+`custom_label`, `custom_extensions`, `is_relative_to_entity`),
+`ColorMetadata`, `PropRefMetadata`, `WaveformMetadata<T>`,
+`StructMetadata`/`GroupMetadata` (`summary`, the member registry) and
+`ArrayMetadata` (the element `PropInfo`, the insert hooks, `summary`) are
+modelled with `static_assert`ed layouts. `TypeSpecificMetadata` returns
+the class for a value type (`0x140A20`, `0x141B90`-`0x141D70`).
+`PropertyType` names the 23 types after `PropertySize` and
+`PropMetadata::Create`.
+
+## Class registration
+
+A class's inline `Init` is `InitComponentClass<T>` (`ComMetaData.h`): in
+the "metadata" heap it sets `mCreatable` and `mSuperclassRoot` (false and
+true for an abstract base such as `RndPostProcStageCom`), runs `_Init`,
+records `{sizeof, alignof}` under the class id in the guarded size map
+(`PropTypeSizes`, `0x19C5F20`) and names the type
+(`PropTypeName<T>::sName`), installs the factory and the placement
+constructor (`Component::sVtables`, `0x19E2938`) and calls
+`ComMetaData::Init` with a prototype's `_HasPostPoll`.
+`RegisterPropStruct<T>` names a struct property type for its arrays
+(`PropArray<T>::sType`) and records its size. A builder (`_Init`)
+constructs a prototype for the defaults, inherits the class's own
+registry, registers each property with `RegisterProp` (building a "prop"
+symbol it does not use) and fills its metadata, and sets the class
+description; a revision handler (`PropRegistry::RevisionArgs`) upgrades
+older saved properties.
+
 ## Weak evidence
 
 - The slot names 3, 5, 6, 9, 12-14, 17, 18, 24-26 and 28-30 rest on their
@@ -113,6 +171,17 @@ set. The class copies are reconstructed for the render components.
 - `ComMetaData::mLightweight`, `mEditorRestrictions` and `mClassName`, and
   `Component::mPropsSynced`, are named from their few readers.
 - `GroupMetadata` as the struct metadata class is inferred.
+- Attribute names that `Dump` does not write: the three set-by-default
+  `PropMetadata` tags (`mExtraFlag0`-`2`, no reader), `mInstanceFile`,
+  the number tags `mReserved` and `mEnabled`, `GameObjectIdMetadata`'s
+  `mEntity`, `mAllowedObjects`, `mAllowedEntities`, `mRequiredInterfaces`
+  and `mFilterClass`, `ResourcePathMetadata`'s `mDefaultExtension` and
+  flags, `PropRefMetadata`'s `mArrayIndex`, `mAllowedComs`,
+  `mAllowedProps` and `mAllowsArrays`, `ArrayMetadata`'s hooks and
+  `mFixedSize`, and `IntMetadata::mBitfield` (which `Dump` writes as
+  "prefix").
+- `PropTypeSizes`, `PropTypeName`, `InitComponentClass`,
+  `RegisterPropStruct` and `RevisionArgs`' fields are inferred.
   `LoadWaveformResources` (`0x1C9A90`), which `LoadResources` calls, takes
   the map's name: it lies in `entity/Waveform.o`'s range and visits the
   waveform property types 18 and 19.

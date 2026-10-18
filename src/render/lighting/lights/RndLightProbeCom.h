@@ -278,9 +278,8 @@ public:
     void _AddToBookkeeping();       // 0x49C700
     void _RemoveFromBookkeeping();  // 0x49BFF0
 
-    // Registers the class. Not reconstructed: the registration helpers it
-    // inlines are not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F04E0
     // The class factory.
     static Component* _Create();
     // Registers the class description and the properties. Not

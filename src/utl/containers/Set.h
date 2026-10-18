@@ -62,6 +62,22 @@ public:
         return &mAnchor;
     }
 
+    // Adds the key unless it is present.
+    void insert(const Key& key) {
+        DoInsertValue(key);
+    }
+    // Removes the key; the number of keys removed.
+    unsigned long erase(const Key& key) {
+        rbtree_node_base* const node = const_cast<rbtree_node_base*>(find(key));
+        if (node == &mAnchor) {
+            return 0;
+        }
+        RBTreeErase(node, &mAnchor);
+        mAllocator.deallocate(node, sizeof(node_type));
+        --mnSize;
+        return 1;
+    }
+
     Compare mCompare;
     rbtree_node_base mAnchor;
     unsigned long mnSize;

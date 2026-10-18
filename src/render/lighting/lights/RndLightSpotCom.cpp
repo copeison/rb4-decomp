@@ -402,3 +402,9 @@ int RndLightSpotCom::_GetTypeImpl() const {
 Component* RndLightSpotCom::_Create() {
     return new RndLightSpotCom();
 }
+
+// Reconstructed from eboot.elf at 0x3F08C0. The binary emits the registration
+// in render/RndInit.o.
+void RndLightSpotCom::Init() {
+    InitComponentClass<RndLightSpotCom>();
+}

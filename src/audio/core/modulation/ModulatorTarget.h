@@ -3,19 +3,9 @@
 #include <cstddef>
 
 #include "audio/core/dsp/ParameterSpec.h"
+#include "entity/props/PropMetadata.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Str.h"
-
-// One value a property editor offers, with its label and help text. The
-// template belongs to entity/PropMetadata.o; it is declared here until that
-// header holds it. The map instantiates AllowedValue<unsigned char> for the
-// modulation enums. Field names are not in the reference map.
-template <class T>
-struct AllowedValue {
-    T mValue;
-    String mName;
-    String mDescription;
-};
 
 // A value a Modulator can drive (audio/ModulatorTarget.o, 0xBEBE0 to
 // 0xBEF83): the float it adds to, and how a modulator's depth and range

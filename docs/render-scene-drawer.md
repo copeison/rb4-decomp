@@ -123,7 +123,7 @@ thread already polls for a manager (`_CullSingleThreaded`, `0x45B6C0`,
 visiting each enabled level with `_VisitLodInstances<0/1>`); otherwise
 `_CullMultiThreaded` (`0x45B080`) runs two passes of 48 static
 `RndBasicCullerJob`s (`ThreadedJob`, vtable `0x19037A0`, 12 slots) in the
-"Culler" poll group: a cull pass over ranges of at least 100 instances
+"Culler" poll manager: a cull pass over ranges of at least 100 instances
 and a copy pass into the drawer's buckets with the sort distances.
 `GetMaxBucketSizes` counts level 0's pool per bucket bit and `TrimPools`
 releases the jobs' lists, keeping nine tenths of their peak as the next
@@ -142,7 +142,7 @@ manager's update flag. The drawer's `mStoredCullResults`
 
 `RndEntityCom` (`render/RndEntityCom.o`, `0x6CA2D0`-`0x6CAE7B`, vtable
 `0x1938278`, 41 slots, 72 bytes; class id "RndEntity") derives from
-`RndDrawableEntityCom`. Its `RuntimeData` holds the entity's poll group
+`RndDrawableEntityCom`. Its `RuntimeData` holds the entity's poll manager
 and poll groups, the scene drawer and whether the component owns it.
 `ObtainSceneDrawer` borrows the drawer of the nearest entity up the tree
 or creates an owned one; the destructor deletes an owned drawer.

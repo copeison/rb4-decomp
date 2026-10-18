@@ -4,9 +4,11 @@
 #include <new>
 
 #include "entity/core/Entity.h"
+#include "entity/props/PropMetadata.h"
 #include "render/drawing/RndSceneDrawer.h"
 #include "render/postprocessing/chain/RndPostProcStageBloomCom.h"
 #include "render/postprocessing/chain/RndPostProcStageCom.h"
+#include "render/scene/RndSceneResource.h"
 
 namespace {
 
@@ -62,6 +64,31 @@ void RndPostProcCom::UpdateDrawTarget(RndSceneDrawTarget& target) const {
             object->GetBaseCom<RndPostProcStageCom>()->UpdateDrawTarget(target);
         }
     }
+}
+
+// Reconstructed from eboot.elf at 0x62F260. Each stage is an object with
+// a component of the "PostProcStage" interface.
+void RndPostProcCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RndPostProcCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+    PropInfo& stages = registry.RegisterPropArray(
+        "stages", offsetof(RndPostProcCom, mStages), sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& stagesMetadata = static_cast<ArrayMetadata&>(*stages.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    stagesMetadata.mHelp = String("Post-proc stages to be applied to the scene (in the order specified)");
+    PropRegistry::RegisterPropArrayItem(stages, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId stageType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& stage = TypeSpecificMetadata(stagesMetadata.mItemInfo, stageType);
+    static_cast<void>(Symbol("item"));
+    stage.mRequiredInterfaces = {RndPostProcStageCom::sClassName};
+
+    metadata.mDescription = "Post processes the scene by applying specified post-proc effect stages";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryPostProc;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mAliases.push_back(Symbol("PostProc"));
 }
 
 // Reconstructed from eboot.elf at 0x62F640.
@@ -148,4 +175,10 @@ ComMetaData& RndPostProcCom::_GetMetaData() {
 // constructs in given storage.
 Component* RndPostProcCom::_Create() {
     return new RndPostProcCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F17F0. The binary emits the registration
+// in render/RndInit.o.
+void RndPostProcCom::Init() {
+    InitComponentClass<RndPostProcCom>();
 }

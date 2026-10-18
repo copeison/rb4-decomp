@@ -198,9 +198,9 @@ void EntityResource::_PollImmediately(Entity* entity) {
 }
 
 // Reconstructed from eboot.elf at 0xFD970.
-void EntityResource::DestroyLayerEntity(Entity* entity) {
+void EntityResource::OnPolledImmediately(Entity* entity) {
     if (entity != nullptr) {
-        _DestroyLayerEntity(entity);
+        _OnPolledImmediately(entity);
     }
 }
 

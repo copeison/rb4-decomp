@@ -7,6 +7,7 @@
 #include "entity/core/EntityResource.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
+#include "entity/core/TransEntityResource.h"
 #include "math/vector/Vector3.h"
 #include "utl/data/DataArray.h"
 
@@ -47,6 +48,21 @@ void AudioListenerCom::_EditEnter() {
 // Reconstructed from eboot.elf at 0x39410.
 void AudioListenerCom::_EditPoll() {
     _Poll();
+}
+
+// Reconstructed from eboot.elf at 0x39420. The class has no properties;
+// a prototype gives the registry the class's registry inherits.
+void AudioListenerCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    AudioListenerCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+    metadata.mDescription = "Allows an object to be the listener position in the entity.";
+    metadata.mAuthor = "Buzz Burrowes";
+    metadata.mCategory = ComMetaData::kCategoryAudio;
+    metadata.mAllowedResources.push_back(TransEntityResource::Id());
+    metadata.mRequiredComponents.push_back(TransCom::sClassName);
 }
 
 // Reconstructed from eboot.elf at 0x39750.
@@ -189,4 +205,10 @@ ComMetaData& AudioListenerCom::_GetMetaData() {
 // audio/SoundManager.o with the class's Init.
 Component* AudioListenerCom::_Create() {
     return new AudioListenerCom();
+}
+
+// Reconstructed from eboot.elf at 0x4B70. The binary emits the
+// registration in audio/SoundManager.o, which calls it.
+void AudioListenerCom::Init() {
+    InitComponentClass<AudioListenerCom>();
 }

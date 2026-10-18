@@ -2,7 +2,10 @@
 
 #include <cstddef>
 
+#include "entity/core/Component.h"
+#include "entity/props/PropArray.h"
 #include "entity/props/PropRegistry.h"
+#include "os/memory/MemMgr.h"
 #include "utl/containers/Map.h"
 #include "utl/containers/Vector.h"
 #include "utl/text/Str.h"
@@ -75,7 +78,7 @@ public:
     // names, and the class CRC. The map's signature is Init(Symbol,
     // PropRegistry const&, unsigned long, bool, bool); this build passes the
     // id by reference and adds mClassName. `unlisted` keeps the class out of
-    // sComMetaDataList. Not reconstructed.
+    // sComMetaDataList.
     void Init(
         const Symbol& id,
         Symbol className,
@@ -187,3 +190,79 @@ static_assert(offsetof(ComMetaData, mSuperclass) == 408);
 static_assert(offsetof(ComMetaData, mHasFlaggedProps) == 416);
 static_assert(offsetof(ComMetaData, mAllowMultiple) == 419);
 static_assert(sizeof(ComMetaData) == 424);
+
+// The size and alignment of a registered component or struct type. Name
+// and field names not in the reference map.
+struct PropTypeSize {
+    unsigned long mSize;
+    unsigned long mAlign;
+};
+
+// The sizes of the registered types by class id: a guarded static (0x19C5F20,
+// guard 0x19C5F58) that every class registration and the dynamic property
+// code read. Name not in the reference map.
+inline eastl::map<Symbol, PropTypeSize>& PropTypeSizes() {
+    static eastl::map<Symbol, PropTypeSize> sSizes;
+    return sSizes;
+}
+
+// The class id a type registered under; each type has a guarded copy, such
+// as 0x19C5540 for AudioListenerCom. Nothing in this build reads it. Name
+// not in the reference map.
+template <class T>
+struct PropTypeName {
+    static Symbol sName;
+};
+
+template <class T>
+Symbol PropTypeName<T>::sName;
+
+// Records the type's size under its class id, naming the type the first
+// time. Inlined into every class's Init. Name not in the reference map.
+template <class T>
+void RegisterPropTypeSize(Symbol name) {
+    eastl::map<Symbol, PropTypeSize>& sizes = PropTypeSizes();
+    if (PropTypeName<T>::sName == Symbol()) {
+        PropTypeName<T>::sName = name;
+    }
+    sizes[name] = PropTypeSize{sizeof(T), alignof(T)};
+}
+
+// Registers a struct property type: the element type of its arrays and its
+// size, once. The binary emits it for each type, such as 0x33150 for
+// AudioEmitterCom's bus names. Name not in the reference map.
+template <class T>
+void RegisterPropStruct(Symbol name) {
+    if (PropArray<T>::sType == Symbol()) {
+        PropArray<T>::sType = name;
+        RegisterPropTypeSize<T>(name);
+    }
+}
+
+// The body of every component class's Init, which the map has inline in
+// each class (for example AudioListenerCom::Init, emitted at 0x4B70): in
+// the "metadata" heap, builds the class's registry and description, records
+// its size, installs its factory and placement constructor (emitted beside
+// the factory, as 0xD2F0 beside AudioListenerCom::_Create) and registers
+// the metadata with a prototype's _HasPostPoll. A base class that is not
+// created itself, such as RndPostProcStageCom, passes false and true. Name
+// not in the reference map.
+template <class T>
+void InitComponentClass(bool creatable = true, bool superclassRoot = false) {
+    static const long sHeap = MemFindHeap("metadata");
+    MemPushHeap(sHeap);
+    const Symbol name = T::sClassName;
+    T::sMetaData.mCreatable = creatable;
+    T::sMetaData.mSuperclassRoot = superclassRoot;
+    T::sMetaData.mAllowMultiple = false;
+    T::_Init(T::sPropRegistry, T::sMetaData);
+    RegisterPropTypeSize<T>(name);
+    T prototype;
+    Component::sFactory[name] = T::_Create;
+    Component::sVtables[name] = [](void* storage) -> Component* {
+        return new (storage) T();
+    };
+    const bool hasPostPoll = prototype._HasPostPoll();
+    T::sMetaData.Init(name, name, T::sPropRegistry, sizeof(T), hasPostPoll, false);
+    MemPopHeap();
+}

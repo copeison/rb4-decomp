@@ -150,25 +150,23 @@ static struct CullerJobSettings {
     int mJobsPerThread;
 } gCullerJobSettings;
 
-// The poll group the jobs run in, created by the first culler. Name not in
-// the reference map.
-static PollGroup* gCullerPollGroup;  // 0x1A76598
+// The poll manager the jobs run in, created by the first culler. Name not
+// in the reference map.
+static PollMgr* gCullerPollMgr;  // 0x1A76598
 
 // The jobs of the multithreaded cull, destroyed at exit by 0x45CB60. Name
 // not in the reference map.
 static RndBasicCullerJob gCullJobs[kNumCullJobs];  // 0x1A765B0
 
-// Moves the jobs that wait for nothing from the list into the group's poll
-// buckets, by where they may run and whether jobs wait for them, as the
-// poll manager's own queueing does; the group's manager polls them. The
+// Moves the jobs that wait for nothing from the list into poll buckets, by
+// where they may run and whether jobs wait for them, as the poll manager's
+// own queueing does; the manager's poll group polls them. The
 // timer name ("basicculler_firstpass", "basicculler_second_pass") is
 // unused: the pass timers are compiled out. Name not in the reference map.
 // Reconstructed from eboot.elf at 0x45CDC0.
-static void QueueCullJobs(PollGroup* group, CullJobList& jobs, const char* timerName) {
+static void QueueCullJobs(PollMgr* pollMgr, CullJobList& jobs, const char* timerName) {
     static_cast<void>(timerName);
-    // The group's manager (PollGroup +48, made by its constructor).
-    PollMgr* const pollMgr =
-        *reinterpret_cast<PollMgr* const*>(reinterpret_cast<const char*>(group) + 48);
+    PollGroup* const group = pollMgr->mPollGroup;
     PollDepBase::PollList buckets[PollDepBase::kNumPollBuckets];
     while (!jobs.empty()) {
         // As in the binary, a first job that still waits would spin here;
@@ -195,11 +193,9 @@ static void QueueCullJobs(PollGroup* group, CullJobList& jobs, const char* timer
             bucket = PollDepBase::kPollBucketMain;
         }
         buckets[bucket].push_back(job);
-        job.mPollMgr = pollMgr;
+        job.mPollGroup = group;
     }
-    // QueueForPoll reads only the lists at the start of the object, which a
-    // poll group shares with a manager; the binary passes the group.
-    reinterpret_cast<PollMgr*>(group)->QueueForPoll(buckets);
+    pollMgr->QueueForPoll(buckets);
 }
 
 // Unlinks the jobs a pass left in the list.
@@ -211,8 +207,8 @@ static void ClearCullJobs(CullJobList& jobs) {
 
 // Reconstructed from eboot.elf at 0x459C20.
 RndBasicCuller::RndBasicCuller() {
-    if (gCullerPollGroup == nullptr) {
-        gCullerPollGroup = new PollGroup("Culler");
+    if (gCullerPollMgr == nullptr) {
+        gCullerPollMgr = new PollMgr("Culler");
     }
 }
 
@@ -399,7 +395,7 @@ void RndBasicCuller::_CullMultiThreaded(
     VectorAdapter<PodVector<RndDrawInstance>>& buckets,
     const RndCullerParams& params) {
     static_cast<void>(sceneDrawId);
-    gCullerPollGroup->Select();
+    gCullerPollMgr->Select();
     CullJobList jobs;
     unsigned long numJobs = 0;
 
@@ -444,8 +440,8 @@ void RndBasicCuller::_CullMultiThreaded(
             begin = end;
         }
     }
-    QueueCullJobs(gCullerPollGroup, jobs, "basicculler_firstpass");
-    gCullerPollGroup->PollJobs(nullptr);
+    QueueCullJobs(gCullerPollMgr, jobs, "basicculler_firstpass");
+    gCullerPollMgr->Sync(nullptr);
     ClearCullJobs(jobs);
 
     // Second pass: each job copies its instances after those of the jobs
@@ -471,10 +467,10 @@ void RndBasicCuller::_CullMultiThreaded(
         out.reserve(offsets[bucket]);
         out.mSize = offsets[bucket];
     }
-    QueueCullJobs(gCullerPollGroup, jobs, "basicculler_second_pass");
-    gCullerPollGroup->PollJobs(nullptr);
+    QueueCullJobs(gCullerPollMgr, jobs, "basicculler_second_pass");
+    gCullerPollMgr->Sync(nullptr);
     ClearCullJobs(jobs);
-    PollGroup::Deselect();
+    PollMgr::Deselect();
 }
 
 // Reconstructed from eboot.elf at 0x45B6C0.

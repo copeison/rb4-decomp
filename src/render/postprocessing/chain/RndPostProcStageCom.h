@@ -98,16 +98,16 @@ public:
         target.mResult = nullptr;
     }
 
-    // Registers the class. Emitted with the renderer's components at
-    // 0x3F1440. Not reconstructed: the registration helpers it inlines are
-    // not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F1440
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x4047F0
-    // Registers the class description and "enabled". Not reconstructed:
-    // ComMetaData's string and list members are written inline through
-    // helpers that are not modelled.
+    // Registers the class description and "enabled".
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x631990
+    // Makes the stage the superclass of a subclass's metadata, runs _Init on
+    // it in the "metadata" heap and combines the editor restrictions. Name
+    // not in the reference map.
+    static void _InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata);  // 0x6304F0
 
     // The object's statics, in the order of its static initializer
     // (0x631E20). The three ints it first sets (0x1AAAC98: -1, the invalid

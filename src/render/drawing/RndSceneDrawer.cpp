@@ -324,7 +324,8 @@ void RndSceneDrawer::_DoPoll() {
 }
 
 // Reconstructed from eboot.elf at 0x41A680.
-void RndSceneDrawer::PostPoll() {
+void RndSceneDrawer::PostPoll(const int& thread) {
+    static_cast<void>(thread);
     _DoPostPoll();
 }
 

@@ -12,6 +12,8 @@
 #include "audio/fmod/system/FmodPlatform.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
+#include "entity/core/TransEntityResource.h"
+#include "entity/props/PropMetadata.h"
 
 namespace {
 
@@ -25,6 +27,18 @@ bool IsEmptyName(Symbol name) {
     }
     return std::strcmp(name.Str(), empty) == 0;
 }
+
+// The property accessors _Init installs (0x37D70 to 0x37E50). Names not
+// in the reference map.
+void SetIsNamedEmitter(const PropAccessorArgs& args);
+void SetEmitterName(const PropAccessorArgs& args);
+bool GetDialogIsPlaying(const PropAccessorArgs& args);
+int GetBar(const PropAccessorArgs& args);
+int GetBeat(const PropAccessorArgs& args);
+int GetTick(const PropAccessorArgs& args);
+void OnUsePreloadedBankChanged(const PropAccessorArgs& args);
+void OnBusChanged(const PropAccessorArgs& args);
+void OnPreloadedBusChanged(const PropAccessorArgs& args);
 
 }  // namespace
 
@@ -90,6 +104,177 @@ AudioEmitterCom::~AudioEmitterCom() {
 
     delete mRuntime.mTempoListenersLock;
     mRuntime.mTempoListenersLock = nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x32110. The defaults come from a
+// prototype; "emitter_name" offers the game-wide emitter names and is
+// hidden unless the emitter is named. Each bus of "tempo_aware_buses" is an
+// event path or, with "use_preloaded_bank", a bus loaded through a
+// PreloaderCom; the editor shows only the matching field. Every property
+// registration builds a "prop" symbol it does not use, and the struct and
+// array registrations "struct", "array" and "struct_item".
+void AudioEmitterCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RegisterPropStruct<TempoAwareBusProps::BusName>(Symbol("TempoAwareBusProps::BusName"));
+    AudioEmitterCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    BoolMetadata& isNamed = TypeSpecificMetadata(
+        registry.RegisterProp("is_named_emitter", 0x16, kPropertyBool, 1), prototype.mIsNamedEmitter);
+    isNamed.mDefault = prototype.mIsNamedEmitter;
+    static_cast<void>(Symbol("prop"));
+    isNamed.mHelp = String("Is this emitter to take the role of one of the game's named emitters?");
+    isNamed.mSetter = SetIsNamedEmitter;
+
+    SymbolMetadata& emitterName = TypeSpecificMetadata(
+        registry.RegisterProp("emitter_name", 0x18, kPropertySymbol, 8), prototype.mEmitterName);
+    emitterName.mDefault = prototype.mEmitterName;
+    static_cast<void>(Symbol("prop"));
+    emitterName.mIsHidden._Set([](const TagArgs& args) {
+        return !static_cast<const AudioEmitterCom&>(args.mComponent).mIsNamedEmitter;
+    });
+    emitterName.mAllowedValues._Set([](const TagArgs& args) {
+        static_cast<void>(args);
+        return GetGameWideEmitterNameValues();
+    });
+    emitterName.mSetter = SetEmitterName;
+
+    BoolMetadata& is2D =
+        TypeSpecificMetadata(registry.RegisterProp("is_2D", 0x20, kPropertyBool, 1), prototype.mIs2D);
+    is2D.mDefault = prototype.mIs2D;
+    static_cast<void>(Symbol("prop"));
+    is2D.mHelp = String(
+        "Is this emitter 2D? (Meaning... no 3D positioning will be applied to sounds played on it.)");
+
+    BoolMetadata& overlap = TypeSpecificMetadata(
+        registry.RegisterProp("allow_dialog_overlap", 0x21, kPropertyBool, 1),
+        prototype.mAllowDialogOverlap);
+    overlap.mDefault = prototype.mAllowDialogOverlap;
+    static_cast<void>(Symbol("prop"));
+    overlap.mHelp = String(
+        "If true, the 'interruptible' flag on all PlayDialog calls or StateGraphNodes is ignored, "
+        "and multiple dialog lines can play simultaneously on this emitter.");
+
+    const bool dialogType = false;
+    BoolMetadata& dialogPlaying = TypeSpecificMetadata(
+        registry.RegisterProp("dialog_is_playing", -1, kPropertyBool, 0), dialogType);
+    static_cast<void>(Symbol("prop"));
+    dialogPlaying.mReadOnly = true;
+    dialogPlaying.mHelp = String("Is Dialog Currently Playing?");
+    dialogPlaying.mGetter = GetDialogIsPlaying;
+
+    const int barType = 0;
+    IntMetadata<int>& bar =
+        TypeSpecificMetadata(registry.RegisterProp("bar", -1, kPropertyInt, 0), barType);
+    static_cast<void>(Symbol("prop"));
+    bar.mReadOnly = true;
+    bar.mHelp = String("Current bar");
+    bar.mGetter = GetBar;
+
+    const int beatType = 0;
+    IntMetadata<int>& beat =
+        TypeSpecificMetadata(registry.RegisterProp("beat", -1, kPropertyInt, 0), beatType);
+    static_cast<void>(Symbol("prop"));
+    beat.mReadOnly = true;
+    beat.mHelp = String("Current beat");
+    beat.mGetter = GetBeat;
+
+    const int tickType = 0;
+    IntMetadata<int>& tick =
+        TypeSpecificMetadata(registry.RegisterProp("tick", -1, kPropertyInt, 0), tickType);
+    static_cast<void>(Symbol("prop"));
+    tick.mReadOnly = true;
+    tick.mHelp = String("Current tick");
+    tick.mGetter = GetTick;
+
+    SymbolMetadata& section = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "section",
+            offsetof(AudioEmitterCom, mRuntime) + offsetof(RuntimeData, mSectionName),
+            kPropertySymbol,
+            8),
+        prototype.mRuntime.mSectionName);
+    section.mDefault = prototype.mRuntime.mSectionName;
+    static_cast<void>(Symbol("prop"));
+    section.mReadOnly = true;
+
+    {
+        GroupMetadata& buses = static_cast<GroupMetadata&>(
+            *registry
+                 .RegisterProp("tempo_aware_buses", 0x38, kPropertyStruct, sizeof(TempoAwareBusProps))
+                 .mMetadata.Get());
+        static_cast<void>(Symbol("struct"));
+        TempoAwareBusProps busesPrototype;
+        buses.mHelp = String(
+            "List any buses which should receive tempo information from music playing on this emitter.");
+        PropRegistry& busesRegistry = buses.mRegistry;
+
+        BoolMetadata& preloaded = TypeSpecificMetadata(
+            busesRegistry.RegisterProp("use_preloaded_bank", 0, kPropertyBool, 1),
+            busesPrototype.mUsePreloadedBank);
+        preloaded.mDefault = busesPrototype.mUsePreloadedBank;
+        static_cast<void>(Symbol("prop"));
+        preloaded.mHelp =
+            String("Enable this if the buses are in a bank that has been preloaded via PreloaderCom.");
+        preloaded.mOnChanged = OnUsePreloadedBankChanged;
+
+        PropInfo& busArray = busesRegistry.RegisterPropArray(
+            "buses",
+            offsetof(TempoAwareBusProps, mBuses),
+            sizeof(PropArray<TempoAwareBusProps::BusName>));
+        ArrayMetadata& busArrayMetadata = static_cast<ArrayMetadata&>(*busArray.mMetadata.Get());
+        static_cast<void>(Symbol("array"));
+        PropRegistry::RegisterPropArrayItem(busArray, kPropertyStruct, sizeof(TempoAwareBusProps::BusName));
+        PropRegistry& busRegistry =
+            static_cast<GroupMetadata&>(*busArrayMetadata.mItemInfo.mMetadata.Get()).mRegistry;
+        static_cast<void>(Symbol("struct_item"));
+        TempoAwareBusProps::BusName busPrototype;
+
+        SymbolMetadata& bus =
+            TypeSpecificMetadata(busRegistry.RegisterProp("bus", 0, kPropertySymbol, 8), busPrototype.mBus);
+        bus.mDefault = busPrototype.mBus;
+        static_cast<void>(Symbol("prop"));
+        bus.mDisplayName = String("bus path");
+        bus.mHelp = String("The sound event to play.");
+        bus.mIsHidden._Set([](const TagArgs& args) {
+            const AudioEmitterCom& emitter = static_cast<const AudioEmitterCom&>(args.mComponent);
+            return emitter.mTempoAwareBusProps.mUsePreloadedBank;
+        });
+        bus.mOnChanged = OnBusChanged;
+
+        SymbolMetadata& preloadedBus = TypeSpecificMetadata(
+            busRegistry.RegisterProp("preloaded_bus", 8, kPropertySymbol, 8), busPrototype.mPreloadedBus);
+        preloadedBus.mDefault = busPrototype.mPreloadedBus;
+        static_cast<void>(Symbol("prop"));
+        preloadedBus.mDisplayName = String("bus path");
+        preloadedBus.mHelp =
+            String("The bus path from a bank listed in a PreloaderCom on your current entity.");
+        preloadedBus.mIsHidden._Set([](const TagArgs& args) {
+            const AudioEmitterCom& emitter = static_cast<const AudioEmitterCom&>(args.mComponent);
+            return !emitter.mTempoAwareBusProps.mUsePreloadedBank;
+        });
+        preloadedBus.mAllowedValues._Set([](const TagArgs& args) {
+            eastl::vector<Symbol> loaded;
+            theSoundManager.GetLoadedBuses(args.mComponent.mObject->mEntity, &loaded);
+            eastl::vector<AllowedValue<Symbol>> values;
+            for (int index = 0; index < static_cast<int>(loaded.size()); ++index) {
+                const Symbol name = loaded[index];
+                values.push_back(AllowedValue<Symbol>{name, String(name.Str()), String("")});
+            }
+            return values;
+        });
+        preloadedBus.mOnChanged = OnPreloadedBusChanged;
+    }
+
+    metadata.mDescription = "Allows entity to emit audio.";
+    metadata.mAuthor = "Buzz Burrowes";
+    metadata.mCategory = ComMetaData::kCategoryAudio;
+    metadata.mAllowedResources.push_back(TransEntityResource::Id());
+    metadata.mRequiredComponents.push_back(TransCom::sClassName);
+    metadata.mLightweight = true;
+    metadata.mAliases.push_back(Symbol("AudioEmitterCom"));
 }
 
 // Reconstructed from eboot.elf at 0x33300.
@@ -840,8 +1025,78 @@ Component* AudioEmitter::GetComponent() {
     return mComponent;
 }
 
+namespace {
+
+// Reconstructed from eboot.elf at 0x37D70. The emitter leaves the named
+// emitters while its flag changes.
+void SetIsNamedEmitter(const PropAccessorArgs& args) {
+    AudioEmitterCom* const emitter = static_cast<AudioEmitterCom*>(args.mComponent);
+    if (emitter->mIsNamedEmitter) {
+        emitter->_UnregisterNamedEmitter();
+    }
+    emitter->mIsNamedEmitter = *static_cast<const bool*>(args.mValue);
+    if (emitter->mIsNamedEmitter) {
+        emitter->_RegisterNamedEmitter();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x37DB0.
+void SetEmitterName(const PropAccessorArgs& args) {
+    AudioEmitterCom* const emitter = static_cast<AudioEmitterCom*>(args.mComponent);
+    if (emitter->mIsNamedEmitter) {
+        emitter->_UnregisterNamedEmitter();
+    }
+    emitter->mEmitterName = *static_cast<const Symbol*>(args.mValue);
+    if (emitter->mIsNamedEmitter) {
+        emitter->_RegisterNamedEmitter();
+    }
+}
+
+// Reconstructed from eboot.elf at 0x37DF0.
+bool GetDialogIsPlaying(const PropAccessorArgs& args) {
+    return static_cast<AudioEmitterCom*>(args.mComponent)->IsDialogPlaying();
+}
+
+// Reconstructed from eboot.elf at 0x37E00. The position counts from one.
+int GetBar(const PropAccessorArgs& args) {
+    return static_cast<AudioEmitterCom*>(args.mComponent)->mRuntime.mSongPos.mMeasure + 1;
+}
+
+// Reconstructed from eboot.elf at 0x37E10.
+int GetBeat(const PropAccessorArgs& args) {
+    return static_cast<AudioEmitterCom*>(args.mComponent)->mRuntime.mSongPos.mBeat + 1;
+}
+
+// Reconstructed from eboot.elf at 0x37E20.
+int GetTick(const PropAccessorArgs& args) {
+    return static_cast<AudioEmitterCom*>(args.mComponent)->mRuntime.mSongPos.mTick + 1;
+}
+
+// Reconstructed from eboot.elf at 0x37E30.
+void OnUsePreloadedBankChanged(const PropAccessorArgs& args) {
+    static_cast<AudioEmitterCom*>(args.mComponent)->_UpdateTempoAwareBuses();
+}
+
+// Reconstructed from eboot.elf at 0x37E40.
+void OnBusChanged(const PropAccessorArgs& args) {
+    static_cast<AudioEmitterCom*>(args.mComponent)->_UpdateTempoAwareBuses();
+}
+
+// Reconstructed from eboot.elf at 0x37E50.
+void OnPreloadedBusChanged(const PropAccessorArgs& args) {
+    static_cast<AudioEmitterCom*>(args.mComponent)->_UpdateTempoAwareBuses();
+}
+
+}  // namespace
+
 // Reconstructed from eboot.elf at 0xCF80. The binary emits the factory in
 // audio/SoundManager.o with the class's Init.
 Component* AudioEmitterCom::_Create() {
     return new AudioEmitterCom();
+}
+
+// Reconstructed from eboot.elf at 0x42F0. The binary emits the
+// registration in audio/SoundManager.o, which calls it.
+void AudioEmitterCom::Init() {
+    InitComponentClass<AudioEmitterCom>();
 }

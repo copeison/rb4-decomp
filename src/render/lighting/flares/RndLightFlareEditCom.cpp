@@ -149,3 +149,9 @@ ComMetaData& RndLightFlareEditCom::_GetMetaData() {
 Component* RndLightFlareEditCom::_Create() {
     return new RndLightFlareEditCom();
 }
+
+// Reconstructed from eboot.elf at 0x3FE980. The binary emits the registration
+// in render/RndInit.o.
+void RndLightFlareEditCom::Init() {
+    InitComponentClass<RndLightFlareEditCom>();
+}

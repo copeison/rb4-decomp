@@ -11,7 +11,7 @@
 #include "utl/threading/PollDep.h"
 
 class Entity;
-class PollGroup;
+class PollMgr;
 
 // The base of the entity resources the renderer draws, such as
 // RndSceneResource (render/RndDrawableEntityResource.o, 0x6C0B80-0x6C14FA;
@@ -96,7 +96,7 @@ public:
 
     // Draws the entity: on the calling thread through slots 36 and 33, or,
     // when the renderer draws with jobs and the parameters allow it, through
-    // the jobs of slots 34, 35, 37 and 38 run under the "draw" poll group.
+    // the jobs of slots 34, 35, 37 and 38 run under the "draw" poll manager.
     // The map's RndEntityResource::Draw(EntityPtr, RndSceneDrawParams&).
     // Not reconstructed: the poll group's queueing (0x6C1150) and the
     // parameter checks it inlines are not modelled.
@@ -131,8 +131,8 @@ public:
     static ResourceMetaData sMetaData;  // 0x1AB0308
 
     // Field names are not in the reference map.
-    // The "draw" poll group the job draw runs under, created by the first.
-    PollGroup* mDrawPollGroup;
+    // The "draw" poll manager the job draw runs under, created by the first.
+    PollMgr* mDrawPollMgr;
     // Cleared by the constructor; no reader was found.
     bool mReserved;
     NoOpDrawJob mHeadJob;               // "head"
@@ -144,7 +144,7 @@ public:
 
 static_assert(offsetof(RndDrawableEntityResource::NoOpDrawJob, mName) == 0x90);
 static_assert(sizeof(RndDrawableEntityResource::NoOpDrawJob) == 0x98);
-static_assert(offsetof(RndDrawableEntityResource, mDrawPollGroup) == 0x118);
+static_assert(offsetof(RndDrawableEntityResource, mDrawPollMgr) == 0x118);
 static_assert(offsetof(RndDrawableEntityResource, mReserved) == 0x120);
 static_assert(offsetof(RndDrawableEntityResource, mHeadJob) == 0x128);
 static_assert(offsetof(RndDrawableEntityResource, mAfterTexRenderersJob) == 0x1C0);

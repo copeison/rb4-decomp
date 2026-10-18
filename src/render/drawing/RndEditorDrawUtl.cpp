@@ -51,3 +51,12 @@ void RndEditorDrawUtl::Terminate() {
     delete gArrowMesh;
     gArrowMesh = nullptr;
 }
+
+// Reconstructed from eboot.elf at 0x461F90.
+eastl::vector<AllowedValue<int>> RndEditorDrawUtl::GetDrawWhenAllowedValues() {
+    eastl::vector<AllowedValue<int>> values;
+    values.push_back(AllowedValue<int>{kDrawNever, String("Never"), String("")});
+    values.push_back(AllowedValue<int>{kDrawIfSelected, String("If Selected"), String("")});
+    values.push_back(AllowedValue<int>{kDrawAlways, String("Always"), String("")});
+    return values;
+}

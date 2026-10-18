@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 877 entries. The audio
+executable. The latest unresolved-symbol report contains 858 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -225,7 +225,8 @@ The latest focused commits, newest first, are:
 | `006db74` | Message sources, poll dependencies, entity lifecycle and loading, audio emitter and listener components, SynthRack and MultiFusion generators |
 | `a7b94d9` | os memory, debug, system, files and keyboard; render scene, drawer, culler, lights, cameras, materials, meshes, particles, post-processing and options components |
 | `1fd3e74` | Entity header and instance components, waveforms, entity copy; scene drawer passes and job graph, shader dispatches and shader graph queries, occlusion query manager, mesh and material resources, particle system and texture renderer managers, edit components |
-| (this) | UI manager, UI init, layout resource and the real functions behind the `ui_*` adapters |
+| `048b965` | UI manager, UI init, layout resource and the real functions behind the `ui_*` adapters |
+| (this) | Property metadata and 22 component registry builders; the poll manager (PollMgr/PollGroup swapped to the binary's meaning), the scene and UI layout polls and draws |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

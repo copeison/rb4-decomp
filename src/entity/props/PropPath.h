@@ -45,6 +45,14 @@ public:
 
     // An empty path. Inlined by every user.
     PropPath() : mSize(0) {}
+    // A path of the one member. Inlined by the registries that look a
+    // member up, such as InstanceCom::_Init (0x118E60), which assign the
+    // name through a temporary node. Name not in the reference map.
+    explicit PropPath(Symbol name) : mSize(0) {
+        Node node;
+        mNodes[0] = (node = name);
+        mSize = 1;
+    }
 
     // Sets the path from the message's nodes from `start` on: symbols name
     // members and integers index arrays.

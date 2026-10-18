@@ -71,16 +71,12 @@ public:
         const RndSceneDrawParams& params,
         RndSceneBatchContext& batch) override;  // 0x632BB0
 
-    // Registers the class. Emitted with the renderer's components at
-    // 0x3F9AD0. Not reconstructed: the registration helpers it inlines are
-    // not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3F9AD0
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x405A40
     // Registers the class description and the properties below, with the
-    // falloff function's choices. Not reconstructed: ComMetaData's string
-    // and list members and the properties' metadata are written inline
-    // through helpers that are not modelled.
+    // falloff function's choices.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x6320F0
 
     // The object's statics, in the order of its static initializer

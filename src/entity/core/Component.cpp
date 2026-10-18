@@ -63,6 +63,8 @@ void ReportPropPathFailure(const Component& component, const PropPath& path) {
 
 // The class factories at 0x19E2900.
 eastl::map<Symbol, Component* (*)()> Component::sFactory;
+// The placement constructors at 0x19E2938.
+eastl::map<Symbol, Component* (*)(void* storage)> Component::sVtables;
 // The flag at 0x19E2970.
 bool Component::sRegressionTesting;
 
@@ -74,7 +76,7 @@ Component::Component()
       mResourcesRequested(false),
       mResourcesReady(false),
       mEntered(false),
-      mReserved(false) {}
+      mLoadResourcesQueued(false) {}
 
 // Reconstructed from eboot.elf at 0xE71C0. Nothing is copied from the other
 // component; the imprint's properties are copied by _ImprintProps.
@@ -85,7 +87,7 @@ Component::Component(const Component& other)
       mResourcesRequested(false),
       mResourcesReady(false),
       mEntered(false),
-      mReserved(false) {
+      mLoadResourcesQueued(false) {
     static_cast<void>(other);
 }
 

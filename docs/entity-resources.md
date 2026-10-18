@@ -24,7 +24,7 @@ map puts all of this in its `entity` module.
 | `entity/Waveform.o` | `0x1C8B70`-`0x1D0A9F` | `src/entity/waveform/Waveform.h` (declared) |
 | `utl/DataUtl.o` (part) | `0x23C2E0`, `0x23F780` | `src/utl/data/DataUtl.cpp` |
 | `utl/FileUtl.o` (part) | `0x244860`-`0x245866` | `src/utl/files/FileUtl.cpp` |
-| `utl/PollMgr.o` (part) | thread-local data | `src/utl/threading/PollMgr.cpp` |
+| `utl/PollMgr.o` | `0x24CB60`-`0x2518E0` | `src/utl/threading/PollMgr.cpp` (see [messages-and-polls.md](messages-and-polls.md)) |
 | `utl/BinStream.o` (part) | `0x219F10` | `src/utl/streams/BinStream.cpp` |
 
 The component base and the property system are in
@@ -224,7 +224,7 @@ layout and the constructors are modelled; `WaveformInit`,
   `CopyToCache` have no callers. Their names rest on their bodies and their
   place in the object.
 - The EntityResource slot names `_PostLoad`, `_OnEntityReady`,
-  `_DestroyLayerEntity`, `IsTransient`, `_IsEditorEntity` and
+  `_OnPolledImmediately`, `IsTransient`, `_IsEditorEntity` and
   `_WantsPerfTimers` come from their bodies and callers only.
 - Every load-progress name, and the enumerator names `kDestroyRoot`,
   `kDestroyEditorInstance` and `kDestroyInstance`, are inferred.

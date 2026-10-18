@@ -14,6 +14,7 @@
 #include "utl/text/Symbol.h"
 
 class PollGroup;
+class PollMgr;
 class Vector2i;
 
 // The component through which a parent entity instances a scene
@@ -93,9 +94,14 @@ public:
     // centre, moved by "projection_offset" (horizontally scaled from the
     // output's aspect to the target's).
     Hmx::Rect CalcProjectionRect(const Vector2i& size) const;  // 0x4365F0
-    // The poll group of the instanced scene's RndSceneCom. Name not in the
-    // reference map.
-    PollGroup* GetScenePollGroup() const;  // 0x436670
+    // The poll manager of the instanced scene's RndSceneCom. Name not in
+    // the reference map.
+    PollMgr* GetScenePollMgr() const;  // 0x436670
+    // The drawer's (key 0) and the scene's (key 1) poll groups of the
+    // instanced scene, or null while no scene is instanced. Names not in
+    // the reference map.
+    PollGroup* GetSceneDrawerPollGroup() const;  // 0x4366C0
+    PollGroup* GetScenePollGroup() const;        // 0x4366E0
     // Rebuilds mMaskingScenes. Not reconstructed: the dynamically loaded
     // scenes are found through the root's UI layout component, which is
     // not modelled. Name not in the reference map.

@@ -1,7 +1,6 @@
-// entity/InstanceCom.o (0x118DC0 to 0x122DA0). The registry (0x118E60), the
-// property handlers (0x11B8A0-0x11BF8F), the interface property copies
-// (0x11A1F0, 0x11A360, 0x11C220 and 0x11C420) and ResourceCom's
-// registration (0x11B8E0) are not reconstructed.
+// entity/InstanceCom.o (0x118DC0 to 0x122DA0). The interface property
+// copies (0x11A1F0, 0x11A360, 0x11C220 and 0x11C420) are not
+// reconstructed.
 #include "entity/core/InstanceCom.h"
 
 #include <new>
@@ -12,6 +11,8 @@
 #include "entity/core/EntityResource.h"
 #include "entity/core/GameObject.h"
 #include "entity/core/TransCom.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
 #include "os/memory/MemMgr.h"
 #include "utl/data/DataArray.h"
 #include "utl/data/DataUtl.h"
@@ -52,6 +53,24 @@ bool EntersImmediately() {
     return context.mPollMgr != nullptr && context.mEnterImmediately;
 }
 
+// The property handlers _Init installs (0x11B8A0, 0x11B8C0). Names not in
+// the reference map.
+void OnActiveChanged(const PropAccessorArgs& args);
+void OnPollEnabledChanged(const PropAccessorArgs& args);
+
+// Whether the instanced entity's root does not copy on instance, which
+// makes "active" and "poll_enabled" read-only; false while the resource is
+// missing or failed. The body of the tag functions at 0x11BC10 and
+// 0x11BD90. Name not in the reference map.
+bool IsSharedInstance(const TagArgs& args) {
+    const InstanceCom& instance = static_cast<const InstanceCom&>(args.mComponent);
+    const TransEntityResource* const resource = instance.mResource.Get();
+    if (resource == nullptr || resource->Fail()) {
+        return false;
+    }
+    return !RootHeader(resource->mEntity)->CopyOnInstance();
+}
+
 }  // namespace
 
 // Reconstructed from eboot.elf at 0x118DC0. The heap index is looked up
@@ -67,6 +86,59 @@ void InstanceCom::_InitAsSuperclass(PropRegistry& registry, ComMetaData& metadat
     metadata.mEditorRestrictions = ComMetaData::InheritEditorRestrictions(
         static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions),
         restrictions);
+}
+
+// Reconstructed from eboot.elf at 0x118E60. The file property's metadata
+// is looked up by its path, once to no effect and once to set its resource
+// class. Each registration builds a "prop" symbol it does not use.
+void InstanceCom::_Init(PropRegistry& registry, ComMetaData& metadata, const char* fileProp) {
+    metadata.mDescription = "Used to load an entity resource.";
+    metadata.mAuthor = "Matt Sharpe";
+    metadata.mCategory = ComMetaData::kCategoryMiscellaneous;
+    metadata.mAllowedResources.push_back(Symbol("RndDrawableEntityResource"));
+    metadata.mAliases.push_back(Symbol("InstanceCom"));
+    metadata.mInterface = sClassName;
+    metadata.mLightweight = true;
+    _InitPropRegistry(registry, fileProp);
+
+    InstanceCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    } else {
+        static_cast<void>(sPropRegistry.FindProp(PropPath(Symbol("file")), nullptr));
+        const ResourcePath fileType;
+        ResourcePathMetadata& file = TypeSpecificMetadata(
+            *const_cast<PropInfo*>(sPropRegistry.FindProp(PropPath(Symbol("file")), nullptr)), fileType);
+        static_cast<void>(Symbol("prop"));
+        file.mResourceId = Symbol("RndEntityResource");
+
+        BoolMetadata& active = TypeSpecificMetadata(
+            sPropRegistry.RegisterProp("active", offsetof(InstanceCom, mActive), kPropertyBool, 1),
+            prototype.mActive);
+        active.mDefault = prototype.mActive;
+        static_cast<void>(Symbol("prop"));
+        active.mHelp = String("If unchecked, my child entity will stop polling and stop drawing");
+        active.mOnChanged = OnActiveChanged;
+        active.mReadOnly._Set([](const TagArgs& args) { return IsSharedInstance(args); });
+
+        BoolMetadata& pollEnabled = TypeSpecificMetadata(
+            sPropRegistry.RegisterProp("poll_enabled", offsetof(InstanceCom, mPollEnabled), kPropertyBool, 1),
+            prototype.mPollEnabled);
+        pollEnabled.mDefault = prototype.mPollEnabled;
+        static_cast<void>(Symbol("prop"));
+        pollEnabled.mHelp = String("If unchecked, my child entity will stop polling (but keep drawing)");
+        pollEnabled.mOnChanged = OnPollEnabledChanged;
+        pollEnabled.mReadOnly._Set([](const TagArgs& args) { return IsSharedInstance(args); });
+    }
+    // At 0x11BF10: records the revision the properties were saved under.
+    std::function<void(const PropRegistry::RevisionArgs&)> onRevision =
+        [](const PropRegistry::RevisionArgs& args) {
+            static_cast<InstanceCom*>(args.mComponent)->mRuntime.mLoadedRev = args.mSavedRev;
+        };
+    if (&registry == &sPropRegistry) {
+        sPropRegistry.SetCurrentRev(1);
+        sPropRegistry.mRevisionFunc = onRevision;
+    }
 }
 
 // Reconstructed from eboot.elf at 0x1196D0.
@@ -567,6 +639,55 @@ Entity* InstanceCom::GetInterfaceEntity() {
 // Reconstructed from eboot.elf at 0x11B850.
 bool InstanceCom::_ForwardsInterfaceEdits() {
     return true;
+}
+
+namespace {
+
+// Reconstructed from eboot.elf at 0x11B8A0.
+void OnActiveChanged(const PropAccessorArgs& args) {
+    InstanceCom* const instance = static_cast<InstanceCom*>(args.mComponent);
+    if (instance->mRuntime.mEntity != nullptr) {
+        instance->mRuntime.mEntity->SetActive(instance->mActive);
+    }
+}
+
+// Reconstructed from eboot.elf at 0x11B8C0.
+void OnPollEnabledChanged(const PropAccessorArgs& args) {
+    InstanceCom* const instance = static_cast<InstanceCom*>(args.mComponent);
+    if (instance->mRuntime.mEntity != nullptr) {
+        instance->mRuntime.mEntity->SetPollEnabled(instance->mPollEnabled);
+    }
+}
+
+}  // namespace
+
+// Reconstructed from eboot.elf at 0x11B8E0. The file property is only
+// marked as the instance's file; "reloads_self" and "com_order_crc" are
+// read-only debug properties.
+void InstanceCom::_InitPropRegistry(PropRegistry& registry, const char* fileProp) {
+    InstanceCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+    registry.RegisterProp(fileProp, offsetof(InstanceCom, mFile), kPropertyResourcePath, 8)
+        .mMetadata->mInstanceFile = true;
+
+    BoolMetadata& reloadsSelf = TypeSpecificMetadata(
+        registry.RegisterProp("reloads_self", offsetof(InstanceCom, mReloadsSelf), kPropertyBool, 1),
+        prototype.mReloadsSelf);
+    reloadsSelf.mDefault = prototype.mReloadsSelf;
+    static_cast<void>(Symbol("prop"));
+    reloadsSelf.mReadOnly = true;
+    reloadsSelf.mDebug = true;
+
+    IntMetadata<int>& comOrderCrc = TypeSpecificMetadata(
+        registry.RegisterProp("com_order_crc", offsetof(InstanceCom, mComOrderCrc), kPropertyInt, 4),
+        prototype.mComOrderCrc);
+    comOrderCrc.mDefault = prototype.mComOrderCrc;
+    static_cast<void>(Symbol("prop"));
+    comOrderCrc.mDefault = -1;
+    comOrderCrc.mDebug = true;
+    comOrderCrc.mReadOnly = true;
 }
 
 // Reconstructed from eboot.elf at 0x12B470, emitted with InterfaceSource's

@@ -99,6 +99,23 @@ public:
         ++mSize;
     }
 
+    // Exchanges the elements, the sizes and the allocators, as EASTL's swap
+    // does when the allocators compare equal, which HmxAllocator's always
+    // do (0x252D60); for example at 0x8B1BB0 for PollGroup pointers.
+    void swap(list& other) {
+        const ListNodeBase node = mNode;
+        mNode = other.mNode;
+        other.mNode = node;
+        RelinkAnchor(other);
+        other.RelinkAnchor(*this);
+        const Allocator allocator = mAllocator;
+        mAllocator = other.mAllocator;
+        other.mAllocator = allocator;
+        const unsigned long size = mSize;
+        mSize = other.mSize;
+        other.mSize = size;
+    }
+
     // Frees every node and leaves the anchor linked to itself.
     void clear() {
         DoClear();
@@ -193,6 +210,18 @@ private:
         }
         tail->mpNext = left != nullptr ? left : right;
         return head.mpNext;
+    }
+
+    // Points the swapped-in nodes back at this anchor; an anchor that held
+    // no nodes took the other anchor's self links. Name not in EASTL.
+    void RelinkAnchor(list& other) {
+        if (mNode.mpNext == &other.mNode) {
+            mNode.mpPrev = &mNode;
+            mNode.mpNext = &mNode;
+        } else {
+            mNode.mpPrev->mpNext = &mNode;
+            mNode.mpNext->mpPrev = &mNode;
+        }
     }
 
     void DoClear() {

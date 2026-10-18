@@ -4,7 +4,11 @@
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
 #include "entity/core/GameObject.h"
+#include "entity/props/PropMetadata.h"
+#include "render/drawing/RndDrawInstanceCom.h"
 #include "render/drawing/RndSceneDrawer.h"
+#include "render/scene/RndEntityResource.h"
+#include "render/system/RndUtl.h"
 #include "utl/files/FileUtl.h"
 #include "utl/threading/PollMgr.h"
 
@@ -22,7 +26,7 @@ RndEntityCom::RndEntityCom() : mPreviewLod(0) {}
 // Reconstructed from eboot.elf at 0x6CA310. The class's constructor inlines
 // it.
 RndEntityCom::RuntimeData::RuntimeData()
-    : mPollGroup(nullptr),
+    : mPollMgr(nullptr),
       mPollGroups(nullptr),
       mSceneDrawer(nullptr),
       mOwnsSceneDrawer(false),
@@ -33,8 +37,8 @@ RndEntityCom::RuntimeData::RuntimeData()
 RndEntityCom::~RndEntityCom() {
     delete mRuntimeData.mPollGroups;
     mRuntimeData.mPollGroups = nullptr;
-    delete mRuntimeData.mPollGroup;
-    mRuntimeData.mPollGroup = nullptr;
+    delete mRuntimeData.mPollMgr;
+    mRuntimeData.mPollMgr = nullptr;
     if (mRuntimeData.mOwnsSceneDrawer) {
         delete mRuntimeData.mSceneDrawer;
     }
@@ -42,12 +46,11 @@ RndEntityCom::~RndEntityCom() {
 }
 
 // Reconstructed from eboot.elf at 0x6CA430.
-PollGroup* RndEntityCom::ObtainPollMgr() {
-    if (mRuntimeData.mPollGroup == nullptr) {
-        mRuntimeData.mPollGroup =
-            new PollGroup(FileGetName(mObject->mEntity->mResource->mPath.Str()));
+PollMgr* RndEntityCom::ObtainPollMgr() {
+    if (mRuntimeData.mPollMgr == nullptr) {
+        mRuntimeData.mPollMgr = new PollMgr(FileGetName(mObject->mEntity->mResource->mPath.Str()));
     }
-    return mRuntimeData.mPollGroup;
+    return mRuntimeData.mPollMgr;
 }
 
 // Reconstructed from eboot.elf at 0x6CA480.
@@ -85,6 +88,36 @@ RndSceneDrawer* RndEntityCom::ObtainOwnedSceneDrawer() {
         mRuntimeData.mOwnsSceneDrawer = true;
     }
     return mRuntimeData.mSceneDrawer;
+}
+
+// Reconstructed from eboot.elf at 0x6CA5A0. Each preview level is named,
+// and described, by its level name.
+void RndEntityCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RndDrawableEntityCom::_InitAsSuperclass(registry, metadata);
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    metadata.mDescription = "Entity-wide rendering settings";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mEditorRestrictions = 0;
+    metadata.mAllowedResources.push_back(RndEntityResource::Id());
+    metadata.mLightweight = true;
+    RndEntityCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+    PropInfo& lodInfo =
+        registry.RegisterProp("preview_lod", offsetof(RndEntityCom, mPreviewLod), kPropertyInt, 4);
+    IntMetadata<int>& lod = static_cast<IntMetadata<int>&>(*lodInfo.mMetadata.Get());
+    lod.mDefault = prototype.mPreviewLod;
+    static_cast<void>(Symbol("prop"));
+    lod.mHelp = String("Level of detail to draw when viewing this entity on its own");
+    eastl::vector<AllowedValue<int>> levels;
+    levels.reserve(kNumSceneLods);
+    for (unsigned int level = 0; level < kNumSceneLods; ++level) {
+        const char* const name = RndUtl::GetLodName(static_cast<RndSceneLod>(level));
+        levels.push_back(AllowedValue<int>{static_cast<int>(level), String(name), String(name)});
+    }
+    lod.mAllowedValues = static_cast<eastl::vector<AllowedValue<int>>&&>(levels);
 }
 
 // Reconstructed from eboot.elf at 0x6CAB20.
@@ -157,4 +190,10 @@ ComMetaData& RndEntityCom::_GetMetaData() {
 // render/RndInit.o with the class's Init.
 Component* RndEntityCom::_Create() {
     return new RndEntityCom();
+}
+
+// Reconstructed from eboot.elf at 0x3ED3A0. The binary emits the registration
+// in render/RndInit.o.
+void RndEntityCom::Init() {
+    InitComponentClass<RndEntityCom>();
 }

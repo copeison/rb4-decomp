@@ -7,12 +7,17 @@ PropInfo::PropInfo() : mOffset(-1), mDynamicOffset(-1), mType(kPropertyNone), mC
 
 // Reconstructed from eboot.elf at 0x12DC00.
 bool PropInfo::IsSaved() const {
-    return mOffset >= 0 && mMetadata->mFlags[1];
+    return mOffset >= 0 && mMetadata->mSaves;
 }
 
 // Reconstructed from eboot.elf at 0x12DC20.
 const PropInfo& PropInfo::PropArrayItemInfo() const {
     return static_cast<const ArrayMetadata*>(mMetadata.Get())->mItemInfo;
+}
+
+// Reconstructed from eboot.elf at 0x12DC40.
+const PropRegistry* PropInfo::GetStructRegistry() const {
+    return mMetadata->GetStructRegistry();
 }
 
 // Reconstructed from eboot.elf at 0x12DC70.

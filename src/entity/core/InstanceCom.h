@@ -237,11 +237,14 @@ public:
     // interface components. Name not in the reference map.
     void _InstanceChild();  // 0x119E90
 
-    // Registers the file property under `fileProp`, "active" and
-    // "poll_enabled", describes the class and installs the revision
-    // handler. Not reconstructed: the property metadata and the
-    // std::function handlers it binds are not modelled.
+    // Describes the class, registers the resource properties and, for the
+    // class's own registry, "active", "poll_enabled", the file property's
+    // resource class and the revision handler.
     static void _Init(PropRegistry& registry, ComMetaData& metadata, const char* fileProp);  // 0x118E60
+    // Registers the resource file under `fileProp`, "reloads_self" and
+    // "com_order_crc". The map's signature is
+    // _InitPropRegistry(PropRegistry&).
+    static void _InitPropRegistry(PropRegistry& registry, const char* fileProp);  // 0x11B8E0
     // The class's registration, with the file property "file".
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x1196D0
     // Makes InstanceCom the superclass of a subclass's metadata, runs

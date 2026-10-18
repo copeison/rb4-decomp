@@ -395,11 +395,6 @@ public:
     // compiles it against the DynamicComResource base (0x11BF90 for
     // TransEntityResource). Name not in the reference map.
     bool _LoadResource();
-    // Registers mFile under the given property name, "reloads_self" and
-    // "com_order_crc" (0x11B8E0 for TransEntityResource). Not
-    // reconstructed: the property metadata's attributes are written
-    // through helpers that are not modelled.
-    static void _Init(PropRegistry& registry, const char* fileProp);
 
     // Field names are not in the reference map.
     // The resource file; the subclass names the property.

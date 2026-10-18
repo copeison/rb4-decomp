@@ -33,8 +33,11 @@ an inlined copy constructor keeps the properties, copies the scene's
 `floats`, `colors` and hysteresis `entries` through `PropArrayBase::_Copy`,
 and starts the run-time state afresh (the scene's poll groups, drawer and
 counters, `isolate_lod`, the camera's stereo eyes and the drawable entity's
-texture renderers). The scene's and the camera's `_Init` stay declared;
-their property metadata is not modelled. `RndDrawableEntityCom::_Init` is reconstructed:
+texture renderers). The camera's `_Init` is reconstructed with its clip,
+pixel-accuracy and field-of-view callbacks (`0x6B8310`-`0x6B83A0`); the
+scene's stays declared. `RndEntityCom::_Init` offers the level names
+(`RndUtl::GetLodName`, `0x4423A0`); the classes' `Init` registrations are
+reconstructed. `RndDrawableEntityCom::_Init` is reconstructed:
 "Goes on the root object of all drawable entities", a rendering class
 allowed in `RndDrawableEntityResource`s whose interface is its own class
 symbol. `_InitAsSuperclass` (`0x4105A0`, emitted in `RndSceneCom.o`) makes
@@ -66,8 +69,8 @@ property references inside the array elements are the map's `PropRef`
 (216 bytes, constructor `0x17F4F0`), which is not modelled under
 `src/entity`; `RndSceneCom::PropRefData` mirrors its members.
 
-The runtime members are the entity's `PollGroup` (`+0x120`), the split
-poll jobs and their nested `PollMgr`s (`+0x128`), the scene's
+The runtime members are the entity's `PollMgr` (`+0x120`), the split
+poll jobs and their `PollGroup`s (`+0x128`), the scene's
 `PollGroups` (`+0x148`: "SceneDrawer PG" and "Scene PG"), the
 `RndSceneDrawer` (`+0x150`), the frame interval (`+0x158`), the
 partial-framerate scene index (`+0x160`), the frame the interval started
@@ -76,7 +79,7 @@ partial-framerate scene index (`+0x160`), the frame the interval started
 (`+0x188`).
 
 Slot 29 (`_OnResourcesLoaded`, the map's `_LoadResources`) sizes the
-globals to four entries, creates the poll group and the scene drawer,
+globals to four entries, creates the poll manager and the scene drawer,
 takes the first light manager in the entity when none is named, creates
 the "Prop Hysteresis" texture (one row per entry filled with its default
 values, in the supported 64-bit float format) and finds the entity's
@@ -106,18 +109,20 @@ the counter.
 
 `AddPollSplitJob` (`0x408810`) adds a `PollSplitJob` (a `ThreadedJob`,
 vtable `0x18FFBC8`, 184 bytes) for a window of the entity's poll order,
-named "poll-split-job: <n>" for its perf timer, under a new nested manager
-"<name> PG" that shares the releasing job's manager.
-`LinkPollSplitJobs` (`0x408A80`) queues each job on its manager and chains
-the managers; `ClearPollSplitJobs` (`0x408600`) destroys them.
-`CreatePollGroups` (`0x408B10`) builds the scene's `PollGroups`; a scene
-below another stops its polls from waiting for its drawer's.
+named "poll-split-job: <n>" for its perf timer, in a new poll group
+"<name> PG" whose head and tail take the releasing job's group.
+`LinkPollSplitJobs` (`0x408A80`) adds each job to its group and chains
+the groups; `ClearPollSplitJobs` (`0x408600`) destroys them.
+`CreatePollGroups` (`0x408B10`) builds the scene's `PollGroups`
+(`0x4121A0`; `Reset` `0x412450`, destructor `0x412750`), a
+`PollGroupMap` whose scene group (key 1) polls after the drawer group
+(key 0); a scene below another stops its polls from waiting for its
+drawer's.
 
 Not reconstructed: `_Init`, `UpdatePropHysteresisTexture`
 (`0x409710`, the per-frame texel update), the job's `_DoPoll`
-(`0x407F30`: the audio lock and the entity's poll window), the
-`PollGroups` class (`0x4121A0`-`0x412750`) and the array type
-registrations (`0x410090`, `0x410240`, `0x4103F0`).
+(`0x407F30`: the audio lock and the entity's poll window) and the array
+type registrations (`0x410090`, `0x410240`, `0x4103F0`).
 
 ## RndCameraCom
 
@@ -140,7 +145,7 @@ PS4 resolution, or the whole target, and calls
 ## RndDrawableEntityResource and RndSceneResource
 
 `RndDrawableEntityResource` derives from `TransEntityResource`. It owns a
-"draw" `PollGroup` (`+0x118`), three `NoOpDrawJob`s that order the draw
+"draw" `PollMgr` (`+0x118`), three `NoOpDrawJob`s that order the draw
 jobs ("head", "after tex renderers", "tail"; vtable `0x1937B50`) and the
 current draw's job list (`+0x2F0`). Slots 33-38 are pure: draw now, start
 and finish the draw jobs, and draw, start and finish the texture renderers.
@@ -168,14 +173,35 @@ audio-emitter and transform editor data, the instance pool) are reached through 
 `StateGraphDriverCom` have symbol-only headers under `src/anim` and
 `src/stategraph`.
 
-Not reconstructed: `_PollEntity` (`0x43A130`), `_EnterImmediately`
-(`0x438670`; its two callbacks are the `std::function` thunks at
-`0x43AC70`-`0x43AEA0`), slot 22 (`0x439AE0`, run at the end of the
-entity's poll, which rebuilds the split poll jobs) and
-`_OnComponentCreated` (`0x43A6D0`). They need `PollMgr` and `PollGroup`
-entry points (`0x24CF10`, `0x24F900`, `0x250160`, `0x24D4D0`), the poll
-context's third member and `RndLightCom::AddToEnviron` (`0x46CCD0`),
-none of which are declared yet.
+The first immediate enter (`_EnterImmediately`, `0x438670`) creates the
+scene's poll groups and gives the scene group callbacks (the
+`std::function` members at `0x43AC70`-`0x43AEA0`): before its polls the
+frame interval steps and either marks the entity unpolled (flag 0x2000)
+or records the interval's start frame; after them the mark is cleared.
+`_PollEntity` (`0x43A130`) polls the groups under the scene's manager:
+the drawer group starts, the manager syncs on the scene group and then on
+everything, and both groups run their post-polls. A thread that already
+polls syncs the scene's timelines (`TimelinesCom::_UpdateParentClock`,
+`_SyncClock`, through `_SyncTimelines`, `0x43A580`) and polls through the
+base class; an edit-mode scene polls once per frame interval between the
+drawer's poll and post-poll. Slot 22, `_OnPolledImmediately` (`0x439AE0`,
+called at the end of `Entity::_PollImmediately`), queues the drawer in
+the selected drawer group and rebuilds the split poll jobs: a window ends
+at each object with a "ScenePollSplit" component (vtable `0x18FF610`, not
+modelled; its class symbol is `gScenePollSplitComId`), weighs a tenth of
+its components, and the objects' components receive their window's job
+through `Component` slot 26. `_OnComponentCreated` (`0x43A6D0`) joins new
+lights (`RndLightCom::AddToEnviron`, `0x46CCD0`, declared), draw nodes and
+entity instances to the light manager's default environment.
+`RndSceneInstanceCom::GetSceneDrawerPollGroup` and `GetScenePollGroup`
+(`0x4366C0`, `0x4366E0`) return the instanced scene's groups.
+
+Names inferred from bodies and callers: `_OnPolledImmediately` (the
+binary shows slot 22 is no `_DestroyLayerEntity`), `_SyncTimelines`,
+`gScenePollSplitComId`, the scene-instance group getters, and on
+`TimelinesCom` `_UpdateParentClock`, `_SyncClock`, slot 41
+`_OnClockSynced` (empty), `mParentClock`, `mClockSynced` and `mFramerate`
+("framerate").
 
 ## RndTexRendererMgr
 

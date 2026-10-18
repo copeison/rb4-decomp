@@ -11,6 +11,7 @@
 #include "entity/core/ComMetaData.h"
 #include "entity/core/Component.h"
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
 #include "entity/props/PropRegistry.h"
 #include "math/transform/Transform.h"
 #include "os/threading/CritSec.h"
@@ -297,15 +298,12 @@ public:
     void _RegisterNamedEmitter();    // 0x33370
     void _UnregisterNamedEmitter();  // 0x33620
 
-    // Registers the class: the metadata heap, _Init, the factories and the
-    // class's ComMetaData. Inline in the map; this build emits it in
-    // audio/SoundManager.o at 0x42F0. Not reconstructed: the registration
-    // helpers it inlines are not modelled.
+    // Registers the class (InitComponentClass). Inline in the map; this
+    // build emits it in audio/SoundManager.o at 0x42F0.
     static void Init();
     // The class factory. Emitted in audio/SoundManager.o at 0xCF80.
     static Component* _Create();
-    // Registers the properties and the class description. Not
-    // reconstructed: the property metadata's attributes are not modelled.
+    // Registers the properties and the class description.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x32110
 
     static Symbol sId;          // 0x19C7768, "AudioEmitter"
@@ -333,6 +331,11 @@ public:
     TempoAwareBusProps mTempoAwareBusProps;  // "tempo_aware_buses"
     RuntimeData mRuntime;
 };
+
+// The game-wide emitter names as allowed values for "emitter_name", read
+// under sNamedEmittersLock. At 0x358E0. Name not in the reference map. Not
+// reconstructed.
+eastl::vector<AllowedValue<Symbol>> GetGameWideEmitterNameValues();
 
 // Adds an empty entry for the emitter name to AudioEmitterCom::
 // sNamedEmitters, which named emitters then join; SoundManager reads the

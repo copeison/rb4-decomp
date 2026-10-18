@@ -177,7 +177,7 @@ destroys the objects. Both release the threaded poll range first and resync
 the masking scenes after.
 
 `_EnterEntity` (`0x8AC810`) enters the objects itself, creates the layout
-component's poll group and managers, and keeps the entered scenes for the
+component's poll manager and groups, and keeps the entered scenes for the
 next sync of the poll range. `_OnEntityReady` (`0x8ADA20`) and
 `_EnterImmediately` (`0x8AD8F0`) collect and enter the ready scenes.
 `HandleMsg` (`0x8ADB70`) exports a message to the scene entities.
@@ -190,8 +190,31 @@ order built from the scene instances' draw orders.
 
 `UILayoutCom` (280 bytes, vtable `0x195D018`) holds the `poll_order`,
 `draw_order` and `hmd_mirror_overlays` arrays at 32, 72 and 112, the poll
-group and managers at 152-168, the ready scenes at 240 and the released flag
-at 272.
+manager and groups at 152-168, the threaded scenes and the groups to start
+at 176 and 208, the ready scenes at 240 and the released flag at 272.
+
+`_PollEntity` (`0x8ACC60`) applies the scene queues, then, for an active
+game-mode layout, enters ready scenes at once when the range was
+released, selects the layout's `PollMgr`, takes the audio lock as
+"use_pollmgr_audio_lock" asks (left alone while `mSerialPollFrames` counts
+down), starts the drawer group, syncs on the scene group and then on
+everything, and runs the post-polls of the scene group, each threaded
+scene's groups and the drawer group. `_SyncThreadedPollRange`
+(`0x8AC1E0`) orders the scenes' groups: a run of threaded scenes polls
+after the groups the last serial scene left, a serial scene after the
+whole run; the layout's own entity polls in the layout's group after them.
+`_ClearThreadedPollRange` (`0x8AB6E0`) unlinks them again when a scene
+group has jobs.
+
+The draws (`_Draw` `0x8AFDC0`, `_StartDrawJobs` `0x8B05E0`,
+`_FinishDrawJobs` `0x8B1100`) walk the showing scenes; each first draws
+the depth of its showing masking scenes (`DrawMaskingScenes`, `0x8AF870`),
+clears only as the first scene and outputs to the back buffer only as the
+last (`_SetSceneDrawParams`, `0x8AFB90`). The job draw keeps one
+`SceneDrawJob` (408 bytes, vtable `0x195D368`) per scene for the masking
+draw and chains each scene's draw jobs after it; without scenes the
+`ClearJob` runs. `DrawHmdMirrorOverlays` (`0x8AF240`, no caller) draws the
+HMD mirror overlays without clearing.
 
 ## Weak evidence
 
@@ -207,7 +230,10 @@ at 272.
   (`0x8AC1E0`) takes the map's name from its callees, and
   `_ClearThreadedPollRange` (`0x8AB6E0`) is named as its counterpart.
   `_ValidateSceneData` takes the map's name for a body whose checks are
-  compiled out.
+  compiled out. `SceneDrawJob`, `DrawMaskingScenes`, `_GetMaskingScenes`,
+  `_SetSceneDrawParams`, `DrawHmdMirrorOverlays`,
+  `_AssignPartialFramerateScenes` and `UILayoutCom::mThreadedScenes` and
+  `mStartPollGroups` (nothing found fills it) are named from their bodies.
 - `UILayoutCom` and `UIListEditorDataCom` are named after their class
   symbols; the map, which is older, has neither.
 - `JoypadClient::SetInputEnabled` (`0x39F6E0`), `RndDrawUtl::ClearBuffers`
@@ -218,14 +244,13 @@ at 272.
 
 ## Not reconstructed
 
-- `UILayoutResource::_PollEntity` (`0x8ACC60`), the draws (`_Draw`,
-  `_StartDrawJobs`, `_FinishDrawJobs`, from `0x8AF240`), the scene draw job
-  (vtable `0x195D368`) and the poll range functions: they use poll-manager
-  and scene-instance helpers (`0x24D370`, `0x24D620`, `0x4366C0`,
-  `0x4366E0`) and render job state that are not modelled.
+- `UILayoutResource::_AssignPartialFramerateScenes` (`0x8AD420`, the
+  end of the poll), which gives the partial-framerate scenes distinct
+  intervals through a bit vector (vtable `0x195D3C8`, the map's
+  `utl/BitVector.o` family) that is not modelled.
 - The rest of `UILayoutCom` and the UI component classes, including their
-  `Init` registrations, which inline the metadata helpers that are not
-  modelled (as for the other component classes).
+  `Init` registrations: `InitComponentClass` needs each class's
+  constructor, statics and `_Init`, which are not reconstructed.
 - `ui/UIMsg.o` (the button and select messages).
 - Outside the `ui` module: `RBMetaState`, `DialogMgrCom`, `JoypadClient`,
   `ResourceLoader::AcquireLoader` and `ReleaseLoader`, and

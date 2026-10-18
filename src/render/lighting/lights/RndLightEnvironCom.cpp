@@ -7,6 +7,8 @@
 
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
 #include "math/color/Color.h"
 #include "render/context/RndContext.h"
 #include "render/lighting/RndLightMgrCom.h"
@@ -14,6 +16,7 @@
 #include "render/lighting/lights/RndLightCom.h"
 #include "render/materials/RndMaterialCom.h"
 #include "render/scene/RndSceneCom.h"
+#include "render/scene/RndSceneResource.h"
 
 namespace {
 
@@ -208,6 +211,62 @@ void RndLightEnvironCom::DrawDeferredLightNoCompute(
     for (RndLightCom* light : mRuntime.mCulledNegativeLights) {
         light->_DrawDeferredNoComputeImpl(ctx, buffers, target, noProbe);
     }
+}
+
+// Reconstructed from eboot.elf at 0x479650. The run-time light lists are
+// shown read-only for debugging and not saved; a nested light's id refers
+// into the entity it was found in.
+void RndLightEnvironCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mCategory = ComMetaData::kCategoryLight;
+    metadata.mDescription = "Lighting environment";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    RndLightEnvironCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+
+    PropInfo& indexInfo = registry.RegisterProp(
+        "environ_index",
+        offsetof(RndLightEnvironCom, mRuntime) + offsetof(RuntimeData, mEnvironIndex),
+        kPropertyInt,
+        4);
+    IntMetadata<int>& index = static_cast<IntMetadata<int>&>(*indexInfo.mMetadata.Get());
+    index.mDefault = prototype.mRuntime.mEnvironIndex;
+    static_cast<void>(Symbol("prop"));
+    index.mDebug = true;
+    index.mReadOnly = true;
+    index.mSaves = false;
+
+    PropInfo& siblings = registry.RegisterPropArray(
+        "sibling_lights",
+        offsetof(RndLightEnvironCom, mRuntime) + offsetof(RuntimeData, mSiblingLights),
+        sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& siblingsMetadata = static_cast<ArrayMetadata&>(*siblings.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    PropRegistry::RegisterPropArrayItem(siblings, kPropertyGameObjectId, sizeof(GameObjectId));
+    siblingsMetadata.mReadOnly = true;
+    siblingsMetadata.mDebug = true;
+    siblingsMetadata.mSaves = false;
+
+    PropInfo& nested = registry.RegisterPropArray(
+        "nested_lights",
+        offsetof(RndLightEnvironCom, mRuntime) + offsetof(RuntimeData, mNestedLights),
+        sizeof(PropArray<GameObjectId>));
+    ArrayMetadata& nestedMetadata = static_cast<ArrayMetadata&>(*nested.mMetadata.Get());
+    static_cast<void>(Symbol("array"));
+    nestedMetadata.mReadOnly = true;
+    nestedMetadata.mDebug = true;
+    nestedMetadata.mSaves = false;
+    PropRegistry::RegisterPropArrayItem(nested, kPropertyGameObjectId, sizeof(GameObjectId));
+    const GameObjectId lightType = {static_cast<unsigned int>(-1)};
+    GameObjectIdMetadata& nestedLight = TypeSpecificMetadata(nestedMetadata.mItemInfo, lightType);
+    static_cast<void>(Symbol("item"));
+    nestedLight.mEntity._Set([](const TagArgs& args) {
+        const RndLightEnvironCom& environ = static_cast<const RndLightEnvironCom&>(args.mComponent);
+        return environ.mRuntime.mNestedLightEntities[args.mPath[-1].mValue];
+    });
 }
 
 // Reconstructed from eboot.elf at 0x479B80.

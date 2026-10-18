@@ -109,8 +109,7 @@ with its 160-byte `Params`.
 
 ## Not yet reconstructed
 
-- `PollMgr::IsWorkerThread` (0x24F6E0, an invented name),
-  `Thread::ThreadIdToName`, `DataVarIndex` and `DataVariable`.
+- `Thread::ThreadIdToName`, `DataVarIndex` and `DataVariable`.
 - The typesetter's callees in `utl/UTF8.o` (`WideCharToChar`, `WToUpper`,
   `WToLower` and the CJK line-break rules) and `ObjPtr::MakeErrorName`
   (declared on `GameObject`).

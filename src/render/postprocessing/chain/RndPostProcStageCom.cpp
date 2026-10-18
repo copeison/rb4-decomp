@@ -3,8 +3,11 @@
 
 #include <new>
 
+#include "entity/props/PropMetadata.h"
+#include "os/memory/MemMgr.h"
 #include "render/drawing/RndSceneDrawParams.h"
 #include "render/drawing/RndSceneDrawer.h"
+#include "render/scene/RndSceneResource.h"
 
 // The object's statics, in the order of its static initializer (0x631E20).
 Symbol RndPostProcStageCom::sId("PostProcStage");
@@ -18,6 +21,27 @@ RndPostProcStageCom::RndPostProcStageCom() : mEnabled(true) {}
 // Reconstructed from eboot.elf at 0x631960. The deleting destructor is at
 // 0x631970.
 RndPostProcStageCom::~RndPostProcStageCom() {}
+
+// Reconstructed from eboot.elf at 0x631990. A stage of a scene's post
+// processing implements the "PostProcStage" interface.
+void RndPostProcStageCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.mDescription = "Com that holds a single stage of a scene's PostProc.";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mCategory = ComMetaData::kCategoryRendering;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+    metadata.mInterface = sClassName;
+    metadata.mEditorRestrictions = 0;
+    RndPostProcStageCom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+    BoolMetadata& enabled = TypeSpecificMetadata(
+        registry.RegisterProp("enabled", offsetof(RndPostProcStageCom, mEnabled), kPropertyBool, 1),
+        prototype.mEnabled);
+    enabled.mDefault = prototype.mEnabled;
+    static_cast<void>(Symbol("prop"));
+    enabled.mHelp = String("Should this stage draw?");
+}
 
 // Reconstructed from eboot.elf at 0x631BD0.
 void RndPostProcStageCom::Draw(
@@ -122,4 +146,25 @@ void RndPostProcStageCom::_UpdateDrawTarget(RndSceneDrawTarget& target) {
 // constructs in given storage.
 Component* RndPostProcStageCom::_Create() {
     return new RndPostProcStageCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F1440. The binary emits the registration
+// in render/RndInit.o. The class is a base that is not created itself.
+void RndPostProcStageCom::Init() {
+    InitComponentClass<RndPostProcStageCom>(false, true);
+}
+
+// Reconstructed from eboot.elf at 0x6304F0. The binary emits it with the
+// first stage class that calls it, in render/RndPostProcStageBloomCom.o.
+void RndPostProcStageCom::_InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata) {
+    metadata.InitSuperclass("RndPostProcStageCom", sMetaData);
+    const ComMetaData::EditorRestriction restrictions =
+        static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions);
+    static const long heap = MemFindHeap("metadata");
+    MemPushHeap(heap);
+    _Init(registry, metadata);
+    MemPopHeap();
+    metadata.mEditorRestrictions = ComMetaData::InheritEditorRestrictions(
+        static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions),
+        restrictions);
 }

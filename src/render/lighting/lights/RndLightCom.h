@@ -24,6 +24,7 @@ class RndCameraContext;
 class RndComputeBuffer;
 class RndContext;
 class RndDrawNodeCom;
+class RndLightEnvironCom;
 class RndLightMgrCom;
 class RndLightProbeCom;
 class RndSceneDrawer;
@@ -249,6 +250,10 @@ public:
     // reference map; the evidence is weak.
     Plane GetLocalClipPlane() const;  // 0x46D680
 
+    // Appends the light environment's object to "environments" and, while
+    // the light is entered, registers the light with it (0x478EC0). Name
+    // not in the reference map.
+    void AddToEnviron(RndLightEnvironCom* environ);  // 0x46CCD0
     // Registers the lights in the instanced entity of an instance
     // component, recursing into nested instances. The map's
     // AddNestedLightsToBookkeeping(ObjPtr const&); this build takes the

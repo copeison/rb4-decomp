@@ -12,6 +12,7 @@
 class Entity;
 class PollGroup;
 class PollMgr;
+class RndSceneInstanceCom;
 class RndSceneResource;
 
 // The layout-wide rendering settings on a UILayoutResource's root
@@ -20,7 +21,7 @@ class RndSceneResource;
 // symbol is "UILayout". It lies before UILayoutResource in the binary
 // (0x8A9340 to 0x8AAA3F); the map, which is older, has no object for it.
 // Only the members the layout uses are declared, and only its poll
-// managers are reconstructed. The vtable is at 0x195D018; the object is 280
+// manager and groups are reconstructed. The vtable is at 0x195D018; the object is 280
 // bytes. Name not in the reference map.
 class UILayoutCom : public RndDrawableEntityCom {
 public:
@@ -40,16 +41,16 @@ public:
     // Removes the object from the poll, draw and HMD mirror orders. Name
     // not in the reference map.
     void RemoveSceneObject(GameObjectId id);  // 0x8A9B00
-    // Resets and destroys the scenes' poll groups and nested poll manager.
-    // Name not in the reference map.
-    void _DestroyPollMgrs();  // 0x8A9830
-    // Creates the poll group the layout's scenes are selected into, named
-    // for the layout's file, unless there is one. Name not in the
+    // Resets and destroys the scenes' poll groups and the layout's poll
+    // group. Name not in the reference map.
+    void _DestroyPollGroups();  // 0x8A9830
+    // Creates the poll manager the layout's scenes are selected into,
+    // named for the layout's file, unless there is one. Name not in the
     // reference map.
-    void _ObtainPollGroup();  // 0x8A98D0
-    // Creates the scenes' poll groups and nested poll manager, named for
-    // the layout's file. Name not in the reference map.
-    void _CreatePollMgrs();  // 0x8A9960
+    void _ObtainPollMgr();  // 0x8A98D0
+    // Creates the scenes' poll groups and the layout's poll group, named
+    // for the layout's file. Name not in the reference map.
+    void _CreatePollGroups();  // 0x8A9960
 
     static Symbol sId;         // 0x1AC8D50, "UILayout"
     // The class symbol GameObject::CreateComponent takes; also
@@ -65,16 +66,17 @@ public:
     // "hmd_mirror_overlays": the scenes drawn only over the HMD mirror, in
     // draw order.
     PropArray<GameObjectId> mHmdMirrorOverlays;
-    // The poll group (_ObtainPollGroup), and the nested poll manager and
-    // poll groups (_CreatePollMgrs) of the layout's scenes. The manager is
-    // a small-pool block.
-    PollGroup* mPollGroup;
+    // The poll manager (_ObtainPollMgr), and the poll group and the
+    // scenes' poll groups (_CreatePollGroups).
     PollMgr* mPollMgr;
+    PollGroup* mPollGroup;
     RndSceneCom::PollGroups* mScenePollGroups;
-    // Two lists the threaded poll range keeps: the scene instances whose
-    // poll groups follow the layout's, and the poll jobs the layout polls.
-    // Not modelled.
-    unsigned char mPollRangeLists[64];
+    // The scenes of the threaded poll range: the instanced scenes in poll
+    // order (UILayoutResource::_SyncThreadedPollRange).
+    eastl::list<RndSceneInstanceCom*> mThreadedScenes;
+    // Groups the layout's poll starts before its own and empties after;
+    // nothing found adds to it.
+    eastl::list<PollGroup*> mStartPollGroups;
     // The scenes to enter at once when the poll range is synced again.
     eastl::list<ReadyScene> mReadyScenes;
     // Set while the threaded poll range is released
@@ -85,9 +87,11 @@ public:
 static_assert(offsetof(UILayoutCom, mPollOrder) == 32);
 static_assert(offsetof(UILayoutCom, mDrawOrder) == 72);
 static_assert(offsetof(UILayoutCom, mHmdMirrorOverlays) == 112);
-static_assert(offsetof(UILayoutCom, mPollGroup) == 152);
-static_assert(offsetof(UILayoutCom, mPollMgr) == 160);
+static_assert(offsetof(UILayoutCom, mPollMgr) == 152);
+static_assert(offsetof(UILayoutCom, mPollGroup) == 160);
 static_assert(offsetof(UILayoutCom, mScenePollGroups) == 168);
+static_assert(offsetof(UILayoutCom, mThreadedScenes) == 176);
+static_assert(offsetof(UILayoutCom, mStartPollGroups) == 208);
 static_assert(offsetof(UILayoutCom, mReadyScenes) == 240);
 static_assert(offsetof(UILayoutCom, mPollRangeReleased) == 272);
 static_assert(sizeof(UILayoutCom) == 280);

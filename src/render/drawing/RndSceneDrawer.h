@@ -174,7 +174,7 @@ public:
     // The map's signature is ThreadPoll().
     void ThreadPoll(const int& thread) override;
     // Slot 4 at 0x41A680: _DoPostPoll.
-    void PostPoll() override;
+    void PostPoll(const int& thread) override;
     // Slot 5 at 0x41A770: "Scene Drawer <index>".
     const char* GetPollName() const override;
 

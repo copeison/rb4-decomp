@@ -148,6 +148,13 @@ struct TaskDesc {
     Thread::ThreadPriority mPriority;
     unsigned long mAffinityMask;
     ThreadDesc mMoreThreads[15];
+
+    // The settings of the thread with the index; the first thread's are
+    // the fields above mMoreThreads, laid out as a ThreadDesc. Inlined into
+    // PollMgr::_StartWorkers (0x24E1C0). Name not in the reference map.
+    const ThreadDesc& GetThread(unsigned long index) const {
+        return reinterpret_cast<const ThreadDesc*>(&mStackSize)[index];
+    }
 };
 
 static_assert(offsetof(TaskDesc, mNumThreads) == 8);

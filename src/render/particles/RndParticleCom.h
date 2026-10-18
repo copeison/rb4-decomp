@@ -427,8 +427,7 @@ public:
     void GatherColliders();  // 0x617F30
     void GatherAffectors();  // 0x618040
 
-    // Registers the class. Not reconstructed: the registration helpers it
-    // inlines are not modelled.
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
     static void Init();  // 0x3FA5F0
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x405B30

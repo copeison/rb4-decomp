@@ -6,7 +6,6 @@
 #include "entity/core/Entity.h"
 #include "entity/core/EntityResource.h"
 #include "os/memory/MemMgr.h"
-#include "os/memory/PoolAlloc.h"
 #include "os/platform/PlatformMgr.h"
 #include "os/profiling/PerfMgr.h"
 #include "render/atmosphere/RndAtmosphereCom.h"
@@ -35,10 +34,6 @@ namespace {
 // in the reference map.
 constexpr unsigned int kNoObject = 0xFFFFFFFFU;
 
-// The size of the small-pool blocks the nested poll managers live in.
-// Name not in the reference map.
-constexpr unsigned long kPollMgrBlockSize = 544;
-
 // Whether the renderer draws scenes at partial frame rates: the settings
 // allow some, enable them, and use tiled lighting. Inlined into every
 // user. Name not in the reference map.
@@ -65,12 +60,9 @@ ComMetaData RndSceneCom::sMetaData;
 // Reconstructed from eboot.elf at 0x408600.
 void RndSceneCom::ClearPollSplitJobs() {
     for (PollSplitJobEntry& entry : mPollSplitJobs) {
-        PollMgr* pollMgr = entry.mPollMgr;
-        pollMgr->Reset();
-        if (pollMgr != nullptr) {
-            pollMgr->~PollMgr();
-            PoolFree(kPollMgrBlockSize, pollMgr);
-        }
+        PollGroup* const group = entry.mPollGroup;
+        group->Reset();
+        delete group;
         delete entry.mJob;
     }
     mPollSplitJobs.mpEnd = mPollSplitJobs.mpBegin;
@@ -95,7 +87,7 @@ RndSceneCom::RndSceneCom()
       mEnableLod(false),
       mNumDrawEntries(0),
       mNeverCull(false),
-      mPollGroup(nullptr),
+      mPollMgr(nullptr),
       mPollGroups(nullptr),
       mSceneDrawer(nullptr),
       mFrameInterval(static_cast<unsigned long>(-1)),
@@ -119,8 +111,8 @@ RndSceneCom::~RndSceneCom() {
         delete mPollGroups;
     }
     mPollGroups = nullptr;
-    delete mPollGroup;
-    mPollGroup = nullptr;
+    delete mPollMgr;
+    mPollMgr = nullptr;
     delete mSceneDrawer;
     mSceneDrawer = nullptr;
     delete mPropHysteresisTexture;
@@ -140,19 +132,18 @@ void RndSceneCom::AddPollSplitJob(
     const char* timerName =
         (FormatString("poll-split-job: %d") << static_cast<unsigned int>(index)).Str();
     job->mTimerIndex = thePerfMgr.GetTimerIndex(Symbol(timerName));
-    PollMgr* pollMgr = static_cast<PollMgr*>(PoolAlloc(kPollMgrBlockSize, nullptr));
-    new (pollMgr) PollMgr((FormatString("%s PG") << name).Str());
-    pollMgr->mSharePollMgr = true;
+    PollGroup* const group = new PollGroup((FormatString("%s PG") << name).Str());
+    group->mShareParentGroup = true;
     job->SetPollWeight(weight, false);
-    mPollSplitJobs.push_back(PollSplitJobEntry{job, pollMgr});
+    mPollSplitJobs.push_back(PollSplitJobEntry{job, group});
 }
 
 // Reconstructed from eboot.elf at 0x408A80.
 void RndSceneCom::LinkPollSplitJobs() {
     for (unsigned long i = 0; i < mPollSplitJobs.size(); ++i) {
-        mPollSplitJobs[i].mPollMgr->AddJob(mPollSplitJobs[i].mJob);
+        mPollSplitJobs[i].mPollGroup->AddJob(mPollSplitJobs[i].mJob);
         if (i != 0) {
-            mPollSplitJobs[i].mPollMgr->PollAfter(mPollSplitJobs[i - 1].mPollMgr);
+            mPollSplitJobs[i].mPollGroup->PollAfter(mPollSplitJobs[i - 1].mPollGroup);
         }
     }
 }
@@ -163,7 +154,7 @@ void RndSceneCom::CreatePollGroups(Entity* entity, bool root) {
     if (root) {
         return;
     }
-    mPollGroups->mPollMgrs.find(1)->second->RemovePollAfter(mPollGroups->mPollMgrs.find(0)->second);
+    mPollGroups->mPollGroups.find(1)->second->RemovePollAfter(mPollGroups->mPollGroups.find(0)->second);
 }
 
 // Reconstructed from eboot.elf at 0x408C10.
@@ -288,13 +279,13 @@ RndCMAACom* RndSceneCom::GetAntialiasing() {
     return FindSceneCom<RndCMAACom>(this, mAntialiasing);
 }
 
-// Reconstructed from eboot.elf at 0x4116A0. The poll group is named after
+// Reconstructed from eboot.elf at 0x4116A0. The poll manager is named after
 // the entity's file.
 bool RndSceneCom::_OnResourcesLoaded() {
     mFloats.Resize(4);
     mColors.Resize(4);
-    if (mPollGroup == nullptr) {
-        mPollGroup = new PollGroup(FileGetName(mObject->mEntity->mResource->mPath.Str()));
+    if (mPollMgr == nullptr) {
+        mPollMgr = new PollMgr(FileGetName(mObject->mEntity->mResource->mPath.Str()));
     }
     if (mSceneDrawer == nullptr) {
         mSceneDrawer = new RndSceneDrawer();
@@ -448,8 +439,44 @@ bool RndSceneCom::PollSplitJob::IsPollEnabled() const {
     return mEntity->IsPollEnabled();
 }
 
+// Reconstructed from eboot.elf at 0x4121A0. Both groups are made threaded
+// twice.
+RndSceneCom::PollGroups::PollGroups(const char* path) {
+    PollGroup* const drawer =
+        new PollGroup((FormatString("%s SceneDrawer PG") << FileGetName(path)).Str());
+    PollGroup* const scene = new PollGroup((FormatString("%s Scene PG") << FileGetName(path)).Str());
+    drawer->SetThreaded(true);
+    scene->SetThreaded(true);
+    scene->PollAfter(drawer);
+    drawer->SetThreaded(true);
+    scene->SetThreaded(true);
+    mPollGroups[0] = drawer;
+    mPollGroups[1] = scene;
+}
+
+// Reconstructed from eboot.elf at 0x412450.
+void RndSceneCom::PollGroups::Reset() {
+    PollGroupMap::Reset();
+    mPollGroups.find(1)->second->PollAfter(mPollGroups.find(0)->second);
+}
+
+// Reconstructed from eboot.elf at 0x412750. 0x412540 is a thunk to it.
+RndSceneCom::PollGroups::~PollGroups() {
+    if (mPollGroups.size() != 0) {
+        mPollGroups[1]->RemovePollAfter(mPollGroups[0]);
+        mPollGroups[0]->ClearJobs();
+        mPollGroups[1]->ClearJobs();
+    }
+}
+
 // Reconstructed from eboot.elf at 0x4048E0. The binary emits the factory in
 // render/RndInit.o with the class's Init.
 Component* RndSceneCom::_Create() {
     return new RndSceneCom();
+}
+
+// Reconstructed from eboot.elf at 0x3F1F60. The binary emits the registration
+// in render/RndInit.o.
+void RndSceneCom::Init() {
+    InitComponentClass<RndSceneCom>();
 }

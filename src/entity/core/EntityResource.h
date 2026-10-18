@@ -82,9 +82,10 @@ public:
     // context asks for it. Names not in the reference map.
     virtual void _EnterImmediately(Entity* entity);  // 0xFD950
     virtual void _PollImmediately(Entity* entity);   // 0xFD960
-    // Slot 22 at 0x5C2A0: empty here; DestroyLayerEntity calls it. Name not
-    // in the reference map; the evidence is weak.
-    virtual void _DestroyLayerEntity(Entity* entity) {
+    // Slot 22 at 0x5C2A0: told through OnPolledImmediately at the end of
+    // the entity's immediate poll (Entity::_PollImmediately, 0xF575F);
+    // empty here. Name not in the reference map.
+    virtual void _OnPolledImmediately(Entity* entity) {
         static_cast<void>(entity);
     }
     // Slot 23: creates the components the class requires that the object
@@ -156,7 +157,7 @@ public:
     void ReadyEntity(Entity* entity);  // 0xFD8E0
     // Calls slot 22 when there is an entity. Name not in the reference
     // map.
-    void DestroyLayerEntity(Entity* entity);  // 0xFD970
+    void OnPolledImmediately(Entity* entity);  // 0xFD970
     // Loads the entity's resources.
     bool LoadResources();  // 0xFD990
     // Whether the resource is the one whose load the calling thread reports

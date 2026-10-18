@@ -4,6 +4,8 @@
 #include <new>
 
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
+#include "render/options/RndOptions.h"
 
 // The object's statics, in the order of its static initializer (0x6D1DA0).
 // The three ints it first sets come from a shared header and are not
@@ -33,6 +35,29 @@ Rnd2DOptionsCom::Rnd2DOptionsCom()
 // Reconstructed from eboot.elf at 0x6D1960. The deleting destructor is at
 // 0x6D1970.
 Rnd2DOptionsCom::~Rnd2DOptionsCom() {}
+
+// Reconstructed from eboot.elf at 0x6D1990.
+void Rnd2DOptionsCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RndOptionsCom::_InitAsSuperclass(registry, metadata);
+    metadata.mDescription = "Options governing the appearance of 2d rendering primitives";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndOptionsResource::Id());
+    Rnd2DOptionsCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+    BoolMetadata& showVertices = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "show_selected_scale9_vertices",
+            offsetof(Rnd2DOptionsCom, mShowSelectedScale9Vertices),
+            kPropertyBool,
+            1),
+        prototype.mShowSelectedScale9Vertices);
+    showVertices.mDefault = prototype.mShowSelectedScale9Vertices;
+    static_cast<void>(Symbol("prop"));
+    showVertices.mHelp = String("Should the vertices of selected Scale9's be drawn?");
+}
 
 // Reconstructed from eboot.elf at 0x6D1BC0.
 Symbol Rnd2DOptionsCom::GetId() const {

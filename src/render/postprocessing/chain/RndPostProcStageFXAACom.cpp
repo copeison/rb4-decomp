@@ -8,6 +8,7 @@
 #include "render/drawing/RndDrawUtl.h"
 #include "render/drawing/RndSceneDrawer.h"
 #include "render/postprocessing/antialiasing/RndShaderFXAA.h"
+#include "render/scene/RndSceneResource.h"
 #include "render/shaders/RndShaderEnums.h"
 #include "render/shaders/RndShaderMgr.h"
 #include "render/system/RndDevice.h"
@@ -34,6 +35,20 @@ RndPostProcStageFXAACom::RndPostProcStageFXAACom() {}
 // Reconstructed from eboot.elf at 0x6331E0. The deleting destructor is at
 // 0x6331F0.
 RndPostProcStageFXAACom::~RndPostProcStageFXAACom() {}
+
+// Reconstructed from eboot.elf at 0x633210. The class has no properties
+// of its own.
+void RndPostProcStageFXAACom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    _InitAsSuperclass(registry, metadata);
+    RndPostProcStageFXAACom prototype;
+    if (&registry != &sPropRegistry) {
+        registry.AddInheritedRegistry(sClassName, sPropRegistry);
+    }
+    metadata.mDescription = "Applies a *last-gen* antialias effect to the scene";
+    metadata.mAuthor = "Mike Fitzgerald";
+    metadata.mCategory = ComMetaData::kCategoryPostProc;
+    metadata.mAllowedResources.push_back(RndSceneResource::Id());
+}
 
 // Reconstructed from eboot.elf at 0x6333C0.
 void RndPostProcStageFXAACom::_DrawImpl(
@@ -157,4 +172,10 @@ ComMetaData& RndPostProcStageFXAACom::_GetMetaData() {
 // constructs in given storage.
 Component* RndPostProcStageFXAACom::_Create() {
     return new RndPostProcStageFXAACom();
+}
+
+// Reconstructed from eboot.elf at 0x3F9E90. The binary emits the registration
+// in render/RndInit.o.
+void RndPostProcStageFXAACom::Init() {
+    InitComponentClass<RndPostProcStageFXAACom>();
 }

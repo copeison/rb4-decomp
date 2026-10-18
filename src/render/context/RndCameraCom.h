@@ -85,8 +85,7 @@ public:
     // in degrees) and ortho_height. Their callbacks keep the far distance
     // at least twice the near one and the near distance at most half the
     // far one, take the content height for a pixel-accurate camera, and
-    // hide the settings of the other projection. Not reconstructed: the
-    // property metadata it fills is not modelled.
+    // hide the settings of the other projection.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x6B7420
 
     static Symbol sId;  // 0x1AAF8F0, "Camera"

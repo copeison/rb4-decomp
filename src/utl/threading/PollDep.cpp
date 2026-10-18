@@ -5,13 +5,22 @@
 #include "os/threading/CritSec.h"
 #include "utl/threading/PollMgr.h"
 
+namespace {
+
+// The group a head or tail job belongs to. Name not in the reference map.
+PollGroup* OwnerGroup(PollDepBase* job) {
+    return static_cast<PollGroupJob*>(job)->mOwner;
+}
+
+}  // namespace
+
 // Reconstructed from eboot.elf at 0x24BC80. A job starts threaded, with
 // weight 1 and no workers in its mask.
 PollDepBase::PollDepBase()
     : mNumAfters(0),
       mPollWeight(1),
       mFlags(kFlagThreaded),
-      mPollMgr(nullptr),
+      mPollGroup(nullptr),
       mPostPollCrit(nullptr) {
     mDepCounts[0] = 0;
     mDepCounts[1] = 0;
@@ -22,7 +31,7 @@ PollDepBase::PollDepBase(const PollDepBase& other)
     : mNumAfters(0),
       mPollWeight(1),
       mFlags(other.mFlags & (kThreadMask | kFlagThreaded)),
-      mPollMgr(nullptr),
+      mPollGroup(nullptr),
       mPostPollCrit(nullptr) {
     mDepCounts[0] = 0;
     mDepCounts[1] = 0;
@@ -64,8 +73,8 @@ void PollDepBase::_OnPolled(bool canQueue) {
     mFlags &= ~kFlagPollSkipped;
 }
 
-// Reconstructed from eboot.elf at 0x24BFE0. A job standing for a nested
-// manager hands its afters to that manager.
+// Reconstructed from eboot.elf at 0x24BFE0. A group's head or tail job
+// returns to its own group.
 void PollDepBase::_FreeAfters(bool canQueue) {
     PollList buckets[kNumPollBuckets];
     const bool queue = canQueue && IsPollEnabled() && (mFlags & kFlagPollSkipped) == 0;
@@ -76,10 +85,10 @@ void PollDepBase::_FreeAfters(bool canQueue) {
     }
     mNumAfters = mAfters.size();
     mFlags ^= kFlagOddFrame;
-    if (AsPollMgrJob() != nullptr || AsPollMgrDep() != nullptr) {
-        mPollMgr = _NestedPollMgr();
+    if (AsPollGroupTail() != nullptr || AsPollGroupHead() != nullptr) {
+        mPollGroup = OwnerGroup(this);
     } else {
-        mPollMgr = nullptr;
+        mPollGroup = nullptr;
     }
     if (queued) {
         gEntityThreadState.mPollMgr->QueueForPoll(buckets);
@@ -111,9 +120,9 @@ void PollDepBase::EarlyFreeToPoll(PollDepBase* after) {
 
 // Reconstructed from eboot.elf at 0x24C420. The after counts this release
 // for the next frame at once. A light threaded job goes to the leaf bucket
-// when nothing but a nested manager waits for it.
+// when nothing but a nested group's tail waits for it.
 bool PollDepBase::_FreeAfter(PollDepBase* after, bool canQueue, PollList* buckets) {
-    const bool nested = after->AsPollMgrJob() != nullptr || after->AsPollMgrDep() != nullptr;
+    const bool nested = after->AsPollGroupTail() != nullptr || after->AsPollGroupHead() != nullptr;
     const unsigned short flags = after->mFlags;
     after->mFlags = static_cast<unsigned short>(flags | (canQueue ? 0 : kFlagPollSkipped));
     ++after->mDepCounts[(flags & kFlagOddFrame) == 0];
@@ -121,12 +130,12 @@ bool PollDepBase::_FreeAfter(PollDepBase* after, bool canQueue, PollList* bucket
         return false;
     }
     if (nested) {
-        if (after->_NestedPollMgr()->mSharePollMgr) {
-            after->mPollMgr = mPollMgr;
+        if (OwnerGroup(after)->mShareParentGroup) {
+            after->mPollGroup = mPollGroup;
         }
         after->mFlags &= ~kFlagPollSkipped;
     } else {
-        after->mPollMgr = mPollMgr;
+        after->mPollGroup = mPollGroup;
         if (!canQueue || !after->IsPollEnabled()) {
             after->mFlags &= ~kFlagPollSkipped;
             after->_FreeAfters(false);
@@ -145,7 +154,7 @@ bool PollDepBase::_FreeAfter(PollDepBase* after, bool canQueue, PollList* bucket
             bucket = kPollBucketHeavy;
         } else if (
             after->mAfters.empty() ||
-            (after->mAfters.size() == 1 && after->mAfters[0]->AsPollMgrJob() != nullptr)) {
+            (after->mAfters.size() == 1 && after->mAfters[0]->AsPollGroupTail() != nullptr)) {
             bucket = kPollBucketThreadedLeaf;
         } else {
             bucket = kPollBucketThreaded;
@@ -221,7 +230,7 @@ void PollDepBase::ClearAllDeps() {
     mAfters.clear();
     mNumAfters = 0;
     mFlags &= ~kFlagPollSkipped;
-    mRootNode.Remove();
+    mLeafNode.Remove();
     _RemovePostPoll();
 }
 
@@ -250,20 +259,20 @@ void PollDepBase::_Reset() {
     mDepCounts[1] = 0;
     mDepCounts[0] = 0;
     mFlags &= ~(kFlagOddFrame | kFlagPollSkipped);
-    mPollMgr = nullptr;
+    mPollGroup = nullptr;
     mPostPollCrit = nullptr;
-    mRootNode.Remove();
+    mLeafNode.Remove();
 }
 
 // Reconstructed from eboot.elf at 0x24CA60. The queue's lock is held
 // without counting the entry.
 void PollDepBase::_AddPostPoll() {
-    PollMgr* const mgr = mPollMgr;
-    scePthreadMutexLock(&mgr->mPostPollCrit.mCritSec);
+    PollGroup* const group = mPollGroup;
+    scePthreadMutexLock(&group->mPostPollCrit.mCritSec);
     mPostPollNode.Remove();
-    mgr->mPostPolls.push_back(*this);
-    mPostPollCrit = &mgr->mPostPollCrit;
-    scePthreadMutexUnlock(&mgr->mPostPollCrit.mCritSec);
+    group->mPostPolls.push_back(*this);
+    mPostPollCrit = &group->mPostPollCrit;
+    scePthreadMutexUnlock(&group->mPostPollCrit.mCritSec);
 }
 
 // Reconstructed from eboot.elf at 0x24CB00.

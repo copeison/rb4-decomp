@@ -38,15 +38,12 @@ public:
     // Slot 42: swaps the draw target's buffers as the draw does.
     void _UpdateDrawTarget(RndSceneDrawTarget& target) override;  // 0x634380
 
-    // Registers the class. Emitted with the renderer's components at
-    // 0x3FA240. Not reconstructed: the registration helpers it inlines are
-    // not modelled.
-    static void Init();
+    // Registers the class (InitComponentClass), emitted in render/RndInit.o.
+    static void Init();  // 0x3FA240
     // The class factory, emitted with Init.
     static Component* _Create();  // 0x405AE0
     // Registers the class description; the class has no properties of its
-    // own. Not reconstructed: ComMetaData's string and list members are
-    // written inline through helpers that are not modelled.
+    // own.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x633BA0
 
     // The object's statics, in the order of its static initializer

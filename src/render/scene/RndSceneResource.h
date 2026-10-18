@@ -9,12 +9,13 @@ class BinStream;
 class ComMetaData;
 class Component;
 class GameObject;
+class RndSceneCom;
 
 // A scene file (render/RndSceneResource.o, 0x4384A0-0x43AEE0): a drawable
 // entity resource whose root object carries the scene components. Its
 // entity draws through the root's RndSceneCom: the scene drawer draws it,
 // and the root's texture renderers draw first. The scene's poll is split
-// into jobs under the scene component's nested poll managers. The vtable at
+// into jobs in the scene component's poll groups. The vtable at
 // 0x19013C0 has 39 slots. The object is 784 bytes.
 class RndSceneResource : public RndDrawableEntityResource {
 public:
@@ -47,34 +48,31 @@ public:
     void _EnterEntity(Entity* entity, unsigned int flags) override;  // 0x439820
     // Slot 17: the scene drawer's ExitPrelude, then the exit.
     void _ExitEntity(Entity* entity, unsigned int flags) override;  // 0x4398D0
-    // Slot 18: polls the entity through the scene component's split jobs,
-    // steps its frame interval and records the frame each interval starts
-    // on; the timelines learn of partial frame rates (0x260720, 0x260520)
-    // and the drawer polls around the entity. The map's
-    // PollEntity(EntityPtr). Not reconstructed: the PollMgr and
-    // TimelinesCom calls it makes are not declared.
+    // Slot 18: a game-mode entity polled on a thread that is polling has
+    // its timelines synced first; otherwise the scene's manager polls its
+    // groups, entering at once first when the scene is entered. An
+    // edit-mode entity steps its frame interval and polls only when one
+    // starts, between the drawer's poll and post-poll. The map's
+    // PollEntity(EntityPtr).
     void _PollEntity(Entity* entity) override;  // 0x43A130
     // Slot 19: the first time, unhooks the scene's poll groups and split
     // jobs and destroys the jobs.
     void _OnEntityReady(Entity* root, Entity* entity) override;  // 0x439950
     // Slot 20: creates the scene's poll groups on the first immediate
-    // enter and gives the scene manager (key 1) two callbacks
-    // (PollMgr 0x24CF10): before its polls, step the frame interval and
-    // either mark the entity (flag 0x2000) or record the interval's start
-    // frame; after them, clear the mark. Then clears both managers' jobs
-    // and enters with the group selected (PollGroup 0x24F900). Not
-    // reconstructed: those two PollMgr and PollGroup entry points take
-    // std::function and RndSceneCom::PollGroups and are not declared.
+    // enter and gives the scene group (key 1) two callbacks: before its
+    // polls, step the frame interval and either mark the entity (flag
+    // 0x2000, no poll) or record the interval's start frame; after them,
+    // clear the mark. Then clears both groups' jobs and enters with the
+    // scene's manager selected with the groups.
     void _EnterImmediately(Entity* entity) override;  // 0x438670
-    // Slot 22: called at the end of Entity's poll (0xF575F through
-    // EntityResource::DestroyLayerEntity), so the base name looks wrong.
-    // When the thread's poll context has a manager and enters immediately,
-    // queues the scene drawer on the context's key-0 manager, rebuilds the
-    // scene's split poll jobs ("splitpoll %d") over the entity's poll order
-    // and links them. Not reconstructed: the poll context's third member
-    // (the selected poll groups) and the split job windows are not
-    // modelled.
-    void _DestroyLayerEntity(Entity* entity) override;  // 0x439AE0
+    // Slot 22: when the thread polls and enters at once, queues the scene
+    // drawer in the selected drawer group (key 0) and rebuilds the scene's
+    // split poll jobs ("SplitPoll %d") over the entity's poll order: a new
+    // window starts at each object with a "ScenePollSplit" component, and
+    // each job weighs a tenth of its window's components. The objects'
+    // components learn their job through slot 26; the scene group then
+    // nests the first split group.
+    void _OnPolledImmediately(Entity* entity) override;  // 0x439AE0
     // Slot 23: an instance or instance-pool component also needs a
     // drawable node. The map's CreateRequiredComponents(ObjPtr&,
     // ComMetaData const&).
@@ -85,11 +83,10 @@ public:
     void DestroyDependentComponents(GameObject* object, const ComMetaData& metaData) override;  // 0x43A660
     // Slot 25: a new light, draw node or entity instance joins the scene
     // light manager's default environment: a light through
-    // RndLightCom::AddToEnviron (0x46CCD0), a draw node as its
-    // "environment", and an instance (which also gets its
-    // RndEntityInstanceCom) as a nested light environment. The map's
-    // PostCreateComponent(ObjPtr&, ComMetaData const&). Not reconstructed:
-    // RndLightCom::AddToEnviron is not declared yet.
+    // RndLightCom::AddToEnviron, a draw node as its "environment", and an
+    // instance (which also gets its RndEntityInstanceCom) as a nested light
+    // environment. The map's PostCreateComponent(ObjPtr&, ComMetaData
+    // const&).
     void _OnComponentCreated(Component* component) override;  // 0x43A6D0
     // Slot 29: scenes are instanced by RndSceneInstanceCom.
     Symbol GetInstanceComId() const override;  // 0x439330
@@ -131,6 +128,10 @@ public:
 
     // Describes the class: extension "scene", category "Scenes".
     static void _Init(ResourceMetaData& metaData);  // 0x4389E0
+    // Marks the scene's timelines synced and syncs their clock, as the
+    // game-mode poll does inline. No caller is found. Name not in the
+    // reference map.
+    void _SyncTimelines(RndSceneCom* scene);  // 0x43A580
 
     static ResourceMetaData sMetaData;  // 0x1A72FD8
 };

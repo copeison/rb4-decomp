@@ -1,8 +1,7 @@
 // render/RndSceneInstanceCom.o (0x4362E0 to 0x438200). The registry
 // (0x436AB0, 0x437910), the masking scenes (0x436710 and its callers
-// 0x436700 and 0x436A80), the poll dependencies (0x437B50), the forwards to
-// the scene resource (0x4366C0, 0x4366E0) and the property handlers
-// (0x437FB0-0x4380E0) are not reconstructed.
+// 0x436700 and 0x436A80), the poll dependencies (0x437B50) and the
+// property handlers (0x437FB0-0x4380E0) are not reconstructed.
 #include "render/scene/RndSceneInstanceCom.h"
 
 #include <new>
@@ -80,8 +79,26 @@ Hmx::Rect RndSceneInstanceCom::CalcProjectionRect(const Vector2i& size) const {
 
 // Reconstructed from eboot.elf at 0x436670. The scene must have a child
 // whose root holds a RndSceneCom.
+PollMgr* RndSceneInstanceCom::GetScenePollMgr() const {
+    return mRuntime.mEntity->GetRoot()->GetExistingCom<RndSceneCom>()->mPollMgr;
+}
+
+// Reconstructed from eboot.elf at 0x4366C0.
+PollGroup* RndSceneInstanceCom::GetSceneDrawerPollGroup() const {
+    const Entity* const entity = mRuntime.mEntity;
+    if (entity == nullptr || entity->mResource == nullptr) {
+        return nullptr;
+    }
+    return entity->GetRoot()->GetExistingCom<RndSceneCom>()->mPollGroups->mPollGroups.find(0)->second;
+}
+
+// Reconstructed from eboot.elf at 0x4366E0.
 PollGroup* RndSceneInstanceCom::GetScenePollGroup() const {
-    return mRuntime.mEntity->GetRoot()->GetExistingCom<RndSceneCom>()->mPollGroup;
+    const Entity* const entity = mRuntime.mEntity;
+    if (entity == nullptr || entity->mResource == nullptr) {
+        return nullptr;
+    }
+    return entity->GetRoot()->GetExistingCom<RndSceneCom>()->mPollGroups->mPollGroups.find(1)->second;
 }
 
 // Reconstructed from eboot.elf at 0x4379C0.

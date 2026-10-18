@@ -839,3 +839,9 @@ RndParticleCom::SpinParams::SpinParams(const SpinParams& other) = default;
 Component* RndParticleCom::_Create() {
     return new RndParticleCom();
 }
+
+// Reconstructed from eboot.elf at 0x3FA5F0. The binary emits the registration
+// in render/RndInit.o.
+void RndParticleCom::Init() {
+    InitComponentClass<RndParticleCom>();
+}

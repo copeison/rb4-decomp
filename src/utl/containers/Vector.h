@@ -1,5 +1,6 @@
 #pragma once
 
+#include <initializer_list>
 #include <new>
 #include <utility>
 
@@ -50,6 +51,25 @@ public:
         mpCapacity = mpBegin + count;
         for (const auto* input = other.mpBegin; input != other.mpEnd; ++input, ++mpEnd) {
             new (mpEnd) T(*input);
+        }
+    }
+    // Allocates exactly the list's size and copies its elements, as
+    // EASTL's vector(std::initializer_list<T>) does; PollMgr's static
+    // initializer inlines it at 0x2513A9.
+    vector(std::initializer_list<T> values)
+        : mpBegin(nullptr),
+          mpEnd(nullptr),
+          mpCapacity(nullptr),
+          mAllocator("EASTL vector") {
+        const auto count = values.size();
+        if (count != 0) {
+            mpBegin = static_cast<T*>(mAllocator.allocate(count * sizeof(T)));
+        }
+        mpEnd = mpBegin;
+        mpCapacity = mpBegin + count;
+        for (const auto& value : values) {
+            new (mpEnd) T(value);
+            ++mpEnd;
         }
     }
     vector(vector&& other)

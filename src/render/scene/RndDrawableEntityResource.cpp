@@ -17,7 +17,7 @@ void RndDrawableEntityResource::Init() {
 
 // Reconstructed from eboot.elf at 0x6C0CA0.
 RndDrawableEntityResource::RndDrawableEntityResource()
-    : mDrawPollGroup(nullptr),
+    : mDrawPollMgr(nullptr),
       mReserved(false),
       mHeadJob("head"),
       mAfterTexRenderersJob("after tex renderers"),
@@ -26,8 +26,8 @@ RndDrawableEntityResource::RndDrawableEntityResource()
 // Reconstructed from eboot.elf at 0x6C0DD0. The deleting destructor is at
 // 0x6C0EF0.
 RndDrawableEntityResource::~RndDrawableEntityResource() {
-    delete mDrawPollGroup;
-    mDrawPollGroup = nullptr;
+    delete mDrawPollMgr;
+    mDrawPollMgr = nullptr;
 }
 
 // Reconstructed from eboot.elf at 0x6C0EE0. The deleting destructor is at

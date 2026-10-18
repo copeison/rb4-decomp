@@ -125,6 +125,23 @@ public:
         mHead.mPrev = last;
     }
 
+    // Moves the elements of `other` to the front of the list, keeping
+    // their order (PollMgr::QueueForPoll). Name not in the reference map.
+    void splice_front(List& other) {
+        Node* first = other.mHead.mNext;
+        if (first == &other.mHead || first == mHead.mNext) {
+            return;
+        }
+        Node* last = other.mHead.mPrev;
+        other.mHead.mNext = &other.mHead;
+        other.mHead.mPrev = &other.mHead;
+        Node* position = mHead.mNext;
+        first->mPrev = &mHead;
+        mHead.mNext = first;
+        last->mNext = position;
+        position->mPrev = last;
+    }
+
     // Sorts the list with the comparison, as the map's SortInternal does.
     template <class Cmp>
     void sort(Cmp cmp) {

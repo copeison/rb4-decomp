@@ -795,7 +795,8 @@ void* Entity::GetSinkObject() {
 }
 
 // Reconstructed from eboot.elf at 0xF7920.
-void Entity::PostPoll() {
+void Entity::PostPoll(const int& thread) {
+    static_cast<void>(thread);
     if ((mFlags & 0x100) != 0) {
         _PostPoll();
     }

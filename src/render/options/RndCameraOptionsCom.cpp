@@ -4,6 +4,8 @@
 #include <new>
 
 #include "entity/props/PropArray.h"
+#include "entity/props/PropMetadata.h"
+#include "render/options/RndOptions.h"
 
 // The object's statics, in the order of its static initializer (0x6B9870).
 // The three ints it first sets come from a shared header and are not
@@ -35,6 +37,48 @@ RndCameraOptionsCom::RndCameraOptionsCom()
 // Reconstructed from eboot.elf at 0x6B92D0. The deleting destructor is at
 // 0x6B92E0.
 RndCameraOptionsCom::~RndCameraOptionsCom() {}
+
+// Reconstructed from eboot.elf at 0x6B9300.
+void RndCameraOptionsCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
+    RndOptionsCom::_InitAsSuperclass(registry, metadata);
+    metadata.mDescription = "Options governing the appearance of cameras";
+    metadata.mAuthor = "Daniel Sproul";
+    metadata.mAllowedResources.push_back(RndOptionsResource::Id());
+    RndCameraOptionsCom prototype;
+    PropRegistry& own = prototype._GetPropRegistry();
+    if (&registry != &own) {
+        registry.AddInheritedRegistry(sClassName, own);
+    }
+    BoolMetadata& showCameras = TypeSpecificMetadata(
+        registry.RegisterProp("show_cameras", offsetof(RndCameraOptionsCom, mShowCameras), kPropertyBool, 1),
+        prototype.mShowCameras);
+    showCameras.mDefault = prototype.mShowCameras;
+    static_cast<void>(Symbol("prop"));
+    showCameras.mHelp = String("Should cameras be drawn?");
+    BoolMetadata& showFrusta = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "show_selected_camera_frusta",
+            offsetof(RndCameraOptionsCom, mShowSelectedCameraFrusta),
+            kPropertyBool,
+            1),
+        prototype.mShowSelectedCameraFrusta);
+    showFrusta.mDefault = prototype.mShowSelectedCameraFrusta;
+    static_cast<void>(Symbol("prop"));
+    showFrusta.mHelp = String("Should the frusta of selected cameras be drawn?");
+    FloatMetadata& opacity = TypeSpecificMetadata(
+        registry.RegisterProp(
+            "camera_frusta_opacity",
+            offsetof(RndCameraOptionsCom, mCameraFrustaOpacity),
+            kPropertyFloat,
+            4),
+        prototype.mCameraFrustaOpacity);
+    opacity.mDefault = prototype.mCameraFrustaOpacity;
+    static_cast<void>(Symbol("prop"));
+    opacity.mHelp = String("The opacity of camera frusta");
+    opacity.mMin = 0.0F;
+    opacity.mMax = 1.0F;
+    opacity.mSlider = true;
+}
 
 // Reconstructed from eboot.elf at 0x6B9680.
 Symbol RndCameraOptionsCom::GetId() const {

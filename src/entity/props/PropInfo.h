@@ -6,13 +6,37 @@ class PropMetadata;
 class PropRegistry;
 
 // The type of a registered property. The name is the map's; the
-// enumerators are not in the reference map, and only those the
-// reconstructed code uses are declared.
+// enumerators are not in the reference map. The types follow the sizes in
+// PropertySize (0x1894B0) and the metadata classes PropMetadata::Create
+// makes; type 14 is the element type of an array of arrays.
 enum PropertyType : unsigned int {
+    kPropertyFloat = 0,
+    kPropertyInt8 = 1,
+    kPropertyInt16 = 2,
+    kPropertyInt = 3,
+    kPropertyInt64 = 4,
+    kPropertyUInt8 = 5,
+    kPropertyUInt16 = 6,
+    kPropertyUInt = 7,
+    kPropertyUInt64 = 8,
     kPropertyBool = 9,
+    kPropertyGameObjectId = 10,
+    kPropertySymbol = 11,
+    kPropertyResourcePath = 12,
+    kPropertyColor = 13,
+    // A struct: its members are registered in its GroupMetadata.
+    kPropertyStruct = 15,
+    kPropertyPropRef = 16,
     // A property that only runs its metadata's action; RegisterAction
     // (0x180910) registers it without storage.
     kPropertyAction = 17,
+    kPropertyWaveformFloat = 18,
+    kPropertyWaveformColor = 19,
+    kPropertyVector3 = 20,
+    // Euler angles in a Vector3.
+    kPropertyEuler = 21,
+    // Scale, Euler angles and translation, as TransCom's local transform.
+    kPropertyXfm = 22,
     // Set on an array's type; the low byte is the element type.
     kPropertyArray = 0x100,
     // The type a new PropInfo has (0x12DBE0) and the type
@@ -61,8 +85,8 @@ public:
     bool IsSaved() const;  // 0x12DC00
     // The registry of a struct property's members, from the metadata's
     // slot 7; null for other types. The binary has a const and a non-const
-    // copy (0x12DC30, 0x12DC40). Name not in the reference map. Not
-    // reconstructed: PropMetadata's virtual methods are not modelled.
+    // copy (0x12DC30, 0x12DC40); the first is not declared. Name not in the
+    // reference map.
     const PropRegistry* GetStructRegistry() const;  // 0x12DC40
 
     // The address of the property in the component (or in the array element

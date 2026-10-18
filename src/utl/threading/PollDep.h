@@ -7,15 +7,17 @@
 #include "utl/containers/Vector.h"
 
 class CritSec;
-class PollMgr;
+class PollGroup;
+class PollGroupJob;
 
 // A job the poll manager runs once per frame after the jobs it depends on
 // (utl/PollDep.o, 0x24BC80-0x24CB60). Each job lists the jobs that must
 // wait for it (its afters) and counts the jobs it still waits for; when the
 // count drops to zero the job is queued in a poll bucket. Two counters
 // alternate between frames, so a frame's releases do not disturb the
-// next's. The vtable at 0x18EF498 has ten slots. Entity is built on it at
-// +24.
+// next's. Jobs are grouped into poll groups (PollGroup), whose head and
+// tail jobs bracket them. The vtable at 0x18EF498 has ten slots. Entity is
+// built on it at +24.
 class PollDepBase {
 public:
     // Reaches the link that queues a job in a poll bucket; the map's
@@ -44,6 +46,20 @@ public:
         }
     };
 
+    // Reaches the link that keeps a job nothing waits for in its group's
+    // leaf list, whose jobs the group's tail waits for
+    // (PollGroup::_AddLeafJobs). Name not in the reference map.
+    class LeafNode {
+    public:
+        static LinkedList::Node& ToNode(PollDepBase& dep) {
+            return dep.mLeafNode;
+        }
+        static PollDepBase* FromNode(LinkedList::Node* node) {
+            return reinterpret_cast<PollDepBase*>(
+                reinterpret_cast<char*>(node) - offsetof(PollDepBase, mLeafNode));
+        }
+    };
+
     using PollList = LinkedList::List<PollDepBase, PollNode>;
 
     // The buckets a released job is queued in, by where it may run and by
@@ -54,7 +70,7 @@ public:
         kPollBucketHeavy = 0,
         // A threaded job that other jobs wait for.
         kPollBucketThreaded = 1,
-        // A threaded job nothing waits for, or only a nested manager.
+        // A threaded job nothing waits for, or only a nested group's tail.
         kPollBucketThreadedLeaf = 2,
         // A main-thread job that other jobs wait for.
         kPollBucketMain = 3,
@@ -77,10 +93,12 @@ public:
     // Slot 3: runs the job. The map's signature is ThreadPoll(); this build
     // passes the worker's index, which the jobs seen ignore.
     virtual void ThreadPoll(const int& thread) = 0;
-    // Slot 4 at 0x24CB50: runs after every job of the frame polled, for
-    // jobs queued with _AddPostPoll; empty here. Name not in the reference
-    // map.
-    virtual void PostPoll() {}
+    // Slot 4 at 0x24CB50: runs after every job of the group polled, for
+    // jobs queued with _AddPostPoll; empty here. The poll group passes a
+    // thread index of 0 (0x24D4D0). Name not in the reference map.
+    virtual void PostPoll(const int& thread) {
+        static_cast<void>(thread);
+    }
     // Slot 5 at 0xF79B0: the job's name for reports. Name not in the
     // reference map.
     virtual const char* GetPollName() const {
@@ -90,14 +108,13 @@ public:
     // loses a dependency; empty here. Names not in the reference map.
     virtual void _OnAddPollDep() {}
     virtual void _OnRemovePollDep() {}
-    // Slots 8-9 at 0xF7A20 and 0xF7A30: the job when it stands for a
-    // nested poll manager, which a class keeps right after the base
-    // (_NestedPollMgr). Null here and in every class found. Names not in
-    // the reference map; the evidence is weak.
-    virtual PollDepBase* AsPollMgrDep() const {
+    // Slots 8-9 at 0xF7A20 and 0xF7A30: the job when it is a poll
+    // group's head or tail job (0x24DF50, 0x24DF80); null for every other
+    // job. Names not in the reference map.
+    virtual PollGroupJob* AsPollGroupHead() {
         return nullptr;
     }
-    virtual PollDepBase* AsPollMgrJob() const {
+    virtual PollGroupJob* AsPollGroupTail() {
         return nullptr;
     }
 
@@ -114,7 +131,8 @@ public:
     // Releases each after of this frame and queues those left without
     // dependencies in the thread's poll manager; the afters may be queued
     // only when `canQueue` is set and the job may poll. Swaps the frame's
-    // counters.
+    // counters. A group's head or tail job then belongs to its group
+    // again; any other job forgets its group.
     void _FreeAfters(bool canQueue);  // 0x24BFE0
     // Releases one after before the job finishes polling, when
     // PollMgr::sEarlyFreeToPoll is set and the thread's poll context asks
@@ -134,25 +152,18 @@ public:
     void RemovePollDep(PollDepBase* dep);  // 0x24C770
     // Whether the job waits for `dep`.
     bool HasPollDep(PollDepBase* dep) const;  // 0x24C810
-    // Stops every job waiting for this one and leaves the root list and
+    // Stops every job waiting for this one and leaves the leaf list and
     // the post-poll queue.
     void ClearAllDeps();  // 0x24C840
     // Leaves the post-poll queue.
     void _RemovePostPoll();  // 0x24C970
-    // Forgets the afters, the counters and the manager, and leaves the
-    // root list.
+    // Forgets the afters, the counters and the group, and leaves the leaf
+    // list.
     void _Reset();  // 0x24CA00
-    // Joins its manager's post-poll queue. Name not in the reference map.
+    // Joins its group's post-poll queue. Name not in the reference map.
     void _AddPostPoll();  // 0x24CA60
     // Runs the job on the worker. Name not in the reference map.
     void _DoThreadPoll(int thread);  // 0x24CB00
-
-    // The manager a class that overrides slots 8-9 keeps right after the
-    // base. Name not in the reference map.
-    PollMgr* _NestedPollMgr() const {
-        return *reinterpret_cast<PollMgr* const*>(
-            reinterpret_cast<const char*>(this) + sizeof(PollDepBase));
-    }
 
     // The counter of the jobs this frame's job still waits for, and the
     // next frame's. Name not in the reference map.
@@ -180,9 +191,9 @@ public:
     // Linked only by the constructors and unlinked by the destructor here;
     // its users are not identified.
     LinkedList::Node mAuxNode;
-    // Links a job without dependencies into its manager's root list
+    // Links a job nothing waits for into its group's leaf list
     // (0x24CFC0).
-    LinkedList::Node mRootNode;
+    LinkedList::Node mLeafNode;
     LinkedList::Node mPostPollNode;
     // The jobs that wait for this one; the first mNumAfters wait this
     // frame.
@@ -192,20 +203,20 @@ public:
     unsigned short mPollWeight;
     unsigned short mFlags;
     unsigned char mPadding[4];  // Never read or written.
-    // The manager that polls the job, which its afters inherit.
-    PollMgr* mPollMgr;
+    // The poll group that polls the job, which its afters inherit.
+    PollGroup* mPollGroup;
     // The lock of the post-poll queue the job is in, or null.
     CritSec* mPostPollCrit;
 };
 
 static_assert(offsetof(PollDepBase, mPollNode) == 8);
-static_assert(offsetof(PollDepBase, mRootNode) == 40);
+static_assert(offsetof(PollDepBase, mLeafNode) == 40);
 static_assert(offsetof(PollDepBase, mPostPollNode) == 56);
 static_assert(offsetof(PollDepBase, mAfters) == 72);
 static_assert(offsetof(PollDepBase, mNumAfters) == 104);
 static_assert(offsetof(PollDepBase, mDepCounts) == 112);
 static_assert(offsetof(PollDepBase, mPollWeight) == 120);
 static_assert(offsetof(PollDepBase, mFlags) == 122);
-static_assert(offsetof(PollDepBase, mPollMgr) == 128);
+static_assert(offsetof(PollDepBase, mPollGroup) == 128);
 static_assert(offsetof(PollDepBase, mPostPollCrit) == 136);
 static_assert(sizeof(PollDepBase) == 144);

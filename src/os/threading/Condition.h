@@ -34,6 +34,11 @@ public:
     void Signal() {
         scePthreadCondSignal(&mCond);
     }
+    // Wakes every waiter (PollMgr's workers). Name not in the reference
+    // map.
+    void Broadcast() {
+        scePthreadCondBroadcast(&mCond);
+    }
 
     // Cleared by the constructor (for example at 0x251273 for the poll
     // manager's conditions); nothing reads it. Name not in the reference

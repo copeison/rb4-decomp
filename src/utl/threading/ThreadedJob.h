@@ -14,7 +14,8 @@ public:
         static_cast<void>(thread);
         _DoPoll();
     }
-    void PostPoll() override {
+    void PostPoll(const int& thread) override {
+        static_cast<void>(thread);
         _DoPostPoll();
     }
     // Slot 5 (0x412060 in RndSceneCom.o).

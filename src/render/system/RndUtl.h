@@ -2,6 +2,8 @@
 
 class Entity;
 
+enum RndSceneLod : unsigned int;
+
 // Renderer helpers (render/RndUtl.o). Only the functions the reconstructed
 // code calls are declared.
 class RndUtl {
@@ -12,4 +14,6 @@ public:
     // component's level; one level at the largest float otherwise. The
     // map's signature takes an EntityPtr const&.
     static void ExtractLodSettings(Entity* entity, unsigned int& lodMask, float* distances);  // 0x4423C0
+    // "High", "Medium" or "Low"; null for any other level.
+    static const char* GetLodName(RndSceneLod lod);  // 0x4423A0
 };
