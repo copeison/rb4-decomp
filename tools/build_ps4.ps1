@@ -101,7 +101,12 @@ $archivePath = Join-Path $outputDirectory "librb4_reconstruction.a"
 if (Test-Path -LiteralPath $archivePath) {
     Remove-Item -LiteralPath $archivePath
 }
-& $archiver rcs $archivePath @objects
+# The object list is passed through a response file, as the command line
+# outgrows the Windows limit.
+$responsePath = Join-Path $outputDirectory "objects.rsp"
+$objects | ForEach-Object { '"' + ($_ -replace "\\", "/") + '"' } |
+    Set-Content -LiteralPath $responsePath -Encoding ascii
+& $archiver rcs $archivePath "@$responsePath"
 if ($LASTEXITCODE -ne 0) {
     throw "Archive creation failed: $archivePath"
 }
@@ -110,7 +115,7 @@ $manifestPath = Join-Path $outputDirectory "objects.csv"
 $manifest | Export-Csv -LiteralPath $manifestPath -NoTypeInformation
 
 $combinedObjectPath = Join-Path $outputDirectory "rb4_reconstruction.o"
-& $linker -r -o $combinedObjectPath @objects
+& $linker -r -o $combinedObjectPath "@$responsePath"
 if ($LASTEXITCODE -ne 0) {
     throw "Relocatable link failed: $combinedObjectPath"
 }
