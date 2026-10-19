@@ -38,3 +38,9 @@ static_assert(offsetof(MoggMusicResource, mSongMaps) == 0x30);
 static_assert(offsetof(MoggMusicResource, mSoundId) == 0x38);
 static_assert(offsetof(MoggMusicResource, mMoggName) == 0x40);
 static_assert(sizeof(MoggMusicResource) == 0x90);
+
+// Replaces the function that resolves a file the resource refers to,
+// relative to the resource's path; null restores the default (0x5F5F0),
+// which makes the file a path in the resource's folder. SongMgr::Init
+// installs its own. Name not in the reference map.
+void SetMoggMusicFilePathFunc(ResourcePath (*func)(ResourcePath owner, const char* file));  // 0x5F5D0

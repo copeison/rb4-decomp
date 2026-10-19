@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 1106 entries. The audio
+executable. The latest unresolved-symbol report contains 1248 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -231,7 +231,9 @@ The latest focused commits, newest first, are:
 | `7f92221` | All stategraph nodes, conditions, blend trees and the transition builder; the anim playback core (anim and driver components, drivers, resources, skeleton, key tracks, Anim::Init) |
 | `55986dd` | Anim property keys (bool, int, obj, sym, str, waveform), PropAnimCom, character animation, bone masks, IK and clips; key-track sampling and easing; the persistence core (storage, save/load, profiles, system options) |
 | `5d12080` | Build script passes objects through a response file |
-| (this) | Anim numeric keys, PropAnimResource, PropertyBlenderCom; first Rock Band module: rb_meta's RBMetaState, DialogMgrCom, RBSystemOptions and RBUILayoutCom |
+| `5038476` | Anim numeric keys, PropAnimResource, PropertyBlenderCom; first Rock Band module: rb_meta's RBMetaState, DialogMgrCom, RBSystemOptions and RBUILayoutCom |
+| `e8b8be7` | Progress report regenerated for `5038476` |
+| (this) | rb_meta profile manager, profile, song manager, UI input, overshell (part), character layout tracker; engine users (User, UserMgr, HxGuid); rb_game Defines |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

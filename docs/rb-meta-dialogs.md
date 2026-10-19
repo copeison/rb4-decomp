@@ -151,10 +151,10 @@ inferred names.
 
 ## Dependencies
 
-- `RBUIInputCom` (`src/rb_meta/input/RBUIInputCom.h`, `sId` `0x1B0F6B0`):
-  `_Enter` sets its `ignore_sticky_focus` (offset 528) and registers the
-  dialog with `UIInputCom::RegisterCom`. The bytes between UIInputCom's
-  fields and the properties are not modelled.
+- `RBUIInputCom` ([rb-meta-input.md](rb-meta-input.md)): `_Enter` sets
+  its `ignore_sticky_focus` (offset 528), so the dialog scene keeps no
+  remembered focus, and registers the dialog with
+  `UIInputCom::RegisterCom`.
 - `RBOvershellCom::IsUserAllowingInputToShell(BandUser*)` (`0xBEB060`) on
   `theOvershell` (`0x1B02C38`, set by the overshell's constructor): both
   names are inferred and weak.

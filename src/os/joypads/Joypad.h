@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utl/text/Symbol.h"
+
 // Joypad types shared by the platform controllers (os/Joypad.o). Only the
 // declarations the reconstructed controllers use are present.
 
@@ -39,6 +41,22 @@ void input_refresh_player_assignments();  // 0x8CF240
 // Sends the held-button repeats of every joypad client (os/JoypadClient.o).
 void JoypadClientPoll();  // 0x39FB50
 
+class User;
+
+// The users' pad assignments (os/Joypad.o). Not reconstructed.
+// The user on the pad, or null.
+User* JoypadGetUserFromPadNum(int padNum);  // 0x39C990
+// The pad of the user, or -1. The map has both GetUsersPadNum and
+// JoypadGetUsersPadNum with this signature; which one this is rests on
+// the name of its pair JoypadGetUserFromPadNum. Weak.
+int JoypadGetUsersPadNum(const User* user);  // 0x39C9B0
+// Whether a joypad is connected on the pad; false for -1.
+bool JoypadIsConnectedPadNum(int padNum);  // 0x39D3C0
+// Assigns each of the user manager's users the pad of its position, under
+// the pad lock. The map places ResetAllUsersPads in os/Joypad.o; this
+// build's copy sits with the PS4 joypads. Weak.
+void ResetAllUsersPads();  // 0x8CF060
+
 // The joypad information component ("Provides information about a
 // connected joypad"). Only its registration is declared. Name not in the
 // reference map.
@@ -57,3 +75,25 @@ enum JoypadAction : int {};
 // exported events list. Not reconstructed.
 const char* JoypadActionToName(JoypadAction action);  // 0x39E050
 const char* JoypadButtonToName(JoypadButton button);  // 0x39E060
+
+// A pad's state, one of the table at 0x1A02320 (624 bytes each). Only the
+// held buttons are modelled. Field names are not in the reference map.
+struct JoypadData {
+    // A bit per held JoypadButton.
+    unsigned int mButtons;
+    unsigned char mOpaque[620];  // Not modelled.
+};
+
+static_assert(sizeof(JoypadData) == 624);
+
+// os/Joypad.o. Not reconstructed.
+JoypadData* JoypadGetPadData(unsigned long padNum);  // 0x39C710
+// The controller type of the pad, "none" without one.
+Symbol JoypadControllerTypePadNum(int padNum);  // 0x39C2C0
+// The controller type's "pad_shift_button" and "cymbal_shift_button" from
+// the joypad configuration.
+JoypadButton JoypadTypePadShiftButton(Symbol type);     // 0x39D8B0
+JoypadButton JoypadTypeCymbalShiftButton(Symbol type);  // 0x39D970
+// Whether the controller type flips its directions for left-handed
+// players.
+bool JoypadTypeHasLeftyFlip(Symbol type);  // 0x39D790

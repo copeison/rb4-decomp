@@ -63,3 +63,8 @@ static_assert(sizeof(TrackChannelInfo) == 72);
 
 static_assert(offsetof(MoggResource, mFilePath) == 48);
 static_assert(offsetof(MoggResource, mSoundName) == 56);
+
+// Replaces the function that gives a mogg's companion file; null restores
+// the default (0x61030), MakeResourceCompanionFilepath. SongMgr::Init
+// installs its own. Name not in the reference map.
+void SetMoggCompanionPathFunc(ResourcePath (*func)(ResourcePath mogg));  // 0x61010

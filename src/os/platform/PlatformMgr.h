@@ -48,10 +48,20 @@ Symbol GfxApiSymbol(HxGfxApi api);  // 0x1AE4D0
 // const; this build's function takes no manager object.
 eastl::vector<int> GetSupportedPlatforms();  // 0x3641B0
 
+// Writes the platform's copy of a path into `buffer` and returns it: the
+// platform folder (PlatformSymbol) in front unless the path is local, and,
+// when `resourceExt` is set, "_<platform>" after the extensions of
+// registered resource types ("dta" becomes "dta_<platform>"). Name not in
+// the reference map; the evidence for it is weak.
+char* MakePlatformPath(const char* path, bool resourceExt, char* buffer);  // 0x364E40
+
 #include "utl/data/DataArray.h"
 #include "utl/messages/Message.h"
 #include "utl/messages/MsgSink.h"
 
+#include <functional>
+
+class OnlineID;
 struct SceSaveDataDirName;
 struct SceSaveDataTitleId;
 
@@ -80,6 +90,33 @@ public:
     // application resumes. Name not in the reference map; the evidence is
     // weak.
     virtual void RefreshSignedInUsers(MsgSink* requester);  // 0x363800
+    // Slot 15: whether the user is among the logged-in users the user
+    // service lists. Name not in the reference map.
+    virtual bool IsUserLoggedIn(int user) const;  // 0x370D00
+    // Slot 16: the user's network availability from the NP state, 0 to 3.
+    // Weak evidence for the name, taken from the map's
+    // GetOnlineRestriction(int) const.
+    virtual int GetOnlineRestriction(int user) const;  // 0x370D80
+    // Slots 17-18: asynchronous network availability and privilege checks
+    // that call back when done. Names not in the reference map; the
+    // callback signatures are not recovered, and the evidence for both is
+    // weak.
+    virtual void CheckOnlineAvailability(int user, const std::function<void(int)>& callback);  // 0x370E30
+    virtual void CheckOnlinePrivilege(int user, bool showDialog, const std::function<void(int)>& callback);  // 0x371000
+    // Slot 19: the user's account id, or an unset id.
+    virtual void GetOnlineID(int user, OnlineID* id) const;  // 0x371170
+    // Slot 20: exports "platform_identity_changed". Name not in the
+    // reference map.
+    virtual void ExportPlatformIdentityChanged();  // 0x363930
+    // Slot 21: the user service's name for the user.
+    virtual const char* GetName(int user) const;  // 0x3711E0
+
+    // Refreshes the network state (vtable +384) and returns the cached
+    // link flag (+128). The evidence for the map's name is weak.
+    bool IsEthernetCableConnected();  // 0x363760
+    // Whether every product the marker stands for is installed. The map's
+    // name; the match rests on the signature, so it is weak.
+    bool IsMarkerInstalled(Symbol marker) const;  // 0x364760
 
     // Creates and deletes data://write.test once, recording whether the
     // developer data volume is writable. Name not in the reference map.
@@ -186,6 +223,53 @@ public:
         static Symbol t;
         if (t == Symbol()) {
             t = Symbol("platform_identity_changed");
+        }
+        return t;
+    }
+};
+
+// The server connection changed: (target "connection_status_changed"
+// connected). Newer than the map; the binary keeps the array constructor at
+// 0xD597E0. Name not in the reference map, taken from the event.
+class ConnectionStatusChangedMsg : public Message<1> {
+public:
+    explicit ConnectionStatusChangedMsg(DataArray* msg) : Message<1>(msg) {
+        static_cast<void>(msg->Node(1).LiteralSym(msg));
+        static_cast<void>(Event());
+    }
+
+    // The message type, built on first use (0x19FEBE0).
+    static Symbol Event() {
+        static Symbol t;
+        if (t == Symbol()) {
+            t = Symbol("connection_status_changed");
+        }
+        return t;
+    }
+
+    // Whether the server is reachable (node 2). Name not in the reference
+    // map.
+    bool IsConnected() const {
+        return mData->Int(2) != 0;
+    }
+};
+
+// A pad's entitlements arrived: (target "platform_entitlements_retrieved"
+// success pad entitlements). Newer than the map; RBProfileMgr.o emits the
+// array constructor at 0xD62750. Name not in the reference map, taken from
+// the event.
+class PlatformEntitlementsRetrievedMsg : public Message<3> {
+public:
+    explicit PlatformEntitlementsRetrievedMsg(DataArray* msg) : Message<3>(msg) {
+        static_cast<void>(msg->Node(1).LiteralSym(msg));
+        static_cast<void>(Event());
+    }
+
+    // The message type, built on first use (0x19FEB80).
+    static Symbol Event() {
+        static Symbol t;
+        if (t == Symbol()) {
+            t = Symbol("platform_entitlements_retrieved");
         }
         return t;
     }

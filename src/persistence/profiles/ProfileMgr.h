@@ -88,6 +88,13 @@ public:
     // Reports the pad's failure to the game. Inlined into Handle.
     void _OnSaveEnd(int error, int padNum);
 
+    // Creates the pad's profile unless the pad has one, adds it, loads it
+    // when the manager uses the save manager, tells the game and exports
+    // "profile_signed_in". The game's _OnUserLoggedIn instantiates it; the
+    // binary emits RBProfile's at 0xBB02E0. Name not in the reference map.
+    template <class T>
+    T* CreateProfile(int padNum);
+
     // Inlined into Handle.
     DataNode OnMsg(const UserSignedInMsg& msg);
     // Destroys the user's profile. Inlined into Handle.

@@ -146,6 +146,13 @@ public:
     void UnregisterCom(Component* com);  // 0x89ED30
     // Sets "is_modal". Not reconstructed.
     void SetIsModal(bool modal);  // 0x89EF10
+    // Moves the pad's focus to the receiver; the flag goes on to the
+    // receiver's focused state. Not reconstructed. The parameter name is
+    // weak.
+    void SetFocusedObject(UIInputReceiverCom* receiver, int padNum, bool immediate);  // 0x89D9F0
+    // Sets "focus_first_on_enter" and the pending first focus. Not
+    // reconstructed.
+    void SetFocusFirstOnEnter(bool focusFirst);  // 0x89EF20
     // The focus of the pad: pad 0's entry with "multi_focus", otherwise
     // the only one; null when there is none. Inlined into the property
     // accessors.
@@ -173,6 +180,21 @@ public:
     // Describes the class, exports "ui_select" and "transition_done", and
     // registers its properties.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x89F430
+    // Registers the class's properties for a subclass, under the
+    // "metadata" heap, and inherits its editor restrictions. Inline; the
+    // subclass's object emits it (RBUIInputCom.o at 0xCB1EC0).
+    static void _InitAsSuperclass(PropRegistry& registry, ComMetaData& metadata) {
+        metadata.InitSuperclass("UIInputCom", sMetaData);
+        const ComMetaData::EditorRestriction restrictions =
+            static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions);
+        static const long heap = MemFindHeap("metadata");
+        MemPushHeap(heap);
+        _Init(registry, metadata);
+        MemPopHeap();
+        metadata.mEditorRestrictions = ComMetaData::InheritEditorRestrictions(
+            static_cast<ComMetaData::EditorRestriction>(metadata.mEditorRestrictions),
+            restrictions);
+    }
 
     static Symbol sId;                  // 0x1AC8758, "UIInputCom"
     // The class symbol GameObject::CreateComponent takes; also

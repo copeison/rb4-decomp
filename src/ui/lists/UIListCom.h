@@ -318,6 +318,9 @@ public:
     void SetData(UIListData* data);  // 0x8B7450
     // Whether the list can scroll in the direction. Not reconstructed.
     bool CanScroll(ListDirection direction) const;  // 0x8B7A90
+    // Focuses the item showing the row, scrolling to it; false for -1 or
+    // a row it cannot focus. Not reconstructed.
+    bool SetFocusByDataIndex(unsigned long index);  // 0x8B80D0
     // Hides or shows the list, deactivating its instances. Name not in
     // the reference map. Not reconstructed.
     void SetHidden(bool hidden);  // 0x8B97F0
@@ -336,8 +339,7 @@ public:
     }
     // The rows, or the displayed maximum without data. Inlined into
     // "num_total_elements". The binary reads the rows through
-    // UIListData::GetNumRows (0x8C3BE0), which UIListData.h does not
-    // declare.
+    // UIListData::GetNumRows (0x8C3BE0).
     long GetTotalNumElements() const {
         return mRuntime.mData != nullptr ? static_cast<long>(mRuntime.mData->mRows.size())
                                          : mMaxItemsDisplayed;

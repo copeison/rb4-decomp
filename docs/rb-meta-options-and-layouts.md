@@ -21,10 +21,9 @@ destructors and most setters); they were read from the raw code.
 Declaration-only headers for what the objects call:
 `src/rb_meta/songs/SongMgr.h` (`SongMgr::SaveSongCache`,
 `SongMgr::LoadSongCache`, `theSongMgr`), `src/rb_meta/songs/RBSongSort.h`
-(`RBSongSort::SortMethod`), `src/rb_meta/ui/RBUIInputCom.h`
-(`RBUIInputCom::sId`),
-`src/rb_meta/character/RBCharacterLayoutTrackerCom.h`
-(`AnyPlayerEntityIsLoading`, `sId`). `UIButtonDownMsg` comes from
+(`RBSongSort::SortMethod`). `RBUIInputCom` and
+`RBCharacterLayoutTrackerCom` are described in
+[rb-meta-input.md](rb-meta-input.md). `UIButtonDownMsg` comes from
 `src/ui/input/UIMsg.h`. Engine headers gained
 `UIInputCom::UnregisterCom` (`0x89ED30`),
 `BinStream::operator<<(const FixedString&)` (`0x21A020`), the inline
@@ -174,5 +173,4 @@ the static initializer at `0xCB5A10`.
 
 ## Not reconstructed
 
-`SongMgr`, `RBUIInputCom`, `RBCharacterLayoutTrackerCom` and the map
-reader template are declared only. `RBProfileMgr` declares only `Poll` and `mSystemOptions`.
+`SongMgr` and the map reader template are declared only. `RBProfileMgr` is in [rb-meta-profile-manager.md](rb-meta-profile-manager.md).

@@ -62,6 +62,20 @@ public:
         return &mAnchor;
     }
 
+    // Removes every key, as EASTL's clear (RBProfile::ClearEntitlements at
+    // 0xD582B0 inlines it).
+    void clear() {
+        DoNukeSubtree(static_cast<node_type*>(mAnchor.mpNodeParent));
+        mAnchor.mpNodeRight = &mAnchor;
+        mAnchor.mpNodeLeft = &mAnchor;
+        mAnchor.mpNodeParent = nullptr;
+        mAnchor.mColor = 0;
+        mnSize = 0;
+    }
+    unsigned long size() const {
+        return mnSize;
+    }
+
     // Adds the key unless it is present.
     void insert(const Key& key) {
         DoInsertValue(key);

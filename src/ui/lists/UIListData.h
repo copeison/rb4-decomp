@@ -29,6 +29,9 @@ public:
     // Slots 0-1: 0x8C4A20, 0x8C4AB0.
     ~UIListData() override;
 
+    // The number of rows. Not reconstructed.
+    unsigned long GetNumRows() const;  // 0x8C3BE0
+
     eastl::vector<DataRow> mRows;
     // The column names, in column order.
     eastl::vector<Symbol> mColumns;
