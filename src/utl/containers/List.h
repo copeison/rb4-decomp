@@ -87,6 +87,20 @@ public:
         ++mSize;
     }
 
+    // Links a new node before the position, as EASTL's insert does (for
+    // example AnimDriver::_StartAnim at 0x328780).
+    iterator insert(iterator position, const T& value) {
+        auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
+        new (&node->mValue) T(value);
+        ListNodeBase* const next = position.mpNode;
+        node->mpNext = next;
+        node->mpPrev = next->mpPrev;
+        next->mpPrev->mpNext = node;
+        next->mpPrev = node;
+        ++mSize;
+        return iterator(node);
+    }
+
     // Links a new node after the anchor, as EASTL's push_front does (for
     // example Debug::AddExitCallback, inlined at 0x402CCF).
     void push_front(const T& value) {

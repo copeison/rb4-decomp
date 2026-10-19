@@ -40,8 +40,11 @@ public:
     struct RevisionArgs {
         // The component being loaded.
         Component* mComponent;
-        // Passed through from the load; not identified.
-        const void* mContext[2];
+        // For a struct's own registry, the struct's path and storage, which
+        // the DrivenProp<T> handlers (0x415010) read and write; the names
+        // follow those uses and the evidence is weak.
+        const PropPath* mPath;
+        void* mStorage;
         // A component of the class holding the properties as they were
         // saved, which the handlers read old properties from through
         // FindProp and _GetProp. Name not in the reference map.

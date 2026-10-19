@@ -567,6 +567,9 @@ public:
     // it runs and the flag that follows the label. Name and field names not
     // in the reference map.
     struct InlineAction {
+        // Inlined into DrivenProp<T>::Register (0x4107C0).
+        InlineAction() : mLabel(), mAction(), mEnabled(true) {}
+
         String mLabel;
         std::function<void(const TagArgs&)> mAction;
         // The name is weak.
@@ -1545,6 +1548,14 @@ public:
 static_assert(offsetof(EulerMetadata, mDefault) == 1568);
 static_assert(sizeof(EulerMetadata) == 1712);
 
+// The value of a rotation property (type 21, "Rotation"): Euler angles in
+// radians, stored as a Vector3. The state graph node templates are
+// instantiated for it apart from Vector3, so the binary has a type of its
+// own. Name not in the reference map.
+struct PropRotation : Vector3 {};
+
+static_assert(sizeof(PropRotation) == 12);
+
 // The value of a transform property (type 22): scale, Euler angles and
 // translation, the layout of TransCom's local transform. The identity is
 // at 0x19E669C. Name not in the reference map.
@@ -1559,6 +1570,14 @@ struct PropXfm {
 };
 
 static_assert(sizeof(PropXfm) == 36);
+
+// Interpolates two transforms: the scale and translation directly, the
+// rotation through quaternions (InterpXfm) or angle by angle
+// (InterpXfmLinear), as InterpEuler and InterpEulerLinear do. Emitted in
+// the math module. Names not in the reference map. Declared for the state
+// graph nodes; not reconstructed.
+void InterpXfm(const PropXfm& from, const PropXfm& to, float t, PropXfm& result);        // 0x219450
+void InterpXfmLinear(const PropXfm& from, const PropXfm& to, float t, PropXfm& result);  // 0x2192E0
 
 // The metadata of a transform property (type 22; 1744 bytes, vtable
 // 0x18E7C80), with the members "scale", "rotation" and "translation". Name
@@ -1659,3 +1678,72 @@ WaveformMetadata<Hmx::Color>& TypeSpecificMetadata(
 // angle properties (type 21) take a separate overload at 0x141420, whose
 // value type, also three floats, is not recovered.
 Vector3Metadata& TypeSpecificMetadata(PropInfo& info, const Vector3& type);  // 0x141410
+
+// What a metadata remap function receives (240 bytes): the tag arguments of
+// the property being edited, which the remap function points at another
+// property, whose metadata then answers the attributes (0x1F3DA0 for a float
+// default). The map names the type; the field names are not in the
+// reference map.
+struct TagRemapArgs {
+    // The tag arguments the attribute was asked with.
+    const Component& mComponent;
+    const PropPath& mPath;
+    // Filled by the remap function: the entity, the component and path of
+    // the property that answers, and its info.
+    Entity* mEntity;
+    Component* mTargetCom;
+    PropPath mTargetPath;
+    const PropInfo* mTargetInfo;
+};
+
+static_assert(offsetof(TagRemapArgs, mEntity) == 16);
+static_assert(offsetof(TagRemapArgs, mTargetPath) == 32);
+static_assert(offsetof(TagRemapArgs, mTargetInfo) == 232);
+static_assert(sizeof(TagRemapArgs) == 240);
+
+// The function a remapped attribute calls to find the property that answers
+// it. The map's RemapPropMetadata overloads take a std::function<void
+// (TagRemapArgs&)> const&; this build passes the function's address.
+using TagRemapFunc = void (*)(TagRemapArgs& args);
+
+// Makes the metadata's type-specific attributes (default, range, allowed
+// values and the like) answer with those of the property `remap` finds.
+// Declared for the state graph comparisons; not reconstructed.
+void RemapPropMetadata(FloatMetadata& metadata, const TagRemapFunc& remap);  // 0x1E5FF0
+// 0x1E1470 (signed char), 0x1E1DE0 (short), 0x1E2750 (int), 0x1E30C0
+// (long), 0x1E3A30 (unsigned char), 0x1E43A0 (unsigned short), 0x1E4D10
+// (unsigned int), 0x1E5680 (unsigned long).
+template <typename T>
+void RemapPropMetadata(IntMetadata<T>& metadata, const TagRemapFunc& remap);
+void RemapPropMetadata(BoolMetadata& metadata, const TagRemapFunc& remap);          // 0x1E6950
+void RemapPropMetadata(GameObjectIdMetadata& metadata, const TagRemapFunc& remap);  // 0x1E6F30
+void RemapPropMetadata(PropRefMetadata& metadata, const TagRemapFunc& remap);       // 0x1E7040
+void RemapPropMetadata(SymbolMetadata& metadata, const TagRemapFunc& remap);        // 0x1E7490
+void RemapPropMetadata(ResourcePathMetadata& metadata, const TagRemapFunc& remap);  // 0x1E7640
+void RemapPropMetadata(ColorMetadata& metadata, const TagRemapFunc& remap);         // 0x1E7DB0
+// 0x1E8030 (float), 0x1E8860 (Hmx::Color).
+template <class T>
+void RemapPropMetadata(WaveformMetadata<T>& metadata, const TagRemapFunc& remap);
+// The vector, rotation and transform overloads, which the state graph's
+// property nodes call. Declared for the state graph nodes; not
+// reconstructed.
+void RemapPropMetadata(Vector3Metadata& metadata, const TagRemapFunc& remap);  // 0x1E8AE0
+void RemapPropMetadata(EulerMetadata& metadata, const TagRemapFunc& remap);    // 0x1E8BD0
+void RemapPropMetadata(XfmMetadata& metadata, const TagRemapFunc& remap);      // 0x1E8CC0
+
+// The rotation and transform overloads of TypeSpecificMetadata, newer than
+// the reference map.
+EulerMetadata& TypeSpecificMetadata(PropInfo& info, const PropRotation& type);  // 0x141420
+XfmMetadata& TypeSpecificMetadata(PropInfo& info, const PropXfm& type);        // 0x141DB0
+
+// The read-only overloads of the numbers (the map's TypeSpecificMetadata(
+// PropInfo const&, T const&)), which also return the info's metadata.
+const FloatMetadata& TypeSpecificMetadata(const PropInfo& info, const float& type);  // 0x141B80
+const IntMetadata<signed char>& TypeSpecificMetadata(const PropInfo& info, const signed char& type);  // 0x141BA0
+const IntMetadata<short>& TypeSpecificMetadata(const PropInfo& info, const short& type);  // 0x141BC0
+const IntMetadata<int>& TypeSpecificMetadata(const PropInfo& info, const int& type);  // 0x141BE0
+const IntMetadata<long>& TypeSpecificMetadata(const PropInfo& info, const long& type);  // 0x141C00
+const IntMetadata<unsigned char>& TypeSpecificMetadata(const PropInfo& info, const unsigned char& type);  // 0x141C20
+const IntMetadata<unsigned short>& TypeSpecificMetadata(const PropInfo& info, const unsigned short& type);  // 0x141C40
+const IntMetadata<unsigned int>& TypeSpecificMetadata(const PropInfo& info, const unsigned int& type);  // 0x141C60
+const IntMetadata<unsigned long>& TypeSpecificMetadata(const PropInfo& info, const unsigned long& type);  // 0x141C80

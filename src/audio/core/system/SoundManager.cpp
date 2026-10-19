@@ -3,6 +3,7 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "audio/core/components/AudioClipCom.h"
 #include "audio/core/components/AudioEmitterCom.h"
 #include "audio/core/components/AudioListenerCom.h"
 #include "audio/core/fusion/FusionPatchCom.h"
@@ -82,10 +83,6 @@ public:
 class AudioAnalyzerCom {
 public:
     static void Init();  // 0x2090, class "AudioAnalyzer"
-};
-class AudioClipCom {
-public:
-    static void Init();  // 0x25D0, class "AudioClip"
 };
 class AudioClipMusicCom {
 public:

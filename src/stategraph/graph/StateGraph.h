@@ -1,18 +1,13 @@
 #pragma once
 
 #include "entity/core/ComMetaData.h"
+#include "stategraph/nodes/StateNodePlaySound.h"
 #include "utl/text/Symbol.h"
 
-// The settings struct of the driven audio parameters that the sound nodes
-// hold (304 bytes, 8-aligned), registered as a property struct by
-// StateGraph::Init. Its layout is not modelled. Name from the struct's
-// registered type name.
-struct DrivenAudioParamSettings;
-
-// Names the struct type and records its size, once (0x6FB100, emitted in
-// stategraph/StateGraph.o). Not reconstructed: the struct is not modelled.
-template <>
-void RegisterPropStruct<DrivenAudioParamSettings>(Symbol name);
+// StateGraph::Init registers DrivenAudioParamSettings (declared with
+// StateNodePlaySound, whose "params" hold it) through
+// RegisterPropStruct<DrivenAudioParamSettings>, which the binary emits in
+// stategraph/StateGraph.o at 0x6FB100.
 
 // The state graph module (stategraph/StateGraph.o, 0x6F6090-0x7013A0): its
 // Init registers the graph resource, the driver and every graph component

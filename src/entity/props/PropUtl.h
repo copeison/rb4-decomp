@@ -58,6 +58,9 @@ const char* TypeName(PropertyType type, bool constant);  // 0x189510
 // The storage size and alignment of a value of the type.
 unsigned long PropertySize(PropertyType type);  // 0x1894B0
 int PropertyAlignment(PropertyType type);       // 0x1894E0
+// Whether the type is a number: float or one of the integer types (0 to
+// 8). Not reconstructed.
+bool IsNumber(PropertyType type);  // 0x1898B0
 
 // Inserts a value into the array property at the path: `value` is copied in,
 // or a default element is constructed when it is null; `type` is the

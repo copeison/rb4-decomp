@@ -120,7 +120,7 @@ StateCondition* StateCondition::Create(GameObject* object, Type type) {
         className = StateConditionNot::sClassName;
         break;
     case kPropertyComparison:
-        className = StateConditionPropertyComparison<float>::sId;
+        className = StateConditionPropertyComparison<float>::sClassName;
         break;
     case kRandom:
         className = StateConditionRandom::sClassName;
@@ -162,8 +162,8 @@ int StateCondition::GetType() const {
 }
 
 // Reconstructed from eboot.elf at 0x809080.
-bool StateCondition::IsSelectable() const {
-    return _IsSelectable();
+bool StateCondition::IsValid(const StateCondition* parent, String* error) const {
+    return _IsValid(parent, error);
 }
 
 // Reconstructed from eboot.elf at 0x809090.
@@ -178,7 +178,7 @@ int StateCondition::GetNumAllowedChildren() const {
 
 // Reconstructed from eboot.elf at 0x8090B0.
 void StateCondition::GetAllowedChildTypes(eastl::vector<int>& types) {
-    _PrepareAllowedChildTypes();
+    _GetAllowedChildTypes(types);
     if (types.empty()) {
         for (int type = 0; type != kNumTypes; ++type) {
             types.push_back(type);
@@ -421,7 +421,9 @@ const char* StateCondition::_GetDescription() const {
 }
 
 // Reconstructed from eboot.elf at 0x809880.
-bool StateCondition::_IsSelectable() const {
+bool StateCondition::_IsValid(const StateCondition* parent, String* error) const {
+    static_cast<void>(parent);
+    static_cast<void>(error);
     return true;
 }
 

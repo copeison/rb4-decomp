@@ -22,18 +22,25 @@ class StateTransition;
 // blend trees keep one inside the node (vtable 0x193A078, six slots). Only
 // the slots the state graph reads are declared. Name not in the reference
 // map; the slot names follow their uses and the evidence is weak.
+// StateNodeAnimate derives from it after StateNode, at offset 152.
 class StateNodeTiming {
 public:
     // Slot 0: whether the timing can be synchronized to.
     virtual bool IsValid() const = 0;
-    // Slot 1: the node's name.
-    virtual Symbol GetName() const = 0;
+    // Slot 1: the node's name: the animation's or the clip object's for
+    // StateNodeAnimate (0x70F4B0), the object's for the blend trees
+    // (0x717D00, which returns StateBase::GetName's symbol).
+    virtual const char* GetName() const = 0;
     // Slot 2: the scale of the timing in the units at the rate.
     virtual float GetScale(int units, float rate) const = 0;
     // Slot 3: the length, through `length`.
     virtual bool GetLength(float& length) const = 0;
     // Slot 4: the units the timing counts in.
     virtual int GetUnits() const = 0;
+    // Slot 5: rebuilds what the timing comes from: StateNodeAnimate's clip
+    // (0x710040), a blend tree's (0x717F60). Name not in the reference map;
+    // the evidence is weak.
+    virtual void Refresh() const = 0;
 };
 
 // A state of a state graph (stategraph/StateNode.o, 0x708410-0x70AD77;
@@ -120,14 +127,16 @@ public:
     // Slot 46: whether the node can blend with the nodes before and after
     // it; false here. Name not in the reference map.
     virtual bool CanBlend() const;  // 0x709FA0
-    // Slots 47-48 at 0x6FF900 and 0x6FF910: false here; the folder and the
-    // groups answer whether any child does. No node in this build answers
-    // true and only two unreferenced StateTransition helpers read them, so
-    // the names are guesses. Names not in the reference map.
-    virtual bool IsExclusive() const {
+    // Slots 47-48 at 0x6FF900 and 0x6FF910: whether the node sets colour
+    // and rotation properties, to which a transition's
+    // "hsv_color_blending" and "rotation_blending" apply (the editor shows
+    // those only when the target answers true); false here, and the groups
+    // (0x71B8C0, 0x71B910) answer whether any child does. Names not in the
+    // reference map.
+    virtual bool UsesColorBlending() const {
         return false;
     }
-    virtual bool IsBlocking() const {
+    virtual bool UsesRotationBlending() const {
         return false;
     }
     // Slot 49 at 0x6FF920: whether the node does work of its own, which

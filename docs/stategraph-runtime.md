@@ -16,7 +16,9 @@ in [stategraph-components.md](stategraph-components.md).
 
 `StateGraph.o` (`0x6F6090`-`0x7013A0`) also holds every class's `Init`
 and `_Create` and the inline methods the templated classes share; the
-reconstructed classes define theirs with the class.
+classes define theirs with the class. Every class `StateGraph::Init`
+registers is reconstructed (see
+[stategraph-components.md](stategraph-components.md)).
 
 ## Module registration
 
@@ -130,8 +132,7 @@ may run uses the object.
 - The resource's `FindTransitionWithCondition`, `FindParentBlendTree` and
   `GetUnusedObjects` are inferred; the map's `FindTransitionOrigin` has
   no match in this build.
-- The template group functions `StateNodeSetPropertyInit_A`-`_C` are
-  matched to `0x791400`, `0x793350` and `0x7A9AC0` by their order; the
-  `StateNodeIncrementPropertyInit` names are inferred.
+- The `StateNodeIncrementPropertyInit` names are inferred; the
+  `StateNodeSetPropertyInit_A`-`_C` letters match the map's type lists.
 - `BlendTreeBaseCom`, `ClipBlendTreeCom` and `ClipJukeboxCom` follow
   their class ids.

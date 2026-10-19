@@ -89,8 +89,8 @@ public:
     void _LoadBlendCurve();  // 0x7F7D90
     // Slots 47 and 48 of the target node. No caller in this build. Names
     // not in the reference map.
-    bool IsTargetExclusive() const;  // 0x7F7FD0
-    bool IsTargetBlocking() const;   // 0x7F7FE0
+    bool TargetUsesColorBlending() const;  // 0x7F7FD0
+    bool TargetUsesRotationBlending() const;  // 0x7F7FE0
     // Whether the transition takes time: it is synchronized, or it has a
     // driven or positive duration. No caller in this build. Name not in the
     // reference map.
@@ -124,8 +124,8 @@ public:
     static void Init();
     // The class factory. Emitted in stategraph/StateGraph.o at 0x700E70.
     static Component* _Create();
-    // Not reconstructed: its tag functions and the driven property
-    // registrations it calls are not modelled.
+    // Registers the links, the blend settings and the editor views of the
+    // synchronized blend's timing positions (percent, frames, time).
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x7F5420
 
     static Symbol sId;  // 0x1ABE0C0, "StateTransition"

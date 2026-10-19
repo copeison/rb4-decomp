@@ -28,6 +28,7 @@
 #include "stategraph/nodes/StateNodeExecute.h"
 #include "stategraph/nodes/StateNodeFolder.h"
 #include "stategraph/nodes/StateNodeGroup.h"
+#include "stategraph/nodes/StateNodeIncrementProperty.h"
 #include "stategraph/nodes/StateNodeModifySound.h"
 #include "stategraph/nodes/StateNodePlaySound.h"
 #include "stategraph/nodes/StateNodeRoot.h"

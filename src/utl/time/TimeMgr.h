@@ -21,6 +21,13 @@ enum TimeUnits {
 // The unit's name; `pretty` selects the capitalized spelling.
 const char* GetTimeUnitsName(TimeUnits units, bool pretty);  // 0x25A140
 
+template <class T>
+struct AllowedValue;
+// The four timelines as allowed values of a TimeUnits property ("Seconds",
+// "Beats", "UI Seconds", "Tutorial Seconds"), built on first use. Name not
+// in the reference map. Not reconstructed.
+const eastl::vector<AllowedValue<int>>& GetTimeUnitsAllowedValues();  // 0x25BB20
+
 // One time unit's clock (the map's Timeline, from eastl::vector<Timeline> in
 // utl/TimeMgr.o). Field names are not in the reference map.
 struct Timeline {

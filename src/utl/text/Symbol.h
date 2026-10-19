@@ -31,3 +31,7 @@ private:
 };
 
 static_assert(sizeof(Symbol) == sizeof(void*));
+
+// The empty string (utl/Symbol.o). Declared for the state graph
+// comparisons; not reconstructed.
+extern const char* gNullStr;  // 0x18EFB28

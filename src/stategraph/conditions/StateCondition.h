@@ -8,6 +8,7 @@
 #include "utl/text/Symbol.h"
 
 class DataArray;
+class String;
 class Entity;
 class StateConditionInstance;
 class StateGraphInstance;
@@ -46,6 +47,20 @@ public:
         kOnceFalseRemainFalse = 3,
     };
 
+    // How a comparison condition compares (StateConditionComparison<T>'s
+    // "operator"). The map names the type; the enumerator names follow the
+    // allowed values' labels ("==" to "Between").
+    enum ComparisonOperator : int {
+        kEqual = 0,
+        kNotEqual = 1,
+        kLess = 2,
+        kLessEqual = 3,
+        kGreater = 4,
+        kGreaterEqual = 5,
+        // value (a) <= value < value (b), with (a) and (b) in either order.
+        kBetween = 6,
+    };
+
     StateCondition();  // 0x808AE0
     // Copies the condition for an imprint. Inlined into _Imprint (0x809620).
     StateCondition(const StateCondition& other)
@@ -76,10 +91,13 @@ public:
     virtual void _AddChild(GameObjectId child);                // 0x809790
     virtual void _RemoveChild(GameObjectId child);             // 0x8097A0
     virtual GameObjectId _GetChild(unsigned int index) const;  // 0x8097B0
-    // Slot 48 at 0x8097D0: called before the allowed child types are
-    // gathered; nothing here, and no class overrides it. Name not in the
-    // reference map; the evidence is weak.
-    virtual void _PrepareAllowedChildTypes() {}
+    // Slot 48 at 0x8097D0: adds the condition types the condition may hold
+    // as children; none here, which allows every type. StateConditionEvent
+    // allows parameter comparisons only. The map's
+    // _GetAllowedChildTypes(eastl::vector<StateCondition::Type>&) const.
+    virtual void _GetAllowedChildTypes(eastl::vector<int>& types) const {
+        static_cast<void>(types);
+    }
     // Slot 49 at 0x8097E0: the condition types the condition may not hold
     // as children; none here. Name not in the reference map.
     virtual void _GetDisallowedChildTypes(eastl::vector<int>& types) const {
@@ -97,9 +115,12 @@ public:
     // Slot 52: the condition's Type; kNumTypes here. Name not in the
     // reference map.
     virtual int _GetType() const;  // 0x809410
-    // Slot 53: true here, and no class overrides it. Name not in the
-    // reference map; the evidence is weak.
-    virtual bool _IsSelectable() const;  // 0x809880
+    // Slot 53: whether the condition is valid under the parent condition
+    // (null at the top), with the reason in `error` (which may be null)
+    // when it is not. True here; the event parameter comparisons need an
+    // Event parent with a matching parameter. Name not in the reference
+    // map; the evidence is weak.
+    virtual bool _IsValid(const StateCondition* parent, String* error) const;  // 0x809880
 
     // Creates the component of the type's class on the object; the
     // logical types share a class.
@@ -112,7 +133,7 @@ public:
     // Slot 52. Name not in the reference map.
     int GetType() const;  // 0x809070
     // Slot 53. Name not in the reference map.
-    bool IsSelectable() const;  // 0x809080
+    bool IsValid(const StateCondition* parent, String* error) const;  // 0x809080
     int GetNumChildren() const;         // 0x809090
     int GetNumAllowedChildren() const;  // 0x8090A0
     // Lists the types the condition may hold as children: every type unless

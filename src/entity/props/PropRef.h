@@ -36,10 +36,22 @@ public:
     // The map's Find(EntityPtr, void**) const: the referenced property's
     // info, with its storage in `storage` when it is given, or null.
     const PropInfo* Find(Entity* entity, void** storage) const;  // 0x17F850
-    // The map's ValueToString(EntityPtr) const: the reference as editor
-    // text, through the static Description.
-    const char* ValueToString(Entity* entity) const;  // 0x17FA50
+    // Declared for the state graph nodes; not reconstructed. The
+    // referenced object, component and property's info in the entity;
+    // false when one is missing. Name not in the reference map; the
+    // evidence is weak.
+    bool Resolve(Entity* entity, GameObject*& object, Component*& com, const PropInfo*& info) const;  // 0x17FCB0
+    // The map's Description(EntityPtr) const: the reference as editor
+    // text, through the static Description (0x17FDA0).
+    const char* Description(Entity* entity) const;  // 0x17FA50
+    // The map's ValueToString(EntityPtr) const: the referenced property's
+    // value as text, or empty when the object or component is missing.
+    // Not reconstructed.
+    const char* ValueToString(Entity* entity) const;  // 0x17FF20
     bool operator==(const PropRef& other) const;  // 0x1801E0
+    // Orders references, as eastl::map<PropRef, ...> compares them
+    // (ClipBlendTreeCom.o's edit values). Not reconstructed.
+    bool operator<(const PropRef& other) const;  // 0x180200
     // The map's Get<T>(EntityPtr): the referenced property's value in the
     // entity. Instantiated where it is used: Waveform<float>'s at 0x2D0470.
     template <class T>

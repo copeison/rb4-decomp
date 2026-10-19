@@ -286,3 +286,9 @@ static_assert(sizeof(Entity) == 320);
 // (entity/Utl.o). The map's IsResourcePathInlined(ResourcePath, EntityPtr
 // const&). Not reconstructed.
 bool IsResourcePathInlined(ResourcePath path, Entity* entity);  // 0x114CC0
+// A name for a new object of the entity: the name, made lowercase with
+// underscores between words when `lowercase` is set, with a number added or
+// raised until no object has it (entity/Utl.o). The map's
+// GenerateUniqueObjectName(Symbol, EntityPtr const&, bool). Not
+// reconstructed.
+Symbol GenerateUniqueObjectName(Symbol name, Entity* entity, bool lowercase);  // 0x113A50

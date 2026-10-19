@@ -97,7 +97,7 @@ void StateGraphInstance::Activate(GameObjectId object) {
 StateNodeInstance* StateGraphInstance::_EnterNode(const StateNode* node) {
     _PopScopes(_PushScopes(node));
     while (node->GetId() == StateNodeFolder::sId) {
-        node = static_cast<const StateNodeFolder*>(node)->mStartNode;
+        node = static_cast<const StateNodeFolder*>(node)->mFolderRuntime.mStartNode;
         _PushScope(node);
         StateTransition* const transition = _FindTransition(mScopes.size() - 1, false, true);
         if (transition != nullptr) {

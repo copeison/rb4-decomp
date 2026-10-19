@@ -9,6 +9,10 @@
 class Component;
 class EntityResource;
 class PropPath;
+template <class T>
+class TKeyTrack;
+template <class T>
+struct ValueTangent;
 
 // A waveform's random evaluation state: the blend between its two curves
 // at the start, and how far the blend moves over the waveform's span
@@ -47,10 +51,21 @@ public:
 
     static ResourcePtr<WaveformResource> sDefault;
 
+    // Whether the resources describe the same curves: the type, the value
+    // range and the type's keys or samples. 0x1A5090 for float. Not
+    // reconstructed.
+    bool operator==(const WaveformResource& other) const;
+
     // Sets the type (the map's SetType(WaveformType)) and rebuilds the
     // tracks for it: 0x2416E0 for float, 0x2419F0 for Hmx::Color. Not
     // reconstructed.
     void SetType(int type);
+    // Replaces the keys of the curve (0 or 1) and rebakes its samples. The
+    // map's SetCurve(unsigned long, TKeyTrack<T> const&); the float tracks
+    // hold ValueTangent<float> keys in this build. 0x728A40 for float, a
+    // copy in stategraph/StateNodeIncrementPropertyInit_A.o. Declared for
+    // the state graph nodes; not reconstructed.
+    void SetCurve(unsigned long curve, const TKeyTrack<ValueTangent<T>>& track);
     // Sets the value of the curve's first key, then rebakes the samples:
     // 0x5E5EA0 for float; inlined for Hmx::Color (its rebake is 0x242170).
     // Not reconstructed.

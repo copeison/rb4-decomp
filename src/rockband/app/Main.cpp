@@ -1,5 +1,6 @@
 #include "rockband/app/Main.h"
 
+#include "anim/core/AnimInit.h"
 #include "audio/core/system/SoundManager.h"
 #include "os/debug/Debug.h"
 #include "os/files/File.h"
@@ -25,7 +26,6 @@
 struct DingoService;
 
 void engine_register_types();
-void animation_register_types();
 void physics_register_types();
 void dingo_initialize(DingoService& service);
 void audio_configure_time_stretch();
@@ -95,7 +95,7 @@ bool App::Initialize(int argc, char** argv) {
     SoundManager::Init(nullptr, -1, false, nullptr, nullptr);
 
     engine_register_types();
-    animation_register_types();
+    Anim::Init();
     physics_register_types();
     StateGraph::Init();
 

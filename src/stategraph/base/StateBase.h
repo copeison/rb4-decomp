@@ -7,6 +7,8 @@
 #include "entity/core/Component.h"
 #include "entity/core/Entity.h"
 #include "entity/core/GameObject.h"
+#include "entity/props/PropMetadata.h"
+#include "entity/props/PropPath.h"
 #include "entity/props/PropRegistry.h"
 #include "utl/text/MakeString.h"
 #include "utl/text/Symbol.h"
@@ -76,6 +78,12 @@ public:
     T* _GetObjectCom(GameObjectId id, bool fail) const;
     template <class T>
     T* _GetObjectBaseCom(GameObjectId id, bool fail) const;
+    // Makes a change of the DrivenProp<T> at the path in the registry
+    // ("value", "prop" or "is_driven") redraw the component in the editor.
+    // Each user emits a copy: 0x727D50 for float, which StateTransition and
+    // the comparison conditions share.
+    template <class T>
+    static void _FixDrivenProp(PropRegistry& registry, const PropPath& path);
 
     // Registers the class (InitComponentClass). Inline in the map; this
     // build emits it in stategraph/StateGraph.o at 0x6F6730.
@@ -139,6 +147,41 @@ T* StateBase::_GetObjectBaseCom(GameObjectId id, bool fail) const {
         ReportMissingGraphCom(*this, object);
     }
     return com;
+}
+
+// The callbacks (0x72A4D0, 0x72A4E0 and 0x72A4F0 for float) each redraw
+// the component.
+template <class T>
+void StateBase::_FixDrivenProp(PropRegistry& registry, const PropPath& path) {
+    static Symbol value;
+    if (value == Symbol()) {
+        value = Symbol("value");
+    }
+    static Symbol prop;
+    if (prop == Symbol()) {
+        prop = Symbol("prop");
+    }
+    static Symbol is_driven;
+    if (is_driven == Symbol()) {
+        is_driven = Symbol("is_driven");
+    }
+    PropPath::Node node;
+
+    PropPath valuePath = path;
+    valuePath.PushNode(node = value);
+    const T type = T();
+    TypeSpecificMetadata(const_cast<PropInfo&>(*registry.FindProp(valuePath, nullptr)), type).mOnChanged =
+        [](const PropAccessorArgs& args) { static_cast<StateBase*>(args.mComponent)->_SendDisplayTextUpdated(); };
+
+    PropPath propPath = path;
+    propPath.PushNode(node = prop);
+    static_cast<PropRefMetadata&>(*registry.FindProp(propPath, nullptr)->mMetadata.Get()).mRefOnChanged =
+        [](const PropAccessorArgs& args) { static_cast<StateBase*>(args.mComponent)->_SendDisplayTextUpdated(); };
+
+    PropPath drivenPath = path;
+    drivenPath.PushNode(node = is_driven);
+    static_cast<BoolMetadata&>(*registry.FindProp(drivenPath, nullptr)->mMetadata.Get()).mOnChanged =
+        [](const PropAccessorArgs& args) { static_cast<StateBase*>(args.mComponent)->_SendDisplayTextUpdated(); };
 }
 
 static_assert(offsetof(StateBase, mComment) == 24);

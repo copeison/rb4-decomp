@@ -12,6 +12,13 @@ using DialogSoundSink = std::function<void(AudioEmitter*, Symbol, void*)>;
 // Request for a dialog generator, marked by PlayArgs::mFormat 4. Names not in
 // the reference map.
 struct DialogPlayArgs : public PlayArgs {
+    // An interruptible line without a sink, marked with format 4
+    // (DialogGenerator::kDialogFormat). Inlined into the builders, for
+    // example StateNodePlaySound::Instance::_Enter at 0x788990.
+    DialogPlayArgs() : mSink(), mContext(nullptr), mInterruptible(true) {
+        mFormat = 4;
+    }
+
     // Optional sink for the names of the sounds the event creates.
     DialogSoundSink mSink;
     void* mContext;

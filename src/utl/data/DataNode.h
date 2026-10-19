@@ -12,6 +12,12 @@ class DataNode;
 class Entity;
 class GameObject;
 class GameObjectId;
+class PropRef;
+template <class T>
+class Waveform;
+namespace Hmx {
+class Color;
+}
 class String;
 class TextStream;
 
@@ -37,6 +43,12 @@ enum DataType : int {
     kDataProperty = 0x13,
     // Raw bytes in a DataArray with a negative size.
     kDataGlob = 0x14,
+    // An array holding a colour's components and its colour space
+    // (LiteralColor) and one holding a property reference's object, component
+    // and path (LiteralPropRef). Inferred names; the event parameter
+    // conditions test for them with CompatibleType.
+    kDataColor = 0x15,
+    kDataPropRef = 0x16,
     kDataDefine = 0x20,
     kDataInclude = 0x21,
     kDataMerge = 0x22,
@@ -147,6 +159,21 @@ public:
 
     // Whether a value of the type may stand in for this node's value.
     bool CompatibleType(DataType type) const;  // 0x236F40
+
+    // Declared for the state graph's event parameter conditions; not
+    // reconstructed.
+    // The colour of a kDataColor node without evaluating it, converted to
+    // gamma space when `gamma` is set and to linear space otherwise (the
+    // array may name its own space, "gamma", "linear" or "sRGB"). The map's
+    // LiteralColor(DataArray const*) const; the flag's meaning is inferred
+    // and weak.
+    Hmx::Color LiteralColor(bool gamma, const DataArray* source) const;  // 0x2378E0
+    // The property reference of a kDataPropRef node: the object, the
+    // component and the path array.
+    PropRef LiteralPropRef(const DataArray* source) const;  // 0x2373B0
+    // The waveforms of the waveform nodes, with a new evaluation state.
+    Waveform<float> LiteralWaveformFloat(const DataArray* source) const;  // 0x238DF0
+    Waveform<Hmx::Color> LiteralWaveformColor(const DataArray* source) const;  // 0x2391E0
     // Whether the evaluated value is set: a non-empty symbol, string or
     // glob, a non-null object or a valid object id.
     bool NotNull() const;  // 0x2387C0

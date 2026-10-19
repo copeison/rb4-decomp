@@ -24,6 +24,11 @@ public:
     unsigned int Index() const {
         return mId & 0xFFF;
     }
+    // Orders ids by their value, as eastl::map<GameObjectId, ...> compares
+    // them (StateNodeGroup.o's tree at 0x71E1B0).
+    bool operator<(const GameObjectId& other) const {
+        return mId < other.mId;
+    }
 
     unsigned int mId;  // Name not in the reference map.
 };
