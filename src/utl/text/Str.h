@@ -151,6 +151,12 @@ public:
     // Frees the text and takes the other string's. Name not in the
     // reference map.
     String& operator=(String&& other);  // 0x2552C0
+    // Copies the text through FixedString's assignment. Inlined into its
+    // users, such as the string keys' sampling (0x31B030).
+    String& operator=(const String& other) {
+        FixedString::operator=(other.c_str());
+        return *this;
+    }
     explicit String(const FixedString& other);  // 0x255310
     // `count` copies of `c`.
     String(unsigned long count, char c);  // 0x255430

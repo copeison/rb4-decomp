@@ -20,6 +20,9 @@ void MakeRotMatrix(const Vector3& euler, Hmx::Matrix3& matrix, bool useTable);  
 // The Euler angles, in radians, and the row lengths of a scaled rotation.
 // Not reconstructed.
 void MakeEulerScale(const Hmx::Matrix3& matrix, Vector3& euler, Vector3& scale);  // 0x215EE0
+// The row lengths of a scaled rotation, the z scale negated for a
+// left-handed one. Not reconstructed.
+void MakeScale(const Hmx::Matrix3& matrix, Vector3& scale);  // 0x215D90
 
 // Interpolates two sets of Euler angles through the rotations' quaternions,
 // along the shorter arc. Declared for the state graph nodes; not

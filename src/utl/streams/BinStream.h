@@ -6,6 +6,7 @@
 #include "os/memory/MemMgr.h"
 
 class Rand2;
+class String;
 class Symbol;
 
 enum SeekType {
@@ -63,9 +64,33 @@ public:
     void Seek(long offset, SeekType origin);
     void SetLittleEndian(bool littleEndian);  // 0x21A710
     BinStream& operator>>(Symbol& symbol);
+    // Reads a length and that many characters, decrypted when the stream has
+    // a cipher; a length of 0x10000 or more fails the stream and empties
+    // the string.
+    BinStream& operator>>(String& str);  // 0x21A4C0
+    // Inline in the map's build.
+    BinStream& operator>>(float& value) {
+        ReadEndian(&value, sizeof(value));
+        return *this;
+    }
+    // Inline in the map's build: one byte, nonzero for true.
+    BinStream& operator>>(bool& value) {
+        unsigned char byte;
+        Read(&byte, sizeof(byte));
+        value = byte != 0;
+        return *this;
+    }
     // Writes the symbol's length and characters, encrypted when the stream
     // has a cipher.
     BinStream& operator<<(const Symbol& symbol);  // 0x219F10
+
+    // Reads the cipher seed and encrypts the reads that follow with it.
+    void EnableReadEncryption();  // 0x21A720
+    // Writes a new seed from the engine's random generator and encrypts the
+    // writes that follow with it.
+    void EnableWriteEncryption();  // 0x21A810
+    // Deletes the cipher.
+    void DisableEncryption();  // 0x21A920
 
     // Data members are public so the layout asserts below can reach them.
     // Names not in the reference map.

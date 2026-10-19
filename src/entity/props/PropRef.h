@@ -2,20 +2,22 @@
 
 #include <cstddef>
 
+#include "entity/core/Component.h"
 #include "entity/core/GameObject.h"
+#include "entity/props/PropInfo.h"
 #include "entity/props/PropPath.h"
+#include "entity/props/PropRegistry.h"
+#include "entity/props/PropUtl.h"
 #include "utl/text/Symbol.h"
 
-class Component;
 class Entity;
-class PropInfo;
 
 // A reference to a property of a component of an object: the object, the
 // component's class and the path to the property (entity/PropRef.o; the
 // constructors are at 0x17F4F0-0x17F60F). Properties of type 16 store one
 // in 216 bytes, for example EntityHeaderCom's "show_entity".
-// Only the constructors are reconstructed. Field names are not in the
-// reference map.
+// Only the constructors and the comparisons are reconstructed. Field names
+// are not in the reference map.
 class PropRef {
 public:
     // No object, no component and an empty path.
@@ -49,11 +51,17 @@ public:
     // Not reconstructed.
     const char* ValueToString(Entity* entity) const;  // 0x17FF20
     bool operator==(const PropRef& other) const;  // 0x1801E0
-    // Orders references, as eastl::map<PropRef, ...> compares them
-    // (ClipBlendTreeCom.o's edit values). Not reconstructed.
+    // Orders references by object, component class and path, as
+    // eastl::map<PropRef, ...> compares them (ClipBlendTreeCom.o's edit
+    // values).
     bool operator<(const PropRef& other) const;  // 0x180200
+    // The map's Exists(EntityPtr) const: whether the entity has the object,
+    // its component and the property. Not reconstructed.
+    bool Exists(Entity* entity) const;  // 0x17F760
     // The map's Get<T>(EntityPtr): the referenced property's value in the
-    // entity. Instantiated where it is used: Waveform<float>'s at 0x2D0470.
+    // entity, read as PropValueType<T>, or the type's default when the
+    // object, component or property is missing. Instantiated where it is
+    // used: bool's at 0x302750, Waveform<float>'s at 0x2D0470.
     template <class T>
     T Get(Entity* entity) const;
 
@@ -67,3 +75,121 @@ public:
 static_assert(offsetof(PropRef, mCom) == 8);
 static_assert(offsetof(PropRef, mPath) == 16);
 static_assert(sizeof(PropRef) == 216);
+
+// The property type a value type is read and written as, which PropRef::Get
+// and the key components pass to _GetProp and _SetProp, specialized below
+// for the property value types. Name not in the reference map.
+template <class T>
+struct PropValueType;
+
+class ResourcePath;
+class Vector3;
+struct PropRotation;
+struct PropXfm;
+template <class T>
+class Waveform;
+namespace Hmx {
+class Color;
+}
+
+template <>
+struct PropValueType<bool> {
+    static constexpr PropertyType kType = kPropertyBool;
+};
+template <>
+struct PropValueType<signed char> {
+    static constexpr PropertyType kType = kPropertyInt8;
+};
+template <>
+struct PropValueType<short> {
+    static constexpr PropertyType kType = kPropertyInt16;
+};
+template <>
+struct PropValueType<int> {
+    static constexpr PropertyType kType = kPropertyInt;
+};
+template <>
+struct PropValueType<long> {
+    static constexpr PropertyType kType = kPropertyInt64;
+};
+template <>
+struct PropValueType<unsigned char> {
+    static constexpr PropertyType kType = kPropertyUInt8;
+};
+template <>
+struct PropValueType<unsigned short> {
+    static constexpr PropertyType kType = kPropertyUInt16;
+};
+template <>
+struct PropValueType<unsigned int> {
+    static constexpr PropertyType kType = kPropertyUInt;
+};
+template <>
+struct PropValueType<unsigned long> {
+    static constexpr PropertyType kType = kPropertyUInt64;
+};
+template <>
+struct PropValueType<float> {
+    static constexpr PropertyType kType = kPropertyFloat;
+};
+template <>
+struct PropValueType<GameObjectId> {
+    static constexpr PropertyType kType = kPropertyGameObjectId;
+};
+template <>
+struct PropValueType<Symbol> {
+    static constexpr PropertyType kType = kPropertySymbol;
+};
+template <>
+struct PropValueType<ResourcePath> {
+    static constexpr PropertyType kType = kPropertyResourcePath;
+};
+template <>
+struct PropValueType<Hmx::Color> {
+    static constexpr PropertyType kType = kPropertyColor;
+};
+template <>
+struct PropValueType<PropRef> {
+    static constexpr PropertyType kType = kPropertyPropRef;
+};
+template <>
+struct PropValueType<Vector3> {
+    static constexpr PropertyType kType = kPropertyVector3;
+};
+template <>
+struct PropValueType<PropRotation> {
+    static constexpr PropertyType kType = kPropertyEuler;
+};
+template <>
+struct PropValueType<PropXfm> {
+    static constexpr PropertyType kType = kPropertyXfm;
+};
+template <>
+struct PropValueType<Waveform<float>> {
+    static constexpr PropertyType kType = kPropertyWaveformFloat;
+};
+template <>
+struct PropValueType<Waveform<Hmx::Color>> {
+    static constexpr PropertyType kType = kPropertyWaveformColor;
+};
+
+template <class T>
+T PropRef::Get(Entity* entity) const {
+    GameObject* const object = Obj(entity);
+    if (object == nullptr) {
+        return T();
+    }
+    Component* const component = object->FindCom(mCom);
+    if (component == nullptr) {
+        return T();
+    }
+    T value = T();
+    void* storage = component;
+    const PropInfo* const info = component->_GetPropRegistry().FindProp(mPath, &storage);
+    if (info == nullptr || !_GetProp(*component, mPath, *info, storage, &value, PropValueType<T>::kType)) {
+        static_cast<void>(component->MakeErrorName());
+        char text[512] = {};
+        mPath.ToString(text, sizeof(text));
+    }
+    return value;
+}

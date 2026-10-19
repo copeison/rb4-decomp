@@ -3,16 +3,13 @@
 #include <cstddef>
 
 #include "entity/resources/Resource.h"
+#include "entity/waveform/Key.h"
 #include "math/random/Rand.h"
 #include "utl/containers/Vector.h"
 
 class Component;
 class EntityResource;
 class PropPath;
-template <class T>
-class TKeyTrack;
-template <class T>
-struct ValueTangent;
 
 // A waveform's random evaluation state: the blend between its two curves
 // at the start, and how far the blend moves over the waveform's span
@@ -26,20 +23,33 @@ struct WaveformEvalData {
 
 static_assert(sizeof(WaveformEvalData) == 8);
 
+// The key a WaveformResource<T>'s tracks hold: float waveforms keep
+// tangents, colour waveforms plain colours. Name not in the reference map.
+template <class T>
+struct WaveformKey {
+    using Type = ValueTangent<T>;
+};
+template <>
+struct WaveformKey<Hmx::Color> {
+    using Type = Hmx::Color;
+};
+
 // The curves a waveform evaluates (entity/Waveform.o; 248 bytes): a type,
 // how the curves blend, the two key tracks, their baked samples and the
-// range of values. Only the layout the reconstructed code reads is
-// modelled; the methods are not reconstructed. A default-constructed
+// range of values. Only the layout and the curve updates are
+// reconstructed. A default-constructed
 // Waveform<T> starts with sDefault (0x19C5390 for float); WaveformInit builds
 // the resources at 0x19E4A00 and 0x19E4A08, which the map does not name.
 // Field names are not in the reference map.
 template <class T>
 class WaveformResource : public Resource {
 public:
+    // The key of the tracks: the float tracks keep tangents.
+    using Key = typename WaveformKey<T>::Type;
+
     // An empty resource of type -1 whose tracks hold one default key.
     // Emitted at 0x1CAC80 for Hmx::Color; inlined for float, for example by
-    // RndParticleCom::_Init (0x603850). Not reconstructed: the key tracks are
-    // not modelled.
+    // RndParticleCom::_Init (0x603850). Not reconstructed.
     WaveformResource();
 
     ResourceMetaData* GetMetaData() const override;
@@ -60,12 +70,30 @@ public:
     // tracks for it: 0x2416E0 for float, 0x2419F0 for Hmx::Color. Not
     // reconstructed.
     void SetType(int type);
-    // Replaces the keys of the curve (0 or 1) and rebakes its samples. The
-    // map's SetCurve(unsigned long, TKeyTrack<T> const&); the float tracks
-    // hold ValueTangent<float> keys in this build. 0x728A40 for float, a
-    // copy in stategraph/StateNodeIncrementPropertyInit_A.o. Declared for
-    // the state graph nodes; not reconstructed.
-    void SetCurve(unsigned long curve, const TKeyTrack<ValueTangent<T>>& track);
+    // Replaces the interpolation and keys of the curve (0 or 1) and
+    // rebakes its samples, unless they are the same. The map's
+    // SetCurve(unsigned long, TKeyTrack<T> const&); the float tracks hold
+    // ValueTangent<float> keys in this build. Inlined, as by
+    // RndVolumetricScatteringCom::_Init (0x454A70); the binary also has a
+    // copy for float at 0x728A40 in stategraph/StateNodeIncrementPropertyInit_A.o.
+    void SetCurve(unsigned long curve, const TKeyTrack<Key>& track) {
+        TKeyTrack<Key>& own = mTracks[curve];
+        if (track.mInterpolation == own.mInterpolation && SameKeys(track, own)) {
+            return;
+        }
+        own.mInterpolation = track.mInterpolation;
+        const unsigned long count = track.mKeys.mSize;
+        own.mKeys.Resize(count);
+        for (unsigned long i = 0; i < count; ++i) {
+            static_cast<TKey<Key>*>(own.mKeys.mData)[i] = static_cast<const TKey<Key>*>(track.mKeys.mData)[i];
+        }
+        GenerateTable(curve);
+        _UpdateNonZero();
+    }
+    // Samples the curve into 256 values clamped to the value range when the
+    // type evaluates it from samples (the first curve of type 2, both of
+    // type 3), and otherwise releases its samples. 0x1CE140 for float.
+    void GenerateTable(unsigned long curve);
     // Sets the value of the curve's first key, then rebakes the samples:
     // 0x5E5EA0 for float; inlined for Hmx::Color (its rebake is 0x242170).
     // Not reconstructed.
@@ -87,15 +115,60 @@ public:
     // The map's WaveformBlendMode (0 to 5): how the eval data blends the
     // two curves.
     int mBlendMode;
-    // The two TKeyTrack<T> (entity/Key.o), 56 bytes each; not modelled.
-    alignas(8) unsigned char mTracks[2][56];
+    // The two curves' keys.
+    TKeyTrack<Key> mTracks[2];
     // The tracks baked into samples.
     eastl::vector<T> mSamples[2];
-    // Set once the samples are baked.
-    bool mBaked;
+    // Whether a value the type evaluates is not zero: the first keys of the
+    // curves of types 0 and 1, or the samples of types 2 and 3. Every
+    // change of the curves recomputes it.
+    bool mNonZero;
     // The smallest and largest value, starting at 1e30 and -1e30.
     float mValueRange[2];
+
+private:
+    // Whether the tracks hold the same keys. Inlined into SetCurve. Name not
+    // in the reference map.
+    static bool SameKeys(const TKeyTrack<Key>& a, const TKeyTrack<Key>& b) {
+        const unsigned long count = a.mKeys.mSize;
+        if (count != b.mKeys.mSize) {
+            return false;
+        }
+        for (unsigned long i = 0; i < count; ++i) {
+            if (!(static_cast<const TKey<Key>*>(a.mKeys.mData)[i] == static_cast<const TKey<Key>*>(b.mKeys.mData)[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    // Recomputes mNonZero. Inlined after every change of the curves. Name
+    // not in the reference map.
+    void _UpdateNonZero() {
+        mNonZero = false;
+        if (mType <= 1) {
+            if (static_cast<const TKey<Key>*>(mTracks[0].mKeys.mData)[0].mValue.mValue != 0.0f) {
+                mNonZero = true;
+            } else if (mType == 1 && static_cast<const TKey<Key>*>(mTracks[1].mKeys.mData)[0].mValue.mValue != 0.0f) {
+                mNonZero = true;
+            }
+            return;
+        }
+        if ((mType & ~1) != 2) {
+            return;
+        }
+        for (unsigned long curve = 0; curve < (mType == 3 ? 2UL : 1UL); ++curve) {
+            for (const T* sample = mSamples[curve].mpBegin; sample != mSamples[curve].mpEnd; ++sample) {
+                if (*sample != 0.0f) {
+                    mNonZero = true;
+                    return;
+                }
+            }
+        }
+    }
 };
+
+template <>
+void WaveformResource<float>::GenerateTable(unsigned long curve);  // 0x1CE140
 
 // A guarded template static, null until set: 0x19C5390 (guard 0x19C5398)
 // for float.
@@ -180,7 +253,7 @@ public:
 static_assert(offsetof(WaveformResource<float>, mType) == 44);
 static_assert(offsetof(WaveformResource<float>, mTracks) == 56);
 static_assert(offsetof(WaveformResource<float>, mSamples) == 168);
-static_assert(offsetof(WaveformResource<float>, mBaked) == 232);
+static_assert(offsetof(WaveformResource<float>, mNonZero) == 232);
 static_assert(offsetof(WaveformResource<float>, mValueRange) == 236);
 static_assert(sizeof(WaveformResource<float>) == 248);
 static_assert(offsetof(Waveform<float>, mEvalData) == 8);

@@ -111,6 +111,10 @@ public:
     // An array node sharing the array.
     explicit DataNode(const DataArrayPtr& array);  // 0x238470
     DataNode(DataArray* array, DataType type);     // 0x238490
+    // A waveform node sharing the waveform's resources. Declared for the
+    // waveform keys; not reconstructed.
+    explicit DataNode(const Waveform<float>& waveform);       // 0x238430
+    explicit DataNode(const Waveform<Hmx::Color>& waveform);  // 0x238450
     DataNode(const DataNode& other);
     ~DataNode();
     DataNode& operator=(const DataNode& other);

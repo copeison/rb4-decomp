@@ -75,6 +75,10 @@ public:
     iterator end() {
         return iterator(&mNode);
     }
+    // The first value; the list must not be empty.
+    const T& front() const {
+        return static_cast<const node_type*>(mNode.mpNext)->mValue;
+    }
 
     // Links a new node before the anchor.
     void push_back(const T& value) {

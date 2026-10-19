@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utl/text/Symbol.h"
+
 // The localized text tables (os/Locale.o). Only the members SystemInit and
 // SetSystemLanguage call are declared; the class is not reconstructed.
 class Locale {
@@ -15,3 +17,9 @@ public:
 
 // At 0x19FDE08.
 extern Locale TheLocale;
+
+// The localized text of the token, or the token's own text when the table
+// has no entry; `found`, when given, receives whether it had one. The map
+// has Localize(Symbol, bool*, Locale&); this build passes a third argument
+// that the body does not read, which its callers set to zero.
+const char* Localize(Symbol token, bool* found, int unused, Locale& locale);  // 0x35E9B0

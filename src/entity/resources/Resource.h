@@ -177,6 +177,11 @@ public:
     // the one with the id. The map's signature is
     // LoadUnique(ResourcePath, Symbol); this build adds the flag.
     static ResourcePtr<Resource> LoadUnique(ResourcePath path, Symbol type, bool ignoreExt);  // 0x1AC010
+    // The typed form, instantiated where it is used: CharAnimResource's
+    // for CharAnimRawResource at 0x2E09A0. The map's signature is
+    // LoadUnique<T>(ResourcePath); this build adds the flag.
+    template <class T>
+    static ResourcePtr<T> LoadUnique(ResourcePath path, bool ignoreExt);
     // Loads every loaded resource again as a new copy, which writes its
     // cached file.
     static void ForceCacheLoadedResources();  // 0x1AC550
@@ -309,6 +314,13 @@ template <class T>
 ResourcePtr<T> Resource::GetOrLoad(ResourcePath path, bool ignoreExt) {
     ResourcePtr<T> resource;
     resource = static_cast<T*>(GetOrLoad(path, T::Id(), ignoreExt).Get());
+    return resource;
+}
+
+template <class T>
+ResourcePtr<T> Resource::LoadUnique(ResourcePath path, bool ignoreExt) {
+    ResourcePtr<T> resource;
+    resource = static_cast<T*>(LoadUnique(path, T::Id(), ignoreExt).Get());
     return resource;
 }
 

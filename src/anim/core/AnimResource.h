@@ -122,3 +122,11 @@ static_assert(sizeof(AnimResource::Event) == 16);
 // reference map; the binary emits it before ui/UI.o, and its object is not
 // identified.
 eastl::vector<AllowedValue<Symbol>> GetAnimTypeAllowedValues();  // 0x891390
+
+// Read and write the "frame" of the event whose member an accessor's path
+// names (the path's last node is replaced by "frame"); a missing or
+// unconvertible property is reported. The accessors of the events'
+// "frame_editor_view" (CharAnimCom.o, CharClipCom.o) call them. Names not
+// in the reference map. Not reconstructed.
+float GetEventFrame(const PropAccessorArgs& args);              // 0x32C8D0
+void SetEventFrame(const PropAccessorArgs& args, float frame);  // 0x32CBF0

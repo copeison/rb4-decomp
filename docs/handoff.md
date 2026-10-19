@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 1092 entries. The audio
+executable. The latest unresolved-symbol report contains 1073 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -228,7 +228,8 @@ The latest focused commits, newest first, are:
 | `048b965` | UI manager, UI init, layout resource and the real functions behind the `ui_*` adapters |
 | `a8d3c3c` | Property metadata and 22 component registry builders; the poll manager (PollMgr/PollGroup swapped to the binary's meaning), the scene and UI layout polls and draws |
 | `d365572` | Property metadata virtuals and the remaining component builders (lights, scene, mesh, particle, transform, entity header, Fusion patch, UI); the stategraph core (driver, graph resource and instance, nodes, transitions, conditions) |
-| (this) | All stategraph nodes, conditions, blend trees and the transition builder; the anim playback core (anim and driver components, drivers, resources, skeleton, key tracks, Anim::Init) |
+| `7f92221` | All stategraph nodes, conditions, blend trees and the transition builder; the anim playback core (anim and driver components, drivers, resources, skeleton, key tracks, Anim::Init) |
+| (this) | Anim property keys (bool, int, obj, sym, str, waveform), PropAnimCom, character animation, bone masks, IK and clips; key-track sampling and easing; the persistence core (storage, save/load, profiles, system options) |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

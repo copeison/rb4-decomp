@@ -12,6 +12,11 @@ public:
     virtual void Init();       // slot 4: 0x36C370
     virtual void Poll();       // slot 5: 0x36C870
     virtual void Terminate();  // slot 6: 0x36C810
+
+    // Whether the cheat that fails every content mount is on. The binary
+    // inlines it as a read of the flag at +0x30 (StorageRef_PS4's mount at
+    // 0x3B1CF7); the flag is not modelled.
+    bool AreAllMountsGoingToFailDueToCheat();
 };
 
 // The PS4 content manager, a ContentMgr_PS4 at 0x19FE7A0.

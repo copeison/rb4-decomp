@@ -408,12 +408,16 @@ void RndVolumetricScatteringCom::SetNoAtmosphereFwdShadingConstants(
 void RndVolumetricScatteringCom::_Init(PropRegistry& registry, ComMetaData& metadata) {
     RegisterPropStruct<QualitySettings>(Symbol("RndVolumetricScatteringCom::QualitySettings"));
     _InitAsSuperclass(registry, metadata);
-    // The default height density. The binary inlines the resource's
-    // constructor and SetType(2), then gives the first curve the keys
-    // (0, 1) and (1, 1) and rebakes it; that part is not reconstructed, as
-    // the key tracks are not modelled.
+    // The default height density: a baked curve through the keys (0, 1) and
+    // (1, 1) with Hermite interpolation. The binary inlines the resource's
+    // constructor, SetType(2) and SetCurve.
     gDefaultHeightDensity = new WaveformResource<float>();
     gDefaultHeightDensity->SetType(2);
+    TKeyTrack<ValueTangent<float>> defaultCurve;
+    defaultCurve.mInterpolation = KeyTrackBase::kInterpolationHermite;
+    defaultCurve.AddKey(ValueTangent<float>{1.0F, 0.0F, 0.0F, true}, 0.0F, false, false);
+    defaultCurve.AddKey(ValueTangent<float>{1.0F, 0.0F, 0.0F, true}, 1.0F, false, false);
+    gDefaultHeightDensity->SetCurve(0, defaultCurve);
     metadata.mDescription = "Simulates volumetric light scattering throughout the scene volume";
     metadata.mAuthor = "Daniel Sproul";
     RndVolumetricScatteringCom prototype;
