@@ -288,15 +288,15 @@ void PropKeysWaveformCom<T>::Init() {
 
 // Reconstructed from eboot.elf at 0x3259A0.
 template <>
-void TPropDriver<PropKeysWaveformCom<float>>::_Poll(Entity* entity) {
-    static_cast<void>(entity);
+void TPropDriver<PropKeysWaveformCom<float>>::_Poll(GameObject* root) {
+    static_cast<void>(root);
     PollWaveformKeys(*this);
 }
 
 // Reconstructed from eboot.elf at 0x325CE0.
 template <>
-void TPropDriver<PropKeysWaveformCom<Hmx::Color>>::_Poll(Entity* entity) {
-    static_cast<void>(entity);
+void TPropDriver<PropKeysWaveformCom<Hmx::Color>>::_Poll(GameObject* root) {
+    static_cast<void>(root);
     PollWaveformKeys(*this);
 }
 

@@ -39,9 +39,11 @@ public:
     // playback sends as "anim_event" when it passes the frame
     // (PlaybackInfo::SendEvents). Anim::Init registers the struct as
     // "AnimResource::Event"; the map has CharAnimCom::AnimEvent in its
-    // place. Field names are not in the reference map.
+    // place. A new event is at frame 0 with the empty name, as the
+    // array's element constructor (0x2D9ED0) makes it. Field names are not
+    // in the reference map.
     struct Event {
-        float mFrame;
+        float mFrame = 0.0f;
         Symbol mName;
     };
 
@@ -124,9 +126,10 @@ static_assert(sizeof(AnimResource::Event) == 16);
 eastl::vector<AllowedValue<Symbol>> GetAnimTypeAllowedValues();  // 0x891390
 
 // Read and write the "frame" of the event whose member an accessor's path
-// names (the path's last node is replaced by "frame"); a missing or
-// unconvertible property is reported. The accessors of the events'
+// names (the path's last node is dropped and the node before it becomes
+// "frame"); a missing or unconvertible property is reported, and the read
+// then gives 0. The accessors of the events'
 // "frame_editor_view" (CharAnimCom.o, CharClipCom.o) call them. Names not
-// in the reference map. Not reconstructed.
+// in the reference map.
 float GetEventFrame(const PropAccessorArgs& args);              // 0x32C8D0
 void SetEventFrame(const PropAccessorArgs& args, float frame);  // 0x32CBF0

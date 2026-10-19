@@ -75,7 +75,11 @@ sets `mHasFlaggedProps` when a property has an instance access, through
 the class to `sComMetaDataList` (`0x19E28B8`). The release build keeps the
 loops of its stripped duplicate-id checks; the source leaves them out.
 `AddExportedEvent` reserves room for 32 events and returns the new event's
-parameter registry.
+parameter registry. `mReserved` (offset 83) has no identified reader and
+three writers: `CharClipCom::_Init` (`0x2E6360`),
+`CharIkBoneInterp::_Init` (`0x2F1580`) and the "PathMesh" registration
+(`RndPathMeshCom::_Init` in the map, `0x5E45B0`), which also sets
+`mLightweight`.
 
 The class CRC takes `Component::GetClassCRC` (`0xE72A0`): a component of
 the class, created through its factory, hashes its poll-order and

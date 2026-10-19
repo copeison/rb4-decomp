@@ -119,8 +119,7 @@ void CharAnimDriver::_CacheIkComs(GameObject* root) {
 // Reconstructed from eboot.elf at 0x2DDA60. A playback with an
 // auto-destruct mode of 3 or 4 that the layered playbacks after it in its
 // slot hide completely is stopped after the blend.
-void CharAnimDriver::_Poll(Entity* entity) {
-    GameObject* const root = reinterpret_cast<GameObject*>(entity);
+void CharAnimDriver::_Poll(GameObject* root) {
     if (mDisabled) {
         return;
     }

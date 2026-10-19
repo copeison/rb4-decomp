@@ -75,6 +75,11 @@ public:
     bool operator==(const PropPath& other) const;  // 0x17EA80
     // Orders paths by their length, then node by node by type and value.
     bool operator<(const PropPath& other) const;  // 0x17EB40
+    // Whether this path is the other or leads to a property inside it: its
+    // nodes start with all of the other's, an unused node matching any
+    // value. The map's Contains(PropPath const&) const; which way round the
+    // map's name reads is not certain. Not reconstructed.
+    bool Contains(const PropPath& other) const;  // 0x17EAE0
 
     // The node at the index; a negative index counts from the end. Inlined
     // into PropRegistry::FindProp (0x180B40). Name not in the reference map.

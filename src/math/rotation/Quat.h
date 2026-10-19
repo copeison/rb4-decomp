@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+class Vector3;
+
 namespace Hmx {
 
 class Matrix3;
@@ -13,6 +15,9 @@ class Quat {
 public:
     // The rotation of the matrix (math/Rot.o). Not reconstructed.
     void Set(const Matrix3& matrix);  // 0x2165F0
+    // The rotation of the Euler angles, in radians (math/Rot.o). Not
+    // reconstructed.
+    void Set(const Vector3& euler);  // 0x216480
 
     float x;
     float y;

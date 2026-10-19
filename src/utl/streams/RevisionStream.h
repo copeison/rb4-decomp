@@ -102,6 +102,27 @@ public:
     int mAsOf;
 };
 
+// Reads the value only when the block was written at a revision from
+// `asOf` to `until`, for a value later revisions dropped. Name and field
+// names not in the reference map. The game code emits RangeOp<int> (vtable
+// 0x19634D0, Read 0x9D4C00).
+template <typename T>
+class RangeOp : public RevisionOp {
+public:
+    RangeOp(T* value, int asOf, int until) : mValue(value), mAsOf(asOf), mUntil(until) {}
+    ~RangeOp() override {}
+
+    void Read(RevisionStream& stream) override {
+        if (stream.mReadRevision >= mAsOf && stream.mReadRevision <= mUntil) {
+            stream >> *mValue;
+        }
+    }
+
+    T* mValue;
+    int mAsOf;
+    int mUntil;
+};
+
 // Runs the operation on the stream. The map also has an lvalue overload.
 RevisionStream& operator>>(RevisionStream& stream, RevisionOp&& op);  // 0x1183960
 

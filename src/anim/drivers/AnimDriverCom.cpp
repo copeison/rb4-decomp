@@ -106,14 +106,14 @@ bool AnimDriverCom::_OnResourcesLoaded() {
 
 // Reconstructed from eboot.elf at 0x32A170.
 void AnimDriverCom::_Poll() {
-    mRuntime.mPropAnimDriver.Poll(mObject->mEntity);
-    mRuntime.mCharAnimDriver.Poll(mObject->mEntity);
+    mRuntime.mPropAnimDriver.Poll(mObject);
+    mRuntime.mCharAnimDriver.Poll(mObject);
 }
 
 // Reconstructed from eboot.elf at 0x32A1A0.
 void AnimDriverCom::_EditPoll() {
-    mRuntime.mPropAnimDriver.Poll(mObject->mEntity);
-    mRuntime.mCharAnimDriver.Poll(mObject->mEntity);
+    mRuntime.mPropAnimDriver.Poll(mObject);
+    mRuntime.mCharAnimDriver.Poll(mObject);
 }
 
 // Reconstructed from eboot.elf at 0x32A1D0.

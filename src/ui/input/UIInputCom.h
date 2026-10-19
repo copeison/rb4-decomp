@@ -142,6 +142,10 @@ public:
     // Gives the component the input before the receivers, once. Not
     // reconstructed.
     void RegisterCom(Component* com);  // 0x89EC30
+    // Removes a component RegisterCom gave the input. Not reconstructed.
+    void UnregisterCom(Component* com);  // 0x89ED30
+    // Sets "is_modal". Not reconstructed.
+    void SetIsModal(bool modal);  // 0x89EF10
     // The focus of the pad: pad 0's entry with "multi_focus", otherwise
     // the only one; null when there is none. Inlined into the property
     // accessors.

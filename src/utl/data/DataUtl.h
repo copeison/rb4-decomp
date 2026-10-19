@@ -27,6 +27,8 @@ class Symbol;
 void DataInit();  // 0x23B710
 // Defines the macro as the array, replacing an earlier definition.
 void DataSetMacro(Symbol name, DataArray* value);  // 0x23B800
+// The array the macro is defined as, or null.
+DataArray* DataGetMacro(Symbol name);  // 0x23B990
 // A new one-node array holding a copy of the node, without a reference.
 // The map instantiates it in os/PlatformMgr.o.
 DataArray* MakeDataArray(const DataNode& node);  // 0x363FE0
@@ -35,3 +37,10 @@ DataArray* MakeDataArray(const DataNode& node);  // 0x363FE0
 // anim/PropKeysQuatCom.o.
 DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1);  // 0x82E00
 DataArray* MakeDataArray(const DataNode& node0, const DataNode& node1, const DataNode& node2);  // 0x83540
+// A new four-node array, emitted with the quaternion keys
+// (anim/PropKeysQuatCom.o). Declared for them; not reconstructed.
+DataArray* MakeDataArray(
+    const DataNode& node0,
+    const DataNode& node1,
+    const DataNode& node2,
+    const DataNode& node3);  // 0x313FB0

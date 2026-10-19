@@ -115,6 +115,11 @@ public:
     // waveform keys; not reconstructed.
     explicit DataNode(const Waveform<float>& waveform);       // 0x238430
     explicit DataNode(const Waveform<Hmx::Color>& waveform);  // 0x238450
+    // A colour node (kDataColor); unless `linear` is set, the node's array
+    // also names the colour's space with a (gamma linear) entry. Declared
+    // for the colour keys, which pass false; not reconstructed. The flag's
+    // name is weak.
+    DataNode(const Hmx::Color& color, bool linear);  // 0x237F90
     DataNode(const DataNode& other);
     ~DataNode();
     DataNode& operator=(const DataNode& other);
@@ -172,6 +177,10 @@ public:
     // LiteralColor(DataArray const*) const; the flag's meaning is inferred
     // and weak.
     Hmx::Color LiteralColor(bool gamma, const DataArray* source) const;  // 0x2378E0
+    // The colour of the evaluated node (LiteralColor of Evaluate's
+    // result). Inline in the map's build; the colour keys call the
+    // binary's copy. Declared for them; not reconstructed.
+    Hmx::Color Color(bool gamma, const DataArray* source) const;  // 0x17CA70
     // The property reference of a kDataPropRef node: the object, the
     // component and the path array.
     PropRef LiteralPropRef(const DataArray* source) const;  // 0x2373B0

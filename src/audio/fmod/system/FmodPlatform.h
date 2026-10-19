@@ -81,6 +81,12 @@ public:
     // HMX DSPs on the bus; false when the bus is not loaded. Name not in the
     // reference map.
     virtual bool GetBusTempoListeners(Symbol path, eastl::vector<TempoListener*>& listeners);
+
+    // Sets the VCA's volume from decibels (silent below a floor) over the
+    // fade time; `mode` is passed through. Used by RBMetaState::Poll for the
+    // "vca:/SFX" and "vca:/Crowd" volume options. Name not in the reference
+    // map; the evidence that it belongs to this class is weak.
+    bool SetVcaVolumeDb(const char* path, int mode, float db, float fadeSeconds);  // 0xBF9F0
 };
 
 extern FmodBusInterface* gFmodBusInterface;

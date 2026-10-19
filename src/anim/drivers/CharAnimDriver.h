@@ -31,10 +31,8 @@ public:
     // for anything else, a failed resource or a driver already playing 101
     // animations.
     AnimInstID StartAnim(Resource* resource, const AnimOptions& options) override;  // 0x2DE2E0
-    // Slot 4: blends the playbacks into the pose. AnimDriverCom passes its
-    // root GameObject here (0x32A179), not the entity the base class's
-    // signature names; the source casts it back.
-    void _Poll(Entity* entity) override;  // 0x2DDA60
+    // Slot 4: blends the playbacks into the pose of the root object.
+    void _Poll(GameObject* root) override;  // 0x2DDA60
 
     // Sets the weight of a blend-tree slot; the slots added before it get
     // weight 1.

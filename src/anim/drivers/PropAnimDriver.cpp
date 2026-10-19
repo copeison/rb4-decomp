@@ -20,9 +20,9 @@ PropAnimDriver::~PropAnimDriver() {
 }
 
 // Reconstructed from eboot.elf at 0x2FCCB0.
-void PropAnimDriver::_Poll(Entity* entity) {
+void PropAnimDriver::_Poll(GameObject* root) {
     for (PropDriver* driver : mPropDrivers) {
-        driver->Poll(entity);
+        driver->Poll(root);
     }
 }
 
@@ -37,7 +37,7 @@ AnimInstID PropAnimDriver::StartAnim(Resource* resource, const AnimOptions& opti
     eastl::vector<PropKeysBaseCom*> keys;
     unsigned int saved = 0;
     MemPushTemp(saved, true, true);
-    anim->GetPropKeys(keys, false);
+    anim->HarvestAllKeys(keys, false);
     MemPopTemp(saved);
     mPropDrivers.reserve(keys.size());
     for (PropKeysBaseCom* const key : keys) {

@@ -120,7 +120,9 @@ public:
     // every component's class sets it (GameObject::mAllComsFlagged); no
     // reader is identified, so the name is weakly supported.
     bool mLightweight;
-    // Set only by the registration at 0x2E6360; no reader is identified.
+    // Set by three registrations: CharClipCom::_Init (0x2E6360),
+    // CharIkBoneInterp::_Init (0x2F1580) and RndPathMeshCom's "PathMesh"
+    // registration (0x5E45B0); no reader is identified.
     bool mReserved;
     // Other ids the class is found by.
     eastl::vector<Symbol> mAliases;

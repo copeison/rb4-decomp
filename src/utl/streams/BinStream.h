@@ -5,6 +5,7 @@
 
 #include "os/memory/MemMgr.h"
 
+class FixedString;
 class Rand2;
 class String;
 class Symbol;
@@ -73,6 +74,17 @@ public:
         ReadEndian(&value, sizeof(value));
         return *this;
     }
+    // Inline in the map's build, as the revision reads of the game's
+    // options need them (Revision::AsOfOp<int>::Read at 0x9D43D0 and
+    // AsOfOp<unsigned int>::Read at 0xD4A920).
+    BinStream& operator>>(int& value) {
+        ReadEndian(&value, sizeof(value));
+        return *this;
+    }
+    BinStream& operator>>(unsigned int& value) {
+        ReadEndian(&value, sizeof(value));
+        return *this;
+    }
     // Inline in the map's build: one byte, nonzero for true.
     BinStream& operator>>(bool& value) {
         unsigned char byte;
@@ -83,6 +95,9 @@ public:
     // Writes the symbol's length and characters, encrypted when the stream
     // has a cipher.
     BinStream& operator<<(const Symbol& symbol);  // 0x219F10
+    // Writes the text's length and characters, encrypted when the stream
+    // has a cipher. The map's operator<<(FixedString const&).
+    BinStream& operator<<(const FixedString& str);  // 0x21A020
 
     // Reads the cipher seed and encrypts the reads that follow with it.
     void EnableReadEncryption();  // 0x21A720

@@ -17,3 +17,11 @@ public:
 };
 
 static_assert(sizeof(Vector3) == 12);
+
+// The linear blend from `a` to `b` by `t` (the map's Interp). Inlined into
+// its users, such as the vector keys' sampling (0x324D40).
+inline void Interp(const Vector3& a, const Vector3& b, float t, Vector3& result) {
+    result.x = (b.x - a.x) * t + a.x;
+    result.y = (b.y - a.y) * t + a.y;
+    result.z = (b.z - a.z) * t + a.z;
+}

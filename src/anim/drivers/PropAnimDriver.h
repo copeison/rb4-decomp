@@ -27,8 +27,8 @@ public:
     // Slot 4: drops the playback's keys.
     virtual void Remove(const PlaybackInfo* info) = 0;
     // Slot 5: sets the property from the playbacks. The map's
-    // Poll(ObjPtr const&).
-    virtual void Poll(Entity* entity) = 0;
+    // Poll(ObjPtr const&): the entity's root object.
+    virtual void Poll(GameObject* root) = 0;
 
     // The property driven. Name not in the reference map.
     PropRef mProp;
@@ -53,7 +53,7 @@ public:
     // ones left without keys.
     void _OnStopAnim(PlaybackInfo& info) override;  // 0x2FCFC0
     // Slot 4: polls every property driver.
-    void _Poll(Entity* entity) override;  // 0x2FCCB0
+    void _Poll(GameObject* root) override;  // 0x2FCCB0
 
     // The driver of the property, or null. No caller was found.
     PropDriver* _FindPropDriver(const PropRef& prop);  // 0x2FD070

@@ -101,4 +101,4 @@ inline bool PropKeysTypeCom<String>::ApplyFrame(float frame, Entity* entity) con
 
 // The heaviest playback's string, which the driver does not apply.
 template <>
-void TPropDriver<PropKeysStrCom>::_Poll(Entity* entity);  // 0x31AD80
+void TPropDriver<PropKeysStrCom>::_Poll(GameObject* root);  // 0x31AD80

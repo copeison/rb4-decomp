@@ -170,6 +170,12 @@ public:
     // revision 18; `final` marks the fixup done. The map's signature is
     // _FixupStaleIds(). Not reconstructed.
     void _FixupStaleIds(bool final);  // 0xFE5C0
+    // When the resource is still marked as having stale ids, clears the mark
+    // and rewrites the stale object ids of every component of its entity and
+    // of the marked entity resources inlined into it. Only
+    // PropertyBlenderCom::_AreResourcesReady calls it. Name not in the
+    // reference map; the evidence is weak. Not reconstructed.
+    void FixupStaleIds();  // 0xFFED0
     // The load step count: the stream's from revision 15, else 100, plus
     // the counts of the layer files when `countLayers` is set and the
     // stream is not cached. Name not in the reference map. Not

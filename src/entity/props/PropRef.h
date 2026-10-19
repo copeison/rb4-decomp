@@ -38,6 +38,11 @@ public:
     // The map's Find(EntityPtr, void**) const: the referenced property's
     // info, with its storage in `storage` when it is given, or null.
     const PropInfo* Find(Entity* entity, void** storage) const;  // 0x17F850
+    // The referenced property's info in the component, with its storage
+    // in `storage` when it is given (the component's registry's FindProp
+    // from the component). Declared for the key components; not
+    // reconstructed.
+    const PropInfo* Find(Component* component, void** storage) const;  // 0x17FC70
     // Declared for the state graph nodes; not reconstructed. The
     // referenced object, component and property's info in the entity;
     // false when one is missing. Name not in the reference map; the
@@ -88,6 +93,8 @@ struct PropRotation;
 struct PropXfm;
 template <class T>
 class Waveform;
+template <class T>
+struct ValueTangent;
 namespace Hmx {
 class Color;
 }
@@ -130,6 +137,11 @@ struct PropValueType<unsigned long> {
 };
 template <>
 struct PropValueType<float> {
+    static constexpr PropertyType kType = kPropertyFloat;
+};
+// The float keys' values are read and written as their float.
+template <>
+struct PropValueType<ValueTangent<float>> {
     static constexpr PropertyType kType = kPropertyFloat;
 };
 template <>

@@ -197,16 +197,18 @@ public:
     virtual void _OnStopAnim(PlaybackInfo& info) {
         static_cast<void>(info);
     }
-    // Slot 4: applies the playbacks to the entity.
-    virtual void _Poll(Entity* entity) = 0;
+    // Slot 4: applies the playbacks to the entity of the root object.
+    virtual void _Poll(GameObject* root) = 0;
 
     // The frames per unit of the timeline: 30 per second, 16 per beat, 1
-    // for the values from 4 on. No caller was found; the binary emits it in
-    // anim/PropAnimDriver.o.
+    // for the frame-based values from 4 on. The out-of-line copy has no
+    // caller; PropAnimResource's frame conversions inline it. The binary
+    // emits it in anim/PropAnimDriver.o.
     static float GetDefaultFramesPerUnit(TimeUnits units);  // 0x2FD1F0
-    // The timeline of the units, taking 4 off the values from 4 on. No
-    // caller was found; emitted in anim/PropAnimDriver.o. Name not in the
-    // reference map; the evidence is weak.
+    // The timeline of the units, taking 4 off the frame-based values from
+    // 4 on. The out-of-line copy has no caller; PropAnimResource inlines
+    // it. Emitted in anim/PropAnimDriver.o. Name not in the reference map;
+    // the evidence is weak.
     static int GetBaseUnits(int units);  // 0x2FD200
 
     // Adds a playback of the animation behind the others of its blend-tree
@@ -228,8 +230,9 @@ public:
     void Clear();  // 0x328AC0
     // Advances the playbacks, applies them (slot 4), then removes or pauses
     // the ones that ended and records the frames they reached. The map's
-    // TAnimDriver<T>::Poll(ObjPtr const&).
-    void Poll(Entity* entity);  // 0x328B50
+    // TAnimDriver<T>::Poll(ObjPtr const&); AnimDriverCom passes its object,
+    // the entity's root.
+    void Poll(GameObject* root);  // 0x328B50
     void SetAnimTime(const AnimInstID& id, float time);    // 0x328CA0
     float GetAnimFrame(const AnimInstID& id);              // 0x328CE0
     void SetAnimFrame(const AnimInstID& id, float frame);  // 0x328D30

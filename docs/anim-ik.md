@@ -125,8 +125,9 @@ The emitted vtables of the five classes match the binary slot for slot
   `sClassName` statics.
 - The map's `_Fixup(bool)` of `CharBoneMaskCom`, `CharIkCom` and
   `CharIkDriverCom` has no counterpart in this build's vtables.
-- `ComMetaData::mReserved`, which `CharIkBoneInterp::_Init` sets as well
-  as the registration at `0x2E6360`.
+- `ComMetaData::mReserved`, which `CharIkBoneInterp::_Init` sets as do
+  `CharClipCom::_Init` (`0x2E6360`) and the "PathMesh" registration
+  (`0x5E45B0`); it has no identified reader.
 
 ## Not reconstructed
 

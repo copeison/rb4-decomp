@@ -1,9 +1,38 @@
 // anim/AnimResource.o (0x32C760 to 0x32CF92). The interface's vtable
-// (0x18FA340) is emitted here. Not reconstructed: the "frame" accessors of
-// the event properties at 0x32C8D0 and 0x32CBF0, which read and write an
-// event's frame through the component's registry for the resources'
-// "frame_editor_view".
+// (0x18FA340) is emitted here.
 #include "anim/core/AnimResource.h"
+
+#include "entity/core/Component.h"
+#include "entity/props/PropPath.h"
+#include "entity/props/PropRegistry.h"
+#include "entity/props/PropUtl.h"
+
+namespace {
+
+// The path of the "frame" of the event whose member the accessor's path
+// names: the last node is dropped and the one before it becomes "frame"
+// (a local static of each accessor, 0x19FBA20 and 0x19FBA30). Inlined
+// into both accessors. Name not in the reference map.
+PropPath EventFramePath(const PropAccessorArgs& args, Symbol& frameName) {
+    if (frameName == Symbol()) {
+        frameName = Symbol("frame");
+    }
+    PropPath path = *static_cast<const PropPath*>(args.mPath);
+    path.PopNode();
+    path.mNodes[path.mSize - 1] = frameName;
+    return path;
+}
+
+// Reports a "frame" that is missing or that does not convert: the
+// component's error name and the path's text are made and dropped.
+// Inlined into both accessors. Name not in the reference map.
+void ReportEventFrame(const Component& component, const PropPath& path) {
+    static_cast<void>(component.MakeErrorName());
+    char text[512] = {};
+    path.ToString(text, sizeof(text));
+}
+
+}  // namespace
 
 // Reconstructed from eboot.elf at 0x32C760.
 eastl::vector<AllowedValue<int>> AnimResource::GetBlendModeAllowedValues() {
@@ -44,4 +73,30 @@ float AnimResource::FrameToEventFrame(float frame) const {
 GameObject* AnimResource::GetObject(Entity* entity) const {
     static_cast<void>(entity);
     return nullptr;
+}
+
+// Reconstructed from eboot.elf at 0x32C8D0.
+float GetEventFrame(const PropAccessorArgs& args) {
+    static Symbol frameName;
+    const PropPath path = EventFramePath(args, frameName);
+    Component* const component = args.mComponent;
+    float frame = 0.0f;
+    void* storage = component;
+    const PropInfo* const info = component->_GetPropRegistry().FindProp(path, &storage);
+    if (info == nullptr || !_GetProp(*component, path, *info, storage, &frame, kPropertyFloat)) {
+        ReportEventFrame(*component, path);
+    }
+    return frame;
+}
+
+// Reconstructed from eboot.elf at 0x32CBF0.
+void SetEventFrame(const PropAccessorArgs& args, float frame) {
+    static Symbol frameName;
+    const PropPath path = EventFramePath(args, frameName);
+    Component* const component = args.mComponent;
+    void* storage = component;
+    const PropInfo* const info = component->_GetPropRegistry().FindProp(path, &storage);
+    if (info == nullptr || !_SetProp(*component, path, *info, storage, &frame, kPropertyFloat, false)) {
+        ReportEventFrame(*component, path);
+    }
 }

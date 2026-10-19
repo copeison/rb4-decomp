@@ -68,8 +68,10 @@ public:
     // widening at 0x1183300, which UpdateFrameRange calls).
     float mFrameRangeStart;
     float mFrameRangeEnd;
-    // "time_units": 8 by default, which is not one of the clocks' units;
-    // what it selects is not decoded.
+    // "time_units": a timeline (0-3), the same counted in frames (4-7), or
+    // by default 8, the "default_timeline" of the AnimDriverCom of the
+    // entity resource the animation is inlined in
+    // (PropAnimResource::GetUnits).
     int mTimeUnits;
     // "is_looping".
     bool mLooping;

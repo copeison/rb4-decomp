@@ -94,8 +94,8 @@ private:
 // the frame, blending into the next key's (0x3259A0 and 0x325AD0 for
 // float), set when the playback is not paused and the keys are not empty.
 template <>
-void TPropDriver<PropKeysWaveformCom<float>>::_Poll(Entity* entity);  // 0x3259A0
+void TPropDriver<PropKeysWaveformCom<float>>::_Poll(GameObject* root);  // 0x3259A0
 template <>
-void TPropDriver<PropKeysWaveformCom<Hmx::Color>>::_Poll(Entity* entity);
+void TPropDriver<PropKeysWaveformCom<Hmx::Color>>::_Poll(GameObject* root);
 
 static_assert(sizeof(PropKeysWaveformCom<float>) == 320);

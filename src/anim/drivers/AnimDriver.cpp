@@ -423,11 +423,11 @@ void AnimDriver::Clear() {
 }
 
 // Reconstructed from eboot.elf at 0x328B50.
-void AnimDriver::Poll(Entity* entity) {
+void AnimDriver::Poll(GameObject* root) {
     for (auto it = mPlaybacks.begin(); it != mPlaybacks.end(); ++it) {
         it->AdvanceCurrentTime();
     }
-    _Poll(entity);
+    _Poll(root);
     for (auto it = mPlaybacks.begin(); it != mPlaybacks.end();) {
         if (it->IsFinishedPlaying()) {
             if (it->mAutoDestruct != 0) {

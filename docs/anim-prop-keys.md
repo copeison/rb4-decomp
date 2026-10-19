@@ -19,6 +19,12 @@ runtime in [anim-runtime.md](anim-runtime.md).
 | `anim/PropKeysObjCom.o` | `0x30E2A0`-`0x310FAF` | `src/anim/props/PropKeysObjCom.cpp` |
 | `anim/PropKeysStrCom.o` | `0x318DB0`-`0x31B3B1` | `src/anim/props/PropKeysStrCom.cpp` |
 | `anim/PropKeysSymCom.o` | `0x31B470`-`0x31E1F0` | `src/anim/props/PropKeysSymCom.cpp` |
+| `anim/PropKeysColorCom.o` | `0x302B50`-`0x30534F` | `src/anim/props/PropKeysColorCom.cpp` |
+| `anim/PropKeysFloatCom.o` | `0x305D40`-`0x308AAF` | `src/anim/props/PropKeysFloatCom.cpp` |
+| `anim/PropKeysQuatCom.o` | `0x311080`-`0x31498F` | `src/anim/props/PropKeysQuatCom.cpp` |
+| `anim/PropKeysRotationCom.o` | `0x314990`-`0x318DAF` | `src/anim/props/PropKeysRotationCom.cpp` |
+| `anim/PropKeysTransformSRTCom.o` | `0x31E2E0`-`0x32233F` | `src/anim/props/PropKeysTransformSRTCom.cpp` |
+| `anim/PropKeysVec3Com.o` | `0x322340`-`0x32531F` | `src/anim/props/PropKeysVec3Com.cpp` |
 | `anim/PropKeysWaveformCom.o` | `0x325320`-`0x326BDF` | `src/anim/props/PropKeysWaveformCom.cpp` |
 | `anim/PropAnimCom.o` | `0x2FBC00`-`0x2FCAB1` | `src/anim/props/PropAnimCom.cpp` |
 
@@ -75,6 +81,7 @@ waveform into the next one's through the waveform's second resource.
 | `PropKeysObjCom` | `GameObjectId` | `0x18F83F8` | `0x19FA220`, `0x19FA228`, `0x19FA230`, `0x19FA2D0` |
 | `PropKeysSymCom` | `Symbol` | `0x18F93E8` | `0x19FAC70`, `0x19FAC78`, `0x19FAC80`, `0x19FAD20` |
 | `PropKeysStrCom` | `String` ("string" struct) | `0x18F9000` | `0x19FA9F0`, `0x19FA9F8`, `0x19FAA00`, `0x19FAAA0` |
+| `PropKeysFloatCom` ... `PropKeysTransformSRTCom` | float, vectors, rotations, colours, transforms | see [anim-prop-keys-numeric.md](anim-prop-keys-numeric.md) | |
 | `PropKeysWaveformCom<float>`, `<Hmx::Color>` | `Waveform<T>` | `0x18F4120`, `0x18F45B0` | `0x19F78E8`, `0x19F7648`, `0x19F7830`, `0x19F7658` (float) |
 
 The integer and waveform classes are named "PropKeysIntCom_kInt8" ...
@@ -88,7 +95,9 @@ The emitted vtables (both parts) match the binary slot for slot.
 span ("frame_range_start"/"frame_range_end", measured on enter unless
 regression testing, `UpdateFrameRange` `0x2FC2D0`), "time_units",
 "is_looping" and "target_order". Statics `0x19F96E0`, `0x19F96E8`,
-`0x19F96F0`, `0x19F9790`.
+`0x19F96F0`, `0x19F9790`. "time_units" is a timeline (0-3), the same
+counted in frames (4-7) or, by default, 8: the timeline of the entity the
+animation is inlined in ([anim-runtime.md](anim-runtime.md)).
 
 ## Weak evidence
 
@@ -97,7 +106,6 @@ regression testing, `UpdateFrameRange` `0x2FC2D0`), "time_units",
   `HasSerializedValue` have no caller in the module), `OffsetFrames`,
   `_RemapKeyValue`, `sRemapKeyValue`, `StaticKeyTypeName` (no callers),
   the registry's key and value types, and the field names.
-- `PropAnimCom::mTimeUnits`' default 8 is not one of the clocks' units.
 - The waveform keys' blend writes the eased position into the waveform's
   first override datum and the interpolation's 0x20000000 flag into the
   second; what the flag selects is not decoded.

@@ -13,6 +13,7 @@ Names follow [naming.md](naming.md).
 | `SampleValueAtFrame` (`ValueTangent<float>`) and the easing | `0x1CE320`, `0x1CE460`-`0x1CFB20` | `src/entity/waveform/Key.h`, `src/math/easing/Easing.h` |
 | `entity/Key.o` (part) | `0x1DC930`, `0x1DCA50` | `src/entity/waveform/Key.cpp` |
 | `WaveformResource<float>::GenerateTable` | `0x1CE140` | `src/entity/waveform/Waveform.cpp` |
+| `KeyTrackBase::InterpolationToString`, `StringToInterpolation` (in `math/Easing.o`) | `0x212420`, `0x212440` | `src/math/easing/Easing.cpp` |
 
 The tracks are templates, defined in the header; the binary emits each
 instantiation's methods where it is used, the float and colour ones with
@@ -36,8 +37,11 @@ value, or inserts the new key before or after the keys already at the
 frame. `RemoveKeysInFrameRange` removes the keys from the start up to,
 but not at, the end. A new track's interpolation is 0; the waveforms set
 1 and the volumetric scattering's default height density 3. The easing
-table at `0x18EEC60` names the values: None, Linear, Spline, Hermite,
-Sigmoid and the easing curves from 5 to 53.
+table at `0x18EEC60` (`sInterpolationNames`) names the values from -1
+("Invalid"): None, Linear, Spline, Hermite, Sigmoid and the easing curves
+from 5 to 53. `InterpolationToString` returns a value's label, null out of
+range; `StringToInterpolation` returns the value of a label, -1 when none
+matches.
 
 `ValueTangent<T>` (16 bytes for float) is a value with in and out
 tangents and the auto-tangent flag; `TKey<T>` is a frame and a value.
@@ -77,8 +81,6 @@ and (1, 1).
 
 ## Not reconstructed
 
-- `KeyTrackBase::InterpolationToString` and `StringToInterpolation`; this
-  build's are in `math/Easing.o` (`0x212420`, `0x212440`).
 - The other `Key.o` spline samplings (`TKey<float>` at `0x1DC9A0`).
 
 ## Weak evidence
@@ -87,4 +89,4 @@ and (1, 1).
   names, which follow the easing table's labels.
 - `InterpolationEase`, `UpgradeInterpolation`, the easing curve names
   (only `EaseBounceOut` is in the map), `SameKeys`, `_UpdateNonZero`,
-  `WaveformKey` and `mNonZero`.
+  `WaveformKey`, `mNonZero` and `sInterpolationNames`.

@@ -144,8 +144,8 @@ String PropKeysStrCom::_DefaultValue() const {
 // Reconstructed from eboot.elf at 0x31AD80. The string is sampled into a
 // copy and never applied.
 template <>
-void TPropDriver<PropKeysStrCom>::_Poll(Entity* entity) {
-    static_cast<void>(entity);
+void TPropDriver<PropKeysStrCom>::_Poll(GameObject* root) {
+    static_cast<void>(root);
     String chosen;
     String value;
     float heaviest = -100000.0f;

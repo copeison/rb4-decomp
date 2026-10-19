@@ -368,9 +368,9 @@ public:
     }
     // Slot 5: the map's Poll(ObjPtr const&), which calls _Poll when there
     // are playbacks.
-    void Poll(Entity* entity) override {
+    void Poll(GameObject* root) override {
         if (mEntries.mpBegin != mEntries.mpEnd) {
-            _Poll(entity);
+            _Poll(root);
         }
     }
 
@@ -389,8 +389,8 @@ public:
 
     // Sets the property from the playbacks; the discrete form unless the
     // class specializes it. 0x301FF0 for bool, inlined into Poll.
-    void _Poll(Entity* entity) {
-        static_cast<void>(entity);
+    void _Poll(GameObject* root) {
+        static_cast<void>(root);
         typename Keys::ValueType chosen;
         float heaviest = -100000.0f;
         bool none = true;

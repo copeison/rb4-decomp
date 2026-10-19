@@ -111,6 +111,9 @@ public:
     // signature is NextObject(GameObjectId, Symbol) const; this build takes
     // the object.
     GameObject* NextObject(const GameObject* object, Symbol com) const;  // 0xEF1A0
+    // The number of objects in all layers. Not reconstructed. Name not in
+    // the reference map.
+    unsigned long NumObjects() const;  // 0xF1350
     // A description for error messages: the resource's id and path, and
     // the resource it is inlined in.
     const char* MakeErrorName() const;  // 0xF0DD0

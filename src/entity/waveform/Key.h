@@ -6,6 +6,8 @@
 #include "entity/props/PropArray.h"
 #include "math/color/Color.h"
 #include "math/easing/Easing.h"
+#include "math/rotation/Quat.h"
+#include "math/vector/Vector3.h"
 
 // The key tracks of the property animations and waveforms (entity/Key.o).
 // The tracks are templates: the binary emits each instantiation's methods
@@ -17,13 +19,15 @@
 
 // A float key value with its tangents (the map's ValueTangent<T>). With
 // mAutoTangents set the spline sampling (0x1DCA50) derives the tangents from
-// the neighbouring keys and ignores the stored ones; a new key sets it.
+// the neighbouring keys and ignores the stored ones. A new value is zero
+// with automatic tangents, as the float keys' prototype (0x305FD0) and
+// samples (0x306C30) show.
 template <class T>
 struct ValueTangent {
-    T mValue;
-    T mInTangent;
-    T mOutTangent;
-    bool mAutoTangents;
+    T mValue = T();
+    T mInTangent = T();
+    T mOutTangent = T();
+    bool mAutoTangents = true;
 
     // The same value and tangent mode, and with stored tangents the same
     // tangents. Inlined into WaveformResource<T>::SetCurve.
@@ -115,6 +119,13 @@ public:
         kInterpolationHalfQuarterStairStep = 52,
         kInterpolationQuarterHalfStairStep = 53,
     };
+
+    // The interpolation's label in the easing table ("Linear", "Cubic
+    // In/Out"), "Invalid" for -1 and null out of range; and the value of
+    // a label, -1 when none matches. The map has them in entity/Key.o;
+    // this build emits them in math/Easing.o.
+    static const char* InterpolationToString(Interpolation interpolation);  // 0x212420
+    static Interpolation StringToInterpolation(const char* name);           // 0x212440
 
     // A new track does not interpolate until it is set; the waveforms set
     // Linear (0x1CAC80), the volumetric scattering's default height
@@ -528,6 +539,69 @@ void TKeyTrack<ValueTangent<float>>::_SampleSplineInterpValue(
     float t,
     ValueTangent<float>& value) const;  // 0x1DCA50
 
+// The vector keys blend each component; the ends give the keys' values
+// exactly. Inlined into 0x324D40.
+template <>
+inline void TKeyTrack<Vector3>::_SampleLinearInterpValue(
+    const TKey<Vector3>* prev,
+    const TKey<Vector3>* next,
+    float t,
+    Vector3& value) const {
+    if (t == 0.0f) {
+        value = prev->mValue;
+    } else if (t == 1.0f) {
+        value = next->mValue;
+    } else {
+        Interp(prev->mValue, next->mValue, t, value);
+    }
+}
+
+// The cubic Hermite curve between the keys, with the slopes through the
+// neighbouring keys (SplineTangent, inlined twice): k1-k0 for two keys,
+// (k1-k0)*1.5+(k0-k2)*0.25 at the first key and its mirror at the last,
+// (k[i+1]-k[i-1])*0.5 otherwise. Not reconstructed.
+template <>
+void TKeyTrack<Vector3>::_SampleSplineInterpValue(
+    const TKey<Vector3>* prev,
+    const TKey<Vector3>* next,
+    float t,
+    Vector3& value) const;  // 0x1DCCF0
+
+// The quaternion keys blend along the shorter arc. Inlined into 0x3125F0.
+template <>
+inline void TKeyTrack<Hmx::Quat>::_SampleLinearInterpValue(
+    const TKey<Hmx::Quat>* prev,
+    const TKey<Hmx::Quat>* next,
+    float t,
+    Hmx::Quat& value) const {
+    FastInterp(prev->mValue, next->mValue, t, value);
+}
+
+// Catmull-Rom through the keys before and after the pair (the ends
+// repeated), each neighbour flipped onto the first key's hemisphere, then
+// normalized. Not reconstructed.
+template <>
+void TKeyTrack<Hmx::Quat>::_SampleSplineInterpValue(
+    const TKey<Hmx::Quat>* prev,
+    const TKey<Hmx::Quat>* next,
+    float t,
+    Hmx::Quat& value) const;  // 0x1DD190
+
+// The colour keys blend in gamma space: with the interpolation's
+// 0x20000000 flag through InterpLinearAsGamma_sRGBInHSV, otherwise both
+// keys are converted to sRGB, blended and converted back. They have no
+// spline. Not reconstructed; the track's SampleValueAtFrame is emitted at
+// 0x2424A0.
+template <>
+void TKeyTrack<Hmx::Color>::_SampleLinearInterpValue(
+    const TKey<Hmx::Color>* prev,
+    const TKey<Hmx::Color>* next,
+    float t,
+    Hmx::Color& value) const;  // 0x1DEA70
+
+static_assert(sizeof(TKey<Vector3>) == 16);
+static_assert(sizeof(TKey<Hmx::Quat>) == 20);
+static_assert(sizeof(TKey<Hmx::Color>) == 20);
 static_assert(offsetof(TKeyTrack<ValueTangent<float>>, mKeys) == 16);
 static_assert(sizeof(TKeyTrack<ValueTangent<float>>) == 56);
 

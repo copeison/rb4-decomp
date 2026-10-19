@@ -285,3 +285,12 @@ private:
 };
 
 }  // namespace eastl
+
+class BinStream;
+
+// Reads a count and that many keys and values into the map, replacing the
+// values of keys already present. The map names the instantiation
+// operator>> <int, Symbol>(BinStream&, eastl::map<int, Symbol>&), emitted
+// at 0xD4A980. Declared only.
+template <typename Key, typename T>
+BinStream& operator>>(BinStream& stream, eastl::map<Key, T>& map);
