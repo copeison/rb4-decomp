@@ -1,5 +1,7 @@
 #pragma once
 
+#include <new>
+
 #include "utl/containers/Map.h"
 
 namespace eastl {
@@ -87,6 +89,7 @@ public:
             return 0;
         }
         RBTreeErase(node, &mAnchor);
+        static_cast<node_type*>(node)->mValue.~Key();
         mAllocator.deallocate(node, sizeof(node_type));
         --mnSize;
         return 1;
@@ -102,6 +105,7 @@ private:
         while (node != nullptr) {
             DoNukeSubtree(static_cast<node_type*>(node->mpNodeRight));
             auto* left = static_cast<node_type*>(node->mpNodeLeft);
+            node->mValue.~Key();
             mAllocator.deallocate(node, sizeof(node_type));
             node = left;
         }
@@ -133,7 +137,7 @@ private:
             ? kRBTreeSideLeft
             : kRBTreeSideRight;
         auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
-        node->mValue = key;
+        ::new (static_cast<void*>(&node->mValue)) Key(key);
         RBTreeInsert(node, parent, &mAnchor, side);
         ++mnSize;
     }
