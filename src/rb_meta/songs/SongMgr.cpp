@@ -120,42 +120,6 @@ typename eastl::map<Key, T>::iterator End(const eastl::map<Key, T>& map) {
     return const_cast<eastl::map<Key, T>&>(map).end();
 }
 
-// The value of the key, inserted constructed in place when missing, for the
-// maps whose values own storage (eastl::map's operator[] assigns over the
-// raw node).
-template <typename Key, typename T>
-T& FindOrInsert(eastl::map<Key, T>& map, const Key& key) {
-    using Node = typename eastl::map<Key, T>::node_type;
-    const auto it = map.lower_bound(key);
-    if (it != map.end() && !(key < it->first)) {
-        return it->second;
-    }
-    eastl::rbtree_node_base* current = map.mAnchor.mpNodeParent;
-    eastl::rbtree_node_base* parent = &map.mAnchor;
-    bool less = true;
-    while (current != nullptr) {
-        parent = current;
-        less = key < static_cast<Node*>(current)->mValue.first;
-        current = less ? current->mpNodeLeft : current->mpNodeRight;
-    }
-    auto* node = static_cast<Node*>(map.mAllocator.allocate(sizeof(Node)));
-    new (const_cast<Key*>(&node->mValue.first)) Key(key);
-    new (&node->mValue.second) T();
-    const auto side = parent == &map.mAnchor || less ? eastl::kRBTreeSideLeft : eastl::kRBTreeSideRight;
-    eastl::RBTreeInsert(node, parent, &map.mAnchor, side);
-    ++map.mnSize;
-    return node->mValue.second;
-}
-
-// Releases the storage of the values before the map frees its nodes.
-template <typename Key, typename T>
-void ReleaseValues(eastl::map<Key, T>& map) {
-    for (auto it = map.begin(); it != map.end(); ++it) {
-        it->second.~T();
-        new (&it->second) T();
-    }
-}
-
 }  // namespace
 
 // Writes the count, then each content and its songs. The map's build has
@@ -189,7 +153,7 @@ BinStream& operator>>(BinStream& stream, eastl::map<Symbol, eastl::vector<int>>&
     for (; count != 0; --count) {
         Symbol key;
         stream >> key;
-        eastl::vector<int>& songs = FindOrInsert(map, key);
+        eastl::vector<int>& songs = map[key];
         unsigned int size;
         stream.ReadEndian(&size, sizeof(size));
         songs.resize(size);
@@ -501,7 +465,6 @@ SongMgr::~SongMgr() {
     none.mValue.object = nullptr;
     DataSetGlobal(Symbol("song_mgr"), none);
     theSongMgr = nullptr;
-    ReleaseValues(mContentSongs);
 }
 
 // Reconstructed from eboot.elf at 0xF2CE50.
@@ -637,7 +600,6 @@ void SongMgr::LoadSongCache(BinStream& stream) {
                 }
             }
             metadata.clear();
-            ReleaseValues(contentSongs);
         }
     }
     MemPopTemp(savedTemp);
@@ -701,7 +663,6 @@ int SongMgr::GetPosInRecentList(int songID) {
 
 // Reconstructed from eboot.elf at 0xF2E290.
 void SongMgr::ClearSongCache() {
-    ReleaseValues(mContentSongs);
     mContentSongs.clear();
     for (auto it = mSongCache.begin(); it != mSongCache.end(); ++it) {
         if (it->second != nullptr) {
@@ -895,7 +856,7 @@ void SongMgr::_AddSongData(SongMetadata* metadata, Symbol content) {
     std::memcpy(song, metadata, sizeof(SongMetadata));
     mSongCache[songID] = song;
     mSongIDToContent[songID] = content;
-    FindOrInsert(mContentSongs, content).push_back(songID);
+    mContentSongs[content].push_back(songID);
     if (mSongCacheLoaded && metadata->IsDownload()) {
         _AddSongAsRecentlyAcquired(songID, mSongCache[songID]);
     }

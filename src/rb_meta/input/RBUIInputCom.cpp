@@ -162,31 +162,6 @@ static_assert(sizeof(SceneFocusState) == 56);
 
 using SceneFocusMap = eastl::map<ResourcePath, SceneFocusState>;
 
-}  // namespace
-
-// utl/containers/Map.h's map assigns a new node's value in place and frees
-// nodes without destroying them, which a list cannot take; this map
-// constructs and destroys its values, as EASTL's does (the node destructor
-// is inlined into 0xCB3750 and _ClearSceneFocusState).
-namespace eastl {
-
-template <>
-SceneFocusMap::node_type* SceneFocusMap::DoCreateNode(const ResourcePath& key) {
-    auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
-    new (&node->mValue) value_type{key, SceneFocusState()};
-    return node;
-}
-
-template <>
-void SceneFocusMap::DoFreeNode(node_type* node) {
-    node->mValue.~value_type();
-    mAllocator.deallocate(node, sizeof(node_type));
-}
-
-}  // namespace eastl
-
-namespace {
-
 // The object an id path names: the first id in the entity, the rest in the
 // entities its instance components instance. Null for an empty path, the
 // null id or a missing object. Name not in the reference map.

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <new>
+
 #include "utl/containers/Std.h"
 
 namespace eastl {
@@ -181,16 +183,17 @@ public:
     Allocator mAllocator;
 
 private:
+    // Nodes are raw allocator memory, so the value is constructed in place
+    // and destroyed in DoFreeNode, as EASTL's DoCreateNode and DoFreeNode do.
     node_type* DoCreateNode(const Key& key) {
         auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
-        const_cast<Key&>(node->mValue.first) = key;
-        node->mValue.second = T();
+        ::new (static_cast<void*>(&node->mValue)) value_type{key, T()};
         return node;
     }
     node_type* DoCreateNode(const node_type* source, rbtree_node_base* parent) {
         auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
-        const_cast<Key&>(node->mValue.first) = source->mValue.first;
-        node->mValue.second = source->mValue.second;
+        ::new (static_cast<void*>(&node->mValue))
+            value_type{source->mValue.first, source->mValue.second};
         node->mpNodeRight = nullptr;
         node->mpNodeLeft = nullptr;
         node->mpNodeParent = parent;
@@ -217,6 +220,7 @@ private:
         return root;
     }
     void DoFreeNode(node_type* node) {
+        node->mValue.~value_type();
         mAllocator.deallocate(node, sizeof(node_type));
     }
     void DoNukeSubtree(node_type* node) {
