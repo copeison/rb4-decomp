@@ -19,9 +19,10 @@ class RBProfile;
 class LocalBandUser : public RBBandUser {
 public:
     // The options the user plays with during an online session: a view
-    // that forwards every slot to the user's options (vtable 0x1960788, 32
-    // slots at 0x92B8D0-0x92C510). Name not in the reference map; the
-    // evidence is weak. Declared only.
+    // that forwards every slot to the user's options (GetGameplayOptions()
+    // const), except that the guitar solo mode and the drum fill logic are
+    // fixed at 1 (vtable 0x1960788, 32 slots at 0x92B8D0-0x92C510). Name not
+    // in the reference map; the evidence is weak.
     class SessionGameplayOptions : public IGameplayOptions {
     public:
         explicit SessionGameplayOptions(LocalBandUser* user) : mUser(user) {}
@@ -68,8 +69,7 @@ public:
     ~LocalBandUser() override;
     // Slots 6-7: both load the options and preferences from the user's
     // profile (or restore the user's own defaults without one) and send the
-    // preferences to the session. Not reconstructed: they read the profile
-    // manager and the preferences through calls not declared yet.
+    // preferences to the session.
     void _OnProfileLoaded() override;  // 0x92B440
     void _OnPlatformUserIdChanged() override;  // 0x92B640
     // Slot 12. Inline; the copy kept is at 0x92B8A0.
@@ -78,8 +78,8 @@ public:
     }
     // Slot 18: also restores the preference defaults.
     void _Reset() override;  // 0x92AC10
-    // Slot 19: the session view during an online session, else the
-    // profile's options or the user's own. Not reconstructed.
+    // Slot 19: the session view while a SOMP client exists, else the
+    // profile's options or the user's own.
     IGameplayOptions* GetGameplayOptions() override;  // 0x92ADB0
     // Slot 21: the profile manager's profile of the user's slot; without a
     // slot and with `any`, the profile of the user's pad.
@@ -88,8 +88,11 @@ public:
     bool IsLocal() const override {
         return true;
     }
-    // Slots 25-26, 29, 31 and 33: the profile's preferences, or the user's
-    // own copies. Not reconstructed.
+    // Slots 25-26, 29, 31 and 33: the profile's preferences when the user's
+    // slot owns the profile's settings, or the user's own copies. The
+    // preferences are the user's track texture (theRBSompSessionMgr's
+    // AllowsRemoteTrackTextures and the track texture list behind
+    // PickSymbol show it); the names stay generic.
     Symbol GetPreferenceSymbol() const override;  // 0x92AE90
     long GetPreferenceIndex() const override;  // 0x92AF00
     // Slots 27-28, 30, 32, 34 and 38: a change is stored, saved to the
@@ -107,33 +110,40 @@ public:
     // Slots 35-36.
     Symbol GetPickedSymbol() const override;  // 0x92B310
     long GetPickedIndex() const override;  // 0x92B320
-    // Slot 37: picks the symbol from a list owned by the global at
-    // 0x1B44F60 (0xF64660) and forgets the picked index. Not
-    // reconstructed.
+    // Slot 37: picks a random track texture (the 472-byte track texture
+    // list at 0x1B44F60, created at 0xF627C0 next to RBTrackTextureCom's
+    // statics; its random pick is 0xF64660), forgets the picked index and
+    // sends the preferences. Not reconstructed: the list's class is not
+    // modelled and its object is not in the reference map.
     void PickSymbol() override;  // 0x92B330
     void SetPickedIndex(long value) override;  // 0x92B370
-    // Slots 39-41: the session calls. Not reconstructed: they call into the
-    // SOMP session manager through functions not declared yet.
+    // Slots 39-41: the session calls. Not reconstructed: slot 39 calls
+    // theRBSompSessionMgr's member update (0xD30CF0) during a session,
+    // slot 40 the SOMP client's preference message (0x9883F0, with
+    // GetSompPreferenceSymbol and GetSompPreferenceIndex) and slot 41 the
+    // client's latency (0x990140, above 500), none of which
+    // RBSompSessionMgr.h declares.
     void _UpdateSompMember() override;  // 0x92B3B0
     void _SendSompPreferences() override;  // 0x92B3E0
     bool IsSompLagging() const override;  // 0x92ACD0
     // Slot 42.
     bool IsSompIdle() const override;  // 0x92AD00
 
-    // The profile's first-time-user events, else the user's own. The map's
-    // BandUser::GetFTUEData(); not reconstructed.
+    // The profile's first-time-user events when the user's slot owns the
+    // profile's settings, else the user's own. The map's
+    // BandUser::GetFTUEData().
     FTUEPersistentData* GetFTUEData();  // 0x92AC70
     // GetGameplayOptions without the session view. The map's
-    // BandUser::GetGameplayOptions() const; not reconstructed.
+    // BandUser::GetGameplayOptions() const.
     IGameplayOptions* GetGameplayOptions() const;  // 0x92AE30
-    // Writes the preferences to the slot's profile. Name not in the
-    // reference map; not reconstructed.
+    // Writes the preferences to the slot's profile when the slot owns its
+    // settings. Name not in the reference map.
     void _SavePreferences();  // 0x92AFB0
     // Restores the user's own options and preference defaults. Name not in
     // the reference map.
     void _ResetPreferences();  // 0x92B540
     // Copies the profile's options and preferences. Name not in the
-    // reference map; not reconstructed.
+    // reference map.
     void _LoadPreferences(RBProfile* profile);  // 0x92B5B0
 
     // Field names are not in the reference map. The options and events

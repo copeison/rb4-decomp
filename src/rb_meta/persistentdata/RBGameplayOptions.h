@@ -47,10 +47,8 @@ public:
     // mutable game (theMutableGame, 0x1AEF778; accessor 0xA48560). Not
     // reconstructed: Game is rb_game code and is not modelled.
     void _OnVocalStemVolumeChanged() override;  // 0xD53160
-    // Passes the microphone's decibels to slot 10 of the object slot 8 of the
-    // optional service at 0x1ADF350 returns (created at 0x8EC9C0, updated by
-    // optional_service_update), when there is one. Not reconstructed: the
-    // service is not modelled.
+    // Sets the volume of the microphone's channel, when it has one, to the
+    // option's decibels.
     void _OnMicVolumeChanged(int mic) override;  // 0xD53230
 
     // Copies another player's options into the GameplayOptions part, without

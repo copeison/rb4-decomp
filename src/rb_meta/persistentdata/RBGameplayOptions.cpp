@@ -8,6 +8,7 @@
 #include "rb_meta/persistentdata/RBGameplayOptions.h"
 
 #include "audio/fmod/system/FmodPlatform.h"
+#include "mic/core/MicChannelMgr.h"
 #include "os/memory/MemMgr.h"
 #include "rb_meta/profiles/RBProfile.h"
 #include "utl/streams/RevisionStream.h"
@@ -98,6 +99,14 @@ void RBGameplayOptions::_OnOptionsChanged() {
 // Reconstructed from eboot.elf at 0xD530E0.
 void RBGameplayOptions::_OnIGSVolumeChanged() {
     gFmodBusInterface->SetVcaVolumeDb("vca:/IGS", 2, GetIGSVolumeDecibels(), 0.0f);
+}
+
+// Reconstructed from eboot.elf at 0xD53230.
+void RBGameplayOptions::_OnMicVolumeChanged(int mic) {
+    MicChannel* const channel = TheMicChannelMgr->GetMic(mic);
+    if (channel != nullptr) {
+        channel->SetVolume(GetMicVolumeDecibels(mic));
+    }
 }
 
 // Reconstructed from eboot.elf at 0xD532F0.

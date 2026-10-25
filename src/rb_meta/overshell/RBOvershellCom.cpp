@@ -29,6 +29,7 @@
 #include "rb_game/users/BandUser.h"
 #include "rb_game/users/BandUserMgr.h"
 #include "rb_game/users/RBBandUser.h"
+#include "rb_meta/character/RBCharacterPreviewMgrCom.h"
 #include "rb_meta/dialog/DialogMgrCom.h"
 #include "rb_meta/input/RBUIInputCom.h"
 #include "rb_meta/overshell/RBOvershellSlotCom.h"
@@ -117,14 +118,6 @@ public:
 };
 
 extern RBBTMMgr* TheRBBTMMgr;  // 0x1ADFE20
-
-// The character preview scene's manager (rb_meta/RBCharacterPreviewMgrCom.o),
-// not modelled: the map's static ShowPreviewScene and HidePreviewScene.
-class RBCharacterPreviewMgrCom {
-public:
-    static void ShowPreviewScene();  // 0xB09F30
-    static void HidePreviewScene();  // 0xB09FD0
-};
 
 // The pads' light colors by pad (a table at 0x1B4C120). The map has
 // RBLightingStateCom::GetJoyPadColor(int); the match rests on the

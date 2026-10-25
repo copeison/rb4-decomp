@@ -142,10 +142,17 @@ static BinStream& operator>>(BinStream& stream, eastl::map<Symbol, int>& totals)
     return stream;
 }
 
-// The song map's reader (0xD4AF20) builds its nodes with
-// SongPersistentData(nullptr, 0), which SongPersistentData.h does not
-// allow as a default yet; it stays the declared generic operator>> <int,
-// SongPersistentData> of utl/containers/Map.h.
+// The songs' results of revisions 14-17, loaded in place (0xD4AF20).
+static BinStream& operator>>(BinStream& stream, eastl::map<int, SongPersistentData>& songs) {
+    unsigned int count;
+    stream.ReadEndian(&count, sizeof(count));
+    for (; count != 0; --count) {
+        int songID;
+        stream >> songID;
+        songs[songID].Load(stream);
+    }
+    return stream;
+}
 
 // Loads the story data (AsOfOp's Read at 0xD4B3F0 calls Load directly).
 static BinStream& operator>>(BinStream& stream, RBBTMBandPersistentData& data) {

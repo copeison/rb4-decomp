@@ -160,18 +160,27 @@ the ratings (1 to 5, dropped at 0).
 Declared only, because they call classes that are not modelled:
 
 - Character: `UpdateCharacter`, `CheckCharUsage`, `_IsUserUsingChar`
-  (RBCampaignMgr and BandUser's character members).
-- Campaign band: the song-map reader `0xD4AF20` (the generic template).
-- Rock Shop: `_AwardOutfitPiece` (achievement slot 22).
-- Song data: `Update` (`0xD6B320`; RBPlayer, the game data).
-- Gameplay options: `_OnVocalStemVolumeChanged`, `_OnMicVolumeChanged`.
-- Achievements: `_IsAutokickInBand`, `LogMidSongStats`,
-  `LogFinalizedStats`, `PushPendingAchievements`, `_UnlockTrophy`,
-  `_TryPresentPendingTrophies`, `_CanPresentTrophyNow` (the game's stats and
-  players).
-- Leaderboards: `Entry::Read`, `RequestLeaderboard`,
-  `OnLeaderboardJobComplete`, `OnScoreSubmissionsComplete` (JSON and the
-  server jobs).
+  (RBCampaignMgr and RBBandUser's character members `0x9AA8E0`-`0x9AA930`).
+- Song data: `Update` (`0xD6B320`; RBPlayer, Game, the band, the game data).
+- Gameplay options: `_OnVocalStemVolumeChanged` (the game's song audio,
+  `theMutableGame` +0xB0, slot 37).
+- Achievements: `LogMidSongStats`, `LogFinalizedStats`,
+  `PushPendingAchievements`, `_UnlockTrophy`, `_TryPresentPendingTrophies`,
+  `_CanPresentTrophyNow` (the game's stats, `Game::GetActivePlayers` at
+  `0xA45F40` and the players' state at +0x510).
+- Leaderboards: `RequestLeaderboard`, `OnLeaderboardJobComplete` and
+  `OnScoreSubmissionsComplete` (the DingoJob server jobs; the leaderboard job
+  keeps its score type at +0x220, song at +0x224, user at +0x230, friends
+  flag at +0x250 and the reply's `Json::Value` at +0x1C0).
+
+Reconstructed since: the campaign band's song-map reader (`0xD4AF20`,
+which loads each `SongPersistentData` in place), `_AwardOutfitPiece` (the
+gender swap's unviewed mark goes to the piece itself, and an award calls
+`LogRockShopItemAwarded`), `_IsAutokickInBand` (`theBandUserMgr`'s slot 1),
+`_OnMicVolumeChanged` (`TheMicChannelMgr`'s channel `SetVolume`) and
+`RBSongLeaderboard::Entry::Read`, with JsonCpp's `Json::Value` declared in
+`src/net/json/jsoncpp.h` (rank as `asUInt64`, score as `asInt64`, the
+rest as `asInt`, "is_you" through `get` with `Value::null`).
 - The rb_game records the pieces embed (the BTM record, `RBSetlist`, the
   SOMP settings) are declared in the pieces' headers.
 

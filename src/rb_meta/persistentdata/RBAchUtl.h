@@ -16,9 +16,9 @@ struct FinalizedSongStatsArgs;
 struct SongPerformanceArgs;
 
 // The achievement progress the platform halves keep over the songs played
-// (rb_meta/RBAchUtl.o, 0xF04990-0xF0727F): per-song proficiency lists that
-// the fan, master, immortal, gold star, authored solo and vocal trophies
-// read. The vtable at 0x198F838 has PersistentData's 7 slots (destructors
+// (rb_meta/RBAchUtl.o, 0xF04990-0xF0602F, before CalbertProcessor.o):
+// per-song proficiency lists that the fan, master, immortal, gold star,
+// authored solo and vocal trophies read. The vtable at 0x198F838 has PersistentData's 7 slots (destructors
 // 0xF05F80 and 0xF05F90, Save 0xF04A90, Load 0xF04DD0); the object is 216
 // bytes. The destructor is implicit: RBAchPersistentData_PS4.o emits its
 // body (0xF04740). Declared only: RBAchUtl.o is not reconstructed.

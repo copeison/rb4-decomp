@@ -5,12 +5,25 @@
 // 0xB52C10), and the static initializer at 0xB530C0, which sets the shared
 // header globals every rb_meta object initializes and is not modelled.
 //
-// Not reconstructed: Entry::Read (0xB51610), RequestLeaderboard (0xB52470)
-// and OnLeaderboardJobComplete (0xB52610), which need the JSON library and
-// the leaderboard job.
+// Not reconstructed: RequestLeaderboard (0xB52470) and
+// OnLeaderboardJobComplete (0xB52610), which need the leaderboard job.
 #include "rb_meta/leaderboards/RBSongLeaderboard.h"
 
+#include "net/json/jsoncpp.h"
 #include "utl/data/DataArray.h"
+
+// Reconstructed from eboot.elf at 0xB51610.
+void RBSongLeaderboard::Entry::Read(const Json::Value& row, int position) {
+    mUsername = Symbol(row["username"].asCString());
+    mPlatformUid = Symbol(row["platform_uid"].asCString());
+    mRank = static_cast<long>(row["rank"].asUInt64());
+    mPosition = position;
+    mDifficulty = row["difficulty"].asInt();
+    mScore = row["score"].asInt64();
+    const int percentage = row["percentage"].asInt();
+    mPercentage = static_cast<unsigned char>(percentage > 100 ? 100 : (percentage > 0 ? percentage : 0));
+    mIsYou = row.get("is_you", Json::Value::null).asInt() != 0;
+}
 
 // Reconstructed from eboot.elf at 0xB517C0.
 RBSongLeaderboard::RBSongLeaderboard(RBProfile* profile, int songId, bool friends)

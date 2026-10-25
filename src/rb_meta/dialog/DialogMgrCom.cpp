@@ -61,13 +61,6 @@ DialogMgrCom* sActiveDialog;  // 0x1AF4D90
 constexpr int kActionConfirm = 1;
 constexpr int kActionCancel = 2;
 
-// The user of a UI message. The band users are the platform's users
-// (BandUser derives from User, which is not modelled). Name not in the
-// reference map.
-BandUser* ToBandUser(User* user) {
-    return reinterpret_cast<BandUser*>(user);
-}
-
 // A text as the InitFor* functions store it: the token itself, or its
 // localized text. Inlined into each of them. Name not in the reference
 // map.
@@ -587,7 +580,7 @@ void DialogMgrCom::_UpdateConditionDialog() {
 
 // Reconstructed from eboot.elf at 0xADE6D0.
 DataNode DialogMgrCom::OnMsg(const UISelectMsg& msg) {
-    BandUser* const user = ToBandUser(msg.GetUser());
+    BandUser* const user = BandUserMgr::GetBandUser(msg.GetUser());
     if (theOvershell->IsUserAllowingInputToShell(user)) {
         const GameObjectId selected = msg.GetSelectedObject();
         if (_IsOkButton(selected)) {
@@ -614,7 +607,7 @@ DataNode DialogMgrCom::OnMsg(const UISelectMsg& msg) {
 // Reconstructed from eboot.elf at 0xADEAF0. Input the overshell keeps is
 // handled and ignored.
 DataNode DialogMgrCom::OnMsg(const UIButtonDownMsg& msg) {
-    if (!theOvershell->IsUserAllowingInputToShell(ToBandUser(msg.GetUser()))) {
+    if (!theOvershell->IsUserAllowingInputToShell(BandUserMgr::GetBandUser(msg.GetUser()))) {
         return DataNode(0);
     }
     const int action = msg.GetAction();
@@ -625,14 +618,14 @@ DataNode DialogMgrCom::OnMsg(const UIButtonDownMsg& msg) {
         case kDialogTypeConditionalWithCancel:
         case kDialogTypeTwoOptions:
         case kDialogTypeThreeOptions:
-            _HideDialog(kButtonCancel, ToBandUser(msg.GetUser()), false);
+            _HideDialog(kButtonCancel, BandUserMgr::GetBandUser(msg.GetUser()), false);
             return DataNode(0);
         default:
             return DataNode();
         }
     }
     if (action == kActionConfirm && sDialogArgs.mLayoutType == kDialogLayoutOnboardingTextDirected) {
-        _HideDialog(kButtonOk, ToBandUser(msg.GetUser()), false);
+        _HideDialog(kButtonOk, BandUserMgr::GetBandUser(msg.GetUser()), false);
         return DataNode(0);
     }
     return DataNode();

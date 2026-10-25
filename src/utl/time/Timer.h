@@ -29,6 +29,12 @@ public:
         }
         return static_cast<float>(CyclesToMs(mCycles));
     }
+    // Starts again from zero. Name not in the reference map.
+    void Restart() {
+        mStart = GetCycleCounter();
+        mCycles = 0;
+        mRunning = 1;
+    }
 
     // Field names are not in the reference map.
     unsigned long mStart;

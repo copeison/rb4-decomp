@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "net/RakNetTypes.h"
 #include "os/users/UserGuid.h"
 #include "rb_game/options/GameplayOptions.h"
 #include "rb_game/users/RBBandUser.h"
@@ -38,15 +39,17 @@ public:
     IGameplayOptions* GetGameplayOptions() override;  // 0x9A5800
     // Slot 21: a remote user has no profile.
     RBProfile* GetProfile(bool any) const override;  // 0x9A5810
-    // Slot 23: the online id the session sent, else an unset one. Not
-    // reconstructed.
+    // Slot 23: the online id the session sent, else an unset one.
     void _GetOnlineIDWithoutProfile(OnlineID& id) const override;  // 0x9A5310
     // Slot 24.
     bool IsLocal() const override;  // 0x9A5820
-    // Slots 25-26 and 29: the session record's preferences. Not
-    // reconstructed.
+    // Slots 25-26: the track texture and its index the session reports
+    // for the user (theRBSompSessionMgr 0xD324C0); outside a session the
+    // empty symbol and -1. Not reconstructed: the session manager's query
+    // is not declared in RBSompSessionMgr.h.
     Symbol GetPreferenceSymbol() const override;  // 0x9A53B0
     long GetPreferenceIndex() const override;  // 0x9A5450
+    // Slot 29: whether the session shows the remote users' track textures.
     bool GetPreferenceFlag0() const override;  // 0x9A54E0
     // Slots 41-42: two flags of the session record.
     bool IsSompLagging() const override;  // 0x9A5900
@@ -55,8 +58,8 @@ public:
     // Setters of the record values below. Names not in the reference map.
     void SetRemoteJoined(bool joined);  // 0x9A5200
     void SetSessionValue(float value);  // 0x9A5210
-    // Copies the 264-byte record the session sent and stamps the time.
-    // Not reconstructed.
+    // Copies the 264-byte record the session sent and stamps the time
+    // with the real time's milliseconds.
     void SetSessionRecord(const void* record);  // 0x9A5220
     void ClearSessionRecordStamp();  // 0x9A52A0
 
@@ -67,7 +70,7 @@ public:
     GameplayOptions mOptions;
     // The owner's id and a session member id (-1 until set).
     UserGuid mOwnerGuid;
-    unsigned char mMemberId[16];
+    RakNet::RakNetGUID mMemberId;
     // The name and the online id text the session sent.
     Symbol mName;
     Symbol mOnlineIDText;
@@ -83,6 +86,7 @@ public:
 
 static_assert(offsetof(RemoteBandUser, mOptions) == 832);
 static_assert(offsetof(RemoteBandUser, mOwnerGuid) == 1016);
+static_assert(offsetof(RemoteBandUser, mMemberId) == 1032);
 static_assert(offsetof(RemoteBandUser, mName) == 1048);
 static_assert(offsetof(RemoteBandUser, mOnlineIDText) == 1056);
 static_assert(offsetof(RemoteBandUser, mRemoteJoined) == 1064);

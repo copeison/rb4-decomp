@@ -10,6 +10,7 @@
 #include "rb_meta/persistentdata/RBRockShopPersistentData.h"
 
 #include "os/memory/MemMgr.h"
+#include "rb_meta/persistentdata/RBAchPersistentData.h"
 #include "rb_meta/profiles/RBProfile.h"
 #include "rb_world/characters/RBOutfitPieceLoader.h"
 #include "utl/streams/RevisionStream.h"
@@ -176,6 +177,36 @@ bool RBRockShopPersistentData::UnlockOutfitPiece(const ResourcePath& piece) {
 bool RBRockShopPersistentData::AwardOutfitPiece(const ResourcePath& piece) {
     const bool awarded = true;
     return _AwardOutfitPiece(piece, awarded);
+}
+
+// Reconstructed from eboot.elf at 0xD63B80.
+bool RBRockShopPersistentData::_AwardOutfitPiece(const ResourcePath& piece, const bool& awarded) {
+    const Symbol shortName = theOutfitPieceLoader->GetShortNameForPiece(piece);
+    if (IsNullSymbol(shortName)) {
+        return false;
+    }
+    const Symbol genderSwap = theOutfitPieceLoader->GetGenderSwapForOutfit(shortName);
+    static const long sHeap = MemFindHeap("profile");
+    MemPushHeap(sHeap);
+    MakeDirty();
+    mUnlockedPieces.erase(shortName);
+    mOwnedPieces.insert(shortName);
+    if (awarded) {
+        mUnviewedPieces.insert(shortName);
+    }
+    if (!IsNullSymbol(genderSwap)) {
+        mUnlockedPieces.erase(genderSwap);
+        mOwnedPieces.insert(genderSwap);
+        if (awarded) {
+            // The original marks the piece again, not its swap.
+            mUnviewedPieces.insert(shortName);
+        }
+    }
+    if (awarded) {
+        mProfile->mAchData->LogRockShopItemAwarded();
+    }
+    MemPopHeap();
+    return true;
 }
 
 // Reconstructed from eboot.elf at 0xD640D0.

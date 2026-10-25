@@ -47,6 +47,11 @@ enum RBCharOutfitSlot {
     kNumOutfitSlots = 26,
 };
 
+// A character's gender. The map names the type (the outfit loader's
+// queries take it by reference); its values are not recovered.
+enum RBCharGender {
+};
+
 // A configuration value of a piece (the map's
 // GetOutfitPieceSettingForConfig reads one by name). Field names not in the
 // reference map.

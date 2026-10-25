@@ -1,6 +1,7 @@
 #include "rb_game/mics/GameMicManager.h"
 
 #include "os/debug/Debug.h"
+#include "mic/core/MicChannelMgr.h"
 #include "rb_game/mics/GameMic.h"
 
 GameMicManager* TheGameMicManager;
@@ -118,6 +119,17 @@ void GameMicManager::SetPlayback(bool playback) {
         if (mic != nullptr) {
             ApplyPlayback(playback, false, mic);
         }
+    }
+}
+
+// Reconstructed from eboot.elf at 0x9BFDA0.
+void GameMicManager::ApplyPlayback(bool playback, bool unused, GameMic* mic) const {
+    static_cast<void>(unused);
+    MicChannel* const channel = mic->GetMyMic();
+    if (playback) {
+        channel->StartPlayback();
+    } else {
+        channel->StopPlayback();
     }
 }
 

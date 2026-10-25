@@ -14,7 +14,7 @@ working tree was clean when the snapshot was taken.
 
 The current PS4 object build compiles **142 C++ translation units**. It creates
 a complete relocatable object and archive, but it does not yet produce a game
-executable. The latest unresolved-symbol report contains 1444 entries. The audio
+executable. The latest unresolved-symbol report contains 1472 entries. The audio
 reconstruction removed its targets but referenced more engine code that is
 still only declared: the audio resource and component `Init`s, the generator
 managers, `LFO`, `ADSR` and the decoders. The resource and entity-core
@@ -236,7 +236,8 @@ The latest focused commits, newest first, are:
 | `5195728` | rb_meta profile manager, profile, song manager, UI input, overshell (part), character layout tracker; engine users (User, UserMgr, HxGuid); rb_game Defines |
 | `0361e3d` | `eastl::map` constructs and destroys values in place |
 | `448d627` | `eastl::set` constructs and destroys keys in place |
-| (this) | rb_game band users (BandUser, BandUserMgr, RB/Local/Remote band users, RBBandUserMgr) and mics; rb_meta helpbar, list provider base, profile persistent-data pieces, song leaderboards, overshell slot com and slot states, most of RBOvershellCom |
+| `e632d7b` | rb_game band users (BandUser, BandUserMgr, RB/Local/Remote band users, RBBandUserMgr) and mics; rb_meta helpbar, list provider base, profile persistent-data pieces, song leaderboards, overshell slot com and slot states, most of RBOvershellCom |
+| (this) | RBBandUserMgr whole, most of RBBandUser/LocalBandUser/RemoteBandUser, GameMic and GameMicManager whole, CommonPhraseCapturer; rb_meta joined slots, CalbertProcessor, calibration numbers and manual flow, content refreshing, game startup, leaderboard list items |
 | `bdec9ed` | Render subsystem init and terminate, pixel canvas, occlusion and inspection shaders |
 | `f520eb5` | Default-texture table by shape, `_CreateTextures`, lighting setters, `RndTextureUtl` |
 | `cc202b1` | Entity, scene, light, material and camera component APIs replace the render runtime adapters; `Rnd::Init`/`Terminate` |

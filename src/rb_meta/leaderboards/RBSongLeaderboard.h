@@ -47,8 +47,8 @@ public:
               mIsYou(false) {}
 
         // Reads "username", "platform_uid", "rank", "difficulty", "score",
-        // "percentage" (clamped to 0-100) and "is_you" from the row's JSON.
-        // Not reconstructed: the JSON library is not modelled.
+        // "percentage" (clamped to 0-100) and "is_you" from the row's JSON;
+        // `position` is the row's index.
         void Read(const Json::Value& row, int position);  // 0xB51610
 
         Symbol mUsername;

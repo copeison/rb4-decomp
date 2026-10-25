@@ -259,8 +259,8 @@ public:
     // Records the layout as current and clears the pending one; the
     // previous layout keeps the last layout other than kLayoutLoading.
     void _SetCurrentLayout(RBUILayout layout);  // 0xBC3D00
-    // Copies whether each slot's user is joined. Not reconstructed: it calls
-    // a User virtual that is not modelled.
+    // Copies whether each slot holds a local band user; does nothing
+    // without a band user manager.
     void _UpdateJoinedSlots();  // 0xBB5C60
     // Switches the "main" and "gpu" heaps to strategy 3 while an expensive
     // layout loads and restores them afterwards. Name not in the reference
@@ -311,8 +311,8 @@ public:
     // The SFX and crowd volume options last applied to the VCAs.
     int mSfxVolume;
     int mCrowdVolume;
-    // Whether Poll applies the volume options; nothing in this build sets
-    // it.
+    // Whether Poll applies the volume options; GameStartupCom sets it once
+    // the shell's sound banks are preloaded.
     bool mApplyVolumeOptions;
     // "num_microphones_connected", counted by Poll.
     int mNumMicsConnected;

@@ -118,6 +118,9 @@ public:
     // "disable_load_tag" after InstanceCom's, and gives the file property
     // the scene resource class.
     static void _Init(PropRegistry& registry, ComMetaData& metadata);  // 0x436AB0
+    // Whether instances with the tag are loaded; true for every tag in this
+    // build. GameStartupCom asks it before preloading tagged scenes.
+    static bool ShouldLoadInstanceWithTag(Symbol tag);  // 0x436A90
 
     static Symbol sId;  // 0x1A72AD8, "SceneInstance"
     // Also "SceneInstance". Name not in the reference map.

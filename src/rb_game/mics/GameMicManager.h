@@ -71,8 +71,7 @@ public:
     // The client's microphone, or null.
     GameMic* GetMic(const MicClientID& client);  // 0x9BFC50
     // Turns the microphone's channel playback on or off. The second flag is
-    // unused. Not reconstructed: it calls the microphone channel, whose
-    // class is not modelled.
+    // unused.
     void ApplyPlayback(bool playback, bool unused, GameMic* mic) const;  // 0x9BFDA0
     void SetPlaybackForMic(bool playback, bool unused, const MicClientID& client);  // 0x9BFDD0
     void SetRecordFileName(const char* name);  // 0x9BFE30

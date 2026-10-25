@@ -18,7 +18,7 @@
 #include "entity/props/PropMetadata.h"
 #include "entity/props/PropPath.h"
 #include "entity/props/PropUtl.h"
-#include "mic/core/Mic.h"
+#include "mic/core/MicChannelMgr.h"
 #include "os/joypads/Joypad.h"
 #include "os/locale/Locale.h"
 #include "persistence/profiles/Profile.h"
@@ -1966,7 +1966,7 @@ void RBOvershellSlotCom::_Poll() {
             const MicClientID client = {index, -1};
             GameMic* const mic = TheGameMicManager->GetMic(client);
             if (mic != nullptr) {
-                static_cast<void>(static_cast<Mic*>(mic->GetMyMic())->GetStatus());
+                mic->GetMyMic()->Start();
                 mic->Update();
                 const float energy = mic->mEnergy;
                 mRuntime.mMicEnergy[index] = energy > 1.0F ? 1.0F : (energy > 0.0F ? energy : 0.0F);

@@ -142,6 +142,12 @@ public:
     // owns them, or when no earlier slot holds the profile and no other
     // slot owns them.
     bool DoesSlotOwnProfileSettings(unsigned long slot) const;  // 0xD5D0E0
+    // The slot's own ownership flag (ProfileData::mOwnsSettings), without
+    // DoesSlotOwnProfileSettings' checks of the other slots. The binary
+    // reads the slot without checking that it exists. The band users ask it
+    // before using the profile's options and preferences. Name not in the
+    // reference map. Declared only.
+    bool SlotOwnsProfileSettings(unsigned long slot) const;  // 0xD5D060
     // The first slot that holds the profile, or -1.
     unsigned long GetSlotIdxFromProfile(RBProfile* profile) const;  // 0xD5D3D0
     // The first slot that holds the profile and owns its settings, or -1.

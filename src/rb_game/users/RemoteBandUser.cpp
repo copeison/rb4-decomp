@@ -1,5 +1,11 @@
 #include "rb_game/users/RemoteBandUser.h"
 
+#include <cstring>
+
+#include "net/OnlineID.h"
+#include "rb_meta/somp/RBSompSessionMgr.h"
+#include "utl/time/TimeMgr.h"
+
 // Reconstructed from eboot.elf at 0x9A51E0.
 const char* RemoteBandUser::GetPlatformName() const {
     if (mName != Symbol()) {
@@ -16,6 +22,13 @@ void RemoteBandUser::SetRemoteJoined(bool joined) {
 // Reconstructed from eboot.elf at 0x9A5210.
 void RemoteBandUser::SetSessionValue(float value) {
     mSessionValue = value;
+}
+
+// Reconstructed from eboot.elf at 0x9A5220.
+void RemoteBandUser::SetSessionRecord(const void* record) {
+    memcpy(mSessionRecord, record, sizeof(mSessionRecord));
+    mSessionRecordTime = TheTimeMgr->mRealTime.SplitMs();
+    mSessionRecordStamped = true;
 }
 
 // Reconstructed from eboot.elf at 0x9A52A0.
@@ -41,6 +54,23 @@ bool RemoteBandUser::IsOvershellSlotClosed() const {
 // Reconstructed from eboot.elf at 0x9A52E0.
 ControllerType RemoteBandUser::GetControllerType() const {
     return GameSlotToControllerType(static_cast<GameSlot>(GetSlot()));
+}
+
+// Reconstructed from eboot.elf at 0x9A5310.
+void RemoteBandUser::_GetOnlineIDWithoutProfile(OnlineID& id) const {
+    if (mOnlineIDText != Symbol()) {
+        id.SetAccountIdFromString(mOnlineIDText.Str());
+        return;
+    }
+    id = OnlineID();
+}
+
+// Reconstructed from eboot.elf at 0x9A54E0.
+bool RemoteBandUser::GetPreferenceFlag0() const {
+    if (!theRBSompSessionMgr.IsSompSession()) {
+        return false;
+    }
+    return theRBSompSessionMgr.AllowsRemoteTrackTextures();
 }
 
 // Reconstructed from eboot.elf at 0x9A5650.

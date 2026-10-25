@@ -10,6 +10,7 @@
 
 class DataArray;
 class IGameplayOptions;
+class IRBAchievementLogger;
 class OnlineID;
 class RBPlayer;
 class RBProfile;
@@ -74,10 +75,9 @@ public:
     // Slot 19: the options the user plays with: the profile's, or the
     // user's own.
     virtual IGameplayOptions* GetGameplayOptions() = 0;
-    // Slot 20: the profile's achievement data, through a base of the
-    // platform class that is not modelled, or null. Name not in the
-    // reference map.
-    virtual void* GetAchievementData() const = 0;
+    // Slot 20: the profile's achievement logger (its achievement data), or
+    // null. Name not in the reference map.
+    virtual IRBAchievementLogger* GetAchievementData() const = 0;
     // Slot 21: the profile of the user's band slot; `any` also looks among
     // the profiles of the user's pad when the user has no slot. The map has
     // GetProfile() const.

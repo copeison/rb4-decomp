@@ -34,6 +34,28 @@ enum HxGfxApi : std::uint32_t {
     kNumGfxApis = 7,
 };
 
+// The console's region, in the order of PlatformRegionToSymbol's names.
+// The map names the type; the enumerator names are not in the reference
+// map.
+enum PlatformRegion : int {
+    kRegionNone = 0,
+    kRegionUS = 1,
+    kRegionCanada = 2,
+    kRegionMexico = 3,
+    kRegionNA = 4,
+    kRegionEurope = 5,
+    kRegionJapan = 6,
+    kRegionBrazil = 7,
+    kRegionGermany = 8,
+    kRegionAustralia = 9,
+    kRegionNewZealand = 10,
+    kNumRegions = 11,
+};
+
+// The region's name ("us", "europe", ...), or the empty symbol for
+// kRegionNone.
+Symbol PlatformRegionToSymbol(PlatformRegion region);  // 0x362E10
+
 // The platform's short name ("ps4"), or the empty symbol for a platform
 // without one.
 Symbol PlatformSymbol(HxPlatform platform);  // 0x363030
@@ -111,6 +133,8 @@ public:
     // Slot 21: the user service's name for the user.
     virtual const char* GetName(int user) const;  // 0x3711E0
 
+    // The console's region.
+    PlatformRegion GetRegion() const;  // 0x363E00
     // Refreshes the network state (vtable +384) and returns the cached
     // link flag (+128). The evidence for the map's name is weak.
     bool IsEthernetCableConnected();  // 0x363760

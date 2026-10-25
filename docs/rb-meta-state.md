@@ -119,9 +119,12 @@ at `0x1AFEF40`.
 
 - The business-intelligence reports (`0xBB7550`-`0xBC3BB0`), which read
   most of the game's state.
-- `_UpdateJoinedSlots` (`0xBB5C60`), which calls a `User` virtual (slot
-  24) that is not modelled, and `GetCurrentBandName` (`0xBC4080`), which
-  reads rb_game managers that are not modelled.
+- `GetCurrentBandName` (`0xBC4080`), which reads rb_game managers that
+  are not modelled.
+
+`_UpdateJoinedSlots` (`0xBB5C60`) is reconstructed: with a band user
+manager, `mSlotJoined` records whether `TheRBBandUserMgr`'s user of each
+slot is local (`RBBandUser::IsLocal`, slot 24).
 
 ## Weak evidence
 
@@ -132,7 +135,8 @@ at `0x1AFEF40`.
   `ExportBootingPlayer`, `IsWatchingCutsceneOrVoting`, `GetCurrentPatch`,
   `GetGameVersionText`, the message classes and `ButtonOverride`'s fields.
 - `mReturnLayout`, `mSongListIndex` and `mPracticeSection` are named from
-  single writers; `mApplyVolumeOptions` has no writer in this build.
+  single writers; `mApplyVolumeOptions`'s only writer is
+  `GameStartupCom::_PostPoll`, once the shell banks are preloaded.
 - `RBSompSessionMgr`, `RBClanMgr` and their flags are named from the SOMP
   and clan strings; `FmodBusInterface::SetVcaVolumeDb` (`0xBF9F0`) is
   placed in that class because `Poll` calls it on `gFmodBusInterface`.

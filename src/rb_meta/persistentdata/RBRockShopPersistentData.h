@@ -51,9 +51,8 @@ public:
     bool PurchaseOutfitPiece(const ResourcePath& piece);  // 0xD640D0
     // Moves the piece from the unlocked to the owned pieces; when `awarded`,
     // also marks it unviewed and calls the profile's achievement interface
-    // (RBProfile::mAchData at offset 24, slot 22, which unlocks trophy 33:
-    // the map's RBAchPersistentData_PS4::LogRockShopItemAwarded). Not
-    // reconstructed: the achievement interface is not modelled.
+    // (LogRockShopItemAwarded, which unlocks trophy 33). The gender swap is
+    // owned too, but the unviewed mark goes to the piece itself again.
     bool _AwardOutfitPiece(const ResourcePath& piece, const bool& awarded);  // 0xD63B80
     // Debug versions of the unlock and the award that take the short name
     // and log the outcome (the logs are compiled out); both forget the

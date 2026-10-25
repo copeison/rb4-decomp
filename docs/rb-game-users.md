@@ -55,10 +55,10 @@ save manager's "load_end". `TheUserMgr` is at `0x19FE748`.
 | --- | --- | --- |
 | `rb_game/BandUser.o` | `0xA3ED10`-`0xA40130` | `src/rb_game/users/BandUser.{h,cpp}` |
 | `rb_game/BandUserMgr.o` | `0xA40130`-`0xA41BBC` | `src/rb_game/users/BandUserMgr.{h,cpp}` |
-| (not in the map) | `0x9A9A00`-`0x9AC060` | `src/rb_game/users/RBBandUser.{h,cpp}` |
+| (not in the map) | `0x9A9A00`-`0x9AC300` | `src/rb_game/users/RBBandUser.{h,cpp}` |
 | (not in the map) | `0x92AB60`-`0x92C580` | `src/rb_game/users/LocalBandUser.{h,cpp}` |
 | (not in the map) | `0x9A48C0`-`0x9A5920` | `src/rb_game/users/RemoteBandUser.{h,cpp}` |
-| (not in the map) | `0x923190`-`0x926610` | `src/rb_game/users/RBBandUserMgr.{h,cpp}` |
+| (not in the map) | `0x923190`-`0x926930` | `src/rb_game/users/RBBandUserMgr.{h,cpp}` |
 
 The chain is `User` -> `BandUser` -> `RBBandUser` -> `LocalBandUser` /
 `RemoteBandUser`. The three derived names are inferred (the older game's
@@ -118,43 +118,119 @@ this build. Inferred names: `Init`, `_CreateUsers`, `GetNumUsersInSlots`,
 
 `RBBandUser` (232 bytes, vtable `0x1962360`, 43 slots; pure 12, 19, 21,
 24-26, 29, 41, 42) adds slot 24 `IsLocal` (true for `LocalBandUser`, false
-for `RemoteBandUser`) and the preference and session slots 25-42, whose
-names follow `RBUserPreferencesPersistentData`'s values and are weak. The
-inline slots 9-11 and the empty defaults of 27-40 are emitted next to the
-local and remote users. Reconstructed: the constructor, destructor,
-`GetPlatformUserId`, `GetPlatformName`, `_Reset`, `_ApplyTrackVolumeSettings`
-("vca:/IGS" on the guitar part), `IsUsingOtherController` and the two session
-preference helpers (`0x9ABEB0`, `0x9ABF00`). Declared: `SetCurrentCharName`
-(`0x9A9BB0`), `ApplyVocalistVolumeSettings` (`0x9A9D00`), `GetAchievementData`.
+for `RemoteBandUser`) and the preference and session slots 25-42. The
+preferences are the user's track texture (`LocalBandUser::PickSymbol` picks
+from the track texture list at `0x1B44F60`, `RemoteBandUser`'s flag is
+`RBSompSessionMgr::AllowsRemoteTrackTextures`); the slot names stay generic.
+The inline slots 9-11 and the empty defaults of 27-40 are emitted next to
+the local and remote users.
+
+Every function of `0x9A9A00`-`0x9AC050` is reconstructed except:
+
+- `ApplyVocalistVolumeSettings` (`0x9A9D00`): it calls the game
+  (`theGame`, the mutable game's accessor `0xA48560` and its slot 37) and
+  the game data (`0x965DF0`), which are not modelled.
+- `RequestSompParts` (`0x9AB9D0`), `RequestSompPart` (`0x9ABBF0`),
+  `RequestSompDifficulty` (`0x9ABDD0`): they call the SOMP client
+  (`0x98AFB0`, `0x98AA40`, `0x98AAD0`, `0x98AB70`), which
+  `RBSompSessionMgr.h` does not declare.
+
+The character methods keep the map's `BandUser` names:
+`GetPreviewCharacterDesc` (`0x9AA110`), `_GetCharDesc` (`0x9AA250`),
+`SetPreviewCharName` (`0x9AA6D0`), `_VerifyExistenceOfCharacter`
+(`0x9AA7F0`), the `GetCurrentCharName` pair (`0x9AA8C0`, `0x9AA8E0`),
+`IsUsingPrefabChar`, `IsUsingProfileChar`, `IsUsingOtherProfileChar`
+(`0x9AA8F0`-`0x9AA930`), `GetCurrentCharacterDesc` (`0x9AA950`),
+`SetCurrentCharName` (`0x9AAA90`, the locking setter),
+`_ClearCurrentCharUsage` (`0x9AAC00`), `_TryToLockCharacter` (`0x9AACC0`),
+`SetRandomPrefabChar` (`0x9AAD90`), `CheckCharacterUsage` (`0x9AAE70`),
+`_ForceClearCurrentCharUsage` (`0x9AB010`),
+`_UpdateProfileCurrentCharIfOwner` (`0x9AB070`),
+`PushCurrentCharDescToEntity` (`0x9AB100`),
+`SwitchCurrentCharToExistingChar` (`0x9AB160`),
+`SwitchAwayFromOtherProfileCharIfNeeded` (`0x9AB250`),
+`HasAnyProfileChars`, `HasProfileCharWithName`, `HasUnviewedPiecesForSlot`,
+`HasAnyUnviewedItems`, `HasUnviewedClothing`, `HasUnviewedHairOrMakeup`,
+`HasUnviewedInstruments` (`0x9AB2D0`-`0x9AB810`). The unlocked setter
+`0x9A9BB0` (field writes, the profile's saved character and the session)
+is named `_SetCurrentCharName` (inferred). `CharType`'s values are 0 (the
+user's profile character), 1 (a prefab) and 2 (another user's profile
+character).
+
+The SOMP request steps are new: `GetOnlineName` (`0x9AB8B0`, weak),
+`Get/SetSompRequestState` (`0x9AB960`, `0x9AB970`), `GetSompParts`,
+`GetSompPartStates` (`0x9AB980`, `0x9AB990`), `ResetSompRequests`
+(`0x9AB9A0`), `SetSompParts` (`0x9ABA70`), `SetSompPart` (`0x9ABC70`; parts
+0-5 are guitar, bass, drums, pro drums, vocals, harmonies) and
+`SetSompDifficulty` (`0x9ABE50`). `SompRequestState` steps from 4 (idle)
+to 10 (difficulty granted). The fields at +0x8C (`mSompRequestState`) and
++0xA8/+0xC8 (`mSompParts`, a `vector<Symbol>`, and `mSompPartStates`, a
+`vector<int>`) are renamed accordingly. Slot 20 now returns the profile's
+`IRBAchievementLogger`.
 
 `LocalBandUser` (552 bytes, vtable `0x1960620`) keeps an `RBGameplayOptions`
 (+0xE8), a session view of the options (`SessionGameplayOptions`, vtable
-`0x1960788`, +0x1B8), an `FTUEPersistentData` (+0x1C8) and the preference
-values for use without a profile. Reconstructed: constructor, destructor,
-`_Reset`, the preference setters, the picked getters, `_ResetPreferences`,
-slots 12, 24 and 42. The getters that read the profile manager
-(`0xD5D060`, `0xD5CEB0`) or `RBUserPreferencesPersistentData`'s accessors
-(`0xD68C50`-`0xD68F30`), and the SOMP calls, are declared only.
+`0x1960788`, 32 forwarding slots with the guitar solo mode and drum fill
+logic fixed at 1), an `FTUEPersistentData` (+0x1C8) and the preference
+values for use without a profile. The profile's options, events and
+preferences are used when the user's slot owns the profile's settings
+(`RBProfileMgr::SlotOwnsProfileSettings`, `0xD5D060`, declared for this).
+Not reconstructed: `IsSompLagging` (`0x92ACD0`, client `0x990140`),
+`PickSymbol` (`0x92B330`, the track texture list's `0xF64660`),
+`_UpdateSompMember` (`0x92B3B0`, `theRBSompSessionMgr` `0xD30CF0`) and
+`_SendSompPreferences` (`0x92B3E0`, client `0x9883F0`).
 
 `RemoteBandUser` (1352 bytes, vtable `0x19621C0`) keeps the session's
-member record (opaque), a `GameplayOptions` (+0x340), the name (+0x418) and
-online id text (+0x420). Only the small slots are reconstructed.
+member record (+0xE8, an object with its own vtable `0x1962318`, not
+modelled), a `GameplayOptions` (+0x340), the owner's id (+0x3F8), the
+member's `RakNet::RakNetGUID` (+0x408), the name (+0x418) and online id
+text (+0x420). Reconstructed besides the small slots: `SetSessionRecord`
+(`0x9A5220`), `_GetOnlineIDWithoutProfile` (`0x9A5310`) and
+`GetPreferenceFlag0` (`0x9A54E0`). Not reconstructed: the constructor,
+destructor and `_Reset` (they build the member record), and
+`GetPreferenceSymbol`/`GetPreferenceIndex` (`0x9A53B0`, `0x9A5450`,
+`theRBSompSessionMgr` `0xD324C0`, not declared).
 
 ### RBBandUserMgr
 
 The 352-byte subclass (vtable `0x1960498`) created by `RBBandUserMgrInit`
 (`0x9231C0`), which sets `TheRBBandUserMgr` (`0x1ADFB18`) and
-`theBandUserMgr`, calls `Init`, `SetTheUserMgr` and registers
-`RBBandUserMgrTerminate` (`0x923190`) as an exit callback. `_CreateUsers`
-(`0x923520`) makes eight `LocalBandUser`s and three `RemoteBandUser`s. It
-also keeps the local (+0x100) and remote (+0x120) lists and the session
-leader's member id (+0x140) and user id (+0x150). Reconstructed: the
-creator, terminator, constructor, destructor, `_CreateUsers`,
-`HasProfileAndController` (`0x923300`), `GetRBBandUserFromSlot`
-(`0x9249B0`), `GetRemoteUserFromSlot` (`0x9249C0`) and
-`GetLocalUserFromSlot` (`0x924A20`). Not reconstructed: the session-filtered
-user lists (`0x923AF0`-`0x924970`) and the session updates
-(`0x925680`-`0x926610`, called from `RBOvershellCom::_PollRemoteUsers`).
+`theBandUserMgr`. `_CreateUsers` (`0x923520`) makes eight `LocalBandUser`s
+and three `RemoteBandUser`s, kept also in the local (+0x100) and remote
+(+0x120) lists; the session leader's member id (`RakNet::RakNetGUID`,
++0x140) and user id (+0x150) follow. Every function of
+`0x923190`-`0x9268E0` is reconstructed; the static initializer
+(`0x9268F0`) builds the RakNet header's unassigned ids and the SOMP
+session settings' defaults and is not.
+
+The user queries the map's `BandUserMgr` had moved here and take more
+filters (`RBBandUserFlags`: 0x2 local, 0x40/0x80 without/with a joypad,
+0x100/0x200/0x400 not a guitar, microphone or drum controller):
+`_GetBandUsers` (`0x923AF0`), `_GetRBBandUsers` (`0x923E70`),
+`_GetLocalUsers` (`0x9241F0`), `_GetRemoteUsers` (`0x924570`),
+`CountBandUsers` (`0x924A60`), `GetNumLocalParticipants` (`0x925240`),
+`GetLocalParticipants` (`0x9252C0`), `GetNumConnectedUsers` (`0x9252E0`),
+`GetParticipatingBandUsers` (`0x925360`), `GetLocalUsersWithAnyController`
+(`0x925380`), `GetLocalUsersNotParticipatingWithAnyController`
+(`0x9253A0`), `GetLocalNonParticipantsWithControllerType` (`0x9253C0`),
+and `GetBandUserByProfile` (`0x9248F0`, with a settings-owner flag). New:
+`GetLocalSompLeader` (`0x925410`), `GetLocalParticipantFromPad`
+(`0x925480`), `GetRemoteNonParticipants` (`0x925540`),
+`GetSlotsWithoutSompHost` (`0x925560`, weak).
+
+The session updates take the member table of `theRBSompSessionMgr`
+(`SompSessionMembers`, the manager's part from +0x180: six 56-byte
+`SompSessionMember`s at +0x820 and their count at +0x970; declared in
+`RBBandUserMgr.h` and to be moved to `rb_meta/somp`): `UpdateSompLeader`
+(`0x925680`, exports "somp_leader_changed"), `_FindSompMember`
+(`0x925D20`), `ResetSompState` (`0x925E10`), `UpdateSompHosts`
+(`0x925EE0`), `UpdateSompReady` (`0x926050`). The first-time-user events:
+`HasAnyoneSeenEvent` (`0x9261C0`), `_GetFTUEDataForAllUsers` (`0x926270`),
+`MarkParticipatingUsersEventSeen` (`0x926620`). The overshell checks:
+`DoAnyUsersHaveTheirOvershellSlotOpen` (`0x9266B0`),
+`DoAllUsersHaveTheirOvershellSlotOpen` (`0x926770`),
+`DoAllUsersHaveTheirOvershellSlotClosed` (`0x926830`). All these names
+except the new ones are the map's `BandUserMgr` names.
 
 ### Gameplay options
 
@@ -189,3 +265,10 @@ names inferred), `RBPlayer::ChangeDifficulty` (`0xA5F1B0`, weak match) in
 `src/rb_game/players/RBPlayer.h`, and `MicManagerInterface` and three
 `MicClientMapper` members with `theMicClientMapper` (`0x1ADF358`) in
 `src/mic/core/MicClientMapper.h` (see [rb-game-mics.md](rb-game-mics.md)).
+
+The rest of the band users added: `net/RakNetTypes.h` (`RakNet::RakNetGUID`,
+statically linked RakNet), `OnlineID::SetAccountIdFromString`
+(`0x11AE6D0`), `RBProfileMgr::SlotOwnsProfileSettings` (`0xD5D060`), the
+`RBCharManager` prefab locks (`0xFC7FC0`-`0xFC95D0`),
+`RBOutfitPieceLoader::GetRockShopFilesForOutfitSlot` (`0x100DED0`, weak)
+and the empty `RBChar::RBCharGender`.

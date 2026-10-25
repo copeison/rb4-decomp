@@ -19,6 +19,9 @@ public:
     // Sets the account id. Name not in the reference map; the map's
     // SetOnlineID takes an SceNpOnlineId.
     void SetAccountId(const unsigned long& accountId);  // 0x11AE6B0
+    // Sets the account id from its decimal text. Name not in the reference
+    // map.
+    void SetAccountIdFromString(const char* text);  // 0x11AE6D0
 
     unsigned long mAccountId;
     bool mValid;

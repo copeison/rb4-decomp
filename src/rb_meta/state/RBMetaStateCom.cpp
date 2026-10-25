@@ -30,6 +30,8 @@
 #include "os/system/System.h"
 #include "persistence/saveload/SaveLoadMgr.h"
 #include "rb_game/mics/GameMicManager.h"
+#include "rb_game/users/RBBandUser.h"
+#include "rb_game/users/RBBandUserMgr.h"
 #include "rb_meta/character/RBCharacterMenuMgr.h"
 #include "rb_meta/clans/RBClanMgr.h"
 #include "rb_meta/dialog/DialogMgrCom.h"
@@ -734,6 +736,17 @@ void RBMetaState::Poll() {
         if (TheGameMicManager->HasMic(MicClientID{slot, -1})) {
             mNumMicsConnected++;
         }
+    }
+}
+
+// Reconstructed from eboot.elf at 0xBB5C60.
+void RBMetaState::_UpdateJoinedSlots() {
+    if (theBandUserMgr == nullptr) {
+        return;
+    }
+    for (int slot = 0; slot < kNumGameSlots; slot++) {
+        const RBBandUser* const user = TheRBBandUserMgr->GetRBBandUserFromSlot(slot);
+        mSlotJoined[slot] = user != nullptr && user->IsLocal();
     }
 }
 

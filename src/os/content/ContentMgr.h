@@ -62,9 +62,19 @@ public:
     // 0x3B1CF7); the flag is not modelled.
     bool AreAllMountsGoingToFailDueToCheat();
 
+    // Whether the last refresh finished (state 1). The match to the map's
+    // name rests on its place before HasNeverRefreshed, so it is weak.
+    bool IsRefreshDone() const;  // 0x392FF0
     // True while a refresh is under way (states 2-4 and above 5). The
     // evidence for the name is weak.
     bool IsRefreshInProgress() const;  // 0x393010
+    // Marks the content for a new refresh.
+    void ForceDirty();  // 0x393030
+    // Starts a refresh of the content. The match to the map's name is weak.
+    void StartRefresh();  // 0x393260
+    // Limits the discovery to the content included with the game; turning
+    // it off marks the content for a new refresh.
+    void SetDiscoverIncludedContentOnly(bool includedOnly);  // 0x395180
     // Asks for the content to be mounted, holding a mount reference. False
     // when it cannot be mounted.
     bool MountContent(Symbol content);  // 0x3949B0
