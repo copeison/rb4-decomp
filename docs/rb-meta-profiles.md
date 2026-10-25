@@ -9,19 +9,33 @@ that creates profiles is in
 
 ## Files
 
-| Object | Range | Source | State |
-| --- | --- | --- | --- |
-| `rb_meta/RBProfile.o` | `0xD53430`-`0xD5B31F` | `src/rb_meta/profiles/RBProfile.cpp` | partly reconstructed |
-| `rb_meta/FTUEPersistentData.o` | `0xD45270`-`0xD456EB` | `src/rb_meta/persistentdata/FTUEPersistentData.cpp` | reconstructed |
-| `rb_meta/RBCampaignGigProgressPersistentData.o` | `0xD4CCA0`-`0xD4D51B` | `src/rb_meta/persistentdata/RBCampaignGigProgressPersistentData.cpp` | reconstructed |
-| `rb_meta/RBCampaignCityProgressPersistentData.o` | `0xD4B660`-`0xD4CC9F` | `.../RBCampaignCityProgressPersistentData.h` | declared |
-| `rb_meta/RBCampaignBandPersistentData.o` | `0xD464A0`-`0xD4B65F` | `.../RBCampaignBandPersistentData.h` | declared |
-| `rb_meta/RBCharacterPersistentData.o` | `0xD4D520`-`0xD4FC1F` | `.../RBCharacterPersistentData.h` | declared |
-| `rb_meta/RBGameplayOptions.o` | `0xD52AF0`-`0xD5342F` | `.../RBGameplayOptions.h` | declared |
-| `rb_meta/RBRockShopPersistentData.o` | `0xD62D50`-`0xD650EF` | `.../RBRockShopPersistentData.h` | declared |
-| `rb_meta/SongPersistentData.o` | from `0xD69800` | `.../SongPersistentData.h` | declared |
-| `rb_meta/RBAchPersistentData.o`, `_PS4.o` | `0xF07280`, from `0xF02810` | `.../RBAchPersistentData.h`, `RBAchPersistentData_PS4.h` | declared |
-| newer objects (below) | see the headers | `src/rb_meta/persistentdata/` | declared |
+| Object | Range | Source (`src/rb_meta/...`) |
+| --- | --- | --- |
+| `rb_meta/RBProfile.o` | `0xD53430`-`0xD5B31F` | `profiles/RBProfile.cpp` |
+| `rb_meta/FTUEPersistentData.o` | `0xD45270`-`0xD456EB` | `persistentdata/FTUEPersistentData.cpp` |
+| (RBBTMBandPersistentData, declared) | `0xD456F0`-`0xD4600F` | `persistentdata/RBBTMBandPersistentData.h` |
+| (RBBTMPersistentData) | `0xD46010`-`0xD4649B` | `persistentdata/RBBTMPersistentData.cpp` |
+| `rb_meta/RBCampaignBandPersistentData.o` | `0xD464A0`-`0xD4B65F` | `persistentdata/RBCampaignBandPersistentData.cpp` |
+| `rb_meta/RBCampaignCityProgressPersistentData.o` | `0xD4B660`-`0xD4CC9F` | `persistentdata/RBCampaignCityProgressPersistentData.cpp` |
+| `rb_meta/RBCampaignGigProgressPersistentData.o` | `0xD4CCA0`-`0xD4D51B` | `persistentdata/RBCampaignGigProgressPersistentData.cpp` |
+| `rb_meta/RBCharacterPersistentData.o` | `0xD4D520`-`0xD4FC1F` | `persistentdata/RBCharacterPersistentData.cpp` |
+| (RBClanPersistentData) | `0xD4FC20`-`0xD52AEB` | `persistentdata/RBClanPersistentData.cpp` |
+| `rb_meta/RBGameplayOptions.o` | `0xD52AF0`-`0xD5342F` | `persistentdata/RBGameplayOptions.cpp` |
+| `rb_meta/RBRockShopPersistentData.o` | `0xD62D50`-`0xD650EF` | `persistentdata/RBRockShopPersistentData.cpp` |
+| (RBSetlistPersistentData) | `0xD650F0`-`0xD65CAF` | `persistentdata/RBSetlistPersistentData.cpp` |
+| (RBSompSettingsPersistentData) | `0xD65CB0`-`0xD663EF` | `persistentdata/RBSompSettingsPersistentData.cpp` |
+| (RBUserPreferencesPersistentData) | `0xD68800`-`0xD6907F` | `persistentdata/RBUserPreferencesPersistentData.cpp` |
+| (RBSeenIdsPersistentData) | `0xD69080`-`0xD697EB` | `persistentdata/RBSeenIdsPersistentData.cpp` |
+| `rb_meta/SongPersistentData.o` | `0xD69800`-`0xD6DD6F` | `persistentdata/SongPersistentData.cpp` |
+| `rb_meta/RBAchPersistentData_PS4.o` | `0xF02810`-`0xF0498B` | `persistentdata/RBAchPersistentData_PS4.cpp` |
+| `rb_meta/RBAchPersistentData.o` | `0xF07280`-`0xF073DB` (after RBAchUtl.o) | `persistentdata/RBAchPersistentData.cpp` |
+| (RBSongLeaderboard) | `0xB515E0`-`0xB530FB` | `leaderboards/RBSongLeaderboard.cpp` |
+| (RBMiniLeaderboardResults) | `0xCB9FE0`-`0xCBD7AF` | `leaderboards/RBMiniLeaderboardResults.cpp` |
+
+Objects in parentheses are newer than the map; their class names are
+inferred (weak). `RBAchUtl.h` declares `RBAch::SonglistProficiency` and
+`RBAch::CampaignData`; `entitlements/RBEntitlementMgr.h` the entitlement
+manager.
 
 Each object ends with a static initializer (`0xD456B0`, `0xD4D4E0`,
 `0xD52AB0`, `0xD5B2E0`, ...) that sets globals of a shared header; it is
@@ -92,49 +106,73 @@ entitlement jobs and 10 s for the upload.
 
 ## Pieces
 
-- `FTUEPersistentData` (56 bytes, vtable `0x197D408`): a vector of seen
-  event symbols; revision-0 block. `MarkEventSeen` always dirties.
-- `RBCampaignGigProgressPersistentData` (48, `0x197D760`): venue, stars,
-  display stars, highest score, attempted; revision 2 (highest score from
-  1, display stars from 2). Copy constructor and assignment are emitted.
-- `RBCampaignCityProgressPersistentData` (96, `0x197D6F0`): fans, cash,
-  `map<Symbol, gig>` and the profile.
-- `RBCampaignBandPersistentData` (768, `0x197D4F0`): `mRecentlyPlayed` at
-  352; the rest is opaque.
-- `RBGameplayOptions` (208, `0x197D8A0`): PersistentData plus an rb_game
-  base at +24 (vtable `0x197D908`, constructor `0xA4C280`) that holds the
-  option values.
-- `SongPersistentData` (408, `0x197E2C8`) and
-  `QuickplaySongPersistentData` (464, `0x197E318`); the base's eighth slot
-  (`SetChecksum`) is newer than the map.
+| Class | Bytes | Vtable | Revision | Contents |
+| --- | ---: | --- | ---: | --- |
+| `FTUEPersistentData` | 56 | `0x197D408` | 0 | seen event symbols; `MarkEventSeen` always dirties |
+| `RBBTMPersistentData` | 80 | `0x197D498` | 0 | playthroughs started and ended, the best playthrough (a 40-byte rb_game record, vtable `0x1963298`) |
+| `RBCampaignBandPersistentData` | 768 | `0x197D4F0` | 19 | name, cities, tours, fans and cash per tour, the cities' progress, session musicians, songs and songs played, pending fixes, BTM band data; Load converts revisions 8-17 |
+| `RBCampaignCityProgressPersistentData` | 96 | `0x197D6F0` | 0 | fans, cash, `map<Symbol, gig>` |
+| `RBCampaignGigProgressPersistentData` | 48 | `0x197D760` | 2 | venue, stars, display stars, highest score, attempted |
+| `RBCharacterPersistentData` | 128 | `0x197D7A8` | 4 | at most 16 `RBChar::RBCharDesc` (3984 bytes), the saved character, the users' characters under a lock |
+| `RBClanPersistentData` | 136 | `0x197D7F0` | 6 | cached clan points and tiers, Band Wars spotlight scores per song (layouts changed at 5 and 6) |
+| `RBGameplayOptions` | 208 | `0x197D8A0`, `0x197D908` | 11 | `PersistentData` plus rb_game's `GameplayOptions` |
+| `RBRockShopPersistentData` | 200 | `0x197DF90` | 3 | unlocked, owned and unviewed piece short names (`set<Symbol>`) |
+| `RBSetlistPersistentData` | 80 | `0x197E028` | 0 | `vector<RBSetlist>` (96-byte rb_game records) under a lock |
+| `RBSompSettingsPersistentData` | 64 | `0x197E098` | 1 | the SOMP session settings (40 bytes) |
+| `RBUserPreferencesPersistentData` | 56 | `0x197E210` | 1 | a symbol, a value and four flags a band user copies |
+| `RBSeenIdsPersistentData` | 88 | `0x197E280` | - | `set<Symbol>` |
+| `SongPersistentData` | 408 | `0x197E2C8` | 8 | scores, stars, accuracies and eligibility per score type and difficulty, play count, last played |
+| `QuickplaySongPersistentData` | 464 | `0x197E318` | 3 | adds the song's 56-byte checksum |
+| `RBAchPersistentData` | 40 | `0x198F8C8`, `0x198F918` | - | PersistentData plus the achievement interface (`IRBAchievementLogger`, 31 slots) at +24 |
+| `RBAchPersistentData_PS4` | 512 | `0x198F558` | 6 | trophy context and handle, proficiency and campaign data, counters, a threaded trophy unlocker (62 trophies) |
 
-Newer than the map, named from their contents (weak): `RBBTMPersistentData`
-(80, `0x197D4A8`), `RBClanPersistentData` (136, `0x197D7F0`),
-`RBSetlistPersistentData` (80, `0x197E028`),
-`RBSompSettingsPersistentData` (64, `0x197E098`),
-`RBUserPreferencesPersistentData` (56, `0x197E210`),
-`RBSeenIdsPersistentData` (88, `0x197E280`).
+`RBSongLeaderboard` (96 bytes, vtable `0x196F568`) keeps a board of 56-byte
+rows per score type; `RBMiniLeaderboardResults` (664, `0x1978960`) the
+pad's score submission results.
+
+The profile's remaining functions are reconstructed: the leaderboard
+caches (created on first use under `mLeaderboardLock`, and
+`GetLeaderboardScore`, the profile's own row), the song library's score
+cache (`mSongScoreCache` holds leaderboard rows), `GetOrCreate*SongData`,
+the played-song sets, `GetHighestStatStars`, `IsSongEntitled` (the profile's
+entitlements, then `RBEntitlementMgr::IsSongEntitled`), the entitled-song
+sets over ids 1-327, `UpdateSongPackAchievements` (entitlements 15-17) and
+the ratings (1 to 5, dropped at 0).
 
 ## Weak names
 
 - Every field name of RBProfile; `GetNumBands`, `GetNumQuickplaySongs`,
   the rating, entitlement, job and seen-id methods, `_StartOnlineCheck`,
   `IncrementAchievementLogCount`, `ClearClan`, `ClearClanName`.
-- The newer pieces' class names and the foreign types declared in
-  `RBProfile.h` (`RBMiniLeaderboardResults`, `RBRivalsPlayerProfile`,
-  `RBSongLeaderboard`) and in `RBProfile.cpp` (`DingoUserSession`,
-  `dingo_find_user_session`).
+- The newer pieces' class names, their records' names, the leaderboard
+  classes, `RBRivalsPlayerProfile`, `IRBAchievementLogger`,
+  `RBEntitlementMgr` and `DingoUserSession`/`dingo_find_user_session`.
+- The profile's newer helpers: the score cache, `GetLeaderboardScore`,
+  `GetMoreScoredType`, the played-song and entitled-song sets and
+  `UpdateSongPackAchievements`; that the score cache's rows are leaderboard
+  rows.
 - In the map the campaign song lookups take a band; this build keeps one
   campaign map in the profile, and `GetOrCreateCampaignSongData` comes
   before `GetOrCreateQuickplaySongData`.
 
 ## Not reconstructed
 
-In RBProfile.o: the leaderboard caches (`0xD55800`-`0xD55DC0`), the score
-cache (`0xD56000`-`0xD564F0`), `GetOrCreate*SongData`, `GetAllSongsPlayed`,
-`GetHighestStatStars`, the song-id range helpers (`0xD58600`-`0xD58940`),
-`IsSongEntitled`, the achievement update `0xD589C0`, rating increase and
-decrease, `_GetSavedEntitlements` (inlined into Save here) and the
-templates. All piece objects except FTUE and the gig progress are declared
-only; their layouts are opaque where the profile does not reach into them.
+Declared only, because they call classes that are not modelled:
+
+- Character: `UpdateCharacter`, `CheckCharUsage`, `_IsUserUsingChar`
+  (RBCampaignMgr and BandUser's character members).
+- Campaign band: the song-map reader `0xD4AF20` (the generic template).
+- Rock Shop: `_AwardOutfitPiece` (achievement slot 22).
+- Song data: `Update` (`0xD6B320`; RBPlayer, the game data).
+- Gameplay options: `_OnVocalStemVolumeChanged`, `_OnMicVolumeChanged`.
+- Achievements: `_IsAutokickInBand`, `LogMidSongStats`,
+  `LogFinalizedStats`, `PushPendingAchievements`, `_UnlockTrophy`,
+  `_TryPresentPendingTrophies`, `_CanPresentTrophyNow` (the game's stats and
+  players).
+- Leaderboards: `Entry::Read`, `RequestLeaderboard`,
+  `OnLeaderboardJobComplete`, `OnScoreSubmissionsComplete` (JSON and the
+  server jobs).
+- The rb_game records the pieces embed (the BTM record, `RBSetlist`, the
+  SOMP settings) are declared in the pieces' headers.
+
 `AddEntitlement` omits the entitlement manager's own songs (`0xB46170`).

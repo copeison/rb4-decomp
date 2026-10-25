@@ -29,6 +29,8 @@ public:
     // Slots 0-1: 0x8C4A20, 0x8C4AB0.
     ~UIListData() override;
 
+    // Removes every row. Not reconstructed.
+    void Clear();  // 0x8C36E0
     // The number of rows. Not reconstructed.
     unsigned long GetNumRows() const;  // 0x8C3BE0
 

@@ -22,7 +22,9 @@ public:
     // The revision Save writes. Name not in the reference map.
     static constexpr int kRevision = 2;
 
-    explicit RBCampaignGigProgressPersistentData(RBProfile* profile);  // 0xD4CCA0
+    // The city's map builds its nodes with the default, a null profile
+    // (0xD4CA50).
+    explicit RBCampaignGigProgressPersistentData(RBProfile* profile = nullptr);  // 0xD4CCA0
     // The map's build has no copy constructor or assignment; the binary
     // emits them for the city's map. They copy the values and mark the
     // copy dirty.

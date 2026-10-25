@@ -9,10 +9,12 @@
 
 #include <np/np_common.h>
 #include <cstring>
+#include <functional>
 
 #include "os/locale/Locale.h"
 #include "os/memory/MemMgr.h"
 #include "os/platform/PlatformMgr.h"
+#include "rb_meta/entitlements/RBEntitlementMgr.h"
 #include "rb_meta/persistentdata/RBAchPersistentData_PS4.h"
 #include "rb_meta/profiles/RBProfileMgr.h"
 #include "rb_meta/songs/SongMetadata.h"
@@ -88,6 +90,31 @@ enum SignInState {
     kSignInUnknown = 5,
 };
 
+// Whether the song is a public RB4 song, which GetHighestStatStars counts.
+// Inlined. Name not in the reference map.
+bool IsCountedRB4Song(int songId) {
+    SongMetadata* const metadata = theSongMgr->GetMetadata(songId, false);
+    return metadata != nullptr && metadata->IsRB4Song() && !metadata->IsPrivate();
+}
+
+// The song packs whose ownership logs a trophy (UpdateSongPackAchievements).
+// Names not in the reference map.
+constexpr int kSongPackEntitlement15 = 15;
+constexpr int kSongPackEntitlement16 = 16;
+constexpr int kSongPackEntitlement17 = 17;
+
+// The highest song rating. Name not in the reference map.
+constexpr unsigned char kMaxSongRating = 5;
+
+// Calls the function with each song id an entitlement can name, 1 to 327.
+// Inlined into the entitlement sets, which build a std::function (vtables
+// 0x197DDC0, 0x197DE10, 0x197DE60). Name not in the reference map.
+void ForEachEntitlementSongId(const std::function<void(int)>& function) {
+    for (int songId = 1; songId <= kLastSavedEntitlement; ++songId) {
+        function(songId);
+    }
+}
+
 // The node of a set or map key.
 template <typename Key>
 const Key& NodeKey(const eastl::rbtree_node_base* node) {
@@ -95,6 +122,10 @@ const Key& NodeKey(const eastl::rbtree_node_base* node) {
 }
 
 }  // namespace
+
+// Adds the ids of the songs with results to the set. Name not in the
+// reference map.
+static void AddSongsPlayed(eastl::set<int>& songs, const eastl::map<int, QuickplaySongPersistentData>& songData);
 
 // Reconstructed from eboot.elf at 0xD53430. _StartOnlineCheck is inlined.
 RBProfile::RBProfile(int padNum)
@@ -220,7 +251,7 @@ void RBProfile::DeleteAll() {
     mQuickplaySongData.clear();
     mCampaignSongData.clear();
     mSongRatings.clear();
-    mGameplayOptions.ResetOptions();
+    mGameplayOptions.Clear();
     mSompSettings.Clear();
     mCharacterData.Clear();
     mCampaignBands.clear();
@@ -348,6 +379,22 @@ void RBProfile::Save(BinStream& stream) const {
     }
 }
 
+// Reconstructed from eboot.elf at 0xD54C50.
+eastl::set<int> RBProfile::_GetSavedEntitlements() const {
+    unsigned int saved = 0;
+    MemPushTemp(saved, true, true);
+    eastl::set<int> entitlements;
+    for (const eastl::rbtree_node_base* node = mEntitlements.begin(); node != mEntitlements.end();
+         node = eastl::RBTreeIncrement(node)) {
+        const int songId = NodeKey<int>(node);
+        if (songId >= kFirstSavedEntitlement && songId <= kLastSavedEntitlement) {
+            entitlements.insert(songId);
+        }
+    }
+    MemPopTemp(saved);
+    return entitlements;
+}
+
 // Reconstructed from eboot.elf at 0xD54E00. Saves older than revision 13
 // are dropped. The binary reads each piece through a Revision::AsOfOp of
 // its type; the revision checks are written out here. A guest profile whose
@@ -473,6 +520,64 @@ void RBProfile::_PreparePersistentData() {
     mClanData.mParent = this;
 }
 
+// Reconstructed from eboot.elf at 0xD55800. The new board is copied into
+// the cache; the copies start without a subscription.
+RBSongLeaderboard* RBProfile::GetSongLeaderboard(int songId) {
+    ScopedCritSec leaderboardLock(mLeaderboardLock);
+    auto it = mSongLeaderboards.find(songId);
+    if (it == mSongLeaderboards.end()) {
+        static const long sHeap = MemFindHeap("profile");
+        MemPushHeap(sHeap);
+        const RBSongLeaderboard board(this, songId, false);
+        it = mSongLeaderboards.insert(eastl::pair<const int, RBSongLeaderboard>{songId, board}).first;
+        MemPopHeap();
+    }
+    return &it->second;
+}
+
+// Reconstructed from eboot.elf at 0xD55AB0.
+RBSongLeaderboard* RBProfile::GetSongLeaderboard(Symbol song) {
+    return GetSongLeaderboard(theSongMgr->GetSongIDFromShortName(song, true));
+}
+
+// Reconstructed from eboot.elf at 0xD55AE0.
+RBSongLeaderboard* RBProfile::GetFriendsSongLeaderboard(int songId) {
+    ScopedCritSec leaderboardLock(mLeaderboardLock);
+    auto it = mFriendsSongLeaderboards.find(songId);
+    if (it == mFriendsSongLeaderboards.end()) {
+        static const long sHeap = MemFindHeap("profile");
+        MemPushHeap(sHeap);
+        const RBSongLeaderboard board(this, songId, true);
+        it = mFriendsSongLeaderboards.insert(eastl::pair<const int, RBSongLeaderboard>{songId, board}).first;
+        MemPopHeap();
+    }
+    return &it->second;
+}
+
+// Reconstructed from eboot.elf at 0xD55D90.
+RBSongLeaderboard* RBProfile::GetFriendsSongLeaderboard(Symbol song) {
+    return GetFriendsSongLeaderboard(theSongMgr->GetSongIDFromShortName(song, true));
+}
+
+// Reconstructed from eboot.elf at 0xD55DC0. The board is copied first; the
+// profile's row is the one with its platform user id.
+int RBProfile::GetLeaderboardScore(int songId, const ScoreType& type, bool friends) {
+    ScopedCritSec leaderboardLock(mLeaderboardLock);
+    const RBSongLeaderboard board = friends ? *GetFriendsSongLeaderboard(songId) : *GetSongLeaderboard(songId);
+    if (!board.HasResults(type)) {
+        return 0;
+    }
+    const eastl::vector<RBSongLeaderboard::Entry> entries = board.GetEntries(type);
+    const OnlineID onlineId = mOnlineID;
+    const Symbol platformUid(onlineId.ToString());
+    for (const RBSongLeaderboard::Entry& entry : entries) {
+        if (entry.mPlatformUid == platformUid) {
+            return static_cast<int>(entry.mScore);
+        }
+    }
+    return 0;
+}
+
 // Reconstructed from eboot.elf at 0xD55FB0.
 void RBProfile::LockSongScoreCache() {
     mSongScoreCacheLock.Enter();
@@ -481,6 +586,41 @@ void RBProfile::LockSongScoreCache() {
 // Reconstructed from eboot.elf at 0xD55FE0.
 void RBProfile::UnlockSongScoreCache() {
     mSongScoreCacheLock.Exit();
+}
+
+// Reconstructed from eboot.elf at 0xD56000.
+eastl::vector<RBSongLeaderboard::Entry>* RBProfile::GetCachedSongScores(const int& songId) {
+    ScopedCritSec scoreCacheLock(mSongScoreCacheLock);
+    return &mSongScoreCache[songId];
+}
+
+// Reconstructed from eboot.elf at 0xD56110.
+long RBProfile::GetCachedSongScoresStamp(const int& songId) {
+    ScopedCritSec scoreCacheLock(mSongScoreCacheLock);
+    return mSongScoreCacheStamps[songId];
+}
+
+// Reconstructed from eboot.elf at 0xD56210.
+void RBProfile::SetCachedSongScores(
+    const int& songId,
+    const eastl::vector<RBSongLeaderboard::Entry>& scores,
+    long stamp) {
+    ScopedCritSec scoreCacheLock(mSongScoreCacheLock);
+    static const long sHeap = MemFindHeap("profile");
+    MemPushHeap(sHeap);
+    eastl::vector<RBSongLeaderboard::Entry>& cached = mSongScoreCache[songId];
+    if (&cached != &scores) {
+        cached = scores;
+    }
+    mSongScoreCacheStamps[songId] = stamp;
+    MemPopHeap();
+}
+
+// Reconstructed from eboot.elf at 0xD564F0.
+void RBProfile::ClearCachedSongScores(const int& songId) {
+    ScopedCritSec scoreCacheLock(mSongScoreCacheLock);
+    mSongScoreCache[songId].clear();
+    mSongScoreCacheStamps[songId] = 0;
 }
 
 // Reconstructed from eboot.elf at 0xD56660.
@@ -570,9 +710,137 @@ QuickplaySongPersistentData* RBProfile::GetCampaignSongData(Symbol song) {
     return GetCampaignSongData(theSongMgr->GetSongIDFromShortName(song, false));
 }
 
+// Reconstructed from eboot.elf at 0xD56EF0. A new song's results are
+// assigned into the map's default node and pointed back at the profile.
+QuickplaySongPersistentData* RBProfile::GetOrCreateCampaignSongData(Symbol song) {
+    const int songId = theSongMgr->GetSongIDFromShortName(song, true);
+    if (songId == 0) {
+        return nullptr;
+    }
+    ScopedCritSec songDataLock(mSongDataLock);
+    auto it = mCampaignSongData.find(songId);
+    if (it == mCampaignSongData.end()) {
+        static const long sHeap = MemFindHeap("profile");
+        MemPushHeap(sHeap);
+        const QuickplaySongPersistentData data(this, songId);
+        mCampaignSongData[songId] = data;
+        mCampaignSongData[songId].mParent = this;
+        it = mCampaignSongData.find(songId);
+        MemPopHeap();
+    }
+    return &it->second;
+}
+
+// Reconstructed from eboot.elf at 0xD57250. As GetOrCreateCampaignSongData.
+QuickplaySongPersistentData* RBProfile::GetOrCreateQuickplaySongData(Symbol song) {
+    const int songId = theSongMgr->GetSongIDFromShortName(song, true);
+    if (songId == 0) {
+        return nullptr;
+    }
+    ScopedCritSec songDataLock(mSongDataLock);
+    auto it = mQuickplaySongData.find(songId);
+    if (it == mQuickplaySongData.end()) {
+        static const long sHeap = MemFindHeap("profile");
+        MemPushHeap(sHeap);
+        const QuickplaySongPersistentData data(this, songId);
+        mQuickplaySongData[songId] = data;
+        mQuickplaySongData[songId].mParent = this;
+        it = mQuickplaySongData.find(songId);
+        MemPopHeap();
+    }
+    return &it->second;
+}
+
 // Reconstructed from eboot.elf at 0xD575B0.
 unsigned long RBProfile::GetNumQuickplaySongs() const {
     return mQuickplaySongData.size();
+}
+
+// Reconstructed from eboot.elf at 0xD575C0. Each song's results are
+// copied before they are asked; the song data lock is not taken.
+ScoreType RBProfile::GetMoreScoredType(ScoreType first, ScoreType second) const {
+    int firstCount = 0;
+    int secondCount = 0;
+    for (auto it = mQuickplaySongData.begin(); it != mQuickplaySongData.end(); ++it) {
+        const QuickplaySongPersistentData data(it->second);
+        firstCount += data.HasScore(first) ? 1 : 0;
+        secondCount += data.HasScore(second) ? 1 : 0;
+    }
+    return secondCount > firstCount ? second : first;
+}
+
+// Reconstructed from eboot.elf at 0xD576C0. The bands are read under their
+// own lock inside the song data's.
+eastl::set<int> RBProfile::GetAllSongsPlayed() const {
+    ScopedCritSec songDataLock(const_cast<CritSec&>(mSongDataLock));
+    eastl::set<int> songs;
+    AddSongsPlayed(songs, mQuickplaySongData);
+    AddSongsPlayed(songs, mCampaignSongData);
+    ScopedCritSec bandsLock(const_cast<CritSec&>(mBandsLock));
+    for (const RBCampaignBandPersistentData& band : mCampaignBands) {
+        for (const eastl::rbtree_node_base* node = band.mSongsPlayed.begin(); node != band.mSongsPlayed.end();
+             node = eastl::RBTreeIncrement(node)) {
+            songs.insert(NodeKey<int>(node));
+        }
+    }
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD57920.
+static void AddSongsPlayed(eastl::set<int>& songs, const eastl::map<int, QuickplaySongPersistentData>& songData) {
+    for (auto it = songData.begin(); it != songData.end(); ++it) {
+        songs.insert(it->second.GetID());
+    }
+}
+
+// Reconstructed from eboot.elf at 0xD57A30.
+eastl::set<int> RBProfile::GetQuickplaySongsPlayed() const {
+    ScopedCritSec songDataLock(const_cast<CritSec&>(mSongDataLock));
+    eastl::set<int> songs;
+    AddSongsPlayed(songs, mQuickplaySongData);
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD57B10.
+eastl::set<int> RBProfile::GetCampaignSongsPlayed() const {
+    ScopedCritSec songDataLock(const_cast<CritSec&>(mSongDataLock));
+    eastl::set<int> songs;
+    AddSongsPlayed(songs, mCampaignSongData);
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD57BF0. Only the quickplay songs count
+// toward `stars`; the best stars of each song count once toward
+// `rb4Stars`.
+void RBProfile::GetHighestStatStars(int& stars, int& rb4Stars) const {
+    ScopedCritSec songDataLock(const_cast<CritSec&>(mSongDataLock));
+    stars = 0;
+    rb4Stars = 0;
+    eastl::map<int, int> bestStars;
+    for (auto it = mQuickplaySongData.begin(); it != mQuickplaySongData.end(); ++it) {
+        const int songId = it->first;
+        const int songStars = it->second.GetHighStatStars();
+        stars += songStars;
+        if (IsCountedRB4Song(songId)) {
+            int& best = bestStars[songId];
+            best = best > songStars ? best : songStars;
+        }
+    }
+    ScopedCritSec bandsLock(const_cast<CritSec&>(mBandsLock));
+    for (const RBCampaignBandPersistentData& band : mCampaignBands) {
+        for (auto it = band.mSongData.begin(); it != band.mSongData.end(); ++it) {
+            const int songId = it->first;
+            if (!IsCountedRB4Song(songId)) {
+                continue;
+            }
+            const int songStars = it->second.GetHighStatStars();
+            int& best = bestStars[songId];
+            best = best > songStars ? best : songStars;
+        }
+    }
+    for (auto it = bestStars.begin(); it != bestStars.end(); ++it) {
+        rb4Stars += it->second;
+    }
 }
 
 // Reconstructed from eboot.elf at 0xD57FF0.
@@ -622,6 +890,14 @@ void RBProfile::IncrementAchievementLogCount() {
     }
 }
 
+// Reconstructed from eboot.elf at 0xD58180.
+bool RBProfile::IsSongEntitled(int songId) const {
+    if (HasEntitlement(songId)) {
+        return true;
+    }
+    return theRBEntitlementMgr->IsSongEntitled(songId, mPadNum);
+}
+
 // Reconstructed from eboot.elf at 0xD58210.
 bool RBProfile::HasEntitlement(int songId) const {
     return mEntitlements.find(songId) != mEntitlements.end();
@@ -663,6 +939,65 @@ void RBProfile::SetNeedsServerEntitlements(bool needed) {
     mServerEntitlementsJob.mNeeded = needed;
 }
 
+// Reconstructed from eboot.elf at 0xD58600.
+eastl::set<int> RBProfile::GetEntitledSongs() const {
+    unsigned int saved = 0;
+    MemPushTemp(saved, true, true);
+    eastl::set<int> songs;
+    ForEachEntitlementSongId([this, &songs](int songId) {
+        if (IsSongEntitled(songId)) {
+            songs.insert(songId);
+        }
+    });
+    MemPopTemp(saved);
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD58740.
+eastl::set<int> RBProfile::GetProfileEntitledSongs() const {
+    unsigned int saved = 0;
+    MemPushTemp(saved, true, true);
+    eastl::set<int> songs;
+    ForEachEntitlementSongId([this, &songs](int songId) {
+        if (HasEntitlement(songId)) {
+            songs.insert(songId);
+        }
+    });
+    MemPopTemp(saved);
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD58880.
+eastl::set<int> RBProfile::GetPlatformEntitledSongs() const {
+    unsigned int saved = 0;
+    MemPushTemp(saved, true, true);
+    eastl::set<int> songs;
+    ForEachEntitlementSongId([this, &songs](int songId) {
+        if (theRBEntitlementMgr->IsSongEntitled(songId, mPadNum)) {
+            songs.insert(songId);
+        }
+    });
+    MemPopTemp(saved);
+    return songs;
+}
+
+// Reconstructed from eboot.elf at 0xD589C0. The achievements' interface
+// slots run 28, 27 and 29 for the entitlements 15, 16 and 17.
+void RBProfile::UpdateSongPackAchievements() {
+    if (mAchData == nullptr) {
+        return;
+    }
+    if (IsSongEntitled(kSongPackEntitlement15)) {
+        mAchData->LogEntitlement15Owned();
+    }
+    if (IsSongEntitled(kSongPackEntitlement16)) {
+        mAchData->LogEntitlement16Owned();
+    }
+    if (IsSongEntitled(kSongPackEntitlement17)) {
+        mAchData->LogEntitlement17Owned();
+    }
+}
+
 // Reconstructed from eboot.elf at 0xD58BE0.
 bool RBProfile::IsEntitlementRetryWaiting() const {
     const float now = TheTimeMgr->mRealTime.SplitMs();
@@ -696,6 +1031,47 @@ unsigned char RBProfile::GetSongRating(int songId) const {
     return it != ratings.end() ? it->second : 0;
 }
 
+// Reconstructed from eboot.elf at 0xD58DF0. A rated song counts up to 5; a
+// new one starts at 1.
+bool RBProfile::IncreaseSongRating(int songId) {
+    static const long sHeap = MemFindHeap("profile");
+    MemPushHeap(sHeap);
+    bool changed = true;
+    const auto it = mSongRatings.find(songId);
+    if (it != mSongRatings.end()) {
+        if (it->second > kMaxSongRating - 1) {
+            changed = false;
+        } else {
+            ++it->second;
+        }
+    } else {
+        mSongRatings[songId] = 1;
+    }
+    if (changed) {
+        MakeDirty();
+    }
+    MemPopHeap();
+    return changed;
+}
+
+// Reconstructed from eboot.elf at 0xD58F90. A rating that reaches 0 is
+// dropped.
+bool RBProfile::DecreaseSongRating(int songId) {
+    static const long sHeap = MemFindHeap("profile");
+    MemPushHeap(sHeap);
+    bool changed = false;
+    const auto it = mSongRatings.find(songId);
+    if (it != mSongRatings.end() && it->second != 0) {
+        if (--it->second == 0) {
+            mSongRatings.erase(it);
+        }
+        MakeDirty();
+        changed = true;
+    }
+    MemPopHeap();
+    return changed;
+}
+
 // Reconstructed from eboot.elf at 0xD590C0.
 bool RBProfile::OutfitPieceIsUnlocked(const ResourcePath& piece) const {
     return mRockShopData.OutfitPieceIsUnlocked(piece);
@@ -722,12 +1098,12 @@ void RBProfile::PurchaseOutfitPiece(const ResourcePath& piece) {
 }
 
 // Reconstructed from eboot.elf at 0xD59110.
-bool RBProfile::HasSeenId(unsigned long id) const {
+bool RBProfile::HasSeenId(Symbol id) const {
     return mSeenIds.HasSeenId(id);
 }
 
 // Reconstructed from eboot.elf at 0xD59120.
-bool RBProfile::MarkIdSeen(unsigned long id) {
+bool RBProfile::MarkIdSeen(Symbol id) {
     return mSeenIds.MarkIdSeen(id);
 }
 

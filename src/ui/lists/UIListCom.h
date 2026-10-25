@@ -324,6 +324,14 @@ public:
     // Hides or shows the list, deactivating its instances. Name not in
     // the reference map. Not reconstructed.
     void SetHidden(bool hidden);  // 0x8B97F0
+    // The rows of the list's data, 0 without data. Not reconstructed.
+    unsigned long _GetDataRows() const;  // 0x8B7900
+    // Sends the list's selections to the component too. Not reconstructed.
+    void RegisterForSelectionHandling(Component* com);  // 0x8B9700
+    // Overrides whether the list's rows can be selected, or (with
+    // `overridden` clear) ends the override. Name not in the reference
+    // map. Not reconstructed.
+    void SetCanSelectOverride(bool overridden, bool canSelect);  // 0x8BD8A0
 
     // Inlined into "is_scrolling".
     bool IsScrolling() const {

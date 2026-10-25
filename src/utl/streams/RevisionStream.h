@@ -123,6 +123,29 @@ public:
     int mUntil;
 };
 
+// Reads the value only when the block was written at exactly revision
+// `at`, for a value only that revision saved. Name in the reference map;
+// field names are not. RBAchPersistentData_PS4.o emits
+// AtOp<eastl::vector<Symbol>> (vtable 0x198F810, Read 0xF04890),
+// RBGameplayOptions.o AtOp<bool> (vtable 0x197DA80, Read 0xD53390) and
+// RBRockShopPersistentData.o AtOp<eastl::set<Symbol>> (vtable 0x197DFF0,
+// Read 0xD65090); those callers read into a local and drop it.
+template <typename T>
+class AtOp : public RevisionOp {
+public:
+    AtOp(T* value, int at) : mValue(value), mAt(at) {}
+    ~AtOp() override {}
+
+    void Read(RevisionStream& stream) override {
+        if (stream.mReadRevision == mAt) {
+            stream >> *mValue;
+        }
+    }
+
+    T* mValue;
+    int mAt;
+};
+
 // Runs the operation on the stream. The map also has an lvalue overload.
 RevisionStream& operator>>(RevisionStream& stream, RevisionOp&& op);  // 0x1183960
 

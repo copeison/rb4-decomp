@@ -13,4 +13,10 @@ public:
     // The class symbol GameObject::CreateComponent takes; also "Text". Name
     // not in the reference map.
     static Symbol sClassName;  // 0x1AAD880
+
+    // Set the text and the localization token, marking the text for
+    // rebuilding when the component shows them. Not reconstructed; the
+    // names follow the map's order of the setters.
+    void SetTextUtf8(const char* text);  // 0x66A120
+    void SetTextToken(Symbol token);     // 0x66A1C0
 };

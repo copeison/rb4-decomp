@@ -85,6 +85,29 @@ public:
         rbtree_node_base* mpNode;
     };
 
+    class const_iterator {
+    public:
+        explicit const_iterator(const rbtree_node_base* node = nullptr) : mpNode(node) {}
+        const value_type& operator*() const {
+            return static_cast<const node_type*>(mpNode)->mValue;
+        }
+        const value_type* operator->() const {
+            return &static_cast<const node_type*>(mpNode)->mValue;
+        }
+        const_iterator& operator++() {
+            mpNode = RBTreeIncrement(mpNode);
+            return *this;
+        }
+        bool operator==(const const_iterator& other) const {
+            return mpNode == other.mpNode;
+        }
+        bool operator!=(const const_iterator& other) const {
+            return mpNode != other.mpNode;
+        }
+
+        const rbtree_node_base* mpNode;
+    };
+
     map() : mCompare(), mnSize(0), mAllocator("EASTL map") {
         mAnchor.mpNodeRight = &mAnchor;
         mAnchor.mpNodeLeft = &mAnchor;
@@ -114,7 +137,30 @@ public:
             mnSize = other.mnSize;
         }
     }
-    map& operator=(const map&) = delete;
+    // Frees the nodes and copies the other tree, as EASTL's rbtree
+    // operator= does (for example RBCampaignCityProgressPersistentData's
+    // assignment at 0xD4B920).
+    map& operator=(const map& other) {
+        if (this != &other) {
+            clear();
+            if (other.mAnchor.mpNodeParent != nullptr) {
+                mAnchor.mpNodeParent = DoCopySubtree(
+                    static_cast<const node_type*>(other.mAnchor.mpNodeParent), &mAnchor);
+                rbtree_node_base* node = mAnchor.mpNodeParent;
+                while (node->mpNodeRight != nullptr) {
+                    node = node->mpNodeRight;
+                }
+                mAnchor.mpNodeRight = node;
+                node = mAnchor.mpNodeParent;
+                while (node->mpNodeLeft != nullptr) {
+                    node = node->mpNodeLeft;
+                }
+                mAnchor.mpNodeLeft = node;
+                mnSize = other.mnSize;
+            }
+        }
+        return *this;
+    }
     ~map() {
         DoNukeSubtree(static_cast<node_type*>(mAnchor.mpNodeParent));
     }
@@ -136,6 +182,33 @@ public:
     }
     iterator end() {
         return iterator(&mAnchor);
+    }
+    const_iterator begin() const {
+        return const_iterator(mAnchor.mpNodeLeft);
+    }
+    const_iterator end() const {
+        return const_iterator(&mAnchor);
+    }
+
+    const_iterator lower_bound(const Key& key) const {
+        const rbtree_node_base* current = mAnchor.mpNodeParent;
+        const rbtree_node_base* range = &mAnchor;
+        while (current != nullptr) {
+            if (!mCompare(static_cast<const node_type*>(current)->mValue.first, key)) {
+                range = current;
+                current = current->mpNodeLeft;
+            } else {
+                current = current->mpNodeRight;
+            }
+        }
+        return const_iterator(range);
+    }
+    const_iterator find(const Key& key) const {
+        const auto it = lower_bound(key);
+        if (it != end() && !mCompare(key, it->first)) {
+            return it;
+        }
+        return end();
     }
 
     iterator lower_bound(const Key& key) {
@@ -166,6 +239,31 @@ public:
             it = DoInsertKey(it, key);
         }
         return it->second;
+    }
+
+    // Inserts a copy of the value unless its key is present, as EASTL's
+    // insert(const value_type&) (DoInsertValue; for example the profile's
+    // leaderboard caches at 0xD5A1D0). The flag tells whether it inserted.
+    pair<iterator, bool> insert(const value_type& value) {
+        rbtree_node_base* current = mAnchor.mpNodeParent;
+        rbtree_node_base* parent = &mAnchor;
+        bool less = true;
+        while (current != nullptr) {
+            parent = current;
+            less = mCompare(value.first, static_cast<node_type*>(current)->mValue.first);
+            current = less ? current->mpNodeLeft : current->mpNodeRight;
+        }
+        iterator lower(parent);
+        if (less) {
+            if (lower.mpNode == mAnchor.mpNodeLeft) {
+                return pair<iterator, bool>{DoInsertValueImpl(parent, value), true};
+            }
+            --lower;
+        }
+        if (mCompare(lower->first, value.first)) {
+            return pair<iterator, bool>{DoInsertValueImpl(parent, value), true};
+        }
+        return pair<iterator, bool>{lower, false};
     }
 
     iterator erase(iterator position) {
@@ -274,6 +372,17 @@ private:
             return DoInsertKeyImpl(parent, false, key);
         }
         return lower;
+    }
+
+    iterator DoInsertValueImpl(rbtree_node_base* parent, const value_type& value) {
+        const auto side = parent == &mAnchor || mCompare(value.first, static_cast<node_type*>(parent)->mValue.first)
+            ? kRBTreeSideLeft
+            : kRBTreeSideRight;
+        auto* node = static_cast<node_type*>(mAllocator.allocate(sizeof(node_type)));
+        ::new (static_cast<void*>(&node->mValue)) value_type{value.first, value.second};
+        RBTreeInsert(node, parent, &mAnchor, side);
+        ++mnSize;
+        return iterator(node);
     }
 
     iterator DoInsertKeyImpl(rbtree_node_base* parent, bool forceToLeft, const Key& key) {

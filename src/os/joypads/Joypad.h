@@ -1,6 +1,10 @@
 #pragma once
 
+#include "utl/containers/Vector.h"
 #include "utl/text/Symbol.h"
+
+template <typename T>
+struct AllowedValue;
 
 // Joypad types shared by the platform controllers (os/Joypad.o). Only the
 // declarations the reconstructed controllers use are present.
@@ -75,19 +79,29 @@ enum JoypadAction : int {};
 // exported events list. Not reconstructed.
 const char* JoypadActionToName(JoypadAction action);  // 0x39E050
 const char* JoypadButtonToName(JoypadButton button);  // 0x39E060
+// The 15 actions with their names, for properties that hold an action.
+// Not reconstructed.
+eastl::vector<AllowedValue<int>> GetJoypadActionsAllowedValues();  // 0x39DF00
 
 // A pad's state, one of the table at 0x1A02320 (624 bytes each). Only the
 // held buttons are modelled. Field names are not in the reference map.
 struct JoypadData {
     // A bit per held JoypadButton.
     unsigned int mButtons;
-    unsigned char mOpaque[620];  // Not modelled.
+    unsigned char mOpaque[500];  // Not modelled.
+    // The pad's controller type, which maps its buttons to actions. Name not
+    // in the reference map.
+    Symbol mControllerType;
+    unsigned char mOpaque2[112];  // Not modelled.
 };
 
+static_assert(__builtin_offsetof(JoypadData, mControllerType) == 0x1F8);
 static_assert(sizeof(JoypadData) == 624);
 
 // os/Joypad.o. Not reconstructed.
 JoypadData* JoypadGetPadData(unsigned long padNum);  // 0x39C710
+// The action the controller type's button stands for. Not reconstructed.
+JoypadAction ButtonToAction(JoypadButton button, Symbol controllerType);  // 0x39C580
 // The controller type of the pad, "none" without one.
 Symbol JoypadControllerTypePadNum(int padNum);  // 0x39C2C0
 // The controller type's "pad_shift_button" and "cymbal_shift_button" from

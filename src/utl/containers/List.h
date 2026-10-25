@@ -45,6 +45,29 @@ public:
         ListNodeBase* mpNode;
     };
 
+    class const_iterator {
+    public:
+        explicit const_iterator(const ListNodeBase* node = nullptr) : mpNode(node) {}
+        const T& operator*() const {
+            return static_cast<const node_type*>(mpNode)->mValue;
+        }
+        const T* operator->() const {
+            return &static_cast<const node_type*>(mpNode)->mValue;
+        }
+        const_iterator& operator++() {
+            mpNode = mpNode->mpNext;
+            return *this;
+        }
+        bool operator==(const const_iterator& other) const {
+            return mpNode == other.mpNode;
+        }
+        bool operator!=(const const_iterator& other) const {
+            return mpNode != other.mpNode;
+        }
+
+        const ListNodeBase* mpNode;
+    };
+
     list() : mSize(0), mAllocator("EASTL list") {
         mNode.mpNext = &mNode;
         mNode.mpPrev = &mNode;
@@ -58,7 +81,28 @@ public:
             push_back(static_cast<const node_type*>(node)->mValue);
         }
     }
-    list& operator=(const list&) = delete;
+    // Overwrites the values in place, then erases the extra nodes or appends
+    // the missing values, as EASTL's operator= (DoAssign) does; for example
+    // the instance at 0x9613E0 for Symbol lists.
+    list& operator=(const list& other) {
+        if (this != &other) {
+            ListNodeBase* node = mNode.mpNext;
+            const ListNodeBase* source = other.mNode.mpNext;
+            for (; node != &mNode && source != &other.mNode; node = node->mpNext, source = source->mpNext) {
+                static_cast<node_type*>(node)->mValue = static_cast<const node_type*>(source)->mValue;
+            }
+            if (source == &other.mNode) {
+                while (node != &mNode) {
+                    node = erase(iterator(node)).mpNode;
+                }
+            } else {
+                for (; source != &other.mNode; source = source->mpNext) {
+                    push_back(static_cast<const node_type*>(source)->mValue);
+                }
+            }
+        }
+        return *this;
+    }
     ~list() {
         DoClear();
     }
@@ -75,9 +119,38 @@ public:
     iterator end() {
         return iterator(&mNode);
     }
+    const_iterator begin() const {
+        return const_iterator(mNode.mpNext);
+    }
+    const_iterator end() const {
+        return const_iterator(&mNode);
+    }
     // The first value; the list must not be empty.
     const T& front() const {
         return static_cast<const node_type*>(mNode.mpNext)->mValue;
+    }
+    // The last value; the list must not be empty.
+    const T& back() const {
+        return static_cast<const node_type*>(mNode.mpPrev)->mValue;
+    }
+
+    // Keeps the first `count` values, erasing the rest or appending copies
+    // of `value`, as EASTL's resize does (the Symbol instance at 0xD4A820).
+    void resize(unsigned long count, const T& value) {
+        ListNodeBase* node = mNode.mpNext;
+        unsigned long kept = 0;
+        for (; node != &mNode && kept < count; node = node->mpNext) {
+            ++kept;
+        }
+        if (kept == count) {
+            while (node != &mNode) {
+                node = erase(iterator(node)).mpNode;
+            }
+        } else {
+            for (; kept < count; ++kept) {
+                push_back(value);
+            }
+        }
     }
 
     // Links a new node before the anchor.

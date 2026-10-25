@@ -37,13 +37,55 @@ public:
             DoInsertValue(*first);
         }
     }
-    set(const set&) = delete;
-    set& operator=(const set&) = delete;
+    // Copies the keys. EASTL copies the tree node by node; the result is
+    // the same set. Functions that return a set by value need it, though
+    // the binary constructs their results in place.
+    set(const set& other) : mCompare(other.mCompare), mnSize(0), mAllocator(other.mAllocator) {
+        mAnchor.mpNodeRight = &mAnchor;
+        mAnchor.mpNodeLeft = &mAnchor;
+        mAnchor.mpNodeParent = nullptr;
+        mAnchor.mColor = 0;
+        for (const rbtree_node_base* node = other.begin(); node != other.end(); node = RBTreeIncrement(node)) {
+            DoInsertValue(static_cast<const node_type*>(node)->mValue);
+        }
+    }
+    // Replaces the keys with the other set's. EASTL copies the tree node by
+    // node (RBOvershellCom's online slots, 0xBF6EB0); the result is the
+    // same set.
+    set& operator=(const set& other) {
+        if (this != &other) {
+            clear();
+            mCompare = other.mCompare;
+            for (const rbtree_node_base* node = other.begin(); node != other.end(); node = RBTreeIncrement(node)) {
+                DoInsertValue(static_cast<const node_type*>(node)->mValue);
+            }
+        }
+        return *this;
+    }
+    // Whether both sets hold the same keys, as EASTL's operator== (size,
+    // then the keys in order). Inlined into RBOvershellCom::_GoOnline.
+    bool operator==(const set& other) const {
+        if (mnSize != other.mnSize) {
+            return false;
+        }
+        const rbtree_node_base* mine = begin();
+        for (const rbtree_node_base* node = other.begin(); mine != end(); mine = RBTreeIncrement(mine)) {
+            if (!(static_cast<const node_type*>(mine)->mValue == static_cast<const node_type*>(node)->mValue)) {
+                return false;
+            }
+            node = RBTreeIncrement(node);
+        }
+        return true;
+    }
     // The atexit thunk at 0x11848D0.
     ~set() {
         DoNukeSubtree(static_cast<node_type*>(mAnchor.mpNodeParent));
     }
 
+    // The smallest key's node; iterate with RBTreeIncrement up to end().
+    const rbtree_node_base* begin() const {
+        return mAnchor.mpNodeLeft;
+    }
     const rbtree_node_base* end() const {
         return &mAnchor;
     }
@@ -147,3 +189,11 @@ private:
 
 static_assert(sizeof(eastl::set<unsigned short>) == 56);
 static_assert(sizeof(eastl::set<unsigned short>::node_type) == 40);
+
+class BinStream;
+
+// Reads a count and that many keys into the set, keeping the keys already
+// present. The instantiation operator>> <Symbol> is emitted with
+// rb_meta/RBRockShopPersistentData.o (0xD64F10), whose source defines it.
+template <typename Key>
+BinStream& operator>>(BinStream& stream, eastl::set<Key>& set);

@@ -17,7 +17,7 @@ accumulating implementation files. Names and classes follow
 | `src/audio` | Audio engine and FMOD integration | `core`, `fmod` |
 | `src/rockband` | Game startup and main loop (`App`, `main`) | `app` |
 | `src/rb_game` | Game logic | `stagepresence` |
-| `src/rb_meta` | Menus, profiles and metagame | `profiles`, `state` |
+| `src/rb_meta` | Menus, profiles and metagame | `profiles`, `persistentdata`, `leaderboards`, `overshell`, `state`, `ui` |
 | `src/ui` | UI system | `layout`, `manager` |
 
 Every renderer file now sits in a domain folder of `src/render` or

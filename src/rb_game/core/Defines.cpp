@@ -1,5 +1,7 @@
 #include "rb_game/core/Defines.h"
 
+#include "rb_game/users/BandUser.h"
+#include "rb_game/users/BandUserMgr.h"
 #include "utl/data/DataArray.h"
 #include "utl/data/DataUtl.h"
 #include "utl/text/Str.h"
@@ -164,6 +166,46 @@ TrackType ScoreTypeToTrackType(ScoreType type) {
         return kScoreTracks[type];
     }
     return kTrackNone;
+}
+
+// Reconstructed from eboot.elf at 0xA44330. A user without a part counts
+// toward the score of the controller's part. The release body reads the
+// first user even when no user takes part.
+ScoreType GetActiveScoreType() {
+    const eastl::vector<BandUser*> users = theBandUserMgr->GetBandUsers();
+    if (users.size() >= 2) {
+        return kScoreBand;
+    }
+    const BandUser* const user = users[0];
+    if (user->GetTrackType() == kTrackNone) {
+        switch (user->GetControllerType()) {
+        case kControllerDrum:
+            return user->GetPreferredScoreType() == kScoreRealDrum ? kScoreRealDrum : kScoreDrum;
+        case kControllerGuitar:
+            return kScoreGuitar;
+        case kControllerVocals:
+            return user->GetPreferredScoreType() == kScoreHarmony ? kScoreHarmony : kScoreVocals;
+        default:
+            return kScoreBand;
+        }
+    }
+    switch (static_cast<unsigned int>(user->GetTrackType())) {
+    case kTrackDrum:
+        return user->GetPreferredScoreType() == kScoreRealDrum ? kScoreRealDrum : kScoreDrum;
+    case kTrackGuitar:
+        return kScoreGuitar;
+    case kTrackBass:
+        return kScoreBass;
+    case kTrackVocals:
+        return user->GetPreferredScoreType() == kScoreHarmony ? kScoreHarmony : kScoreVocals;
+    case kTrackKeys:
+    case kTrackNone:
+    case 7:
+    case 8:
+        return kScoreBand;
+    default:
+        return kAllScores;
+    }
 }
 
 // Reconstructed from eboot.elf at 0xA44440.

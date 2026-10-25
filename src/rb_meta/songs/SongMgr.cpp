@@ -21,6 +21,7 @@
 #include "os/platform/PlatformMgr.h"
 #include "os/system/System.h"
 #include "persistence/profiles/Profile.h"
+#include "rb_meta/entitlements/RBEntitlementMgr.h"
 #include "rb_meta/profiles/RBProfileMgr.h"
 #include "rb_meta/songs/SongMetadata.h"
 #include "rb_meta/songs/SongMetadataResource.h"
@@ -28,21 +29,6 @@
 #include "utl/streams/RevisionStream.h"
 #include "utl/text/MakeString.h"
 #include "utl/time/TimeMgr.h"
-
-// --- Declared from another rb_meta object -------------------------------
-// The entitlement manager: an rb_meta object after DialogMgrCom.o that the
-// map does not have. Its factory (0xAE25D0) sets the pointer and installs
-// a content filter with SongMgr::SetContentFilter. Only what the paygated
-// folders need is declared; the names are not in the reference map and
-// are weak.
-class RBEntitlementMgr {
-public:
-    // Whether the entitlement is owned. Takes the manager's lock.
-    bool IsEntitled(int entitlement);  // 0xAE40C0
-};
-
-extern RBEntitlementMgr* theRBEntitlementMgr;  // 0x1AF4E38
-// -------------------------------------------------------------------------
 
 namespace {
 

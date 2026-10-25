@@ -157,6 +157,34 @@ public:
     }
 };
 
+// The system overlay showed or hid: (target "system_overlay_status_changed"
+// showing). Inline; RBOvershellCom.o emits the array constructor at
+// 0xBF6A80. The vtable is at 0x18FB9A8.
+class SystemOverlayStatusChangedMsg : public Message<1> {
+public:
+    // The type check of the map's build survives as the evaluation of the
+    // message's type node.
+    explicit SystemOverlayStatusChangedMsg(DataArray* msg) : Message<1>(msg) {
+        static_cast<void>(msg->Node(1).LiteralSym(msg));
+        static_cast<void>(Event());
+    }
+    ~SystemOverlayStatusChangedMsg() override {}
+
+    // The message type, built on first use (0x19FEBA0).
+    static Symbol Event() {
+        static Symbol t;
+        if (t == Symbol()) {
+            t = Symbol("system_overlay_status_changed");
+        }
+        return t;
+    }
+
+    // Name not in the reference map.
+    bool IsShowing() const {
+        return mData->Int(2) != 0;
+    }
+};
+
 // A user signed out: (target "user_signed_out" user). Inline in the map's
 // build; the binary keeps the array constructor at 0x33D000.
 class UserSignedOutMsg : public Message<1> {

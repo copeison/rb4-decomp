@@ -471,6 +471,13 @@ void RBProfileMgr::_CheckForSongUploads() {
     }
 }
 
+// Reconstructed from eboot.elf at 0xD5CEB0.
+RBProfile* RBProfileMgr::GetProfileFromSlotIdx(unsigned long slot) const {
+    auto& profiles = const_cast<eastl::map<unsigned long, ProfileData>&>(mProfileData);
+    const auto it = profiles.find(slot);
+    return it != profiles.end() ? it->second.mProfile : nullptr;
+}
+
 // Reconstructed from eboot.elf at 0xD5D000.
 RBProfile* RBProfileMgr::GetSlotProfileFromPadNum(int padNum) const {
     for (auto& entry : const_cast<eastl::map<unsigned long, ProfileData>&>(mProfileData)) {

@@ -7,6 +7,8 @@
 #include "os/platform/PlatformMgr.h"
 #include "os/threading/CritSec.h"
 #include "persistence/profiles/Profile.h"
+#include "rb_meta/leaderboards/RBMiniLeaderboardResults.h"
+#include "rb_meta/leaderboards/RBSongLeaderboard.h"
 #include "rb_meta/persistentdata/FTUEPersistentData.h"
 #include "rb_meta/persistentdata/RBBTMPersistentData.h"
 #include "rb_meta/persistentdata/RBCampaignBandPersistentData.h"
@@ -39,30 +41,6 @@ class ResourcePath;
 // the layout and the members the profile calls are given. Names not in the
 // reference map; they are inferred from the code that uses them.
 
-// The results of a pad's recent score submissions for the mini
-// leaderboards (rb_meta code at 0xCB9FE0-0xCBD7AF, after RBUpsellScreen): a
-// MsgSink that follows "score_submissions_started" and
-// "score_submissions_complete". The vtable is at 0x1978970; the object is
-// 664 bytes. The evidence for the name is weak.
-class RBMiniLeaderboardResults : public MsgSink {
-public:
-    explicit RBMiniLeaderboardResults(int padNum);  // 0xCBA1E0
-    ~RBMiniLeaderboardResults() override;           // 0xCBA3C0
-    DataNode Handle(DataArray* msg, bool warn) override;  // 0xCBD2B0
-    // Forgets the results.
-    void ClearResults();  // 0xCBA5B0
-
-    int mPadNum;
-    // Set by "score_submissions_started".
-    bool mSubmissionsStarted;
-    // The results, their lock and the two subscriptions; not reconstructed.
-    unsigned char mResults[664 - 16];
-};
-
-static_assert(offsetof(RBMiniLeaderboardResults, mPadNum) == 8);
-static_assert(offsetof(RBMiniLeaderboardResults, mSubmissionsStarted) == 12);
-static_assert(sizeof(RBMiniLeaderboardResults) == 664);
-
 // A pad's Rivals player profile from the server: experience, level, clan
 // and invitations (the clans code at 0xB24DF0-0xB27000, which runs the
 // "player_profile_job_complete" job). A MsgSink; the vtable is at
@@ -84,20 +62,6 @@ public:
 
 static_assert(sizeof(RBRivalsPlayerProfile) == 712);
 
-// A song's leaderboard as the profile caches it (the fail screen's code at
-// 0xB517C0-0xB51C80): the entries around the player and the player's own,
-// for the global board or the friends' board. The vtable is at 0x196F588;
-// the object is 96 bytes. The evidence for the name is weak.
-class RBSongLeaderboard {
-public:
-    RBSongLeaderboard(RBProfile* profile, int songId, bool friends);  // 0xB517C0
-    virtual ~RBSongLeaderboard();                                    // 0xB51A50
-
-    // The song, the entries and the request state; not reconstructed.
-    unsigned char mEntries[96 - 8];
-};
-
-static_assert(sizeof(RBSongLeaderboard) == 96);
 
 // ---------------------------------------------------------------------------
 
@@ -249,27 +213,65 @@ public:
     void AwardOutfitPiece(const ResourcePath& piece);             // 0xD590F0
     void PurchaseOutfitPiece(const ResourcePath& piece);          // 0xD59100
     // The marked ids. Names not in the reference map.
-    bool HasSeenId(unsigned long id) const;  // 0xD59110
-    bool MarkIdSeen(unsigned long id);       // 0xD59120
+    bool HasSeenId(Symbol id) const;  // 0xD59110
+    bool MarkIdSeen(Symbol id);       // 0xD59120
     void ClearSeenIds();                     // 0xD59130
     // The Rivals clan membership. Names not in the reference map; the
     // evidence for them is weak.
     void ClearClan();      // 0xD59170
     void ClearClanName();  // 0xD591A0
 
-    // Declared only: these read the song manager, the entitlement manager,
-    // the achievements or the leaderboard caches in ways not reconstructed.
-    // Names not in the reference map unless the map has them.
+    // The songs entitled from the server that the save keeps (ids 3 to
+    // 327). Save inlines it; this copy has no caller. Name not in the
+    // reference map.
     eastl::set<int> _GetSavedEntitlements() const;  // 0xD54C50
+    // The song's cached boards, global or friends', created on first use
+    // under the leaderboard lock. Names not in the reference map.
     RBSongLeaderboard* GetSongLeaderboard(int songId);  // 0xD55800
     RBSongLeaderboard* GetSongLeaderboard(Symbol song);  // 0xD55AB0
     RBSongLeaderboard* GetFriendsSongLeaderboard(int songId);  // 0xD55AE0
     RBSongLeaderboard* GetFriendsSongLeaderboard(Symbol song);  // 0xD55D90
-    int GetLeaderboardRank(int songId, const unsigned int& instrument, bool friends);  // 0xD55DC0
+    // The score of the profile's own row on the song's board of the score
+    // type, or 0 without one. Name not in the reference map; the evidence
+    // for it is weak.
+    int GetLeaderboardScore(int songId, const ScoreType& type, bool friends);  // 0xD55DC0
+
+    // The song library's cached score rows per song and when they were
+    // stored, under the score cache's lock. Names not in the reference map.
+    eastl::vector<RBSongLeaderboard::Entry>* GetCachedSongScores(const int& songId);  // 0xD56000
+    long GetCachedSongScoresStamp(const int& songId);  // 0xD56110
+    void SetCachedSongScores(
+        const int& songId,
+        const eastl::vector<RBSongLeaderboard::Entry>& scores,
+        long stamp);  // 0xD56210
+    void ClearCachedSongScores(const int& songId);  // 0xD564F0
+
+    // Of the two score types, the one more quickplay songs have a score
+    // for; the first on a tie. Name not in the reference map.
+    ScoreType GetMoreScoredType(ScoreType first, ScoreType second) const;  // 0xD575C0
+    // The ids of the songs with results: quickplay, campaign and every
+    // band's played songs.
     eastl::set<int> GetAllSongsPlayed() const;  // 0xD576C0
-    void GetHighestStatStars(int& stars, int& maxStars) const;  // 0xD57BF0
+    // The quickplay and the campaign songs' ids alone. Names not in the
+    // reference map.
+    eastl::set<int> GetQuickplaySongsPlayed() const;  // 0xD57A30
+    eastl::set<int> GetCampaignSongsPlayed() const;  // 0xD57B10
+    // The sum of the quickplay songs' best stat stars, and the sum of the
+    // best stars of each public RB4 song over the quickplay songs and the
+    // bands' songs. The map's parameter names are not recorded.
+    void GetHighestStatStars(int& stars, int& rb4Stars) const;  // 0xD57BF0
+
+    // Whether the profile or, through theRBEntitlementMgr, the pad's user
+    // owns the song. Name not in the reference map.
     bool IsSongEntitled(int songId) const;  // 0xD58180
-    void UpdateSongPackAchievements(void* context);  // 0xD589C0
+    // The songs from 1 to 327 that IsSongEntitled, HasEntitlement or the
+    // entitlement manager allow. Names not in the reference map.
+    eastl::set<int> GetEntitledSongs() const;  // 0xD58600
+    eastl::set<int> GetProfileEntitledSongs() const;  // 0xD58740
+    eastl::set<int> GetPlatformEntitledSongs() const;  // 0xD58880
+    // Logs the song pack trophies of the entitlements 15, 16 and 17. Name
+    // not in the reference map.
+    void UpdateSongPackAchievements();  // 0xD589C0
 
     // Field names are not in the reference map.
     eastl::vector<RBCampaignBandPersistentData> mCampaignBands;
@@ -279,9 +281,10 @@ public:
     eastl::map<int, RBSongLeaderboard> mFriendsSongLeaderboards;
     RBMiniLeaderboardResults mMiniLeaderboardResults;
     eastl::map<int, unsigned char> mSongRatings;
-    // A per-song list of 56-byte score entries with a 64-bit stamp
-    // (0xD56000-0xD564F0, for the song library); not reconstructed.
-    eastl::map<int, eastl::vector<unsigned char>> mSongScoreCache;
+    // The song library's score rows per song, with a 64-bit stamp. The
+    // rows are 56 bytes, laid out as RBSongLeaderboard's; the evidence that
+    // they are the same type is weak.
+    eastl::map<int, eastl::vector<RBSongLeaderboard::Entry>> mSongScoreCache;
     eastl::map<int, long> mSongScoreCacheStamps;
     RBGameplayOptions mGameplayOptions;
     RBCharacterPersistentData mCharacterData;

@@ -62,7 +62,7 @@ eastl::vector<AllowedValue<int>> GetOvershellOnlineStateAllowedValues();  // 0xB
 class OvershellOverrideEndedMsg : public Message<2> {
 public:
     OvershellOverrideEndedMsg(OvershellOverrideFlow flow, bool cancelled);  // 0xBF6610
-    ~OvershellOverrideEndedMsg() override;
+    ~OvershellOverrideEndedMsg() override {}
 
     // The message type, built on first use (0x1B02FE0).
     static Symbol Event() {
@@ -200,10 +200,18 @@ public:
     };
 
     RBOvershellCom();  // 0xBE8810
+    // Copies the properties for an imprint and starts afresh. Inlined into
+    // _Imprint (0xBF63F0). Not in the reference map.
+    RBOvershellCom(const RBOvershellCom& other);
     // Slots 0-1: 0xBE88D0, 0xBE8970. Clears theOvershell.
     ~RBOvershellCom() override;
 
-    // Slot 2: the overshell's messages and script calls.
+    // Slot 2: the overshell's messages and script calls. Not reconstructed:
+    // it builds the game's messages from their arrays (GameCreatedMsg
+    // 0x971500, GameStartedMsg 0x971610, GameEndedMsg 0x971730,
+    // GameAboutToBeDestroyedMsg 0x971850, JoypadConnectionMsg 0x399950,
+    // GameModeChangedMsg 0xBF6860, GameMicsChangedMsg 0xBF6970), which are
+    // not modelled (GameMicsChangedMsg lacks its DataArray constructor).
     DataNode Handle(DataArray* msg, bool warn) override;  // 0xBF4700
     Symbol GetId() const override;          // slot 4: 0xBF6370
     Symbol GetClassName() const override;   // slot 5: 0xBF6380
@@ -218,7 +226,11 @@ public:
     // from gig/config.dta. The map's _LoadResources(ObjPtr const&).
     bool _OnResourcesLoaded() override;  // 0xBF2860
     // Slot 31: finds the slots and subscribes to the events. The map's
-    // _Enter(ObjPtr const&).
+    // _Enter(ObjPtr const&). Not reconstructed: it subscribes with the
+    // game's message types (GameCreatedMsg::Event and the others, statics
+    // of other objects), JoypadSubscribe (0x39C7E0), the SOMP session
+    // manager's SyncMsgSource base and the game mode's MsgSource, none of
+    // them modelled.
     void _Enter() override;  // 0xBF2A40
     // Slot 33. The map's _Poll(ObjPtr const&).
     void _Poll() override;  // 0xBF36A0
@@ -302,7 +314,9 @@ public:
     // Checks a joining user against the SOMP session's local user. False
     // when the user may not join; `switchProfile` and `profile` then tell
     // the caller to take the local user's profile. Name not in the
-    // reference map.
+    // reference map. Not reconstructed: it calls an RBBandUserMgr member
+    // (0x9252C0, a user list) and the SOMP client's 0x988DC0, which are
+    // not declared.
     bool _CheckSompJoin(BandUser* user, bool* switchProfile, RBProfile** profile);  // 0xBE9AD0
     // Drops the users of the slots that require the song options. The
     // binary keeps an uncalled copy.
@@ -313,6 +327,8 @@ public:
     void Reset();  // 0xBE9F70
     // Starts the override flow, or queues it while a flow cannot start.
     void BeginOverrideFlow(OvershellOverrideFlow flow);  // 0xBEA690
+    // Queues a begin. Name not in the reference map.
+    void _QueueBeginOverrideFlow(OvershellOverrideFlow flow);  // 0xBEA720
     // Ends the override flow if it is the current one, or queues the end.
     void EndOverrideFlow(OvershellOverrideFlow flow, bool cancelled);  // 0xBEA150
     // Leaves the online state; a public entry of _GoOffline. Name not in
@@ -380,6 +396,8 @@ public:
     // newer. Name not in the reference map; the evidence is weak.
     bool IsUserAllowingInputToShell(BandUser* user);  // 0xBEB060
     void _ResolveReadyToPlayStates();  // 0xBEB1C0
+    // Not reconstructed: it starts from an RBBandUserMgr user list
+    // (0x9252C0) that RBBandUserMgr.h does not declare.
     void _ResolvePartWaitStates();     // 0xBEB590
     // Shows the character preview scene while a slot needs it.
     void UpdateCharPreviewSceneState();  // 0xBEBFB0
@@ -387,7 +405,9 @@ public:
     // keeps an uncalled copy.
     int GetNumUsers() const;  // 0xBEC020
     // Whether the SOMP session's local user must reconnect the controller
-    // they joined with. Name not in the reference map.
+    // they joined with. Name not in the reference map. Not reconstructed:
+    // it calls an RBBandUserMgr member (0x9253A0, a user list) that is not
+    // declared.
     bool _NeedsSompControllerReconnect() const;  // 0xBEC080
     bool InSong() const;  // 0xBEC1E0
     // The binary keeps uncalled copies of the next five.
@@ -399,6 +419,8 @@ public:
     // participating. Name not in the reference map.
     void _StartDropInFlows();  // 0xBEC410
     bool _IsInGame() const;    // 0xBEC4C0
+    // Not reconstructed: it calls an RBBandUserMgr member (0x9253A0, a
+    // user list) that is not declared, and reads RBBandUser +0x98.
     void _RefreshJoinableUsers();  // 0xBEC4D0
     void _ResolveSlotStates();     // 0xBECA70
     // Hands the slots whose user's controller is gone to
@@ -454,7 +476,10 @@ public:
     // reference map.
     void _StartSlotOverrideFlow(RBOvershellSlotCom* slot, OvershellSlotStateID returnState);  // 0xBED750
     // Drops the users not signed in after a lost connection, and syncs the
-    // SOMP session's remote users. Name not in the reference map.
+    // SOMP session's remote users. Name not in the reference map. Not
+    // reconstructed: it calls RBBandUserMgr members (0x925E10, 0x925680,
+    // 0x925EE0, 0x926050), the undeclared remote user sync (0xBEDCB0,
+    // 0xBEE680) and the character manager (0xFC81B0).
     void _PollRemoteUsers();  // 0xBED950
     // Starts going offline: pending offline from online, else offline at
     // once. Name not in the reference map.
@@ -466,11 +491,17 @@ public:
     bool IsPendingOnline() const;   // 0xBEE7F0
     bool IsPendingOffline() const;  // 0xBEE800
     // Lets a changed remote user drop in to the game in progress. Name not
-    // in the reference map.
+    // in the reference map. Not reconstructed: it reads the game (theGame
+    // +0xE4, +0x160, 0xA45FB0, 0xA46000, 0xA48A20), the global at 0x1ADF7D0
+    // and RemoteBandUser's session flags (+0x540, +0x541).
     void _DropInRemoteUser(BandUser* user);  // 0xBEEAB0
     // Drops users until one is left, those not flagged first, before the
     // SOMP session takes its local user. Name not in the reference map.
     void PrepareForSompLocalUser();  // 0xBEEBB0
+    // Drops users, first those without the flag BandUser::mJustDisconnected,
+    // until no more than `maxUsers` of the `numUsers` are left, then clears
+    // every slot user's flag. Name not in the reference map.
+    void _RemoveUsersOverLimit(int numUsers, int maxUsers);  // 0xBEEC20
     // Drops users the game mode has no room for. Name not in the
     // reference map.
     void _OnGameModeChanged();  // 0xBEEDA0
@@ -484,15 +515,29 @@ public:
     // copy, whose name is not in the reference map.
     void _OnPendingProfilesResolved();  // 0xBEF0B0
     void _SetupSlotCharacters();        // 0xBEF150
-    // Pauses the game while a slot's state calls for it.
+    // Pauses the game while a slot's state calls for it. Not
+    // reconstructed: they call RBBandUserMgr members (0x926770, 0x9266B0,
+    // 0x926830) and the game (0xA48300, the global at 0x1ADF7D0).
     bool CheckAndAutoPauseGame();    // 0xBEF1E0
     void CheckAndAutoUnpauseGame();  // 0xBEF2B0
     // Ends the slot's override flow and shows its controller disconnected
-    // state, pausing the game. Name not in the reference map.
+    // state, pausing the game. Name not in the reference map. Not
+    // reconstructed: it reads the game (theGame +0xE4).
     void _HandleControllerDisconnect(RBOvershellSlotCom* slot);  // 0xBEF300
-    // Drops the remote users whose controller is gone, with the SOMP
-    // error. Name not in the reference map.
+    // _HandleControllerDisconnect's second half: ends the slot's override
+    // flow, shows its reconnect controller state and pauses the song. The
+    // binary keeps an uncalled copy. Name not in the reference map. Not
+    // reconstructed: it reads the game (theGame +0xE4), which is not
+    // modelled.
+    void _ShowSlotReconnectController(RBOvershellSlotCom* slot);  // 0xBEF3E0
+    // In a SOMP session the session's local user drops out when an online
+    // slot's controller is gone; otherwise the users whose controller is
+    // gone leave. Name not in the reference map.
     void CheckForSompControllerDisconnects();  // 0xBEF460
+    // In a SOMP session: drops the session's local user out when an online
+    // slot's controller is gone ("somp_error_controller_disconnected").
+    // Name not in the reference map.
+    void _DropOutOnSompControllerDisconnect();  // 0xBEF4C0
     // Drops the users whose controller is gone. The binary keeps an
     // uncalled copy. Name not in the reference map.
     void _RemoveDisconnectedUsers();  // 0xBEF6C0
@@ -505,15 +550,19 @@ public:
     // Replaces the slot in the online slots. Name not in the reference
     // map.
     void MoveOnlineSlot(unsigned long from, unsigned long to);  // 0xBEF8A0
-    // Hands the remote user's settings to an online slot. Inlined; the
-    // binary keeps an uncalled copy. Name not in the reference map.
-    // 0xBEFA80; not declared, its arguments are not identified.
+    // Hands the SOMP status tokens to the slot when it is an online slot of
+    // the online overshell. Inlined; the binary keeps an uncalled copy.
+    // Name not in the reference map.
+    void SetSompStatusTokens(unsigned long slot, Symbol status, Symbol status2, Symbol status3);  // 0xBEFA80
     // Goes pending online for the slots. Names not in the reference map.
     void _GoOnline(const eastl::set<unsigned long>& slots);  // 0xBEFB10
     void _ResetOnlineSlots();                              // 0xBEFD70
     void GoOnline(const eastl::vector<BandUser*>& users);  // 0xBEFE80
     void GoOnline(BandUser* user);                         // 0xBF0010
     void _FinishGoingOnline();                             // 0xBF02E0
+    // Back offline from the pending online state. The body of
+    // CancelGoingOnline; the binary keeps an uncalled copy.
+    void _CancelGoingOnline();                             // 0xBF0150
     void _ResetOfflineSlots();                             // 0xBF0230
     // Goes back offline before the online state was reached.
     void CancelGoingOnline();  // 0xBF03B0
@@ -528,18 +577,25 @@ public:
     bool _AreOnlineSlotsReady() const;          // 0xBF0810
     bool _AreOnlineSlotUsersReady() const;      // 0xBF08F0
     bool _IsSlotUserReady(RBOvershellSlotCom* slot) const;  // 0xBF09F0
-    bool _IsAnyOnlineSlotUserReady() const;     // 0xBF0A30
+    // True when no online slot's user is ready.
+    bool _IsNoOnlineSlotUserReady() const;      // 0xBF0A30
+    // Not reconstructed: it reads the SOMP session manager's member
+    // records (+0x364/+0x380 and the next three, 0x208 apart).
     static bool _AreRemoteSlotsConnected();     // 0xBF0B40
     void _UpdatePendingOnlineState();           // 0xBF0BA0
     // Leaves the pending states once the slots are ready or the time ran
     // out. Names not in the reference map.
     void _UpdatePendingOnline();   // 0xBF0BC0
     void _UpdatePendingOffline();  // 0xBF0F80
-    bool _HasOnlineTransitionTimedOut(bool ready, bool expired) const;  // 0xBF11F0
+    // Whether the pending state ends: after 11 seconds, or once
+    // `usersSettled` and either `slotsReady` or 1.5 seconds passed.
+    bool _HasOnlineTransitionTimedOut(bool slotsReady, bool usersSettled) const;  // 0xBF11F0
     // Goes offline once no online slot's user is ready. Name not in the
     // reference map.
     void _UpdateOnline();  // 0xBF1290
     // Times the session's local drop in. Name not in the reference map.
+    // Not reconstructed: it reads the session's member records (as
+    // _AreRemoteSlotsConnected) and calls the SOMP client's 0x989890.
     void _PollSompDropIn();  // 0xBF13C0
     // Counts down the SOMP layout transition. Inlined into _Poll; the
     // binary keeps an uncalled copy. Name not in the reference map.
@@ -553,7 +609,10 @@ public:
     // declared: their message records are not modelled.
     // The SOMP session changes the layout. Name not in the reference map.
     void OnSompLayoutChanged(RBUILayout layout);  // 0xBF2610
-    // A kick request of the SOMP client (0xBF2670) is not declared either.
+    // A remote member's emote (0xBF2670: name, online id, game slot and
+    // emote id; it queues the emote's token on the slot through
+    // FindEmoteRecord) is not declared either: it calls the SOMP session
+    // manager's 0xD3BAF0.
     // Runs a queued UpdateAll. Inlined into _Poll; the binary keeps an
     // uncalled copy. Name not in the reference map.
     void _PollQueuedUpdateAll();  // 0xBF2830
@@ -563,13 +622,16 @@ public:
     void _FindSlots();  // 0xBF33D0
     // Handles the closed system overlay once the platform reports it gone:
     // refreshes the slots' profiles and shows the in-song menu of the first
-    // slot whose user is joining. Name not in the reference map.
+    // slot whose user is joining. Name not in the reference map. Not
+    // reconstructed: it calls the platform's overlay check (0x39E0A0) and
+    // an RBBandUserMgr member (0x9266B0), which are not declared.
     void _PollSystemOverlay();  // 0xBF3A90
     void _OnLayoutTransitionDone();  // 0xBF3D90
     DataNode OnMsg(const JoypadConnectionMsg& msg);       // 0xBF3E10
     DataNode OnMsg(const GameModeChangedMsg& msg);        // 0xBF3E40
     DataNode OnMsg(const GameMicsChangedMsg& msg);        // 0xBF3E70
     DataNode OnMsg(const GameCreatedMsg& msg);            // 0xBF3F10
+    // Not reconstructed: it calls an RBBandUserMgr member (0x9266B0).
     DataNode OnMsg(const GameStartedMsg& msg);            // 0xBF3FB0
     DataNode OnMsg(const GameEndedMsg& msg);              // 0xBF4020
     DataNode OnMsg(const GameAboutToBeDestroyedMsg& msg); // 0xBF40B0
@@ -580,7 +642,8 @@ public:
     // the reference map.
     void _RefreshSlotProfile(RBOvershellSlotCom* slot);  // 0xBF41B0
     // Shows "error_zero_players" while no band user takes part. Name not in
-    // the reference map.
+    // the reference map. Not reconstructed: it (and its condition, 0xBF7020)
+    // reads the game (theGame +0x160).
     void _ShowErrorZeroPlayersDialog();  // 0xBF42D0
     // The shortest time the online slots' users waited, or the default.
     // Name not in the reference map.

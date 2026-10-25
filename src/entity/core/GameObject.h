@@ -7,6 +7,7 @@
 
 class BinStream;
 class Component;
+class DataArray;
 class Entity;
 class PollDepBase;
 
@@ -193,6 +194,9 @@ public:
     // Destructs the object and frees it unless it lives in an imprint. Not
     // reconstructed.
     void _Destroy();  // 0x117520
+    // Sends the message to every component but `from`; true when one
+    // handled it. Emitted in entity/Entity.o. Not reconstructed.
+    bool ExportToSiblings(const Component* from, DataArray* msg) const;  // 0xF08B0
 
     // The component with the class or base-class symbol, or null; the empty
     // symbol matches a component registered without a class. Inlined into

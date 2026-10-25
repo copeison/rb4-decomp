@@ -361,6 +361,12 @@ extern RBMetaState theRBMetaState;  // 0x1AFF588
 class HelpbarOverrideMsg : public Message<0> {
 public:
     HelpbarOverrideMsg() : Message<0>(Event()) {}
+    // Wraps an existing message array, as UISelectMsg's does; emitted in
+    // rb_meta/RBHelpbarCom.o (0xED7320). Name not in the reference map.
+    explicit HelpbarOverrideMsg(DataArray* msg) : Message<0>(msg) {
+        static_cast<void>(msg->Node(1).LiteralSym(msg));
+        static_cast<void>(Event());
+    }
     ~HelpbarOverrideMsg() override {}  // deleting destructor 0xBC50B0
 
     // The message type, built on first use (0x1B002C8).
@@ -378,6 +384,12 @@ public:
 class HelpbarButtonOverrideMsg : public Message<3> {
 public:
     HelpbarButtonOverrideMsg(JoypadAction action, Symbol label, Symbol icon);  // 0xBC50D0
+    // Wraps an existing message array, as UISelectMsg's does; emitted in
+    // rb_meta/RBHelpbarCom.o (0xED71E0). Name not in the reference map.
+    explicit HelpbarButtonOverrideMsg(DataArray* msg) : Message<3>(msg) {
+        static_cast<void>(msg->Node(1).LiteralSym(msg));
+        static_cast<void>(Event());
+    }
     // The complete destructor jumps to Message<3>'s (0xBB7320); the
     // deleting destructor is at 0xBC53B0.
     ~HelpbarButtonOverrideMsg() override {}
@@ -389,6 +401,12 @@ public:
             t = Symbol("helpbar_button_override_msg");
         }
         return t;
+    }
+
+    // The action (node 2). Inlined into its users. Name not in the
+    // reference map.
+    JoypadAction GetAction() const {
+        return static_cast<JoypadAction>(mData->Int(2));
     }
 };
 

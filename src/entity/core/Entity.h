@@ -194,6 +194,9 @@ public:
     void _Poll();  // 0xF5FC0
     // Post-polls the objects. Not reconstructed.
     void _PostPoll();  // 0xF6380
+    // Queues the component's post-poll on the thread's poll dependencies.
+    // Not reconstructed.
+    void QueueForPostPoll(const Component* com);  // 0xF5F40
     // The number of components of the entity's objects, with those of the
     // entities their instance components hold when `instances` is set.
     // Name not in the reference map. Not reconstructed.

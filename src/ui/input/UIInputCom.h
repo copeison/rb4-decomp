@@ -150,6 +150,9 @@ public:
     // receiver's focused state. Not reconstructed. The parameter name is
     // weak.
     void SetFocusedObject(UIInputReceiverCom* receiver, int padNum, bool immediate);  // 0x89D9F0
+    // Takes the focus away from the pad's receiver. Name not in the
+    // reference map. Not reconstructed.
+    void ClearFocus(int padNum);  // 0x89D750
     // Sets "focus_first_on_enter" and the pending first focus. Not
     // reconstructed.
     void SetFocusFirstOnEnter(bool focusFirst);  // 0x89EF20

@@ -54,6 +54,9 @@ public:
         Clock();  // 0x25AA70
 
         void SetPaused(TimeUnits units, bool paused);  // 0x25A990
+        // Whether the clock of the units is paused. Name not in the reference
+        // map.
+        bool IsPaused(TimeUnits units) const;  // 0x25B0B0
         // Sets the time; `reset` also makes the delta zero.
         void SetUISeconds(float seconds, bool reset);  // 0x25AAE0
         float UISeconds() const;                       // 0x25AB20

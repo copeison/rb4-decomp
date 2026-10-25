@@ -17,6 +17,10 @@ public:
     const char* GetTitle() const;       // 0xF28D20
     const char* GetArtist() const;      // 0xF28D30
     bool IsTutorial() const;            // 0xF28DA0
+    // Whether the vocals allow improvisation (+0x3A0). Name not in the
+    // reference map; the evidence is weak.
+    bool HasVocalImprov() const;  // 0xF28DD0
+    int NumVocalParts() const;    // 0xF28DE0
     // The rank of the part (the part enumeration's values 0-6). The map has
     // GetRank(Symbol); this build takes the part's index.
     float GetRank(int part) const;  // 0xF292A0

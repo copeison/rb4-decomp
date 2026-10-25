@@ -133,6 +133,9 @@ public:
     // Map names; not reconstructed.
     void _SelectImpl(User* user, int padNum, bool userInitiated, bool exportMsg);  // 0x8A4BE0
     bool _ExportMsg(DataArray* msg, bool exportMsg);  // 0x8A4E70
+    // Queues the receiver's state for its next poll. Name not in the
+    // reference map. Not reconstructed.
+    void QueueState(UIState state, bool immediate);  // 0x8A4B20
 
     // Registers the class (InitComponentClass, as a superclass root).
     // Inline in the map; emitted in ui/UI.o.

@@ -135,6 +135,9 @@ public:
     // The profile of a pad, among the slots. Name not in the reference
     // map.
     RBProfile* GetSlotProfileFromPadNum(int padNum) const;  // 0xD5D000
+    // The slot's profile. The binary reads the slot without checking that
+    // it exists; a missing slot is treated as empty.
+    RBProfile* GetProfileFromSlotIdx(unsigned long slot) const;  // 0xD5CEB0
     // Whether the slot's settings are the profile's: true when the slot
     // owns them, or when no earlier slot holds the profile and no other
     // slot owns them.

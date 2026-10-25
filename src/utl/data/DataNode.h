@@ -150,6 +150,13 @@ public:
     // The symbol of an evaluated node: a symbol as is, a string interned
     // and a resource path resolved. Name not in the reference map.
     Symbol LiteralSym(const DataArray* source) const;  // 0x2374E0
+    // The integer of an integer node, read without evaluating it. Inlined
+    // into its users, for example RBHelpbarCom::_ParsePromptInfo at
+    // 0xED5A06. Name not in the reference map.
+    int LiteralInt(const DataArray* source) const {
+        static_cast<void>(source);
+        return mValue.integer;
+    }
     // The glob's bytes, storing their count in `size` when it is given.
     // The map places a copy in utl/DataArray.o.
     const void* Glob(int* size, const DataArray* source) const;  // 0x21FD60

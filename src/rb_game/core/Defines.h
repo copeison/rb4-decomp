@@ -91,9 +91,8 @@ Symbol ScoreTypeToSym(ScoreType type);  // 0xA441A0
 ScoreType SymToScoreType(Symbol sym);  // 0xA44270
 // The part a score is played on; kTrackNone for the band score.
 TrackType ScoreTypeToTrackType(ScoreType type);  // 0xA44310
-// The score of the only band user's part, or the band score when there are
-// several users. Not reconstructed: it calls BandUser virtuals that are not
-// modelled yet.
+// The score of the only participating band user's part, or the band score
+// when several users take part.
 ScoreType GetActiveScoreType();  // 0xA44330
 // The controller a score is played on, or kControllerNone. Name not in
 // the reference map.

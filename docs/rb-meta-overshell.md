@@ -9,18 +9,19 @@ slots' states, runs the override flows that take every slot through one
 screen, and keeps the slots' online state in a SOMP session. The
 constructor publishes it as `theOvershell`.
 
-This pass declares the whole class (every function of the object, with its
-address) and reconstructs the state, the registration, the identity slots
-and the self-contained members. The rest is declared only (see "Not
-reconstructed").
+The overshell, its slot component and the slot states are reconstructed
+except the functions listed under "Not reconstructed", which need members
+of BandUser, the game or the SOMP session that are not modelled yet.
 
 ## Files
 
-| Object | Source |
-| --- | --- |
-| `rb_meta/RBOvershellCom.o` | `src/rb_meta/overshell/RBOvershellCom.{h,cpp}` |
-| `rb_meta/RBOvershellDefines.o` (declared) | `src/rb_meta/overshell/RBOvershellDefines.h` |
-| `rb_meta/RBOvershellSlotCom.o` (declared: `sId`) | `src/rb_meta/overshell/RBOvershellSlotCom.h` |
+| Object | Range | Source |
+| --- | --- | --- |
+| `rb_meta/RBOvershellCom.o` | `0xBE6F60`-`0xBF727F` | `src/rb_meta/overshell/RBOvershellCom.{h,cpp}` |
+| `rb_meta/RBOvershellDefines.o` (declared) | | `src/rb_meta/overshell/RBOvershellDefines.h` |
+| `rb_meta/RBOvershellListProviderCom.o` (declared) | | `src/rb_meta/overshell/RBOvershellListProviderCom.h` |
+| `rb_meta/RBOvershellSlotCom.o` | `0xC05910`-`0xC24AFF` | `src/rb_meta/overshell/RBOvershellSlotCom.{h,cpp}` |
+| `rb_meta/RBOvershellSlotState.o` | `0xC24B00`-`0xC2906F` | `src/rb_meta/overshell/RBOvershellSlotState.{h,cpp}` |
 
 ## Globals
 
@@ -33,7 +34,7 @@ reconstructed").
 | `0x1B02A90` | `RBOvershellCom::sMetaData` | |
 | `0x1B02C38` | `theOvershell` | set by the constructor, cleared by the destructor |
 | `0x1971C40` | (table) | `OvershellOnlineStateToString`'s labels, indexed by state + 1 |
-| `0x1B03ED0` | `RBOvershellSlotCom::sId` | required class of "overshell_slots" |
+| `0x1B03ED0` | `RBOvershellSlotCom::sId` | required class of "overshell_slots" (see below) |
 
 Registration `Init` is emitted at `0xB87E00`, the factory `_Create` at
 `0xBAB940` (`new(0x428)`).
@@ -103,15 +104,83 @@ Almost every name of the SOMP code (newer than the map), the field names,
 `GetOverrideFlow`, `_CanChangeOverrideFlow`, `Reset`, `IsOnline`,
 `IsUserAllowingInputToShell`, the `OvershellOverrideFlow` enumerator names
 (flow 1 also starts the drop-in), and the OnSomp forwarders' meaning.
+The slot com's field names and about 150 functions newer than the map
+(the SOMP code especially, `OvershellSlotConnectionState`),
+`RBOvershellRemoteSlotState` and the state slots 19-36 (Has/Get pairs for
+the remote record), `_IsNoOnlineSlotUserReady`, `_RemoveUsersOverLimit`,
+the local Game, GameMode, RBBTMMgr and joypad colour declarations in
+`RBOvershellCom.cpp`.
+
+## RBOvershellSlotCom (760 bytes)
+
+The component of each overshell slot; vtable `0x19722A8` (41 slots:
+destructors `0xC0A5C0`/`0xC0A810`, `Handle` `0xC1E680`, identity slots
+`0xC24010`-`0xC24090`, `0xC24230`/`0xC24240`, slot 29 `0xC0F420`, `_Enter`
+`0xC0F440`, `_Poll` `0xC0FC30`, `_HasPostPoll` `0xC24250`, `_PostPoll`
+`0xC10900`). `RuntimeData` (680 bytes at 24, constructor `0xC05910`) holds
+the overshell, the band slot (+0xA8, -1 for none), the state and the state
+manager (+0x78, +0x88), the potential users, the queued messages (an
+`eastl::deque`, `src/utl/containers/Deque.h`) and the SOMP request state;
+then `list` (704), `confirm_action_text`, the heights (712, 716) and
+`state_blenders` (720). `_Init` registers the slot's properties (list,
+slot, views, online state, tooltips, mic monitors, button states) and six
+exported events. Statics: `sId` `0x1B03ED0`, `sClassName` `0x1B03ED8`,
+`sPropRegistry` `0x1B03EE0`, `sMetaData` `0x1B03F80`, the event symbols
+`0x1B03EA8`-`0x1B03EC8`; static initializer `0xC24990`; `Init` `0xB88970`,
+`_Create` `0xBABA30`.
+
+The slot's user is `theBandUserMgr->GetUserFromSlot(band slot or 0)`.
+`ShowState` sets the user's overshell slot state, runs `UpdateState` (the
+states' exit and enter messages) and `UpdateView` and queues a SOMP update.
+The `OvershellSlotStateID` enumerators (`kState_*`) come from the name table
+at `0x1971C70`; ids 2, 22 and 58-60 are unnamed.
+
+## Slot states
+
+`RBOvershellSlotState` (88 bytes, vtable `0x1972468`, 49 slots: every query
+is virtual in this build; the map's had three) holds the state's
+`slot_states.dta` entry, its id, the slot and a `map<Symbol, DataNode>` of
+properties; `GetStateID` is `0xC24C80`. `RBOvershellRemoteSlotState`
+(vtable `0x19725F0`, newer than the map) serves entries with `(remote
+TRUE)`. `RBOvershellSlotStateMgr` (96 bytes) reads `slot_states.dta` and
+`state_transitions.dta` (`(from (to seconds)...)`, default 0.3 s, 0 from no
+state). Handlers run with the slot as the object and `$overshell` set.
+
+## Behaviour notes
+
+- `_FindSlots`: each slot is the root of the entity its "overshell_slots"
+  object instances; it gets its game and band slot, the input component and
+  the overshell; the valid controllers are guitar, drums, vocals, guitar;
+  the join order 0, 3, 2, 1.
+- `GetOverrideFlow` is disabled while inactive, during a BTM event in game
+  mode 8, during a SOMP session's song in kLayoutGame, and in the Winning,
+  Losing, WatchingCutscene and Exiting gameplay states; it is
+  SompTransition during the 2.5 s SOMP layout transition.
+- A pending online state ends after 11 s, after 1.5 s once the users have
+  settled, or when the slots are ready. A SOMP controller loss drops out to
+  kLayoutSompGreenRoom with "somp_error_controller_disconnected".
+- 0xBF2670 forwards a remote member's emote (0xD3BAF0); the third
+  std::function (vtable `0x1971C00`) is `_ShowErrorZeroPlayersDialog`'s
+  condition (`0xBF7020`); the wrap constructors inlined into `Handle` are
+  `0xBF6860`, `0xBF6970` and `0xBF6A80` (`SystemOverlayStatusChangedMsg`,
+  now in `PlatformMgr.h`).
 
 ## Not reconstructed
 
-Declared only: the functions that call into classes not yet modelled —
-`BandUser` (in this build a chain User, BandUser, an unnamed base and the
-local/remote user classes), `RBOvershellSlotCom` and `RBOvershellSlotState`
-(49-slot vtable at `0x1972468`), `GameMode`, `Game`, the band user manager
-subclass at `0x1ADFB18`, the SOMP session manager's members and client
-(`0x1B156C8`), and the game messages. These are `UpdateAll`, the override
-flow and online transition logic, `_Enter`, `_Poll`, `_FindSlots`,
-`Handle` and the `OnMsg` handlers. They should land with the slot, slot
-state and user classes.
+- RBOvershellCom (17 functions): `_CheckSompJoin`,
+  `_ResolvePartWaitStates`, `_NeedsSompControllerReconnect`,
+  `_RefreshJoinableUsers`, `_PollRemoteUsers`, `CheckAndAutoPauseGame`,
+  `CheckAndAutoUnpauseGame`, `_PollSystemOverlay`, `OnMsg(GameStartedMsg)`
+  (undeclared RBBandUserMgr members), `_HandleControllerDisconnect`,
+  `_ShowSlotReconnectController`, `_ShowErrorZeroPlayersDialog`,
+  `_DropInRemoteUser` (Game fields), `_AreRemoteSlotsConnected`,
+  `_PollSompDropIn` (SOMP member records), `_Enter` (the game messages'
+  event statics, the joypad subscription, GameMode as a MsgSource) and
+  `Handle` (the game messages' wrap constructors).
+- RBOvershellSlotCom (58 of about 309): the user joins and removals, the
+  profile and character functions, part and difficulty selection and the
+  SOMP part, score type and difficulty results (undeclared RBBandUser
+  members); the in-song menu actions (the game); the song options, the SOMP
+  record view and the emote menus (unmodelled tables).
+- RBOvershellSlotState: the base `GetView` and `HandleMsg`, and the remote
+  state's getters (RemoteBandUser's session record).
